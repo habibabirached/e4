@@ -3,6 +3,7 @@ import sys
 #import datetime
 import numpy as np
 import pandas as pd
+import json
 from bokeh.server.server import Server
 from bokeh.application import Application
 from bokeh.application.handlers.function import FunctionHandler
@@ -215,17 +216,21 @@ def peak_find(args, data_frame):
     gaps = gaps[0:len(gaps)-1]
     return peaks_avg_out, bottom_peaks, gaps
 
-def save_data(args, data):
+def save_data(args, data, peak_locs, gaps):
     print('@save_data')    
     if len(args) > 2:
         if args[2] != 'false':
-            json = args[2].find('.json', 0, len(args[2]))
-            if json >= 0:
+            is_json = args[2].find('.json', 0, len(args[2]))
+            if is_json >= 0:
                 #JSON output
                 print('Saving raw data to JSON file: {}'.format(args[2]))
-                data.to_json(args[2], orient='split')
-            csv = args[2].find('.csv', 0, len(args[2]))
-            if csv >= 0:
+                data_dict = {'data':data['filtered'].tolist(),
+                             'locs':peak_locs.tolist(),
+                             'gaps':gaps.tolist()}
+                with open(args[2], 'w') as out_file:
+                    json.dump(data_dict, out_file)
+            is_csv = args[2].find('.csv', 0, len(args[2]))
+            if is_csv >= 0:
                 #CSV output
                 print('Saving raw data to CSV file: {}'.format(args[2]))
                 data.to_csv(args[2], sep=',')    
@@ -253,7 +258,7 @@ if __name__ == "__main__":
 
     peaks_avg_out, peak_locs, gaps = peak_find(ARGS, sensor_data)
 
-    save_data(ARGS, sensor_data)
+    save_data(ARGS, sensor_data, peak_locs, gaps)
 
     DATA = ColumnDataSource(data=dict(index = sensor_data.index.values, \
                                       pt_count=sensor_data['pt_count'], \
