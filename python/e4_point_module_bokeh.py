@@ -17,6 +17,8 @@ from scipy import signal
 
 DATA = ColumnDataSource({'index':[], 'pt_count':[], 'dataset_id':[], 'displacement':[], 'filtered':[]})
 ARGS = sys.argv[1:]
+THRESHOLD = 3.99
+FILTER_ORDER = 1
 
 def update():
     print('@update')
@@ -25,7 +27,7 @@ def update():
     ''' Update the HTML document '''
     DATA.stream(new_data)
 
-def make_document():
+def make_document(data, peak_locs, gaps):
     ''' Create the HTML document '''
     print('@make_document')
 
@@ -37,7 +39,7 @@ def make_document():
                  width=500, height=500, tools=tools_to_show)
     disp_fig.xaxis.axis_label = 'Index'
     disp_fig.yaxis.axis_label = 'Displacement (mm)'
-    disp_fig.line('index', 'displacement', source=DATA, line_width=3, \
+    disp_fig.line('index', 'displacement', source=data, line_width=3, \
                   line_alpha=0.6, line_color='blue')
     hover1 = disp_fig.select(dict(type=HoverTool))
     hover1.tooltips = [('Index', '@index'),('Displacement', '@displacement')]
@@ -50,7 +52,7 @@ def make_document():
 #                          x_range=disp_fig.x_range, tools=tools_to_show)
 #    pt_count_fig.xaxis.axis_label = 'Index'
 #    pt_count_fig.yaxis.axis_label = 'Point Count/Dataset'
-#    pt_count_fig.line('index', 'pt_count', source=DATA, line_width=3, \
+#    pt_count_fig.line('index', 'pt_count', source=data, line_width=3, \
 #                      line_alpha=0.6, line_color='red')
 #    hover2 = pt_count_fig.select(dict(type=HoverTool))
 #    hover2.tooltips = [('Index', '@index'),('Point Count', '@pt_count')]
@@ -62,13 +64,14 @@ def make_document():
 #                            x_range=disp_fig.x_range, tools=tools_to_show)
 #    dataset_id_fig.xaxis.axis_label = 'Index'
 #    dataset_id_fig.yaxis.axis_label = 'Dataset ID'
-#    dataset_id_fig.line('index', 'dataset_id', source=DATA, line_width=3, \
+#    dataset_id_fig.line('index', 'dataset_id', source=data, line_width=3, \
 #                        line_alpha=0.6, line_color='green')
 #    hover3 = dataset_id_fig.select(dict(type=HoverTool))
 #    hover3.tooltips = [('Index', '@index'),('Dataset ID', '@dataset_id')]
 #    hover3.mode = 'mouse'
 
     # Plot filtered data
+    source2 = ColumnDataSource(data=dict(locs=peak_locs, gaps=gaps))    
     filtered_fig = figure(title='Filtered Displacement', \
                           width=500, height=500, \
                           x_range=disp_fig.x_range, \
@@ -76,8 +79,9 @@ def make_document():
                           tools=tools_to_show)
     filtered_fig.xaxis.axis_label = 'Index'
     filtered_fig.yaxis.axis_label = 'Filtered Displacement'
-    filtered_fig.line('index', 'filtered', source=DATA, line_width=3, \
+    filtered_fig.line('index', 'filtered', source=data, line_width=3, \
                          line_alpha=0.6, line_color='red')
+    filtered_fig.circle('locs', 'gaps', source=source2, size=10, fill_alpha=0.6)    
     hover4 = filtered_fig.select(dict(type=HoverTool))
     hover4.tooltips = [('Index', '@index'),('Fitlered', '@filtered')]
     hover4.mode = 'mouse'
@@ -184,12 +188,32 @@ def collect_data(args):
 def filter_data(args, data):
     print('@filter_data')
     freq_cutoff = float(args[3])
-    n_order = 1
+    n_order = FILTER_ORDER
     samp_freq = data['samp_freq']
     print('n_order: {}; freq_cutoff: {}; fs: {}'.format(n_order, freq_cutoff, samp_freq))
     sos = signal.butter(n_order, freq_cutoff, 'lowpass', fs=samp_freq, output='sos')
     filtered = signal.sosfilt(sos, data['sensor_data']['displacement'])
     data['sensor_data']['filtered'] = filtered
+
+def peak_find(args, data_frame):
+    ''' find peaks in the data '''
+    print('@peak_find')
+    data = data_frame['displacement'].values
+    top_peaks, props = signal.find_peaks(data, plateau_size=5000)
+    peaks_avg_out = THRESHOLD*(np.ones(len(data)))
+    gaps = np.zeros(len(props['right_edges']))
+    bottom_peaks = np.zeros(len(gaps))
+    for i in range(len(props['left_edges'])-1):
+        roi = data[props['right_edges'][i]:props['left_edges'][i+1]]
+        roi[roi >= THRESHOLD] = np.nan
+        mean = np.nanmean(roi)
+        peaks_avg_out[props['right_edges'][i]:props['left_edges'][i+1]] = mean
+        gaps[i] = mean
+        bottom_peaks[i] = (props['left_edges'][i+1] + props['right_edges'][i])/2.0
+
+    bottom_peaks = bottom_peaks[0:len(bottom_peaks)-1]
+    gaps = gaps[0:len(gaps)-1]
+    return peaks_avg_out, bottom_peaks, gaps
 
 def save_data(args, data):
     print('@save_data')    
@@ -227,6 +251,8 @@ if __name__ == "__main__":
 
     sensor_data = collection_data['sensor_data']
 
+    peaks_avg_out, peak_locs, gaps = peak_find(ARGS, sensor_data)
+
     save_data(ARGS, sensor_data)
 
     DATA = ColumnDataSource(data=dict(index = sensor_data.index.values, \
@@ -234,8 +260,9 @@ if __name__ == "__main__":
                                       dataset_id=sensor_data['dataset_id'], \
                                       timestamp=sensor_data['timestamp'], \
                                       displacement=sensor_data['displacement'], \
-                                      filtered=sensor_data['filtered']))
+                                      filtered=sensor_data['filtered'], \
+                                      peaks_data=peaks_avg_out))
 
 
     if ARGS[1] == 'true':
-        make_document()
+        make_document(DATA, peak_locs, gaps)
