@@ -89,6 +89,8 @@ def make_document():
                     filtered_fig)
 #                    pt_count_fig,
 #                    dataset_id_fig)
+
+    output_file('e4Pt.html', title='MTI Sensor Data')
     show(layout)
 
 def collect_data(args):
@@ -148,7 +150,7 @@ def collect_data(args):
         for data_pt in range(pt_count):
             disp = read_reg.registers[data_pt*2 + offset] + \
                    (read_reg.registers[(data_pt*2)+1+offset] << 16)
-            displacements[data_index] = float(disp / 10**9)
+            displacements[data_index] = float(disp / 10**7)
             times[data_index] = read_reg.registers[3] + \
                                 (read_reg.registers[4] << 16) +\
                                 (read_reg.registers[5] << 32) + \
@@ -174,8 +176,17 @@ def collect_data(args):
     print('Average samples/sec: {}'.format(samp_freq))
     if len(args) > 2:
         if args[2] != 'false':
-            print('Saving raw data to CSV file: {}'.format(args[2]))
-            sensor_df.to_csv(args[2], sep=',')
+            json = args[2].find('.json', 0, len(args[2]))
+            if json >= 0:
+                #JSON output
+                print('Saving raw data to JSON file: {}'.format(args[2]))
+                sensor_df.to_json(args[2], orient='split')
+            csv = args[2].find('.csv', 0, len(args[2]))
+            if csv >= 0:
+                #CSV output
+                print('Saving raw data to CSV file: {}'.format(args[2]))
+                sensor_df.to_csv(args[2], sep=',')
+
     return {'samp_freq':samp_freq, 'sensor_data':sensor_df}
 
 def filter_data(args, data):
@@ -191,10 +202,12 @@ def filter_data(args, data):
 if __name__ == "__main__":
     ARGS = sys.argv[1:]
     if len(ARGS) == 0:
-        print('Usage: e4_point_module_bokeh num_data_sets produce_plots')
+        print('Usage: e4_point_module_bokeh num_data_sets produce_plots [csv_filename] [filter_freq]')
         print('    num_data_sets: Number of data sets to collect')
         print('    produce_plots: Produce HTML output of plots')
-        print('    cvs_file: Filename to which to save data as CSV file.')
+        print('    output_file: Filename to which to save data file.')
+        print('             \'[fname].csv\' creates csv output')
+        print('             \'[fname].json\' create json output')
         print('             \'false\' causes no output')
         print('    filter_freq: Cutoff filter for data LPF.')
         exit()
