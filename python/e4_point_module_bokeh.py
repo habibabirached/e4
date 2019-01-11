@@ -160,6 +160,10 @@ def collect_data(args):
             data_index += 1
         set_count = set_count + 1
 
+    # Clean the data a bit. The sensor is not capable of measuring
+    # greater than 4mm, so we clamp the data there.
+    displacements = np.where(displacements > 4.0, 4.0, displacements)
+
     # remove any extraneous rows
     sensor_df['pt_count'] = point_counts
     sensor_df['dataset_id'] = datasetIds
@@ -174,30 +178,33 @@ def collect_data(args):
     print('Points collected: {}'.format(total_points))
     print('Elapsed Collection time: {}s'.format(t_total))
     print('Average samples/sec: {}'.format(samp_freq))
-    if len(args) > 2:
-        if args[2] != 'false':
-            json = args[2].find('.json', 0, len(args[2]))
-            if json >= 0:
-                #JSON output
-                print('Saving raw data to JSON file: {}'.format(args[2]))
-                sensor_df.to_json(args[2], orient='split')
-            csv = args[2].find('.csv', 0, len(args[2]))
-            if csv >= 0:
-                #CSV output
-                print('Saving raw data to CSV file: {}'.format(args[2]))
-                sensor_df.to_csv(args[2], sep=',')
 
     return {'samp_freq':samp_freq, 'sensor_data':sensor_df}
 
 def filter_data(args, data):
     print('@filter_data')
     freq_cutoff = float(args[3])
-    n_order = 3
+    n_order = 1
     samp_freq = data['samp_freq']
     print('n_order: {}; freq_cutoff: {}; fs: {}'.format(n_order, freq_cutoff, samp_freq))
     sos = signal.butter(n_order, freq_cutoff, 'lowpass', fs=samp_freq, output='sos')
     filtered = signal.sosfilt(sos, data['sensor_data']['displacement'])
     data['sensor_data']['filtered'] = filtered
+
+def save_data(args, data):
+    print('@save_data')    
+    if len(args) > 2:
+        if args[2] != 'false':
+            json = args[2].find('.json', 0, len(args[2]))
+            if json >= 0:
+                #JSON output
+                print('Saving raw data to JSON file: {}'.format(args[2]))
+                data.to_json(args[2], orient='split')
+            csv = args[2].find('.csv', 0, len(args[2]))
+            if csv >= 0:
+                #CSV output
+                print('Saving raw data to CSV file: {}'.format(args[2]))
+                data.to_csv(args[2], sep=',')    
 
 if __name__ == "__main__":
     ARGS = sys.argv[1:]
@@ -219,6 +226,8 @@ if __name__ == "__main__":
         filter_data(ARGS, collection_data)
 
     sensor_data = collection_data['sensor_data']
+
+    save_data(ARGS, sensor_data)
 
     DATA = ColumnDataSource(data=dict(index = sensor_data.index.values, \
                                       pt_count=sensor_data['pt_count'], \
