@@ -9,17 +9,17 @@ from bokeh.models import HoverTool
 THRESHOLD = 3.99
 FILTER_ORDER = 1
 
-def make_plots(disp, filt_disp, peaks):
+def make_plots(disp, filt_disp, peak_avgs, peak_locs, gaps):
     ''' make bokeh plots for before & after filtering '''
     print('@make_plots')
     tools_to_show = 'hover, box_zoom, pan, save, reset, wheel_zoom'
 
     index = range(len(disp))
-
     source = ColumnDataSource(data=dict(index=index,
                                         disp=disp,
                                         filt_disp=filt_disp,
-                                        peaks=peaks))
+                                        peak_avgs=peak_avgs))
+    source2 = ColumnDataSource(data=dict(locs=peak_locs, gaps=gaps))
     # Plot displacement
     disp_fig = figure(title='Capacitance Sensor Displacement', \
                       width=500, height=500, tools=tools_to_show)
@@ -41,8 +41,9 @@ def make_plots(disp, filt_disp, peaks):
     fdisp_fig.yaxis.axis_label = 'Filtered Displacement (mm)'
     fdisp_fig.line('index', 'filt_disp', source=source, line_width=3, \
                    line_alpha=0.6, line_color='red')
-    fdisp_fig.line('index', 'peaks', source=source, line_width=2, \
+    fdisp_fig.line('index', 'peak_avgs', source=source, line_width=2, \
                    line_alpha=0.6, line_color='green')
+    fdisp_fig.circle('locs', 'gaps', source=source2, size=10, fill_alpha=0.6)
     hover2 = fdisp_fig.select(dict(type=HoverTool))
     hover2.tooltips = [('Index', '@index'),('Displacement', '@filt_disp')]
     hover2.mode = 'mouse'
@@ -65,18 +66,19 @@ def filter_data(args, data):
 def peak_find(args, data):
     ''' find peaks in the data '''
     print('@peak_find')
-    peaks, props = signal.find_peaks(data, plateau_size=5000)
-    print('Peak properties:\n{}'.format(props))
+    top_peaks, props = signal.find_peaks(data, plateau_size=5000)
+    #print('Peak properties:\n{}'.format(props))
     peaks_avg_out = THRESHOLD*(np.ones(len(data)))
     gaps = np.zeros(len(props['right_edges']))
+    bottom_peaks = np.zeros(len(gaps))
     for i in range(len(props['left_edges'])-1):
-        roi = data[props['right_edges'][i]:props['left_edges'][i+1]]        
+        roi = data[props['right_edges'][i]:props['left_edges'][i+1]]
         roi[roi >= THRESHOLD] = np.nan
         mean = np.nanmean(roi)
-        print('Mean({}) = {}'.format(i,mean))
         peaks_avg_out[props['right_edges'][i]:props['left_edges'][i+1]] = mean
         gaps[i] = mean
-    return peaks_avg_out, gaps
+        bottom_peaks[i] = (props['left_edges'][i+1] + props['right_edges'][i])/2.0
+    return peaks_avg_out, bottom_peaks, gaps
 
 if __name__ == "__main__":
     ''' read data from CSV file and apply a digital LPF. '''
@@ -85,6 +87,9 @@ if __name__ == "__main__":
     disp = data[:,4]
     #print('Disp:\n{}'.format(disp))
     filt_disp = filter_data(args, disp)
-    peak_avgs, gaps = peak_find(args,filt_disp)
-    print("Gaps: {}".format(gaps))
-    make_plots(disp, filt_disp, peak_avgs)
+    peak_avgs, peak_locs, gaps = peak_find(args,filt_disp)
+    peak_locs = peak_locs[0:len(peak_locs)-1]
+    gaps = gaps[0:len(gaps)-1]
+    print('Locs: {}'.format(peak_locs))
+    print('Gaps: {}'.format(gaps))
+    make_plots(disp, filt_disp, peak_avgs, peak_locs, gaps)
