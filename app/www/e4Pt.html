@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="format-detection" content="telephone=no">
+	<meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, width=device-width">
+	<title>e-4Pt Tool</title>
+	<script src="./js/lib/jQuery.js"></script>
+	<script type="application/javascript" src="./js/lib/fastclick_v2_min.js"></script>
+	<script type="text/javascript" src="./js/lib/jquery-1.12.3.min.js"></script>
+	<link rel="stylesheet" href="./css/fontAwesome.css"></link>
+        <link rel="stylesheet" href="./css/app_styles.css">
+	<allow-navigation href="*" />
+
+</head>
+<body>
+<!-- --------------- TOP BAR ----------------------- -->
+	<div class="FIXED ROW COLOR_T_BLACK FONT_WHITE HROW Z5">
+
+		<div class="COL_EQUAL W6">
+			<div id="MAIN_MENU" class="COL_FL FONT4 MH3 MW4"><B>[MENU]</B></div>
+		</div>
+
+		<div class="COL_EQUAL W94">
+			<div id="TITLE_BAR" class="COL_FL FONT7 MW4 PH1">e-4Pt Tool</div>
+		</div>
+	</div>
+
+<!-- --------------- PLOT --------------------- -->
+	<div class="FIXED H100 Z0" id="DATA_PLOT">
+            <p>Plot Div</p>
+            <div id="container"></div>
+        </div>
+
+<!-- --------------- LEFT MENU ---------------------  -->
+	<div id="LEFT_MENU" class="FIXED H100 LEFT0 COLOR_T_BLACK Z0" style="top:1vmin">
+		<BR><BR>
+		<div id="SETUP_BUTTON" class="TRACC_BUTTON">SETUP</div>
+		<div id="OPEN_BUTTON_DEVICE" class="TRACC_BUTTON">OPEN LOCAL</div>
+		<div id="CONNECT_WS_BUTTON" class="TRACC_BUTTON">CONNECT TOOL</div>
+		<div id="GET_DATA_BUTTON" class="TRACC_BUTTON">GET DATA</div>
+		<div class="COL_EQUAL H100 W25 PW8 PB2">
+        		<input id="OPEN_EXTERNAL_FILE_BUTTON" name="OPEN_EXTERNAL_FILE_BUTTON" type="file" class="INPUT_HIDE"/>
+			<label for="OPEN_EXTERNAL_FILE_BUTTON" class="OVERLAY_BUTTON BUTTON"  style="display: block; margin:auto;">BROWSE</label>
+		</div>
+		<div id="APP_VERSION">VERSION 0.0.1</div>
+	</div>
+
+<!-- --------------- BOTTOM BAR ---------------------  -->
+	<div class="FIXED W100 BOTTOM0 Z1 COLOR_T_BLACK HROW">
+		<div id="RESULTS_BAR" class="H100 W100 HIDE">
+			<div class="COL_FR">&nbsp</div>
+			<div id="BOT_BAR_Y" class="BLOCK COL_FR FONT8 FONT_WHITE PT1" >0.0345</div>
+			<div class="BLOCK COL_FR FONT8 FONT_SILVER PT1">Y:</div>
+			<div id="BOT_BAR_SET" class="BLOCK COL_FL FONT8 FONT_WHITE PT1">3</div>
+		</div>
+
+		<div id="STATUS_BAR" class="H100 W100">
+			<div class="COL_FL">&nbsp</div>
+			<div id="STATUS_DISPLAY" class="BLOCK COL_FL FONT7 FONT_WHITE PH4 PT1 H100">Connect to e-4Pt Tool to collect data</div>
+		</div>
+
+		<div id="REV_PROGRESS_BAR" class="HIDE">
+			<div id="REV_PROGRESS">&nbsp 0%</div>
+		</div>
+
+	</div>
+
+<!-- --------------- IMPORTS ------------------------- -->
+	<script src="./js/lib/highcharts/highcharts6_0_4.js"></script>
+	<script src="./js/lib/highcharts/highcharts_more.js"></script>
+	<!-- <script src="./libraries/smoothie.js"></script> -->
+	<script src="./js/e4pt_app.js"></script>
+	<!-- <script type="text/javascript" src="cordova.js"></script> -->
+</body>
+
+</html>
