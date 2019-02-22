@@ -48,28 +48,28 @@ def make_document(data, peak_locs, gaps):
     
 
     # Plot point counts
-#    pt_count_fig = figure(title='Set Point Count', \
-#                          width=500, height=500, \
-#                          x_range=disp_fig.x_range, tools=tools_to_show)
-#    pt_count_fig.xaxis.axis_label = 'Index'
-#    pt_count_fig.yaxis.axis_label = 'Point Count/Dataset'
-#    pt_count_fig.line('index', 'pt_count', source=data, line_width=3, \
-#                      line_alpha=0.6, line_color='red')
-#    hover2 = pt_count_fig.select(dict(type=HoverTool))
-#    hover2.tooltips = [('Index', '@index'),('Point Count', '@pt_count')]
-#    hover2.mode = 'mouse'
+    pt_count_fig = figure(title='Set Point Count', \
+                          width=500, height=500, \
+                          x_range=disp_fig.x_range, tools=tools_to_show)
+    pt_count_fig.xaxis.axis_label = 'Index'
+    pt_count_fig.yaxis.axis_label = 'Point Count/Dataset'
+    pt_count_fig.line('index', 'pt_count', source=data, line_width=3, \
+                      line_alpha=0.6, line_color='red')
+    hover2 = pt_count_fig.select(dict(type=HoverTool))
+    hover2.tooltips = [('Index', '@index'),('Point Count', '@pt_count')]
+    hover2.mode = 'mouse'
 
     # Plot dataset ids
-#    dataset_id_fig = figure(title='Dataset IDs', \
-#                            width=500, height=500, \
-#                            x_range=disp_fig.x_range, tools=tools_to_show)
-#    dataset_id_fig.xaxis.axis_label = 'Index'
-#    dataset_id_fig.yaxis.axis_label = 'Dataset ID'
-#    dataset_id_fig.line('index', 'dataset_id', source=data, line_width=3, \
-#                        line_alpha=0.6, line_color='green')
-#    hover3 = dataset_id_fig.select(dict(type=HoverTool))
-#    hover3.tooltips = [('Index', '@index'),('Dataset ID', '@dataset_id')]
-#    hover3.mode = 'mouse'
+    dataset_id_fig = figure(title='Dataset IDs', \
+                            width=500, height=500, \
+                            x_range=disp_fig.x_range, tools=tools_to_show)
+    dataset_id_fig.xaxis.axis_label = 'Index'
+    dataset_id_fig.yaxis.axis_label = 'Dataset ID'
+    dataset_id_fig.line('index', 'dataset_id', source=data, line_width=3, \
+                        line_alpha=0.6, line_color='green')
+    hover3 = dataset_id_fig.select(dict(type=HoverTool))
+    hover3.tooltips = [('Index', '@index'),('Dataset ID', '@dataset_id')]
+    hover3.mode = 'mouse'
 
     # Plot filtered data
     source2 = ColumnDataSource(data=dict(locs=peak_locs, gaps=gaps))    
@@ -91,9 +91,9 @@ def make_document(data, peak_locs, gaps):
     #curdoc().add_root(disp_fig)
 
     layout = column(disp_fig,
-                    filtered_fig)
-#                    pt_count_fig,
-#                    dataset_id_fig)
+                    filtered_fig,
+                    pt_count_fig,
+                    dataset_id_fig)
 
     output_file('e4Pt.html', title='MTI Sensor Data')
     show(layout)
@@ -103,7 +103,8 @@ def collect_data(args):
     #---------------------------------------------------------------------------#
     # choose the client
     #---------------------------------------------------------------------------#
-    client = ModbusClient('192.168.7.75', port=502)
+    #client = ModbusClient('192.168.7.75', port=502)
+    client = ModbusClient('192.168.168.247', port=502)
     client.connect()
 
     #---------------------------------------------------------------------------#

@@ -34,28 +34,28 @@ notify = []
 iwdc_commands = {'sendName':'SendDeviceName',
                  'sendData':'SendData',}
 deviceName = 'DeviceName:Modbus tool'
-seq_ID_out = 1
+#seq_ID_out = 1
 tcp_setup = 0
 
 
 def read_tcp(strm, client, num_sensor_reads):
     ''' read_tcp '''
-    global seq_ID_out
+    #global seq_ID_out
 
     #print 'after tcp connection was set up'
     data = strm.recv(40)
     if data:
-        print 'TCP received: ', data
+        print('TCP received: {}'.format(data))
         if data.find(iwdc_commands['sendName']) >= 0:
             strm.sendall(deviceName)
         elif data.find(iwdc_commands['sendData']) >= 0:
 	    
 	    #Pack up and send the data
-            cmd = pack('>HHH', 7, seq_ID_out, 1) # last digit is number of measurements
-            seq_ID_out = seq_ID_out + 1
+            #cmd = pack('>HHH', 7, seq_ID_out, 1) # last digit is number of measurements
+            #seq_ID_out = seq_ID_out + 1
 
 	    # Get data from Sensor
-	    collection_data = read_modbus(client, num_sensor_reads);
+            collection_data = read_modbus(client, num_sensor_reads);
 
 	    # Convert the sample data to JSON for transmission
             json_data = collection_data['sensor_data'].to_json(orient='split')
@@ -63,9 +63,9 @@ def read_tcp(strm, client, num_sensor_reads):
 	    # Send the data type
             strm.sendall('application/json')
 	    # Send the data
-	    strm.sendall(json_data)
+            strm.sendall(json_data)
     else:
-        print 'no data, client closed connection'
+        print('no data, client closed connection')
         inputs.remove(strm)
         notify.remove(strm)
         strm.close()
@@ -151,7 +151,7 @@ def run(num_sensor_reads):
     # create tcp socket
     global inputs
     global notify
-    global seq_ID_out
+    #global seq_ID_out
     global tcp_setup
     global client
 
@@ -164,14 +164,14 @@ def run(num_sensor_reads):
     displacements = [None]*num_sensor_reads
 
     #create the Modbus connection
-    print "Creating Modbus connection"
+    print('Creating Modbus connection')
     client = ModbusClient(addr_sensor, port=sensor_port)
     connectSuccess = client.connect()
     while connectSuccess == False:
-	print "Failed to connect to Modbus sensor. Trying again..."
-	connectSuccess = client.connect()
+        print('Failed to connect to Modbus sensor. Trying again...')
+        connectSuccess = client.connect()
 
-    print "Connected to Modbus sensor."
+    print('Connected to Modbus sensor.')
 
     addr_h = (host_h, sensor_port) # tcp
     backlog = 5
@@ -179,10 +179,10 @@ def run(num_sensor_reads):
 	# set up TCP connection
         if tcp_setup == 1:
             inputs.append(tcp)
-        seq_ID_out = 1
+        #seq_ID_out = 1
 
         if tcp_setup == 0:
-            print "Creating TCP socket"
+            print('Creating TCP socket')
             tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             tcp.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             tcp.bind(addr_h)
@@ -190,34 +190,37 @@ def run(num_sensor_reads):
             inputs.append(tcp)
             tcp_setup = 1
 
-        print 'Waiting for tcp connection'
+        print('Waiting for tcp connection')
 
-	#print("Waiting for message/event from TCP connection...")
         inputready, outputready, exceptready = select.select(inputs, [], inputs)
 
 	# process any exceptions first - i.e., closed/aborted connections
-	for strm in exceptready:
-	    print "received exception condition for: ", strm.getpeername(), " closing connection"
-	    inputs.remove(strm)
-	    notify.remove(strm)
-	    strm.close()
+        for strm in exceptready:
+            print('recieved exception condition for {}. closing connection.'.format(strm.gettpeername()))
+            inputs.remove(strm)
+            notify.remove(strm)
+            strm.close()
 
 	# now process any descriptors with input to be processed
-	for strm in inputready:
-	    if strm == tcp:
-		print 'accept tcp connection'
-		client, addr_c = strm.accept()
-		inputs.append(client)
-		notify.append(client)
-		read_tcp(strm,client, num_sensor_reads)
-	    else:
-		print "unknown socket:", s.getpeername()
+        for strm in inputready:
+            if strm == tcp:
+                print('accept tcp connection')
+                client, addr_c = strm.accept()
+                inputs.append(client)
+                notify.append(client)
+                read_tcp(strm,client, num_sensor_reads)
+            else:
+                print('unknown socket: {}'.format(strm.getpeername()))
 
-        print '** Finished all sensor reads and transmission to iPad **'
+        print('** Finished all sensor reads and transmission to iPad **')
         inputs = []
         notify = []
 
 if __name__ == '__main__':
     args = sys.argv[1:]
-    num_sensor_reads = args[0]
+    if len(args) == 0:
+        print('Usage: TCPModbus_MTI_2.py num_data_sets')
+        print('    num_data_sets: Number of data sets to collect')
+        exit()
+    num_sensor_reads = int(args[0])
     run(num_sensor_reads)
