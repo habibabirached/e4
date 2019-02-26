@@ -241,11 +241,30 @@ body{
 	position:fixed
 }
 
-#DATA_PLOT{
-	min-width: 800px;
-	max-width: 1600px;
-	height: 500px;
-	margin: 0 auto
+.FRD_PAGE{ 
+  margin: 0;
+  position: absolute;
+  top: 60%;
+  left: 50%;
+  -ms-transform: translate(-50%, -50%);
+  -moz-transform: translate(-50%, -50%);
+  -webkit-transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%);
+}
+
+.SETUP_PAGE{ 
+  margin: 0;
+  position: absolute;
+  top: 60%;
+  left: 50%;
+  -ms-transform: translate(-50%, -50%);
+  -moz-transform: translate(-50%, -50%);
+  -webkit-transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%);
+}
+
+.TXTFIELD {  
+    font-size:24px;
 }
 
 #RPM_DISPLAY_BAR{
@@ -666,11 +685,18 @@ tr, td, th {
 	background-color: var(--TRACC-lightgrey);
 }
 
-#container {  
-  min-width: 500px;
-  max-width: 1600px;
-  height: 500px;
-  margin: 50px;
+#DATA_PLOT {  
+  z-index: -1;
+  overflow:hidden; 
+  height:100%; 
+  width:100%; 
+  position:fixed
+/*
+min-width: 500px;
+max-width: 1600px;
+height: 500px;
+margin: 50px;
+*/
 }
 }
 

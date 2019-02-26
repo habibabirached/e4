@@ -29,19 +29,21 @@
 <!-- --------------- PLOT --------------------- -->
 	<div class="FIXED H100 Z0" id="DATA_PLOT">
             <p>Plot Div</p>
-            <div id="container"></div>
+            <div id="DATA_PLOT"></div>
         </div>
 
 <!-- --------------- LEFT MENU ---------------------  -->
 	<div id="LEFT_MENU" class="FIXED H100 LEFT0 COLOR_T_BLACK Z0" style="top:1vmin">
 		<BR><BR>
+		<div id="FRD_BUTTON" class="TRACC_BUTTON">FRD</div>
 		<div id="SETUP_BUTTON" class="TRACC_BUTTON">SETUP</div>
 		<div id="OPEN_BUTTON_DEVICE" class="TRACC_BUTTON">OPEN LOCAL</div>
 		<div id="CONNECT_WS_BUTTON" class="TRACC_BUTTON">CONNECT TOOL</div>
 		<div id="GET_DATA_BUTTON" class="TRACC_BUTTON">GET DATA</div>
+		<div id="SSO_BUTTON" class="TRACC_BUTTON">DO SSO</div>
 		<div class="COL_EQUAL H100 W25 PW8 PB2">
-        		<input id="OPEN_EXTERNAL_FILE_BUTTON" name="OPEN_EXTERNAL_FILE_BUTTON" type="file" class="INPUT_HIDE"/>
-			<label for="OPEN_EXTERNAL_FILE_BUTTON" class="OVERLAY_BUTTON BUTTON"  style="display: block; margin:auto;">BROWSE</label>
+        	  <input id="OPEN_EXTERNAL_FILE_BUTTON" name="OPEN_EXTERNAL_FILE_BUTTON" type="file" class="INPUT_HIDE"/>
+		  <label for="OPEN_EXTERNAL_FILE_BUTTON" class="OVERLAY_BUTTON BUTTON"  style="display: block; margin:auto;">BROWSE</label>
 		</div>
 		<div id="APP_VERSION">VERSION 0.0.1</div>
 	</div>
@@ -65,6 +67,43 @@
 		</div>
 
 	</div>
+
+<!-- --------------- FRD PAGE ---------------------  -->
+	<div class="FIXED H100 Z0 FRD_PAGE">
+          <div id="FRD_PAGE" class="HIDE">
+            <h1>This page will eventually hold the FRD.</h1>
+          </div>
+        </div>
+
+<!-- --------------- FRAME SELECT PAGE ---------------------  -->
+	<div class="FIXED H100 Z0 SETUP_PAGE">
+          <div id="SETUP_PAGE" class="HIDE">
+            <form action="">
+              <H2>Select Frame</H2>
+              <select class="BORDER_BLACK_1 TXTFIELD" id="FRAME_SIZE">
+                  <option value"6B">6B</option>
+                  <option value"6FA">6FA</option>
+                  <option value"7E">7E</option>
+                  <option value"7FA">7FA</option>
+                  <option value"7FA.05">7FA.05</option>
+                  <option value"9E">9E</option>
+                  <option value"LMS">LMS</option>
+              </select>
+              <br><br><br><br>
+              <H2>Serial Number</H2><br>
+              <input class="BORDER_BLACK_1 TXTFIELD" type="text" name="serial_number" value="">
+              <br><br>
+              <input class="TRACC_BUTTON" type="submit" value="Next" id="SN_SUBMIT_BUTTON">
+            </form>
+          </div>
+        </div>
+
+<!-- --------------- SENSOR MASTERING PAGE ---------------------  -->
+	<div class="FIXED H100 Z0 MASTERING_PAGE">
+          <div id="MASTERING_PAGE" class="HIDE">
+            <H2>Probe Mastering</H2>
+          </div>
+        </div>
 
 <!-- --------------- IMPORTS ------------------------- -->
 	<script src="./js/lib/highcharts/highcharts6_0_4.js"></script>

@@ -20,6 +20,8 @@ var E4PTdata = {
     },
     "date": "",
     "sets":[],
+    "locs":[],
+    "minima":[],
     "alreadyOnLDB":"false"
 }
 
@@ -33,22 +35,29 @@ $(document).ready(function(){
     //}, {passive: true})
     document.getElementById("MAIN_MENU").addEventListener('click', function(){
         $("#TITLE_BAR").text("e-4Pt Tool")
-		$("#SETUP_PAGE").fadeOut();
-		$("#SCAN_INFO_PAGE").fadeOut()
-        $("#RESULTS_PAGE").fadeOut()
-        $("#FILE_LOADING_PAGE").fadeOut()
-        $("#DB_LOADING_PAGE").fadeOut()
+	$("#FRD_PAGE").fadeOut();
+	$("#SETUP_PAGE").fadeOut();
+	$("#SCAN_INFO_PAGE").fadeOut();
+        $("#RESULTS_PAGE").fadeOut();
+        $("#FILE_LOADING_PAGE").fadeOut();
+        $("#DB_LOADING_PAGE").fadeOut();
+        $("#MASTERING_PAGE").fadeOut();
         toggle_menu();
 		
+    }, {passive: true})
+    document.getElementById("FRD_BUTTON").addEventListener('click', function(){
+        toggle_menu();
+        $("#FRD_PAGE").fadeIn();
     }, {passive: true})
     document.getElementById("SETUP_BUTTON").addEventListener('click', function(){
         toggle_menu();
         $("#SETUP_PAGE").fadeIn();
-                                                             
-        //console.log("Calling getCredentials");
-        //window.plugins.FEFCredentials.getCredentials(credentialSuccess,credentialFail,0)
-                                                             
     }, {passive: true})
+    document.getElementById("SN_SUBMIT_BUTTON").addEventListener('click', function(){
+        $("#SETUP_PAGE").fadeOut();
+        $("#MASTERING_PAGE").fadeIn();             
+    }, {passive: true})
+
     function RESULTS_BUTTON_FUNC(){
         getCredentialforREST();
         toggle_menu()
@@ -85,7 +94,17 @@ $(document).ready(function(){
     }, {passive: true})
     document.getElementById("GET_DATA_BUTTON").addEventListener('click', function(){
         toggle_menu();
-        requestE4PtData();
+        var acquisitionTime = prompt("Please enter the acquisition time in seconds.", "30");
+        if (acquisitionTime != null) {
+          requestE4PtData(acquisitionTime);
+        }
+    }, {passive: true})
+    //document.getElementById("MASTER_BUTTON").addEventListener('click', function(){
+    //    console.log("Master Button Clicked.");
+    //}, {passive: true})
+    document.getElementById("SSO_BUTTON").addEventListener('click', function(){
+        toggle_menu();
+        doSSO();
     }, {passive: true})
     setupAccordian()
 })
@@ -153,7 +172,8 @@ function connectWebSocket() {
  
   try {
     console.log("Connecting to WebSocket server.");
-    e4PtSocket = new WebSocket("ws://192.168.7.77:3405");
+    //e4PtSocket = new WebSocket("ws://192.168.7.77:3405");
+    e4PtSocket = new WebSocket("ws://127.0.0.1:3405");
   } catch (err) {
     console.log("Error connecting to WebSocket server");
   }
@@ -162,6 +182,7 @@ function connectWebSocket() {
   e4PtSocket.onopen = function(evt) {
     console.log("e4PtSocket Opened");
     console.log("evt: " + evt);
+    //setTimeout(function(){ sendWSMessage("ping"); }, 5000); // ping after 5s
   }
 
   e4PtSocket.onmessage = function(evt) {
@@ -170,12 +191,16 @@ function connectWebSocket() {
     switch(msg.type) {
     case "data":
       console.log("Received Data Message");
-      console.log(msg);
+      //console.log(msg);
       processE4PtData(msg);
       break;
     case "status":
       console.log("Received Status Message");
       console.log(msg);
+      break;
+    case "pong":
+      console.log("Got pong. Send ping.");
+      setTimeout(function(){ sendWSMessage("ping"); }, 5000); // ping after 5s
       break;
     }
   }
@@ -199,8 +224,14 @@ function processE4PtData(msg) {
   }      
 }
 
-function requestE4PtData() {
-  sendWSMessage("send_data");
+function requestE4PtData(acquisitionTime) {
+  console.log("Requesting " + acquisitionTime + " seconds of data");
+  if (Highcharts.charts.series != null) {
+    while(Highcharts.chart.series.length > 0)
+      Highcharts.chart.series[0].remove(true);
+  }
+  message = "send_data," + acquisitionTime;
+  sendWSMessage(message);
 }
 
 function sendWSMessage(msg_text) {
@@ -236,52 +267,93 @@ function parse_data() {
 
 function plot_data() {
   console.log("@e4pt_app::plot_data()");
-  Highcharts.chart('container', {
-      
+  Highcharts.chart('DATA_PLOT', {
+    chart: {
+      renderTo: 'DATA_PLOT',
+      spacingBottom: 0,
+      spacingTop: 80,
+      spacingLeft: 80,
+      spacingRight: 80,
+      marginBottom: 100,
+      marginTop: 80,
+      marginLeft: 80,
+      marginRight: 80,
+      backgroundColor: 'white',
+      animation: false,
+      //zoomType: "x",
+      //margin: 0,
+      padding: 0
+    },
+    boost: {
+      enabled: true,
+      //seriesThreshold: 1,
+      useGPUTranslations: true,
+      allowForce: true
+    },
     title: {
       text: 'e-4Pt Acquired Data'
-          },
-        
-        subtitle: {
+    },
+    style: {
+      fontFamily: 'Veranda'
+    },
+    subtitle: {
       text: E4PTdata.date
-          },
-        yAxis: {
+    },
+    yAxis: {
       title: {
-        text: 'Displacement'
-            }
+        text: 'Blade Gap'
       },
-        xAxis: {
+      labels: {
+        style: {
+        color: 'black',
+        fontSize: 10
+        }
+      }
+    },
+    xAxis: {
       title: {
         text: 'Index'
-            }
-      },
-        legend: {
+            },
+      labels: {
+        style: {
+        color: 'black',
+        fontSize: 10
+        }
+      }
+    },
+    legend: {
       enabled: 'false',
-          },
-        plotOptions: {
+    },
+    tooltip: {
+      enabled: false
+    },
+    pane: {
+      startAngle: 0
+    },
+    plotOptions: {
       series: {
         label: { connectorAllowed: false },
             pointStart: 0
-            }
+      }
+    },
+    series: [
+      {
+        type: 'line',
+        name: 'Capacitance Sensor',
+        data: E4PTdata.data
       },
-        series: [
-                 {
-                 type: 'line',
-                     name: 'Capacitance Sensor',
-                     data: E4PTdata.data
-                     },
-                 {
-                 type: 'scatter',
-                     name: 'Gap Minima',
-                     data: E4PTdata.minima
-                     }
-                 ],
-        responsive: {
+      {
+        type: 'scatter',
+        name: 'Gap Minima',
+        data: E4PTdata.minima
+      }
+    ],
+    responsive: {
       rules: [{
-          condition: { maxWidth: 1000 }
-          }]
-          }
-    });
+        condition: { maxWidth: 1000 }
+      }]
+    }
+  });
 }
 
 function loadExternalFile(){
@@ -350,4 +422,21 @@ function loadExternalFile(){
         
         $("#RESULTS_PAGE").fadeIn()
     }
+}
+
+function doSSO() {
+  console.log("@doSSO");
+  var authServerUri = "https://fssfed.ge.com/fss/as/authorization.oauth2?response_type=code&scope=openid+profile&client_id=GEPW_FFA_TRACC_01&redirect_uri=TRaCC://authorization_grant/";
+  //var authServerUri = "https://fssfed.ge.com/fss/as/authorization.oauth2";
+  var authParams = {
+    response_type: "code",
+    scope: "openid+profile",
+    client_id: "GEPW_FFA_TRACC_01",
+    redirect_uri: "TRaCC://authorization_grant/"
+  }
+  // Redirect to Authorization page.
+  //var replacementUri = authServerUri + "?" + $.param(authParams);
+  var replacementUri = authServerUri;
+  console.log("replacementUri: " + replacementUri);
+  window.location.replace(replacementUri);
 }
