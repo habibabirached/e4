@@ -3,16 +3,20 @@ import sys
 import asyncio
 import websockets
 import json
+import requests
+import time
 #import datetime
 import numpy as np
 import pandas as pd
 from pymodbus.client.sync import ModbusTcpClient as ModbusClient
 from scipy import signal
 from datetime import datetime
+from asgiref.sync import async_to_sync
 
 PARAMS = ["","",""]
 THRESHOLD = 3.99
 FILTER_ORDER = 1
+LAST_SAVED_FILE = ""
 
 def is_number(s):
     try:
@@ -50,7 +54,7 @@ async def ws_msg_handler(websocket, path):
 
         if msg_args[0] == 'send_data':
             print("Data requested for {} seconds ({} dataframes).".format(nSecs,PARAMS[0]))
-            raw_data = collect_data(PARAMS)
+            raw_data = await collect_data(PARAMS, websocket)
             if len(PARAMS) > 2:
                 # Apply LPF
                 filter_data(PARAMS, raw_data)
@@ -58,19 +62,56 @@ async def ws_msg_handler(websocket, path):
             sensor_data = raw_data['sensor_data']
             peaks_avg_out, peak_locs, gaps = peak_find(PARAMS, sensor_data)
             save_data(PARAMS, sensor_data, peak_locs, gaps)
+
+            #decimate the data we send over the web interface
+            factor = int(20)
+            plot_df = sensor_data['filtered'].iloc[::factor]
+            peak_locs = peak_locs / factor
             data_dict = {'type':'data',
-                         'data':sensor_data['filtered'].tolist(),
+                         'data':plot_df.tolist(),
                          'locs':peak_locs.tolist(),
                          'gaps':gaps.tolist()}
             json_data = json.dumps(data_dict)
             await websocket.send(json_data)
 
-def collect_data(params):
+        if msg_args[0] == 'shutdown':
+            print("Got shutdown message over websocket.");
+            system_shutdown();
+
+        if msg_args[0] == 'get_data_file':
+            global LAST_SAVED_FILE
+            print("Got filename request. File is {}".format(LAST_SAVED_FILE));
+            data_dict = {'type':'filename',
+                         'fname':LAST_SAVED_FILE}
+            json_data = json.dumps(data_dict)
+            await websocket.send(json_data)
+
+def system_shutdown():
+    if sys.platform == 'win32':
+        print("If this were Linux, the machine would be shutting down now.")
+        return
+    else:
+        print("Linux system detected. Attempting to shut down now.")
+        import os
+        print("Shutting down now.")
+        #os.system('systemctl poweroff')
+        os.system('sudo shutdown now')
+        # end of the line
+
+async def send_status_message(websocket, status_msg):
+    # Send status message
+    print("Sending status message: {}".format(status_msg))
+    data_dict = {'type':'status','status':status_msg}
+    json_data = json.dumps(data_dict)
+    await websocket.send(json_data)
+
+async def collect_data(params, websocket):
     '''This is the main function for acquiring data over ModBus'''
     #---------------------------------------------------------------------------#
     # choose the client
     #---------------------------------------------------------------------------#
-    client = ModbusClient('192.168.7.75', port=502)
+    #client = ModbusClient('192.168.7.75', port=502) # Laptop testing
+    client = ModbusClient('192.168.168.247', port=502)  # E4PT System testing
     client.connect()
 
     #---------------------------------------------------------------------------#
@@ -110,6 +151,9 @@ def collect_data(params):
     set_count = 0
     data_index = 0
     offset = 7
+    print('Starting collection loop...')
+    sys.stdout.flush()
+    await send_status_message(websocket, 'acquiring')
     while set_count < num_sets:
         read_reg = client.read_holding_registers(64, 103)
         current_data_set_id = read_reg.registers[0] + (read_reg.registers[1] << 16)
@@ -188,25 +232,33 @@ def peak_find(params, data_frame):
 
 def save_data(params, data, peak_locs, gaps):
     print('@save_data')
+    global LAST_SAVED_FILE
     time_stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     if len(params) > 1:
         if params[1] != 'false':
             is_json = params[1].find('.json', 0, len(params[1]))
             if is_json >= 0:
-                save_file = "e4pt_" + time_stamp + ".json"
+                print('Saving data as json')
+                save_file = "~/data/e4pt_" + time_stamp + ".json"
+                LAST_SAVED_FILE = save_file
                 #JSON output
-                print('Saving raw data to JSON file: {}'.format(params[1]))
+                print('Saving raw data to JSON file: {}'.format(save_file))
                 data_dict = {'data':data['filtered'].tolist(),
                              'locs':peak_locs.tolist(),
                              'gaps':gaps.tolist()}
-                with open(params[1], 'w') as out_file:
+                with open(save_file, 'w') as out_file:
                     json.dump(data_dict, out_file)
             is_csv = params[1].find('.csv', 0, len(params[1]))
             if is_csv >= 0:
-                save_file = "e4pt_" + time_stamp + ".csv"
+                print('Saving data as csv')
+                save_file1 = "~/data/e4pt_" + time_stamp + ".csv"
+                save_file2 = "/var/www/html/e4pt/data/e4pt_" + time_stamp + ".csv"
+                LAST_SAVED_FILE = "./data/e4pt_" + time_stamp + ".csv"
                 #CSV output
-                print('Saving raw data to CSV file: {}'.format(params[1]))
-                data.to_csv(params[1], sep=',')    
+                #print('Saving raw data to CSV file: {}'.format(save_file1))
+                #data.to_csv(save_file1, sep=',')
+                print('Saving raw data to CSV file: {}'.format(LAST_SAVED_FILE))
+                data.to_csv(save_file2, sep=',')
 
 if __name__ == "__main__":
 
@@ -215,12 +267,32 @@ if __name__ == "__main__":
     time_stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     save_file = ".csv"
     print("Output file will be: {}".format(save_file))
-    PARAMS[1]; # Save data or not ('false' or a file name)
+    PARAMS[1] = save_file; # Save data or not ('false' or a file name)
     PARAMS[2] = 10; #Digital filter cutoff freqency. Set to 10 for now.
 
+    # need to wait until we're sure Apache is up and running...
+    sess = requests.Session()
+    apache_wait = True
+    while apache_wait:
+        try:
+            print('Checking for Apache...')
+            req = sess.get('http://localhost/index.html')
+            if "Apache" in req.headers['server']:
+                #Apache is running
+                print('Found Apache!')
+                sess.close()
+                apache_wait = False
+            else:
+                print("(else) Waiting for Apache...")
+                time.sleep(1)
+        except:
+            print("(except) Waiting for Apache...")
+            time.sleep(1)
 
+    print('Connecting web socket...')
     #start_server = websockets.serve(ws_msg_handler, '192.168.7.77', 3405)
-    start_server = websockets.serve(ws_msg_handler, 'localhost', 3405)
+    start_server = websockets.serve(ws_msg_handler, '192.168.168.41', 3405)
+    #start_server = websockets.serve(ws_msg_handler, 'localhost', 3405)
 
     asyncio.get_event_loop().run_until_complete(start_server)
     asyncio.get_event_loop().run_forever()

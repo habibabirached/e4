@@ -67,12 +67,12 @@ $(document).ready(function(){
         createTable()
         $("#RESULTS_PAGE").fadeIn()
     }
-    document.getElementById("OPEN_EXTERNAL_FILE_BUTTON").addEventListener('change', function(){
-        loadExternalFile();
-    }, {passive: true})
-    document.getElementById("OPEN_EXTERNAL_FILE_BUTTON").addEventListener('click', function(){
-        document.getElementById("OPEN_EXTERNAL_FILE_BUTTON").value =null;
-    }, {passive: true})
+    //document.getElementById("OPEN_EXTERNAL_FILE_BUTTON").addEventListener('change', function(){
+    //    loadExternalFile();
+    //}, {passive: true})
+    //document.getElementById("OPEN_EXTERNAL_FILE_BUTTON").addEventListener('click', function(){
+    //    document.getElementById("OPEN_EXTERNAL_FILE_BUTTON").value =null;
+    //}, {passive: true})
     document.getElementById("OPEN_BUTTON_DEVICE").addEventListener('click', function(){
         try {
             listInternalFile();
@@ -92,9 +92,13 @@ $(document).ready(function(){
         toggle_menu();
         connectWebSocket();
     }, {passive: true})
+    document.getElementById("SHUTDOWN_BUTTON").addEventListener('click', function(){
+        toggle_menu();
+        systemShutdown();
+    }, {passive: true})
     document.getElementById("GET_DATA_BUTTON").addEventListener('click', function(){
         toggle_menu();
-        var acquisitionTime = prompt("Please enter the acquisition time in seconds.", "30");
+        var acquisitionTime = window.prompt("Please enter the acquisition time in seconds.", "15");
         if (acquisitionTime != null) {
           requestE4PtData(acquisitionTime);
         }
@@ -105,6 +109,10 @@ $(document).ready(function(){
     document.getElementById("SSO_BUTTON").addEventListener('click', function(){
         toggle_menu();
         doSSO();
+    }, {passive: true})
+    document.getElementById("DOWNLOAD_FILE_BUTTON").addEventListener('click', function(){
+        toggle_menu();
+	doFileDownload();
     }, {passive: true})
     setupAccordian()
 })
@@ -134,6 +142,16 @@ function toggle_menu() {
 		$('#LEFT_MENU').animate({"margin-left": '+=25vmin'});
 		menu_open = true;
 	}
+}
+
+function systemShutdown() {
+  console.log("@systemShutdown");
+  sendWSMessage('shutdown');
+}
+
+function doFileDownload() {
+    console.log("@doFileDownload");
+    sendWSMessage('get_data_file');
 }
 
 // alert function to work on iOS and web browser
@@ -173,7 +191,8 @@ function connectWebSocket() {
   try {
     console.log("Connecting to WebSocket server.");
     //e4PtSocket = new WebSocket("ws://192.168.7.77:3405");
-    e4PtSocket = new WebSocket("ws://127.0.0.1:3405");
+    //e4PtSocket = new WebSocket("ws://127.0.0.1:3405"); // Local testing
+    e4PtSocket = new WebSocket("ws://192.168.168.41:3405"); // E4Pt sys.
   } catch (err) {
     console.log("Error connecting to WebSocket server");
   }
@@ -182,28 +201,57 @@ function connectWebSocket() {
   e4PtSocket.onopen = function(evt) {
     console.log("e4PtSocket Opened");
     console.log("evt: " + evt);
+    setIndicatorColor("green");
     //setTimeout(function(){ sendWSMessage("ping"); }, 5000); // ping after 5s
   }
+ 
+  e4PtSocket.onclose = function(evt) {
+    console.log("e4PtSocket Closed");
+    setIndicatorColor("white");	
+  }
 
+  e4PtSocket.onerror = function(evt) {
+    console.log("e4PtSocket error",evt);
+    setIndicatorColor("white");	
+  }
+
+    
   e4PtSocket.onmessage = function(evt) {
     var msg = JSON.parse(evt.data);
     console.log("e4PtSocket Message Received: " + msg.type);
     switch(msg.type) {
     case "data":
       console.log("Received Data Message");
+      setIndicatorColor("green");
       //console.log(msg);
       processE4PtData(msg);
       break;
     case "status":
       console.log("Received Status Message");
       console.log(msg);
+      if (msg.status == "acquiring") {
+          setIndicatorColor("red");	    
+      }
       break;
     case "pong":
       console.log("Got pong. Send ping.");
       setTimeout(function(){ sendWSMessage("ping"); }, 5000); // ping after 5s
       break;
+    case "filename":
+	console.log("Got filename: " + msg.fname);
+	if (msg.fname.length == 0) {
+	    console.log("No filename: returning");
+	    return;
+	}
+	window.open(msg.fname); // Try to open/download the file.
     }
+      
   }
+}
+
+function setIndicatorColor( color ) {
+    document.getElementById("indicator-pulse").style.background = color;
+    document.getElementById("indicator-solid").style.background = color;      
 }
 
 function processE4PtData(msg) {
@@ -235,11 +283,15 @@ function requestE4PtData(acquisitionTime) {
 }
 
 function sendWSMessage(msg_text) {
+  console.log("@sendWSMessage: " + msg_text);
   var msg = {
   text: msg_text,
   type: "message",
   id: clientID,
   date: Date.now()
+  }
+    if (msg_text.indexOf('send_data') >= 0) {
+      setIndicatorColor("yellow");
   }
   e4PtSocket.send(JSON.stringify(msg));
 }
