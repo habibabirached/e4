@@ -182,6 +182,9 @@ async def collect_data(params, websocket):
     # close so we can reconnect later
     client.close()
 
+    # Notify that acquisition is complete
+    await send_status_message(websocket, 'processing')    
+
     # Clean the data a bit. The sensor is not capable of measuring
     # greater than 4mm, so we clamp the data there.
     displacements = np.where(displacements > 4.0, 4.0, displacements)

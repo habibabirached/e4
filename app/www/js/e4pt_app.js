@@ -230,7 +230,10 @@ function connectWebSocket() {
       console.log("Received Status Message");
       console.log(msg);
       if (msg.status == "acquiring") {
-          setIndicatorColor("red");	    
+          setIndicatorColor("red");
+      }
+      if (msg.status == "processing") {
+          setIndicatorColor("blue");
       }
       break;
     case "pong":
