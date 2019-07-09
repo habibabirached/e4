@@ -41,7 +41,7 @@ async def ws_msg_handler(websocket, path):
             print("msg_args: {}".format(msg_args))
             if is_number(msg_args[1]):
                 nSecs = msg_args[1]
-                nFrames = (20000.0 * float(nSecs))/16.0
+                nFrames = (1000.0 * float(nSecs))/100.0 # 1K samp/sec; 100 samp/frame
                 PARAMS[0] = int(nFrames)
             else:
                 # We didn't get an acquisition time, so bail out.
@@ -164,28 +164,27 @@ async def collect_data(params, websocket):
         data = sock.recv(4)
         # Look for 'DATA' preamble
         if data == b'\x44\x41\x54\x41':
-            print('Found DATA')
+            #print('Found DATA')
             data = sock.recv(4)
             order_number = int.from_bytes(data, byteorder='little')
-            print('Order number: ' + str(order_number))
+            #print('Order number: ' + str(order_number))
             data = sock.recv(4)
             serial_number = int.from_bytes(data, byteorder='little')
-            print('Serial number: ' + str(serial_number))
+            #print('Serial number: ' + str(serial_number))
             data = sock.recv(4)
             video_number = int.from_bytes(data, byteorder='little')
-            print('Video number: ' + str(video_number))
+            #print('Video number: ' + str(video_number))
             data = sock.recv(4)
             measurement_number = int.from_bytes(data, byteorder='little')
-            print('Measurement number: ' + str(measurement_number))
+            #print('Measurement number: ' + str(measurement_number))
             data = sock.recv(4)
             pt_count = int.from_bytes(data, byteorder='little')
             print('frames number: ' + str(pt_count))
             data = sock.recv(4)
             counter = int.from_bytes(data, byteorder='little')
             print('counter: ' + str(counter))
-            for i in range(0,pt_count):
-                data = sock.recv(4)
-                shutter = int.from_bytes(data, byteorder='little')
+            #for i in range(0,pt_count):
+            for i in range(0,100):
                 data = sock.recv(4)
                 intensity = int.from_bytes(data, byteorder='little')
                 data = sock.recv(4)
@@ -210,8 +209,8 @@ async def collect_data(params, websocket):
     await send_status_message(websocket, 'processing')
 
     # Clean the data a bit. The sensor is not capable of measuring
-    # greater than 4mm, so we clamp the data there.
-    displacements = np.where(displacements > 4.0, 4.0, displacements)
+    # greater than Nmm, so we clamp the data there.
+    displacements = np.where(displacements > 25.0, 25.0, displacements)
 
     # remove any extraneous rows
     sensor_df['pt_count'] = point_counts
@@ -221,6 +220,7 @@ async def collect_data(params, websocket):
     sensor_df = sensor_df[sensor_df.dataset_id != 0]
     t0 = sensor_df['timestamp'].iloc[0]
     tf = sensor_df['timestamp'].iloc[-1]
+    print('t0: ' + str(t0) + '; tf: ' + str(tf))
     t_total = (tf-t0)/10**6
     total_points = len(sensor_df.index)
     samp_freq = total_points/t_total
@@ -232,13 +232,16 @@ async def collect_data(params, websocket):
 
 def filter_data(params, data):
     print('@filter_data')
-    freq_cutoff = float(params[2])
-    n_order = FILTER_ORDER
-    samp_freq = data['samp_freq']
-    print('n_order: {}; freq_cutoff: {}; fs: {}'.format(n_order, freq_cutoff, samp_freq))
-    sos = signal.butter(n_order, freq_cutoff, 'lowpass', fs=samp_freq, output='sos')
-    filtered = signal.sosfilt(sos, data['sensor_data']['displacement'])
-    data['sensor_data']['filtered'] = filtered
+    if (False):
+        data['sensor_data']['filtered'] = data['sensor_data']['displacement']
+    else:
+        freq_cutoff = float(params[2])
+        n_order = FILTER_ORDER
+        samp_freq = data['samp_freq']
+        print('n_order: {}; freq_cutoff: {}; fs: {}'.format(n_order, freq_cutoff, samp_freq))
+        sos = signal.butter(n_order, freq_cutoff, 'lowpass', fs=samp_freq, output='sos')
+        filtered = signal.sosfilt(sos, data['sensor_data']['displacement'])
+        data['sensor_data']['filtered'] = filtered
 
 def peak_find(params, data_frame):
     ''' find peaks in the data '''
@@ -302,7 +305,7 @@ if __name__ == "__main__":
     tn.close()
     
     #PARAMS = sys.argv[1:]
-    PARAMS[0] = 25000; # Number of sets of data. Assume 16 pts/set for now.
+    PARAMS[0] = 100; # Number of sets of data. Assume 100 pts/set for now.
     time_stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     save_file = ".csv"
     print("Output file will be: {}".format(save_file))
