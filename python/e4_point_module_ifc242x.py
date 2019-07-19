@@ -13,7 +13,6 @@ from scipy import signal
 from datetime import datetime
 from asgiref.sync import async_to_sync
 import telnetlib
-import struct
 
 PARAMS = ["","",""]
 THRESHOLD = 3.99
@@ -42,7 +41,7 @@ async def ws_msg_handler(websocket, path):
             print("msg_args: {}".format(msg_args))
             if is_number(msg_args[1]):
                 nSecs = msg_args[1]
-                nFrames = (1000.0 * float(nSecs))/100.0 # 1K samp/sec; 100 samp/frame
+                nFrames = (1000.0 * float(nSecs))/100.0
                 PARAMS[0] = int(nFrames)
             else:
                 # We didn't get an acquisition time, so bail out.
@@ -131,7 +130,7 @@ async def collect_data(params, websocket):
     print('@collect_data with num_sets = {}'.format(num_sets))
 
     # Number of data points in a set
-    num_pts_max = 110
+    num_pts_max = 100
 
     #---------------------------------------------------------------------------#
     # Pre-allocate some memory so that acquisition speed is not hindered
@@ -168,25 +167,24 @@ async def collect_data(params, websocket):
         if data == b'\x44\x41\x54\x41':
             #print('Found DATA')
             data = sock.recv(4)
-            order_number = int.from_bytes(data, byteorder='little')
+            #order_number = int.from_bytes(data, byteorder='little')
             #print('Order number: ' + str(order_number))
             data = sock.recv(4)
-            serial_number = int.from_bytes(data, byteorder='little')
+            #serial_number = int.from_bytes(data, byteorder='little')
             #print('Serial number: ' + str(serial_number))
             data = sock.recv(4)
-            video_number = int.from_bytes(data, byteorder='little')
+            #video_number = int.from_bytes(data, byteorder='little')
             #print('Video number: ' + str(video_number))
             data = sock.recv(4)
-            measurement_number = int.from_bytes(data, byteorder='little')
+            #measurement_number = int.from_bytes(data, byteorder='little')
             #print('Measurement number: ' + str(measurement_number))
             data = sock.recv(4)
             pt_count = int.from_bytes(data, byteorder='little')
-            print('frames number: ' + str(pt_count))
+            #print('frames number: ' + str(pt_count))
             data = sock.recv(4)
-            counter = int.from_bytes(data, byteorder='little')
-            print('counter: ' + str(counter))
+            #counter = int.from_bytes(data, byteorder='little')
+            #print('counter: ' + str(counter))
             for i in range(0,pt_count):
-            #for i in range(0,100):
                 data = sock.recv(4)
                 data_tuple = struct.unpack('hh',data)
                 intensity = (float(data_tuple[0] & 2047)/1024.0)*100.0
@@ -212,6 +210,7 @@ async def collect_data(params, websocket):
                     disp = float(dval) * 1e-6
                 data = sock.recv(4)
                 tstamp = int.from_bytes(data, byteorder='little')
+                #print('intensity: ' + str(intensity) + '; timestamp: ' + str(tstamp) + '; distance: ' + str(dist))
                 displacements[data_index] = disp
                 datasetIds[data_index] = current_data_set_id
                 point_counts[data_index] = pt_count
@@ -251,16 +250,14 @@ async def collect_data(params, websocket):
 
 def filter_data(params, data):
     print('@filter_data')
-    if (False):
-        data['sensor_data']['filtered'] = data['sensor_data']['displacement']
-    else:
-        freq_cutoff = float(params[2])
-        n_order = FILTER_ORDER
-        samp_freq = data['samp_freq']
-        print('n_order: {}; freq_cutoff: {}; fs: {}'.format(n_order, freq_cutoff, samp_freq))
-        sos = signal.butter(n_order, freq_cutoff, 'lowpass', fs=samp_freq, output='sos')
-        filtered = signal.sosfilt(sos, data['sensor_data']['displacement'])
-        data['sensor_data']['filtered'] = filtered
+    data['sensor_data']['filtered'] = data['sensor_data']['displacement']
+    #freq_cutoff = float(params[2])
+    #n_order = FILTER_ORDER
+    #samp_freq = data['samp_freq']
+    #print('n_order: {}; freq_cutoff: {}; fs: {}'.format(n_order, freq_cutoff, samp_freq))
+    #sos = signal.butter(n_order, freq_cutoff, 'lowpass', fs=samp_freq, output='sos')
+    #filtered = signal.sosfilt(sos, data['sensor_data']['displacement'])
+    data['sensor_data']['filtered'] = filtered
 
 def peak_find(params, data_frame):
     ''' find peaks in the data '''
@@ -317,7 +314,7 @@ if __name__ == "__main__":
     #Telnet to the device and make sure its output is set correctly.
     #Any other parameters can be set this way too.
     #tn_host = ('169.254.168.150')
-    tn_host = ('192.168.168.150')    
+    tn_host = ('192.168.168.150')
     tn = telnetlib.Telnet(tn_host)
     tn.read_until(bytearray('->','utf-8'))
     tn.write(bytearray('ETHERMODE ETHERNET\n','utf-8'))
