@@ -1,32 +1,31 @@
 ''' Script to collect data from MTI sensor over ModBus. '''
 import sys
 import asyncio
-import time
-import json
-from datetime import datetime
 import websockets
+import json
 import requests
+import time
 #import datetime
 import numpy as np
 import pandas as pd
 from pymodbus.client.sync import ModbusTcpClient as ModbusClient
 from scipy import signal
+from datetime import datetime
+from asgiref.sync import async_to_sync
 
-PARAMS = ["", "", ""]
+PARAMS = ["","",""]
 THRESHOLD = 3.99
 FILTER_ORDER = 1
 LAST_SAVED_FILE = ""
 
-def is_number(num):
-    ''' True or false depending on if the argument can be interpreted as a number.'''
+def is_number(s):
     try:
-        float(num)
+        float(s)
         return True
     except ValueError:
         return False
 
 async def ws_msg_handler(websocket, path):
-    ''' Handles messages from the websocket. '''
     while True:
         rx_msg = await websocket.recv()
         print("rx_msg: {}".format(rx_msg))
@@ -36,13 +35,13 @@ async def ws_msg_handler(websocket, path):
 
         #parse the message
         msg_args = [x.strip() for x in msg_text.split(',')]
-        num_secs = 0
-        if len(msg_args) > 1:
+        nSecs = 0
+        if (len(msg_args) > 1):
             print("msg_args: {}".format(msg_args))
             if is_number(msg_args[1]):
-                num_secs = msg_args[1]
-                num_frames = (20000.0 * float(num_secs))/16.0
-                PARAMS[0] = int(num_frames)
+                nSecs = msg_args[1]
+                nFrames = (20000.0 * float(nSecs))/16.0
+                PARAMS[0] = int(nFrames)
             else:
                 # We didn't get an acquisition time, so bail out.
                 return
@@ -54,7 +53,7 @@ async def ws_msg_handler(websocket, path):
             await websocket.send(json_data)
 
         if msg_args[0] == 'send_data':
-            print("Data requested for {} seconds ({} dataframes).".format(num_secs, PARAMS[0]))
+            print("Data requested for {} seconds ({} dataframes).".format(nSecs,PARAMS[0]))
             raw_data = await collect_data(PARAMS, websocket)
             if len(PARAMS) > 2:
                 # Apply LPF
@@ -76,19 +75,18 @@ async def ws_msg_handler(websocket, path):
             await websocket.send(json_data)
 
         if msg_args[0] == 'shutdown':
-            print("Got shutdown message over websocket.")
-            system_shutdown()
+            print("Got shutdown message over websocket.");
+            system_shutdown();
 
         if msg_args[0] == 'get_data_file':
             global LAST_SAVED_FILE
-            print("Got filename request. File is {}".format(LAST_SAVED_FILE))
+            print("Got filename request. File is {}".format(LAST_SAVED_FILE));
             data_dict = {'type':'filename',
                          'fname':LAST_SAVED_FILE}
             json_data = json.dumps(data_dict)
             await websocket.send(json_data)
 
 def system_shutdown():
-    ''' Shuts down the computer. '''
     if sys.platform == 'win32':
         print("If this were Linux, the machine would be shutting down now.")
         return
@@ -101,10 +99,9 @@ def system_shutdown():
         # end of the line
 
 async def send_status_message(websocket, status_msg):
-    ''' Sends status messages over the websocket. '''
     # Send status message
     print("Sending status message: {}".format(status_msg))
-    data_dict = {'type':'status', 'status':status_msg}
+    data_dict = {'type':'status','status':status_msg}
     json_data = json.dumps(data_dict)
     await websocket.send(json_data)
 
@@ -183,7 +180,7 @@ async def collect_data(params, websocket):
     client.close()
 
     # Notify that acquisition is complete
-    await send_status_message(websocket, 'processing')    
+    await send_status_message(websocket, 'processing')
 
     # Clean the data a bit. The sensor is not capable of measuring
     # greater than 4mm, so we clamp the data there.
@@ -207,7 +204,6 @@ async def collect_data(params, websocket):
     return {'samp_freq':samp_freq, 'sensor_data':sensor_df}
 
 def filter_data(params, data):
-    ''' Apply a LPF to the data. '''
     print('@filter_data')
     freq_cutoff = float(params[2])
     n_order = FILTER_ORDER
@@ -218,7 +214,7 @@ def filter_data(params, data):
     data['sensor_data']['filtered'] = filtered
 
 def peak_find(params, data_frame):
-    ''' Find peaks in the data '''
+    ''' find peaks in the data '''
     print('@peak_find')
     data = data_frame['displacement'].values
     top_peaks, props = signal.find_peaks(data, plateau_size=5000)
@@ -238,7 +234,6 @@ def peak_find(params, data_frame):
     return peaks_avg_out, bottom_peaks, gaps
 
 def save_data(params, data, peak_locs, gaps):
-    ''' Save the data to a CSV or JSON file.'''
     print('@save_data')
     global LAST_SAVED_FILE
     time_stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -259,24 +254,24 @@ def save_data(params, data, peak_locs, gaps):
             is_csv = params[1].find('.csv', 0, len(params[1]))
             if is_csv >= 0:
                 print('Saving data as csv')
-                #save_file1 = "~/data/e4pt_" + time_stamp + ".csv"
+                save_file1 = "~/data/e4pt_" + time_stamp + ".csv"
                 save_file2 = "/var/www/html/e4pt/data/e4pt_" + time_stamp + ".csv"
                 LAST_SAVED_FILE = "./data/e4pt_" + time_stamp + ".csv"
                 #CSV output
                 #print('Saving raw data to CSV file: {}'.format(save_file1))
                 #data.to_csv(save_file1, sep=',')
-                print('Saving raw data to CSV file: {}'.format(LAST_SAVED_FILE))
+                print('Saving raw data to CSV file: {}'.format(LAST_SAVED_FILE))                
                 data.to_csv(save_file2, sep=',')
-
+                
 if __name__ == "__main__":
 
     #PARAMS = sys.argv[1:]
-    PARAMS[0] = 25000 # Number of sets of data. Assume 16 pts/set for now.
+    PARAMS[0] = 25000; # Number of sets of data. Assume 16 pts/set for now.
     time_stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     save_file = ".csv"
     print("Output file will be: {}".format(save_file))
-    PARAMS[1] = save_file # Save data or not ('false' or a file name)
-    PARAMS[2] = 10 #Digital filter cutoff freqency. Set to 10 for now.
+    PARAMS[1] = save_file; # Save data or not ('false' or a file name)
+    PARAMS[2] = 10; #Digital filter cutoff freqency. Set to 10 for now.
 
     # need to wait until we're sure Apache is up and running...
     sess = requests.Session()
@@ -304,3 +299,4 @@ if __name__ == "__main__":
 
     asyncio.get_event_loop().run_until_complete(start_server)
     asyncio.get_event_loop().run_forever()
+    
