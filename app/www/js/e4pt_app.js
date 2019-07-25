@@ -41,7 +41,7 @@ $(document).ready(function(){
         $("#RESULTS_PAGE").fadeOut();
         $("#FILE_LOADING_PAGE").fadeOut();
         $("#DB_LOADING_PAGE").fadeOut();
-        $("#MASTERING_PAGE").fadeOut();
+        $("#SENSOR_SETUP_PAGE").fadeOut();
         toggle_menu();
 		
     }, {passive: true})
@@ -53,9 +53,10 @@ $(document).ready(function(){
         toggle_menu();
         $("#SETUP_PAGE").fadeIn();
     }, {passive: true})
-    document.getElementById("SN_SUBMIT_BUTTON").addEventListener('click', function(){
+    document.getElementById("SENSOR_SETUP_BUTTON").addEventListener('click', function(){
         $("#SETUP_PAGE").fadeOut();
-        $("#MASTERING_PAGE").fadeIn();             
+        $("#SENSOR_SETUP_PAGE").fadeIn();
+	setMasterMessage("white","green","Ready");
     }, {passive: true})
 
     function RESULTS_BUTTON_FUNC(){
@@ -103,13 +104,17 @@ $(document).ready(function(){
           requestE4PtData(acquisitionTime);
         }
     }, {passive: true})
-    //document.getElementById("MASTER_BUTTON").addEventListener('click', function(){
-    //    console.log("Master Button Clicked.");
-    //}, {passive: true})
-    document.getElementById("SSO_BUTTON").addEventListener('click', function(){
+    document.getElementById("SENSOR_SETUP_BUTTON").addEventListener('click', function(){
         toggle_menu();
-        doSSO();
+        sensor_setup();
     }, {passive: true})
+    document.getElementById("START_MASTER_BUTTON").addEventListener('click', function(){
+	do_mastering();
+    }, {passive: true})
+    document.getElementById("START_DARK_REFERENCE_BUTTON").addEventListener('click', function(){
+	do_dark_reference();
+    }, {passive: true})
+
     document.getElementById("DOWNLOAD_FILE_BUTTON").addEventListener('click', function(){
         toggle_menu();
 	doFileDownload();
@@ -142,6 +147,40 @@ function toggle_menu() {
 		$('#LEFT_MENU').animate({"margin-left": '+=25vmin'});
 		menu_open = true;
 	}
+}
+
+function sensor_setup() {
+    console.log("@sensor_setup")
+    $("#FRD_PAGE").fadeOut();
+    $("#SETUP_PAGE").fadeOut();
+    $("#SCAN_INFO_PAGE").fadeOut();
+    $("#RESULTS_PAGE").fadeOut();
+    $("#FILE_LOADING_PAGE").fadeOut();
+    $("#DB_LOADING_PAGE").fadeOut();
+    $("#SENSOR_SETUP_PAGE").fadeIn();    
+}
+
+function do_dark_reference() {
+    console.log("@do_dark_reference");
+    sendWSMessage('do_dark_reference');
+    $("#SENSOR_SETUP_PAGE").fadeOut();    
+    $("#RESULTS_PAGE").fadeIn();    
+}
+
+function do_mastering() {
+    console.log("@do_mastering");
+    sendWSMessage('do_mastering');
+    setMasterMessage("black","yellow","In Progress...");
+}
+
+function done_mastering() {
+    setMasterMessage("white","green","Mastering complete.");
+    setIndicatorColor("green");    
+}
+
+function failed_mastering() {
+    setMasterMessage("black","red","Mastering failed.");
+    setIndicatorColor("green");    
 }
 
 function systemShutdown() {
@@ -230,10 +269,16 @@ function connectWebSocket() {
       console.log("Received Status Message");
       console.log(msg);
       if (msg.status == "acquiring") {
-          setIndicatorColor("red");
+          setIndicatorColor("red");	    
       }
       if (msg.status == "processing") {
-          setIndicatorColor("blue");
+          setIndicatorColor("blue");	    
+      }
+      if (msg.status == "done_mastering") {
+	  done_mastering();
+      }
+      if (msg.status == "failed_mastering") {
+	  failed_mastering();
       }
       break;
     case "pong":
@@ -255,6 +300,12 @@ function connectWebSocket() {
 function setIndicatorColor( color ) {
     document.getElementById("indicator-pulse").style.background = color;
     document.getElementById("indicator-solid").style.background = color;      
+}
+
+function setMasterMessage( txtColor, bgColor, txt ) {
+    document.getElementById("master_message").style.color = txtColor;
+    document.getElementById("master_message").style.background = bgColor;
+    document.getElementById("master_message").value = txt;
 }
 
 function processE4PtData(msg) {
@@ -293,8 +344,11 @@ function sendWSMessage(msg_text) {
   id: clientID,
   date: Date.now()
   }
-    if (msg_text.indexOf('send_data') >= 0) {
+  if (msg_text.indexOf('send_data') >= 0) {
       setIndicatorColor("yellow");
+  }
+  if (msg_text = 'do_dark_reference') {
+      setIndicatorColor("yellow");	
   }
   e4PtSocket.send(JSON.stringify(msg));
 }

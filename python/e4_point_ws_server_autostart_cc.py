@@ -19,6 +19,7 @@ PARAMS = ["","",""]
 THRESHOLD = 3.99
 FILTER_ORDER = 1
 LAST_SAVED_FILE = ""
+SENSOR_HOST = "192.168.168.150"
 
 def is_number(s):
     try:
@@ -78,7 +79,7 @@ async def ws_msg_handler(websocket, path):
 
         if msg_args[0] == 'shutdown':
             print("Got shutdown message over websocket.");
-            system_shutdown();
+            system_shutdown()
 
         if msg_args[0] == 'get_data_file':
             global LAST_SAVED_FILE
@@ -87,6 +88,72 @@ async def ws_msg_handler(websocket, path):
                          'fname':LAST_SAVED_FILE}
             json_data = json.dumps(data_dict)
             await websocket.send(json_data)
+
+        if msg_args[0] == 'do_dark_reference':
+            await dark_reference(websocket)
+
+        if msg_args[0] == 'do_mastering':
+            await do_mastering(websocket)
+
+async def dark_reference(websocket):
+    print('@dark_reference()')
+    # send dark reference command
+    tn_host = (SENSOR_HOST)
+    tn = telnetlib.Telnet(tn_host)
+    tn.read_until(bytearray('->','utf-8'))
+    print("Sending dark correction command")
+    tn.write(bytearray('DARKCORR\n','utf-8'))
+    tn.read_until(bytearray('->','utf-8'))
+    tn.close()    
+    print("Dark correction complete")
+    #next do data collection and show results
+    nSecs = 10
+    nFrames = (1000.0 * float(nSecs))/100.0 # 1K samp/sec; 100 samp/frame
+    PARAMS[0] = int(nFrames)
+    print("Acquiring Data")          
+    raw_data = await collect_data(PARAMS, websocket)
+    if len(PARAMS) > 2:
+        # Apply LPF
+        filter_data(PARAMS, raw_data)
+        
+    sensor_data = raw_data['sensor_data']
+    peaks_avg_out, peak_locs, gaps = peak_find(PARAMS, sensor_data)
+    save_data(PARAMS, sensor_data, peak_locs, gaps)
+
+    #decimate the data we send over the web interface
+    factor = int(20)
+    plot_df = sensor_data['filtered'].iloc[::factor]
+    peak_locs = peak_locs / factor
+    data_dict = {'type':'data',
+                 'data':plot_df.tolist(),
+                 'locs':peak_locs.tolist(),
+                 'gaps':gaps.tolist()}
+    json_data = json.dumps(data_dict)
+    await websocket.send(json_data)
+
+async def do_mastering(websocket):
+    print('@do_mastering()')
+    # send mastering command
+    tn_host = (SENSOR_HOST)
+    tn = telnetlib.Telnet(tn_host)
+    tn.read_until(bytearray('->','utf-8'))
+    print("Sending mastering command(s)")
+    # Clear previous mastering values
+    tn.write(bytearray('MASTERSIGNAL 01DIST1 NONE\n','utf-8'))
+    tn.read_until(bytearray('->','utf-8'))
+    # Set mastering value to 5mm.
+    tn.write(bytearray('MASTERSIGNAL 01DIST1 5.0\n','utf-8'))
+    tn.read_until(bytearray('->','utf-8'))
+    # Activate master value
+    tn.write(bytearray('MASTER 01DIST1 SET\n','utf-8'))
+    response = tn.read_until(bytearray('->','utf-8'))
+    response = response.decode('utf8')
+    tn.close()    
+    if response.find('out of range') == -1:
+        await send_status_message(websocket, "done_mastering")
+    else:
+        await send_status_message(websocket, "failed_mastering")
+    print("Mastering complete")
 
 def system_shutdown():
     if sys.platform == 'win32':
@@ -317,7 +384,7 @@ if __name__ == "__main__":
     #Telnet to the device and make sure its output is set correctly.
     #Any other parameters can be set this way too.
     #tn_host = ('169.254.168.150')
-    tn_host = ('192.168.168.150')    
+    tn_host = (SENSOR_HOST)
     tn = telnetlib.Telnet(tn_host)
     tn.read_until(bytearray('->','utf-8'))
     tn.write(bytearray('ETHERMODE ETHERNET\n','utf-8'))

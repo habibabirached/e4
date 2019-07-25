@@ -50,7 +50,7 @@
 		<div id="OPEN_BUTTON_DEVICE" class="TRACC_BUTTON">OPEN LOCAL</div>
 		<div id="CONNECT_WS_BUTTON" class="TRACC_BUTTON">CONNECT TOOL</div>
 		<div id="GET_DATA_BUTTON" class="TRACC_BUTTON">GET DATA</div>
-		<div id="SSO_BUTTON" class="TRACC_BUTTON">DO SSO</div>
+		<div id="SENSOR_SETUP_BUTTON" class="TRACC_BUTTON">SENSOR SETUP</div>
 		<div id="SHUTDOWN_BUTTON" class="TRACC_BUTTON">SHUTDOWN</div>
 		<div id="DOWNLOAD_FILE_BUTTON" class="TRACC_BUTTON">DOWNLOAD DATA</div>
 		<!--
@@ -112,10 +112,31 @@
           </div>
         </div>
 
-<!-- --------------- SENSOR MASTERING PAGE ---------------------  -->
-	<div class="FIXED H100 Z0 MASTERING_PAGE">
-          <div id="MASTERING_PAGE" class="HIDE">
-            <H2>Probe Mastering</H2>
+	<!-- --------------- SENSOR MASTERING PAGE --------------------- -->
+	<div class="FIXED H100 Z0 SENSOR_SETUP_PAGE">
+          <div id="SENSOR_SETUP_PAGE" class="HIDE">
+            <H2><U>Probe Mastering</U></H2><br>
+	    <p><U>Instructions:</U></p>
+	    <ol style="padding:40px">
+	      <li>Clean mating surfaces of the Probe and the Set Master.</li>
+	      <li>Insert Probe into the Set Master.</li>
+	      <li>Press Start.</li>
+	      <li>Wait until the screen changes.</li>
+	    </ol>
+            <input class="TRACC_BUTTON" type="submit" value="Start" id="START_MASTER_BUTTON">
+	    <input id="master_message" type="text" name="master_message" style="text-align:center;color:white" value="Ready" disabled>
+	    <br>
+            <H2><U>Set Probe Dark Reference</U></H2><br>
+	    <p>The system requires a warm-up time of approximately 30 minutes prior to setting the dark reference. Please ensure that the system has been powered on for 30 minutes to ensure it is warmed up.</p>
+	    <br>
+	    <ol style="padding:40px">
+	      <li>Cover the sensor with the sensor cap to ensure that nothing is in the measurement range and no ambient light enters the sensor.</li>
+	      <li>Press the Start Dark Reference button to initiate the process.</li>
+	    </ol>
+	    <br>
+	    <p>After 30 seconds, you should see a flat line displayed indicating a successfull dark reference.</p>
+            <input class="TRACC_BUTTON" type="submit" value="Start Dark Reference" id="START_DARK_REFERENCE_BUTTON">	    
+	    
           </div>
         </div>
 
