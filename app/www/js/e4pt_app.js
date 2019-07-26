@@ -47,14 +47,18 @@ $(document).ready(function(){
     }, {passive: true})
     document.getElementById("FRD_BUTTON").addEventListener('click', function(){
         toggle_menu();
+	$("#DATA_PLOT").fadeOut();	
         $("#FRD_PAGE").fadeIn();
     }, {passive: true})
     document.getElementById("SETUP_BUTTON").addEventListener('click', function(){
         toggle_menu();
+	$("#DATA_PLOT").fadeOut();
         $("#SETUP_PAGE").fadeIn();
     }, {passive: true})
     document.getElementById("SENSOR_SETUP_BUTTON").addEventListener('click', function(){
         $("#SETUP_PAGE").fadeOut();
+        $("#RESULTS_PAGE").fadeOut();
+        $("#DATA_PLOT").fadeOut();		
         $("#SENSOR_SETUP_PAGE").fadeIn();
 	setMasterMessage("white","green","Ready");
     }, {passive: true})
@@ -164,7 +168,8 @@ function do_dark_reference() {
     console.log("@do_dark_reference");
     sendWSMessage('do_dark_reference');
     $("#SENSOR_SETUP_PAGE").fadeOut();    
-    $("#RESULTS_PAGE").fadeIn();    
+    $("#RESULTS_PAGE").fadeIn();
+    $("#DATA_PLOT").fadeIn();
 }
 
 function do_mastering() {
@@ -334,6 +339,7 @@ function requestE4PtData(acquisitionTime) {
   }
   message = "send_data," + acquisitionTime;
   sendWSMessage(message);
+  $("#DATA_PLOT").fadeIn(); 
 }
 
 function sendWSMessage(msg_text) {

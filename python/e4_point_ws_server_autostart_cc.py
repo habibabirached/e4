@@ -102,8 +102,7 @@ async def dark_reference(websocket):
     tn = telnetlib.Telnet(tn_host)
     tn.read_until(bytearray('->','utf-8'))
     print("Sending dark correction command")
-    tn.write(bytearray('DARKCORR\n','utf-8'))
-    tn.read_until(bytearray('->','utf-8'))
+    send_cmd('DARKCORR',tn)
     tn.close()    
     print("Dark correction complete")
     #next do data collection and show results
@@ -139,11 +138,9 @@ async def do_mastering(websocket):
     tn.read_until(bytearray('->','utf-8'))
     print("Sending mastering command(s)")
     # Clear previous mastering values
-    tn.write(bytearray('MASTERSIGNAL 01DIST1 NONE\n','utf-8'))
-    tn.read_until(bytearray('->','utf-8'))
+    send_cmd('MASTERSIGNAL 01DIST1 NONE',tn)
     # Set mastering value to 5mm.
-    tn.write(bytearray('MASTERSIGNAL 01DIST1 5.0\n','utf-8'))
-    tn.read_until(bytearray('->','utf-8'))
+    send_cmd('MASTERSIGNAL 01DIST1 5.0',tn)
     # Activate master value
     tn.write(bytearray('MASTER 01DIST1 SET\n','utf-8'))
     response = tn.read_until(bytearray('->','utf-8'))
@@ -163,7 +160,6 @@ def system_shutdown():
         print("Linux system detected. Attempting to shut down now.")
         import os
         print("Shutting down now.")
-        #os.system('systemctl poweroff')
         os.system('sudo shutdown now')
         # end of the line
 
@@ -181,7 +177,6 @@ async def collect_data(params, websocket):
     #---------------------------------------------------------------------------#
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     # Connect the socket to the port where the server is listening
-    #server_address = ("169.254.168.150", 1024)
     server_address = ("192.168.168.150", 1024)
     print('connecting to port...')
     sock.connect(server_address)
@@ -374,30 +369,79 @@ def save_data(params, data, peak_locs, gaps):
                 save_file2 = "/var/www/html/e4pt/data/e4pt_" + time_stamp + ".csv"
                 LAST_SAVED_FILE = "./data/e4pt_" + time_stamp + ".csv"
                 #CSV output
-                #print('Saving raw data to CSV file: {}'.format(save_file1))
-                #data.to_csv(save_file1, sep=',')
                 print('Saving raw data to CSV file: {}'.format(LAST_SAVED_FILE))                
                 data.to_csv(save_file2, sep=',')
-                
+
+def check_port(ip,port):
+    print("@check_port")
+    attempts = 24
+    connected = False
+    s = []
+    while attempts > 0:
+        print("Attempting to connect to server/port...")        
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            s.connect((ip, int(port)))
+            connected = True
+            attempts = 0
+        except:
+            err_info = sys.exc_info()
+            print('Error:\n', err_info)
+            print('Error type: ', type(err_info))
+            attempts -= 1;
+            time.sleep(5)
+
+    if connected:
+        s.shutdown(socket.SHUT_RDWR)
+        s.close()
+        s = None
+        print("Port is reachable.")
+        return True
+    else:
+        return False
+
+def send_cmd(cmd,conn):
+    cmd = cmd + "\n"
+    status = True
+    try:
+        conn.write(bytearray(cmd, 'utf-8'))
+    except ConnectionResetError:
+        status = True
+    except:
+        err_info = sys.exc_info()
+        print('Error:\n', err_info)
+        status = False
+    try:
+        conn.read_until(bytearray('->','utf-8'))
+    except ConnectionResetError:
+        status = True
+    except:
+        err_info = sys.exc_info()
+        print('Error:\n', err_info)
+        status = False
+    return status
+
 if __name__ == "__main__":
 
+    # Check for sensor connectivity on port 1024 (the measurement port).
+    # Checking on port 23 (Telnet port) fouls up the telnet connectivity.
+    sensor_reachable = check_port(SENSOR_HOST, 1024)
+    if not sensor_reachable:
+        print("Connection to sensor ultimately failed.")
+        exit()
+    
     #Telnet to the device and make sure its output is set correctly.
     #Any other parameters can be set this way too.
-    #tn_host = ('169.254.168.150')
+    status = True
     tn_host = (SENSOR_HOST)
     tn = telnetlib.Telnet(tn_host)
     tn.read_until(bytearray('->','utf-8'))
-    tn.write(bytearray('ETHERMODE ETHERNET\n','utf-8'))
-    tn.read_until(bytearray('->','utf-8'))
-    tn.write(bytearray('OUTPUT ETHERNET\n','utf-8'))
-    tn.read_until(bytearray('->','utf-8'))
-    tn.write(bytearray('MEASTRANSFER SERVER/TCP 1024\n','utf-8'))
-    tn.read_until(bytearray('->','utf-8'))
-    tn.write(bytearray('OUT_ETH 01INTENSITY 01DIST1 TIMESTAMP\n','utf-8'))
-    tn.read_until(bytearray('->','utf-8'))
+    send_cmd('ETHERMODE ETHERNET',tn)
+    send_cmd('OUTPUT ETHERNET',tn)
+    send_cmd('MEASTRANSFER SERVER/TCP 1024',tn)
+    send_cmd('OUT_ETH 01INTENSITY 01DIST1 TIMESTAMP',tn)
     tn.close()
     
-    #PARAMS = sys.argv[1:]
     PARAMS[0] = 100; # Number of sets of data. Assume 100 pts/set for now.
     time_stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     save_file = ".csv"
@@ -425,9 +469,7 @@ if __name__ == "__main__":
             time.sleep(1)
 
     print('Connecting web socket...')
-    #start_server = websockets.serve(ws_msg_handler, '192.168.7.77', 3405)
     start_server = websockets.serve(ws_msg_handler, '192.168.168.41', 3405)
-    #start_server = websockets.serve(ws_msg_handler, 'localhost', 3405)
 
     asyncio.get_event_loop().run_until_complete(start_server)
     asyncio.get_event_loop().run_forever()
