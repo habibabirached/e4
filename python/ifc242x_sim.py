@@ -9,14 +9,49 @@ import numpy as np
 import pandas as pd
 from scipy import signal
 from datetime import datetime
+import math
+import random
+import csv
 
 TCP_IP = '127.0.0.1'
 TCP_PORT = 1024
-BUFFER_SIZE = 1024
-SAMPLE_RATE = 1000.00 # 1KHz
-NUMBER_OF_FRAMES = 100
+SAMPLE_RATE = 1000.00   # 1KHz
+NUMBER_OF_FRAMES = 100  # Number of frames in a data set transmission
+BLADES_PER_STAGE = 80   #
+ROTOR_RPM = 5           #
+ROTOR_DIAMETER = 2.0    # Rotor Diameter in m
+BLADE_THICKNESS = 0.003 # Blade thicknes in m
+DATA_PTR = 0
 
-def make_data_frame(counter):
+def make_rotor_data():
+    rotor_circ = (ROTOR_DIAMETER * math.pi)         # rotor circumference
+    tangent_speed = rotor_circ * ROTOR_RPM / 60.0   # linear speed at blade tips in m/s
+    samples_per_meter = SAMPLE_RATE / tangent_speed
+    samples_per_rotor = samples_per_meter * rotor_circ
+    samples_per_blade = int(samples_per_meter * BLADE_THICKNESS)
+    noise = random.sample(range(-50, 50), BLADES_PER_STAGE)
+    noise = [noise[i]/100 for i in range(0,len(noise))]
+    data = [15.0] * int(samples_per_rotor+0.5)      # data list initialized with max sensor value.
+    blade_dist = [1.0] * BLADES_PER_STAGE           # distance to each blade tip
+    blade_dist = [blade_dist[i] + noise[i] for i in range(0,len(blade_dist))]
+    # A 'section' of the rotor here means a section containing a blade
+    # and the gap until the next blade.
+    samples_per_section = int(samples_per_rotor / BLADES_PER_STAGE)
+    idx = 0
+    for i in range(0,BLADES_PER_STAGE):
+        idx = (i * samples_per_section)
+        start_pt = idx + int(samples_per_section/2.0)
+        for j in range( start_pt, start_pt + samples_per_blade):
+            data[j] = blade_dist[i]
+    if True:
+        with open('sim_data.csv', mode='w') as csv_file:
+            writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL, lineterminator='\n')
+            for i in range(0,len(data)):
+                writer.writerow([i,data[i]])
+    return data
+
+def make_data_frame(counter, rotor_data):
+    global DATA_PTR
     t0 = time.time()    
     data = b'DATA'
     data = b''.join([data, b'\x00\x00\x00\x00']) # order number
@@ -28,11 +63,16 @@ def make_data_frame(counter):
     counter_bytes = counter.to_bytes(4, byteorder='little', signed=False)
     data = b''.join([data, counter_bytes]) # Counter
     for i in range(0,NUMBER_OF_FRAMES):
+
         # encode two 16-bit values for intensity and max_peak
         data = b''.join([data, b'\xFF\x01\xFF\xFF']) # Append the intensity & peak values
+
         # encode a 32-bit value for displacement
-        i_bytes = i.to_bytes(4, byteorder='little', signed=False)
-        data = b''.join([data, i_bytes]) # Append the displacement data bytes
+        disp = int(rotor_data[DATA_PTR] * 1e6)
+        disp_bytes = disp.to_bytes(4, byteorder='little', signed=False)
+        data = b''.join([data, disp_bytes]) # Append the displacement data bytes
+        DATA_PTR = (DATA_PTR+1) % len(data)
+
         # encode a 32-bit value for timestamp
         measure_time = (time.time() - t0)  # utc time - yesterday's time
         measure_time = measure_time * 1e6 # get the milliseconds
@@ -44,6 +84,9 @@ def make_data_frame(counter):
 
 if __name__ == "__main__":
 
+    DATA_PTR = 0
+    rotor_data = make_rotor_data() # construct one cycle of data around the turbine
+
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.bind((TCP_IP, TCP_PORT))
     s.listen(1)
@@ -53,7 +96,7 @@ if __name__ == "__main__":
     count = 0
     wait_period = float(SAMPLE_RATE / NUMBER_OF_FRAMES)
     while True:
-        df = make_data_frame(count)
+        df = make_data_frame(count, rotor_data)
         conn.send(df)
         time.sleep(1.0/wait_period)
         count += 1
