@@ -1,4 +1,4 @@
-''' Script to collect data from MTI sensor over ModBus. '''
+''' Script to collect data from ifc242x sensor controller. '''
 import sys
 import socket
 import binascii
@@ -18,6 +18,7 @@ PARAMS = ["","",""]
 THRESHOLD = 3.99
 FILTER_ORDER = 1
 LAST_SAVED_FILE = ""
+NOT_SIMULATOR = TRUE
 
 def is_number(s):
     try:
@@ -314,18 +315,19 @@ if __name__ == "__main__":
     #Telnet to the device and make sure its output is set correctly.
     #Any other parameters can be set this way too.
     #tn_host = ('169.254.168.150')
-    tn_host = ('192.168.168.150')
-    tn = telnetlib.Telnet(tn_host)
-    tn.read_until(bytearray('->','utf-8'))
-    tn.write(bytearray('ETHERMODE ETHERNET\n','utf-8'))
-    tn.read_until(bytearray('->','utf-8'))
-    tn.write(bytearray('OUTPUT ETHERNET\n','utf-8'))
-    tn.read_until(bytearray('->','utf-8'))
-    tn.write(bytearray('MEASTRANSFER SERVER/TCP 1024\n','utf-8'))
-    tn.read_until(bytearray('->','utf-8'))
-    tn.write(bytearray('OUT_ETH 01INTENSITY 01DIST1 TIMESTAMP\n','utf-8'))
-    tn.read_until(bytearray('->','utf-8'))
-    tn.close()
+    if NOT_SIMULATOR:
+        tn_host = ('192.168.168.150')
+        tn = telnetlib.Telnet(tn_host)
+        tn.read_until(bytearray('->','utf-8'))
+        tn.write(bytearray('ETHERMODE ETHERNET\n','utf-8'))
+        tn.read_until(bytearray('->','utf-8'))
+        tn.write(bytearray('OUTPUT ETHERNET\n','utf-8'))
+        tn.read_until(bytearray('->','utf-8'))
+        tn.write(bytearray('MEASTRANSFER SERVER/TCP 1024\n','utf-8'))
+        tn.read_until(bytearray('->','utf-8'))
+        tn.write(bytearray('OUT_ETH 01INTENSITY 01DIST1 TIMESTAMP\n','utf-8'))
+        tn.read_until(bytearray('->','utf-8'))
+        tn.close()
     
     #PARAMS = sys.argv[1:]
     PARAMS[0] = 100; # Number of sets of data. Assume 100 pts/set for now.
