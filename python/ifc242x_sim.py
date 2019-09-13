@@ -43,7 +43,7 @@ def make_rotor_data():
         start_pt = idx + int(samples_per_section/2.0)
         for j in range( start_pt, start_pt + samples_per_blade):
             data[j] = blade_dist[i]
-    if True:
+    if False:
         with open('sim_data.csv', mode='w') as csv_file:
             writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL, lineterminator='\n')
             for i in range(0,len(data)):
@@ -52,7 +52,7 @@ def make_rotor_data():
 
 def make_data_frame(counter, rotor_data):
     global DATA_PTR
-    t0 = time.time()    
+    t_idx = counter * NUMBER_OF_FRAMES
     data = b'DATA'
     data = b''.join([data, b'\x00\x00\x00\x00']) # order number
     data = b''.join([data, b'\x00\x00\x00\x00']) # serial number
@@ -62,6 +62,7 @@ def make_data_frame(counter, rotor_data):
     data = b''.join([data, frm_num_bytes]) # number of frames per data block
     counter_bytes = counter.to_bytes(4, byteorder='little', signed=False)
     data = b''.join([data, counter_bytes]) # Counter
+    t_sample = (1.0/SAMPLE_RATE) * 1000 # sampling period in milliseconds
     for i in range(0,NUMBER_OF_FRAMES):
 
         # encode two 16-bit values for intensity and max_peak
@@ -74,30 +75,35 @@ def make_data_frame(counter, rotor_data):
         DATA_PTR = (DATA_PTR+1) % len(data)
 
         # encode a 32-bit value for timestamp
-        measure_time = (time.time() - t0)  # utc time - yesterday's time
-        measure_time = measure_time * 1e6 # get the milliseconds
-        measure_time = int(measure_time)    # truncate to integer
-        time_bytes = measure_time.to_bytes(4, byteorder='little', signed=False)
+        measure_time = t_idx + i            # pseudo-timestamp (initial time + 1ms)
+        time_bytes = int(measure_time).to_bytes(4, byteorder='little', signed=False)
         data = b''.join([data, time_bytes]) # Append the time
-        time.sleep(1.0/SAMPLE_RATE)
+
     return data
 
 if __name__ == "__main__":
 
     DATA_PTR = 0
     rotor_data = make_rotor_data() # construct one cycle of data around the turbine
-
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.bind((TCP_IP, TCP_PORT))
-    s.listen(1)
-    
-    conn, addr = s.accept()
-    print('Connection address:', addr)
     count = 0
-    wait_period = float(SAMPLE_RATE / NUMBER_OF_FRAMES)
-    while True:
-        df = make_data_frame(count, rotor_data)
-        conn.send(df)
-        time.sleep(1.0/wait_period)
-        count += 1
-    conn.close()    
+    
+    if True:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.bind((TCP_IP, TCP_PORT))
+        s.listen(1)
+    
+        conn, addr = s.accept()
+        print('Connection address:', addr)
+
+        wait_period = float(SAMPLE_RATE / NUMBER_OF_FRAMES)
+        while True:
+            df = make_data_frame(count, rotor_data)
+            conn.send(df)
+            time.sleep(1.0/wait_period)
+            count += 1
+        conn.close()
+    else:
+        for i in range(0,2):
+            df = make_data_frame(count, rotor_data)
+            count += 1
+            print('data:\n')
