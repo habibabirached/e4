@@ -70,9 +70,10 @@ def make_data_frame(counter, rotor_data):
 
         # encode a 32-bit value for displacement
         disp = int(rotor_data[DATA_PTR] * 1e6)
+
         disp_bytes = disp.to_bytes(4, byteorder='little', signed=False)
         data = b''.join([data, disp_bytes]) # Append the displacement data bytes
-        DATA_PTR = (DATA_PTR+1) % len(data)
+        DATA_PTR = (DATA_PTR+1) % len(rotor_data)
 
         # encode a 32-bit value for timestamp
         measure_time = t_idx + i            # pseudo-timestamp (initial time + 1ms)
