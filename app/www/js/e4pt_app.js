@@ -27,6 +27,11 @@ var E4PTdata = {
 
 const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
+var stages = ["1", "2", "3"];
+var positions = ["TOP", "LEFT", "BOTTOM", "RIGHT"];
+var current_stage_index = 0;
+var current_position_index = 0;
+
 $(document).ready(function(){	
     var attachFastClick = Origami.fastclick;
     attachFastClick(document.body);
@@ -42,6 +47,7 @@ $(document).ready(function(){
         $("#FILE_LOADING_PAGE").fadeOut();
         $("#DB_LOADING_PAGE").fadeOut();
         $("#SENSOR_SETUP_PAGE").fadeOut();
+        $("#TURBINE_SETUP_PAGE").fadeOut();
         toggle_menu();
 		
     }, {passive: true})
@@ -54,6 +60,7 @@ $(document).ready(function(){
         toggle_menu();
 	$("#DATA_PLOT").fadeOut();
         $("#SETUP_PAGE").fadeIn();
+        frame_information();
     }, {passive: true})
     document.getElementById("SENSOR_SETUP_BUTTON").addEventListener('click', function(){
         $("#SETUP_PAGE").fadeOut();
@@ -62,6 +69,14 @@ $(document).ready(function(){
         $("#SENSOR_SETUP_PAGE").fadeIn();
 	setMasterMessage("white","green","Ready");
     }, {passive: true})
+    document.getElementById("SN_SUBMIT_BUTTON").addEventListener('click', function(){
+        $("#SETUP_PAGE").fadeOut();
+        $("#RESULTS_PAGE").fadeOut();
+        $("#DATA_PLOT").fadeOut();
+        $("#TURBINE_SETUP_PAGE").fadeIn();
+        turbine_setup();
+    }, {passive: true})
+    
 
     function RESULTS_BUTTON_FUNC(){
         getCredentialforREST();
@@ -118,11 +133,14 @@ $(document).ready(function(){
     document.getElementById("START_DARK_REFERENCE_BUTTON").addEventListener('click', function(){
 	do_dark_reference();
     }, {passive: true})
-
     document.getElementById("DOWNLOAD_FILE_BUTTON").addEventListener('click', function(){
         toggle_menu();
 	doFileDownload();
     }, {passive: true})
+    document.getElementById("STAGE_COLLECT_BUTTON").addEventListener('click', function(){
+        collect_stage_data();
+    }, {passive: true})
+    
     setupAccordian()
 })
 
@@ -161,7 +179,95 @@ function sensor_setup() {
     $("#RESULTS_PAGE").fadeOut();
     $("#FILE_LOADING_PAGE").fadeOut();
     $("#DB_LOADING_PAGE").fadeOut();
-    $("#SENSOR_SETUP_PAGE").fadeIn();    
+    $("#SENSOR_SETUP_PAGE").fadeIn();
+    $("#TURBINE_SETUP_PAGE").fadeOut();    
+}
+
+function turbine_setup() {
+    current_stage_index = 0;
+    current_position_index = 0;
+    // Fill in the header
+    E4PTdata.frame = document.getElementById("FRAME_SIZE").value;
+    E4PTdata.serial_number = document.getElementById("SERIAL_NUMBER").value;
+    var header = "Frame: " + E4PTdata.frame + "; S/N: " + E4PTdata.serial_number;
+    document.getElementById("TURBINE_SETUP_HEADER").innerHTML = header;
+
+    // Set up the grid that indicates which data has been collected.
+    var html_buf = [];
+    var stage_index = 0;
+    var position_index = 0;
+    html_buf.push("<tr><td>POSITION</td>");
+    for (stage_index = 0; stage_index < stages.length; stage_index++) {
+        html_buf.push("<td>STAGE " + stages[stage_index] + "</td>");
+    }
+    html_buf.push("</tr>");
+    for (position_index = 0; position_index < positions.length; position_index++) {
+        html_buf.push("<tr><td>" + positions[position_index] + "</td>");
+        for (stage_index = 0; stage_index < stages.length; stage_index++) {
+            html_buf.push("<td id='" + positions[position_index] + stages[stage_index] + 
+                          "' onclick='set_grid_position(\"" + positions[position_index] + 
+                          "\", \"" + stages[stage_index] + 
+                          "\")'></td>");
+        }
+        html_buf.push("</tr>");
+    }
+    html = html_buf.join('\n')
+    document.getElementById("SENSOR_DATA_TABLE").innerHTML = html;
+
+    // Setup the position options
+    html_buf = [];
+    for (position_index = 0; position_index < positions.length; position_index++) {
+        html_buf.push("<option value='" + positions[position_index] + "'>" + positions[position_index] + "</option>");
+    }
+    html = html_buf.join('\n')
+    document.getElementById("SENSOR_POSITION").innerHTML = html;
+
+    // Setup the Stage options
+    html_buf = [];
+    for (stage_index = 0; stage_index < stages.length; stage_index++) {
+        html_buf.push("<option value='" + stages[stage_index] + "'>" + stages[stage_index] + "</option>");
+    }
+    html = html_buf.join('\n')
+    document.getElementById("SENSOR_STAGE").innerHTML = html;
+}
+
+function frame_information() {
+    document.getElementById("FRAME_SIZE").value = "";
+    document.getElementById("SERIAL_NUMBER").value = "";
+}
+
+function collect_stage_data() {
+    var position = document.getElementById("SENSOR_POSITION").value;
+    var stage = document.getElementById("SENSOR_STAGE").value;
+    var boxID = position + stage;
+
+    current_stage_index = document.getElementById("SENSOR_STAGE").selectedIndex;
+    current_position_index =  document.getElementById("SENSOR_POSITION").selectedIndex;
+
+    var str = "&#x2714";
+    var color_str = str.fontcolor("green");
+    document.getElementById(boxID).innerHTML = color_str;
+
+    // Auto-advance    
+    advance_position();
+    
+}
+
+function advance_position() {
+    // Auto-advance
+    current_position_index = (current_position_index + 1) % positions.length;
+    if (current_position_index == 0) {
+        current_stage_index = (current_stage_index + 1) % stages.length;
+    }
+    document.getElementById("SENSOR_STAGE").selectedIndex = current_stage_index;
+    document.getElementById("SENSOR_POSITION").selectedIndex = current_position_index;
+}
+
+function set_grid_position(position, stage) {
+    current_position_index = positions.indexOf(position);
+    current_stage_index = stages.indexOf(stage);
+    document.getElementById("SENSOR_STAGE").selectedIndex = current_stage_index;
+    document.getElementById("SENSOR_POSITION").selectedIndex = current_position_index;
 }
 
 function do_dark_reference() {
@@ -235,31 +341,30 @@ function connectWebSocket() {
   try {
     console.log("Connecting to WebSocket server.");
     //e4PtSocket = new WebSocket("ws://192.168.7.77:3405");
-    //e4PtSocket = new WebSocket("ws://127.0.0.1:3405"); // Local testing
-    e4PtSocket = new WebSocket("ws://192.168.168.41:3405"); // E4Pt sys.
+    e4PtSocket = new WebSocket("ws://127.0.0.1:3405"); // Local testing
+    //e4PtSocket = new WebSocket("ws://192.168.168.41:3405"); // E4Pt sys.
   } catch (err) {
     console.log("Error connecting to WebSocket server");
   }
   if (e4PtSocket == null) return;
 
   e4PtSocket.onopen = function(evt) {
-    console.log("e4PtSocket Opened");
+    console.log("e4PtSocket Opened: ");
     console.log("evt: " + evt);
     setIndicatorColor("green");
     //setTimeout(function(){ sendWSMessage("ping"); }, 5000); // ping after 5s
   }
  
   e4PtSocket.onclose = function(evt) {
-    console.log("e4PtSocket Closed");
+    console.log("e4PtSocket Closed: ", evt);
     setIndicatorColor("white");	
   }
 
   e4PtSocket.onerror = function(evt) {
-    console.log("e4PtSocket error",evt);
+    console.log("e4PtSocket error: ",evt);
     setIndicatorColor("white");	
   }
 
-    
   e4PtSocket.onmessage = function(evt) {
     var msg = JSON.parse(evt.data);
     console.log("e4PtSocket Message Received: " + msg.type);

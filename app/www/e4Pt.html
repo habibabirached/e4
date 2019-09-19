@@ -44,7 +44,7 @@
 
 <!-- --------------- LEFT MENU ---------------------  -->
 	<div id="LEFT_MENU" class="FIXED H100 LEFT0 COLOR_T_BLACK Z0" style="top:1vmin">
-		<BR><BR>
+		<BR/><BR/>
 		<div id="FRD_BUTTON" class="TRACC_BUTTON">FRD</div>
 		<div id="SETUP_BUTTON" class="TRACC_BUTTON">SETUP</div>
 		<div id="OPEN_BUTTON_DEVICE" class="TRACC_BUTTON">OPEN LOCAL</div>
@@ -92,30 +92,67 @@
 <!-- --------------- FRAME SELECT PAGE ---------------------  -->
 	<div class="FIXED H100 Z0 SETUP_PAGE">
           <div id="SETUP_PAGE" class="HIDE">
-            <form action="">
               <H2>Select Frame</H2>
               <select class="BORDER_BLACK_1 TXTFIELD" id="FRAME_SIZE">
-                  <option value"6B">6B</option>
-                  <option value"6FA">6FA</option>
-                  <option value"7E">7E</option>
-                  <option value"7FA">7FA</option>
-                  <option value"7FA.05">7FA.05</option>
-                  <option value"9E">9E</option>
-                  <option value"LMS">LMS</option>
+                  <option value="6B">6B</option>
+                  <option value="6FA">6FA</option>
+                  <option value="7E">7E</option>
+                  <option value="7FA">7FA</option>
+                  <option value="7FA.05">7FA.05</option>
+                  <option value="9E">9E</option>
+                  <option value="LMS">LMS</option>
               </select>
-              <br><br><br><br>
-              <H2>Serial Number</H2><br>
-              <input class="BORDER_BLACK_1 TXTFIELD" type="text" name="serial_number" value="">
-              <br><br>
-              <input class="TRACC_BUTTON" type="submit" value="Next" id="SN_SUBMIT_BUTTON">
-            </form>
+              <br/><br/><br/><br/>
+              <H2>Serial Number</H2><br/>
+              <input class="BORDER_BLACK_1 TXTFIELD" type="text" id="SERIAL_NUMBER" value=""/>
+              <br/><br/>
+              <input class="TRACC_BUTTON" type="submit" value="Next" id="SN_SUBMIT_BUTTON"/>
+          </div>
+        </div>
+<!-- --------------- TURBINE SETUP PAGE --------------------- -->
+	<div class="FIXED H100 Z0 TURBINE_SETUP_PAGE">
+          <div id="TURBINE_SETUP_PAGE" class="HIDE">
+              <H2 id="TURBINE_SETUP_HEADER">Turbine S/N:</H2>
+              <table id="SENSOR_DATA_TABLE" class="SENSOR_DATA_TABLE">
+                <tr>
+                  <td>POSITION</td><td>STAGE 1</td><td>STAGE 2</td>
+                </tr>                
+                <tr>
+                  <td>TOP</td><td id="TOP1"></td><td id="TOP2"></td>
+                </tr>
+                <tr>
+                  <td>BOTTOM</td><td id="BOTTOM1"></td><td id="BOTTOM2"></td>
+                </tr>
+                <tr>
+                  <td>LEFT</td><td id="LEFT1"></td><td id="LEFT2"></td>
+                </tr>
+                <tr>
+                  <td>RIGHT</td><td id="RIGHT1"></td><td id="RIGHT2"></td>
+                </tr>
+              </table>
+              <br/>
+              Position:  <select class="BORDER_BLACK_1 TXTFIELD" id="SENSOR_POSITION">
+                <option value="TOP">Top</option>
+                <option value="BOTTOM">Bottom</option>
+                <option value="LEFT">Left</option>
+                <option value="RIGHT">Right</option>    
+              </select>
+              <br/>
+              <br/>
+              Stage:  <select class="BORDER_BLACK_1 TXTFIELD" id="SENSOR_STAGE">
+                <option value="S1">Stage 1</option>
+                <option value="S2">Stage 2</option>
+              </select>
+              <br/>
+              <br/>              
+              <input class="TRACC_BUTTON" type="submit" value="GO!" id="STAGE_COLLECT_BUTTON"/>
           </div>
         </div>
 
-	<!-- --------------- SENSOR MASTERING PAGE --------------------- -->
+<!-- --------------- SENSOR MASTERING PAGE --------------------- -->
 	<div class="FIXED H100 Z0 SENSOR_SETUP_PAGE">
           <div id="SENSOR_SETUP_PAGE" class="HIDE">
-            <H2><U>Probe Mastering</U></H2><br>
+            <H2><U>Probe Mastering</U></H2><br/>
 	    <p><U>Instructions:</U></p>
 	    <ol style="padding:40px">
 	      <li>Clean mating surfaces of the Probe and the Set Master.</li>
@@ -123,19 +160,19 @@
 	      <li>Press Start.</li>
 	      <li>Wait until the screen changes.</li>
 	    </ol>
-            <input class="TRACC_BUTTON" type="submit" value="Start" id="START_MASTER_BUTTON">
-	    <input id="master_message" type="text" name="master_message" style="text-align:center;color:white" value="Ready" disabled>
-	    <br>
-            <H2><U>Set Probe Dark Reference</U></H2><br>
+            <input class="TRACC_BUTTON" type="submit" value="Start" id="START_MASTER_BUTTON"/>
+	    <input id="master_message" type="text" name="master_message" style="text-align:center;color:white" value="Ready" disabled/>
+	    <br/>
+            <H2><U>Set Probe Dark Reference</U></H2><br/>
 	    <p>The system requires a warm-up time of approximately 30 minutes prior to setting the dark reference. Please ensure that the system has been powered on for 30 minutes to ensure it is warmed up.</p>
-	    <br>
+	    <br/>
 	    <ol style="padding:40px">
 	      <li>Cover the sensor with the sensor cap to ensure that nothing is in the measurement range and no ambient light enters the sensor.</li>
 	      <li>Press the Start Dark Reference button to initiate the process.</li>
 	    </ol>
-	    <br>
-	    <p>This page will disappear and the indicator light will flash yellow, then red. After <30 seconds, you should see a flat line displayed indicating a successfull dark reference.</p>
-            <input class="TRACC_BUTTON" type="submit" value="Start Dark Reference" id="START_DARK_REFERENCE_BUTTON">	    
+	    <br/>
+	    <p>This page will disappear and the indicator light will flash yellow, then red. After &lt;30 seconds, you should see a flat line displayed indicating a successfull dark reference.</p>
+            <input class="TRACC_BUTTON" type="submit" value="Start Dark Reference" id="START_DARK_REFERENCE_BUTTON"/>
 	    
           </div>
         </div>

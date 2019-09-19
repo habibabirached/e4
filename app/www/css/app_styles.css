@@ -274,6 +274,23 @@ body{
   transform: translate(-50%, -50%);
 }
 
+.TURBINE_SETUP_PAGE{ 
+  margin: 0;
+  position: absolute;
+  top: 60%;
+  left: 50%;
+  -ms-transform: translate(-50%, -50%);
+  -moz-transform: translate(-50%, -50%);
+  -webkit-transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%);
+}
+
+.SENSOR_DATA_TABLE{
+  width:90%;
+  top: 60%;
+  left: 50%;
+}
+
 .TXTFIELD {  
     font-size:24px;
 }
