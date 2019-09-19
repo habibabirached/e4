@@ -140,6 +140,9 @@ $(document).ready(function(){
     document.getElementById("STAGE_COLLECT_BUTTON").addEventListener('click', function(){
         collect_stage_data();
     }, {passive: true})
+    document.getElementById("COLLECTION_RESET_BUTTON").addEventListener('click', function(){
+        reset_data_collection();
+    }, {passive: true})
     
     setupAccordian()
 })
@@ -251,6 +254,33 @@ function collect_stage_data() {
     // Auto-advance    
     advance_position();
     
+}
+
+function reset_data_collection() {
+    current_stage_index = 0;
+    current_position_index = 0;
+    document.getElementById("SENSOR_STAGE").selectedIndex = current_stage_index;
+    document.getElementById("SENSOR_POSITION").selectedIndex = current_position_index;
+    var html_buf = [];
+    var stage_index = 0;
+    var position_index = 0;
+    html_buf.push("<tr><td>POSITION</td>");
+    for (stage_index = 0; stage_index < stages.length; stage_index++) {
+        html_buf.push("<td>STAGE " + stages[stage_index] + "</td>");
+    }
+    html_buf.push("</tr>");
+    for (position_index = 0; position_index < positions.length; position_index++) {
+        html_buf.push("<tr><td>" + positions[position_index] + "</td>");
+        for (stage_index = 0; stage_index < stages.length; stage_index++) {
+            html_buf.push("<td id='" + positions[position_index] + stages[stage_index] + 
+                          "' onclick='set_grid_position(\"" + positions[position_index] + 
+                          "\", \"" + stages[stage_index] + 
+                          "\")'></td>");
+        }
+        html_buf.push("</tr>");
+    }
+    html = html_buf.join('\n')
+    document.getElementById("SENSOR_DATA_TABLE").innerHTML = html;
 }
 
 function advance_position() {
