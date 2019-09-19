@@ -27,6 +27,7 @@ var E4PTdata = {
 
 const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
+var frames = ["6B", "6FA", "7E", "7FA", "7FA.05", "9E", "LMS", "7HA", "9HA"];
 var stages = ["1", "2", "3"];
 var positions = ["TOP", "LEFT", "BOTTOM", "RIGHT"];
 var current_stage_index = 0;
@@ -60,7 +61,7 @@ $(document).ready(function(){
         toggle_menu();
 	$("#DATA_PLOT").fadeOut();
         $("#SETUP_PAGE").fadeIn();
-        frame_information();
+        set_frame_information();
     }, {passive: true})
     document.getElementById("SENSOR_SETUP_BUTTON").addEventListener('click', function(){
         $("#SETUP_PAGE").fadeOut();
@@ -187,35 +188,8 @@ function sensor_setup() {
 }
 
 function turbine_setup() {
-    current_stage_index = 0;
-    current_position_index = 0;
-    // Fill in the header
-    E4PTdata.frame = document.getElementById("FRAME_SIZE").value;
-    E4PTdata.serial_number = document.getElementById("SERIAL_NUMBER").value;
-    var header = "Frame: " + E4PTdata.frame + "; S/N: " + E4PTdata.serial_number;
-    document.getElementById("TURBINE_SETUP_HEADER").innerHTML = header;
 
-    // Set up the grid that indicates which data has been collected.
-    var html_buf = [];
-    var stage_index = 0;
-    var position_index = 0;
-    html_buf.push("<tr><td>POSITION</td>");
-    for (stage_index = 0; stage_index < stages.length; stage_index++) {
-        html_buf.push("<td>STAGE " + stages[stage_index] + "</td>");
-    }
-    html_buf.push("</tr>");
-    for (position_index = 0; position_index < positions.length; position_index++) {
-        html_buf.push("<tr><td>" + positions[position_index] + "</td>");
-        for (stage_index = 0; stage_index < stages.length; stage_index++) {
-            html_buf.push("<td id='" + positions[position_index] + stages[stage_index] + 
-                          "' onclick='set_grid_position(\"" + positions[position_index] + 
-                          "\", \"" + stages[stage_index] + 
-                          "\")'></td>");
-        }
-        html_buf.push("</tr>");
-    }
-    html = html_buf.join('\n')
-    document.getElementById("SENSOR_DATA_TABLE").innerHTML = html;
+    reset_data_collection();
 
     // Setup the position options
     html_buf = [];
@@ -234,9 +208,14 @@ function turbine_setup() {
     document.getElementById("SENSOR_STAGE").innerHTML = html;
 }
 
-function frame_information() {
-    document.getElementById("FRAME_SIZE").value = "";
-    document.getElementById("SERIAL_NUMBER").value = "";
+function set_frame_information() {
+    var html_buf = [];
+    var frmIdx = 0;
+    for (frmIdx = 0; frmIdx < frames.length; frmIdx++) {
+        html_buf.push("<option value='" + frames[frmIdx] + "'>" + frames[frmIdx] + "</option>");
+    }
+    var html = html_buf.join('\n');
+    document.getElementById("FRAME_SIZE").innerHTML = html;
 }
 
 function collect_stage_data() {
@@ -259,6 +238,12 @@ function collect_stage_data() {
 function reset_data_collection() {
     current_stage_index = 0;
     current_position_index = 0;
+    // Fill in the header
+    E4PTdata.frame = document.getElementById("FRAME_SIZE").value;
+    E4PTdata.serial_number = document.getElementById("SERIAL_NUMBER").value;
+    var header = "Frame: " + E4PTdata.frame + "; S/N: " + E4PTdata.serial_number;
+    document.getElementById("TURBINE_SETUP_HEADER").innerHTML = header;
+
     document.getElementById("SENSOR_STAGE").selectedIndex = current_stage_index;
     document.getElementById("SENSOR_POSITION").selectedIndex = current_position_index;
     var html_buf = [];
