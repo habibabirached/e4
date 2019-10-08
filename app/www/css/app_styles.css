@@ -285,10 +285,39 @@ body{
   transform: translate(-50%, -50%);
 }
 
-.SENSOR_DATA_TABLE{
+table.sensor_super_table{
+  border-collapse:collapse!important;
   width:90%;
   top: 60%;
   left: 50%;
+}
+
+table.sensor_sub_table{
+  width:90%;
+  top: 90%;
+  left: 50%;
+}
+
+td.sensor_super_td {
+    padding: 1vh; 
+    font-size:2.5vmin;
+    background-color:white;
+    border-collapse:collapse!important;
+    border: none;
+    text-align: center;
+    width: 16.66%;
+    font-weight: normal;
+}
+
+tr.sensor_super_tr {
+    padding: 1vh; 
+    font-size:2.5vmin;
+    background-color:white;
+    border-collapse:collapse!important;
+    border: none;    
+    text-align: center;
+    width: 16.66%;
+    font-weight: normal;
 }
 
 .TXTFIELD {  
@@ -682,14 +711,13 @@ button.ACCORDION.active:after {
     transition: max-height 0.2s ease-out;
 }
 table {
-	display: absolute;
-	margin:auto;
+    display: absolute;
+    margin:auto;
     font-family: arial, sans-serif;
     border-collapse: collapse;
-	width: 95%;
-	margin-top: 10vmin;
-	overflow: visible;
-
+    width: 95%;
+    margin-top: 10vmin;
+    overflow: visible;
 }
 
 .TOP_ROW{
@@ -699,14 +727,14 @@ table {
 }
 
 tr, td, th {
-	padding: 1vh; 
-	font-size:2.5vmin;
-	color: black;
-	background-color:white;
+    padding: 1vh; 
+    font-size:2.5vmin;
+    color: black;
+    background-color:white;
     border: 1px solid black;
-	text-align: center;
-	width: 16.66%;
-	font-weight: normal;
+    text-align: center;
+    width: 16.66%;
+    font-weight: normal;
 }
 
 .SELECTED_ROW{

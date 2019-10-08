@@ -353,14 +353,14 @@ function setup_data_collection_page() {
     // Setup the data tables.  We use different tables for each stage because
     // the number of positions for each stage could be different.
     var stages = current_frame_data['stage'];
-    html_buf.push("<tr>"); // The sub-tables all go in one row in the super-table
+    html_buf.push("<tr class=\"sensor_super_tr\">"); // The sub-tables all go in one row in the super-table
     //console.log(html_buf[html_buf.length-1]);
     for (stage_index = 0; stage_index < stages.length; stage_index++) {
         var stage = stages[stage_index];
         var positions = current_frame_data['position'][stage];
-        html_buf.push("<td><table>");
+        html_buf.push("<td class=\"sensor_super_td\"><table class=\"sensor_sub_table\">");
         //console.log(html_buf[html_buf.length-1]);
-        var header_row = "<tr><td>POSITION</td><td>";
+        var header_row = "<tr class=\"sensor_super_tr\"><td>POSITION</td><td>";
         header_row = header_row + "STAGE " + stages[stage_index];
         header_row = header_row + "</td></tr>";
         html_buf.push(header_row);
