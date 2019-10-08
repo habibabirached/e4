@@ -115,20 +115,8 @@
               <H2 id="TURBINE_SETUP_HEADER">Turbine S/N:</H2>
               <table id="SENSOR_DATA_TABLE" class="SENSOR_DATA_TABLE">
                 <tr>
-                  <td>POSITION</td><td>STAGE 1</td><td>STAGE 2</td>
+                  <td></td>
                 </tr>                
-                <tr>
-                  <td>TOP</td><td id="TOP1"></td><td id="TOP2"></td>
-                </tr>
-                <tr>
-                  <td>BOTTOM</td><td id="BOTTOM1"></td><td id="BOTTOM2"></td>
-                </tr>
-                <tr>
-                  <td>LEFT</td><td id="LEFT1"></td><td id="LEFT2"></td>
-                </tr>
-                <tr>
-                  <td>RIGHT</td><td id="RIGHT1"></td><td id="RIGHT2"></td>
-                </tr>
               </table>
               <br/>
               Position:  <select class="BORDER_BLACK_1 TXTFIELD" id="SENSOR_POSITION">
@@ -144,7 +132,11 @@
                 <option value="S2">Stage 2</option>
               </select>
               <br/>
-              <br/>              
+              <br/>
+              <H2>Casing Thickness (inches):</H2><br/>
+              <input class="BORDER_BLACK_1 TXTFIELD" type="text" id="CASING_THICKNESS" value=""/>
+              <br/>
+              <br/>
               <input class="TRACC_BUTTON" type="submit" value="GO!" id="STAGE_COLLECT_BUTTON"/>
               <input class="TRACC_BUTTON" type="submit" value="Reset" id="COLLECTION_RESET_BUTTON"/>
           </div>
