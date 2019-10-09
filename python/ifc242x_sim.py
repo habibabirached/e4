@@ -48,6 +48,16 @@ def make_rotor_data():
             writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL, lineterminator='\n')
             for i in range(0,len(data)):
                 writer.writerow([i,data[i]])
+
+    # Average & print ten blade distances for comparison purposes.
+    blade_avg = 0.0
+    #npts = 10
+    npts = len(blade_dist)
+    for i in range(npts-1):
+        blade_avg = blade_avg + blade_dist[i]
+    blade_avg = blade_avg / float(npts)
+    print("Blade average distance: ", blade_avg)
+    
     return data
 
 def make_data_frame(counter, rotor_data):
@@ -82,10 +92,23 @@ def make_data_frame(counter, rotor_data):
 
     return data
 
+def find_patterns(data):
+    df = pd.DataFrame(data, columns=['data'])
+    ac = np.zeros(len(df['data']))
+    for i in range(0,len(df)-1):
+        ac[i] = df['data'].autocorr(lag=i)
+
+    with open('pattern_data.csv', mode='w') as csv_file:
+        writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL, lineterminator='\n')
+        for i in range(0,len(ac)):
+            writer.writerow([i,ac[i]])
+
+
 if __name__ == "__main__":
 
     DATA_PTR = 0
     rotor_data = make_rotor_data() # construct one cycle of data around the turbine
+    #find_patterns(rotor_data)
     count = 0
     
     if True:
@@ -98,6 +121,7 @@ if __name__ == "__main__":
 
         wait_period = float(SAMPLE_RATE / NUMBER_OF_FRAMES)
         while True:
+            #rotor_data = make_rotor_data() # make new data with each iteration.
             df = make_data_frame(count, rotor_data)
             conn.send(df)
             time.sleep(1.0/wait_period)
@@ -105,6 +129,6 @@ if __name__ == "__main__":
         conn.close()
     else:
         for i in range(0,2):
+            rotor_data = make_rotor_data() # make new data with each iteration.
             df = make_data_frame(count, rotor_data)
             count += 1
-            print('data:\n')
