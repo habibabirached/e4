@@ -287,9 +287,8 @@ body{
 
 table.sensor_super_table{
   border-collapse:collapse!important;
-  width:90%;
-  top: 60%;
-  left: 50%;
+  width:75%;
+  left: 25%;
 }
 
 table.sensor_sub_table{
@@ -715,8 +714,8 @@ table {
     margin:auto;
     font-family: arial, sans-serif;
     border-collapse: collapse;
-    width: 95%;
-    margin-top: 10vmin;
+    width: 75%;
+    margin-top: 1vmin;
     overflow: visible;
 }
 

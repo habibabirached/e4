@@ -5,6 +5,28 @@ var WebSocket = WebSocket;
 var clientID = 312;
 var e4pt = null;
 
+var Data_Set = function() {
+    this.stage = null;
+    this.location = null;
+    this.case_thickness = null;
+    this.blade_number = null;
+    this.pts = null;
+    this.used_in_avg = null;
+    this.clearance = null;
+    this.quality = null;
+};
+
+Data_Set.prototype.add_data = function(stage, location, case_thickness, blade_number, pts, used_in_avg, clearance, quality) {
+    this.stage = stage;
+    this.location = location;
+    this.case_thickness = case_thickness;
+    this.blade_number = blade_number;
+    this.pts = pts;
+    this.used_in_avg = used_in_avg;
+    this.clearance = clearance;
+    this.quality = quality;
+};
+
 var E4PTdata = {
     "ofs_id": "",
     "frame":"",
@@ -22,6 +44,7 @@ var E4PTdata = {
     "sets":[],
     "locs":[],
     "minima":[],
+    "clearance":"",
     "alreadyOnLDB":"false"
 }
 
@@ -175,6 +198,7 @@ $(document).ready(function(){
     }, {passive: true})
     document.getElementById("GET_DATA_BUTTON").addEventListener('click', function(){
         toggle_menu();
+        $("#DATA_PLOT").fadeIn();        
         var acquisitionTime = window.prompt("Please enter the acquisition time in seconds.", "15");
         if (acquisitionTime != null) {
           requestE4PtData(acquisitionTime);
@@ -301,6 +325,7 @@ function set_position_information() {
 }
 
 function collect_stage_data() {
+    // Make sure the plot doesn't show on screen
     var position = document.getElementById("SENSOR_POSITION").value;
     var stage = document.getElementById("SENSOR_STAGE").value;
     var boxID = position + stage;
@@ -312,12 +337,18 @@ function collect_stage_data() {
     current_position_index =  document.getElementById("SENSOR_POSITION").selectedIndex;
     current_position = current_frame_data['position'][current_stage][current_position_index];
 
-    var str = "&#x2714";
-    var color_str = str.fontcolor("green");
-    document.getElementById(boxID).innerHTML = color_str;
+    // Collect data from the sensor.
+    var acquisitionTime = window.prompt("Please enter the acquisition time in seconds.", "15");
+    if (acquisitionTime != null) {
+        requestE4PtData(acquisitionTime);
+    }
+
+    //var str = "&#x2714";
+    //var color_str = str.fontcolor("green");
+    //document.getElementById(boxID).innerHTML = color_str;
 
     // Auto-advance    
-    advance_position();
+    //advance_position();
     
 }
 
@@ -354,36 +385,27 @@ function setup_data_collection_page() {
     // the number of positions for each stage could be different.
     var stages = current_frame_data['stage'];
     html_buf.push("<tr class=\"sensor_super_tr\">"); // The sub-tables all go in one row in the super-table
-    //console.log(html_buf[html_buf.length-1]);
     for (stage_index = 0; stage_index < stages.length; stage_index++) {
         var stage = stages[stage_index];
         var positions = current_frame_data['position'][stage];
         html_buf.push("<td class=\"sensor_super_td\"><table class=\"sensor_sub_table\">");
-        //console.log(html_buf[html_buf.length-1]);
         var header_row = "<tr class=\"sensor_super_tr\"><td>POSITION</td><td>";
         header_row = header_row + "STAGE " + stages[stage_index];
         header_row = header_row + "</td></tr>";
         html_buf.push(header_row);
-        //console.log(html_buf[html_buf.length-1]);
         for (position_index = 0; position_index < positions.length; position_index++) {
             html_buf.push("<tr><td>" + positions[position_index] + "</td>");
-            //console.log(html_buf[html_buf.length-1]);
             var el_id = positions[position_index] + stages[stage_index];
             el_id = el_id.replace(/\s+/g, '_');
-            //console.log('table element id: ', el_id);
             html_buf.push("<td id='" + el_id + 
                           "' onclick='set_grid_position(\"" + positions[position_index] + 
                           "\", \"" + stages[stage_index] + 
                           "\")'></td>");
-            //console.log(html_buf[html_buf.length-1]);
             html_buf.push("</tr>");
-            //console.log(html_buf[html_buf.length-1]);
         }
         html_buf.push("</table></td>");
-        //console.log(html_buf[html_buf.length-1]);
     }
     html_buf.push("</tr>");
-    //console.log(html_buf[html_buf.length-1]);
     html = html_buf.join('\n')
     document.getElementById("SENSOR_DATA_TABLE").innerHTML = html;
 
@@ -601,7 +623,6 @@ function requestE4PtData(acquisitionTime) {
   }
   message = "send_data," + acquisitionTime;
   sendWSMessage(message);
-  $("#DATA_PLOT").fadeIn();
 }
 
 function sendWSMessage(msg_text) {
@@ -639,7 +660,19 @@ function parse_data() {
   for (var i=0; i<E4PTdata.locs.length; i++) {
     minima[i] = [E4PTdata.locs[i], E4PTdata.gaps[i]];
   }
-  E4PTdata.minima = minima;
+    E4PTdata.minima = minima;
+    console.log("Clearance average: ", E4PTdata.clearance);
+    update_clearance(E4PTdata.clearance);
+}
+
+function update_clearance(clearance) {
+    var stage = current_frame_data['stage'][current_stage_index];
+    var position = current_frame_data['position'][stage][current_position_index];
+    var el_id = position + stage;
+    el_id = el_id.replace(/\s+/g, '_');
+    var clearance_f = parseFloat(clearance.toFixed(4))
+    document.getElementById(el_id).innerHTML = clearance_f;
+    advance_position()
 }
 
 function plot_data() {
@@ -716,7 +749,7 @@ function plot_data() {
     series: [
       {
         type: 'line',
-        name: 'Capacitance Sensor',
+        name: 'Confocal Sensor',
         data: E4PTdata.data
       },
       {
