@@ -14,6 +14,39 @@ from datetime import datetime
 from asgiref.sync import async_to_sync
 import telnetlib
 import struct
+import csv
+
+# The saved data should have the following format:
+# (This is an attempt to follow the follow the format
+# of the data in the file provided from the CMS801
+# system on 04/14/2015.
+#
+# Data dictionary:
+# {
+#  ['DataSet' : {
+#  ['date' : 'mm/dd/yyyy'],
+#  ['time' : '00:00:00'],
+#  ['operator' : 'Jane Doe/John Buck'],
+#  ['Stg' : '2'],
+#  ['Locn' : 'Right'],
+#  ['CaseThk' : '1.392'],
+#  ['BladeNo' : [1,2,3, ..., 999, 1000]],
+#  ['PtNo' : [1,2,3, ..., 999, 1000]],
+#  ['UsedForAvg' : [1, 1, 0, ..., 0, 1]],
+#  ['CLRMeas' : [m, m, m, ..., m, m]],
+#  ['Qual' : [0.99, 0.98, 0.99, ..., 0.99, 1.0]]
+#  }],
+#  ['DataSet' : {
+#    ...
+#  }],
+#  ...
+#  ['DataSet' : {
+#    ...
+#  }]
+# }
+#
+#
+#
 
 PARAMS = ["","",""]
 THRESHOLD = 3.99
@@ -68,16 +101,19 @@ async def ws_msg_handler(websocket, path):
 
             sensor_data = raw_data['sensor_data']
             peaks_avg_out, peak_locs, gaps = peak_find(PARAMS, sensor_data)
+            clearance = compute_clearance(peaks_avg_out, peak_locs, gaps, sensor_data)
             save_data(PARAMS, sensor_data, peak_locs, gaps)
+            #find_patterns(PARAMS, sensor_data['displacement'])
 
             #decimate the data we send over the web interface
-            factor = int(20)
+            factor = int(1)
             plot_df = sensor_data['filtered'].iloc[::factor]
             peak_locs = peak_locs / factor
             data_dict = {'type':'data',
                          'data':plot_df.tolist(),
                          'locs':peak_locs.tolist(),
-                         'gaps':gaps.tolist()}
+                         'gaps':gaps.tolist(),
+                         'clearance':clearance}
             json_data = json.dumps(data_dict)
             await websocket.send(json_data)
 
@@ -321,9 +357,11 @@ async def collect_data(params, websocket):
 
 def filter_data(params, data):
     print('@filter_data')
-    if (False):
-        data['sensor_data']['filtered'] = data['sensor_data']['displacement']
+    if (True):
+        print('  no filtering')
+        data['sensor_data']['filtered'] = data['sensor_data']['displacement'] # No filtering
     else:
+        print('  filtering')
         freq_cutoff = float(params[2])
         n_order = FILTER_ORDER
         samp_freq = data['samp_freq']
@@ -336,21 +374,44 @@ def peak_find(params, data_frame):
     ''' find peaks in the data '''
     print('@peak_find')
     data = data_frame['displacement'].values
-    top_peaks, props = signal.find_peaks(data, plateau_size=5000)
+    top_peaks, props = signal.find_peaks(-data, prominence=2) # look for negative 'peaks'
     peaks_avg_out = THRESHOLD*(np.ones(len(data)))
-    gaps = np.zeros(len(props['right_edges']))
+    gaps = np.zeros(len(props['right_bases']))
     bottom_peaks = np.zeros(len(gaps))
-    for i in range(len(props['left_edges'])-1):
-        roi = data[props['right_edges'][i]:props['left_edges'][i+1]]
+    for i in range(len(props['left_bases'])-1):
+        roi = data[props['left_bases'][i]+1:props['right_bases'][i]]
         roi[roi >= THRESHOLD] = np.nan
         mean = np.nanmean(roi)
-        peaks_avg_out[props['right_edges'][i]:props['left_edges'][i+1]] = mean
+        peaks_avg_out[props['left_bases'][i]+1:props['right_bases'][i]] = mean
         gaps[i] = mean
-        bottom_peaks[i] = (props['left_edges'][i+1] + props['right_edges'][i])/2.0
+        l_idx = props['left_bases'][i] + 1
+        r_idx = props['right_bases'][i]
+        bottom_peaks[i] = (l_idx + r_idx)/2.0
 
     bottom_peaks = bottom_peaks[0:len(bottom_peaks)-1]
     gaps = gaps[0:len(gaps)-1]
     return peaks_avg_out, bottom_peaks, gaps
+
+def compute_clearance(peaks_avg_out, peak_locs, gaps, sensor_data):
+    avg_clearance = 0.0
+    print('@compute_clearance')
+    print('len(peaks_avg_out): ', len(peaks_avg_out))
+    print('peak_locs: ', len(peak_locs))
+    print('gaps: ', gaps)
+    for i in range(len(gaps)-1):
+        avg_clearance = avg_clearance + gaps[i]
+    avg_clearance = avg_clearance / len(gaps)
+    print('  avg_clearance:  ', avg_clearance)
+    return avg_clearance
+
+def find_patterns(params, data_frame):
+
+    acor = np.zeros(len(data_frame['sensor_data']['displacement']))
+
+    with open('pattern_data.csv', mode='w') as csv_file:
+        writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL, lineterminator='\n')
+        for i in range(0,len(ft_mag)):
+            writer.writerow([i,ft_mag[i]])
 
 def save_data(params, data, peak_locs, gaps):
     print('@save_data')
@@ -375,7 +436,9 @@ def save_data(params, data, peak_locs, gaps):
                 print('Saving data as csv')
                 save_file1 = "~/data/e4pt_" + time_stamp + ".csv"
                 save_file2 = "/var/www/html/e4pt/data/e4pt_" + time_stamp + ".csv"
+                #save_file2 = "e4pt_" + time_stamp + ".csv"
                 LAST_SAVED_FILE = "./data/e4pt_" + time_stamp + ".csv"
+                #LAST_SAVED_FILE = "e4pt_" + time_stamp + ".csv"
                 #CSV output
                 print('Saving raw data to CSV file: {}'.format(LAST_SAVED_FILE))                
                 data.to_csv(save_file2, sep=',', index_label='index')
