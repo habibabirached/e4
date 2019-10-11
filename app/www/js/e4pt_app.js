@@ -9,9 +9,7 @@ var Data_Set = function() {
     this.stage = null;
     this.location = null;
     this.case_thickness = null;
-    this.blade_number = null;
     this.pts = null;
-    this.used_in_avg = null;
     this.clearance = null;
     this.quality = null;
 };
@@ -20,9 +18,7 @@ Data_Set.prototype.add_data = function(stage, location, case_thickness, blade_nu
     this.stage = stage;
     this.location = location;
     this.case_thickness = case_thickness;
-    this.blade_number = blade_number;
     this.pts = pts;
-    this.used_in_avg = used_in_avg;
     this.clearance = clearance;
     this.quality = quality;
 };
@@ -340,7 +336,11 @@ function collect_stage_data() {
     // Collect data from the sensor.
     var acquisitionTime = window.prompt("Please enter the acquisition time in seconds.", "15");
     if (acquisitionTime != null) {
-        requestE4PtData(acquisitionTime);
+        //requestE4PtData(acquisitionTime);
+        var sn = document.getElementById("SERIAL_NUMBER").value;
+        var frame = document.getElementById("FRAME_SIZE").value;
+        var casing_thickness = document.getElementById("CASING_THICKNESS").value;
+        requestE4PtDataWithMetaData(acquisitionTime, frame, sn, current_stage, current_position, casing_thickness);
     }
 
     //var str = "&#x2714";
@@ -625,6 +625,18 @@ function requestE4PtData(acquisitionTime) {
   sendWSMessage(message);
 }
 
+function requestE4PtDataWithMetaData(acquisitionTime, frame, sn, stage, position, casing_thickness) {
+    console.log("Requesting " + acquisitionTime + " seconds of data");
+    console.log("Meta data: " + frame + "; " + sn + "; " + stage + "; " + position);
+    frame = frame.replace(/\s+/g, '_'); // replace all the spaces with underscores
+    sn = sn.replace(/\s+/g, '_');
+    stage = stage.replace(/\s+/g, '_');    
+    position = position.replace(/\s+/g, '_');
+    casing_thickness = casing_thickness.replace(/\s+/g, '_');
+    var message = "send_data," + acquisitionTime + "," + frame + "," + sn + "," + stage + "," + position + "," + casing_thickness;
+    sendWSMessage(message);
+}
+
 function sendWSMessage(msg_text) {
   console.log("@sendWSMessage: " + msg_text);
   var msg = {
@@ -663,9 +675,22 @@ function parse_data() {
     E4PTdata.minima = minima;
     console.log("Clearance average: ", E4PTdata.clearance);
     update_clearance(E4PTdata.clearance);
+    //var set = new DataSet();
+    //set.stage = current_stage;
+    //set.location = current_position;
+    //set.case_thickness = document.getElementById("CASING_THICKNESS").value;
+    //set.clearance = E4PTdata.clearance;
+    //set.pts = E4PTdata.data;
+    //set.quality = E4PTdata.intensity;
+    E4PTdata.frame = document.getElementById("FRAME_SIZE").value;
+    E4PTdata.serial_number = document.getElementById("SERIAL_NUMBER").value;
+    //E4PTdata.sets = E4PTdata.sets.push(set);
 }
 
 function update_clearance(clearance) {
+    if (current_frame_data.length == 0) {
+        return;
+    }
     var stage = current_frame_data['stage'][current_stage_index];
     var position = current_frame_data['position'][stage][current_position_index];
     var el_id = position + stage;

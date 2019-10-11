@@ -48,7 +48,7 @@ import csv
 #
 #
 
-PARAMS = ["","",""]
+PARAMS = ["","","",""]
 THRESHOLD = 3.99
 FILTER_ORDER = 1
 LAST_SAVED_FILE = ""
@@ -94,6 +94,19 @@ async def ws_msg_handler(websocket, path):
 
         if msg_args[0] == 'send_data':
             print("Data requested for {} seconds ({} dataframes).".format(nSecs,PARAMS[0]))
+            frame = ""
+            sn = ""
+            stage = ""
+            position = ""
+            casing_thickness = ""
+            if len(msg_args) > 2:
+                frame = msg_args[2]
+                sn = msg_args[3]
+                stage = msg_args[4]
+                position = msg_args[5]
+                if is_number(msg_args[6]):
+                    casing_thickness = float(msg_args[6])
+                    PARAMS[3] = casing_thickness
             raw_data = await collect_data(PARAMS, websocket)
             if len(PARAMS) > 2:
                 # Apply LPF
@@ -102,15 +115,17 @@ async def ws_msg_handler(websocket, path):
             sensor_data = raw_data['sensor_data']
             peaks_avg_out, peak_locs, gaps = peak_find(PARAMS, sensor_data)
             clearance = compute_clearance(peaks_avg_out, peak_locs, gaps, sensor_data)
-            save_data(PARAMS, sensor_data, peak_locs, gaps)
+            save_data(PARAMS, sensor_data, peak_locs, gaps, frame=frame, sn=sn, stage=stage, position=position, casing_thickness=casing_thickness)
             #find_patterns(PARAMS, sensor_data['displacement'])
 
             #decimate the data we send over the web interface
             factor = int(1)
             plot_df = sensor_data['filtered'].iloc[::factor]
+            int_df = sensor_data['intensity'].iloc[::factor]
             peak_locs = peak_locs / factor
             data_dict = {'type':'data',
                          'data':plot_df.tolist(),
+                         'intensity':int_df.tolist(),
                          'locs':peak_locs.tolist(),
                          'gaps':gaps.tolist(),
                          'clearance':clearance}
@@ -232,6 +247,8 @@ async def collect_data(params, websocket):
     num_sets = int(params[0])
     print('@collect_data with num_sets = {}'.format(num_sets))
 
+    casing_thickness = params[3]
+
     # Number of data points in a set
     num_pts_max = 110
 
@@ -342,6 +359,7 @@ async def collect_data(params, websocket):
     sensor_df['timestamp'] = times
     sensor_df['displacement'] = displacements
     sensor_df['intensity'] = intensities
+    sensor_df['casing_thickness'] = casing_thickness
     sensor_df = sensor_df[sensor_df.dataset_id != 0]
     t0 = sensor_df['timestamp'].iloc[0]
     tf = sensor_df['timestamp'].iloc[-1]
@@ -413,10 +431,21 @@ def find_patterns(params, data_frame):
         for i in range(0,len(ft_mag)):
             writer.writerow([i,ft_mag[i]])
 
-def save_data(params, data, peak_locs, gaps):
-    print('@save_data')
+def save_data(params, data, peak_locs, gaps, *args, **kwargs):
+    print('@save_data: len(kwargs): ', len(kwargs))    
     global LAST_SAVED_FILE
     time_stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    frame = ""
+    sn = ""
+    stage = ""
+    position = ""
+    casing_thickness = ""
+    if len(kwargs) > 0:
+        frame = kwargs.get('frame',None)
+        sn = kwargs.get('sn',None)
+        stage = kwargs.get('stage',None)
+        position = kwargs.get('position',None)
+        casing_thickness = kwargs.get('casing_thickness',None)
     if len(params) > 1:
         if params[1] != 'false':
             is_json = params[1].find('.json', 0, len(params[1]))
@@ -428,17 +457,26 @@ def save_data(params, data, peak_locs, gaps):
                 print('Saving raw data to JSON file: {}'.format(save_file))
                 data_dict = {'data':data['filtered'].tolist(),
                              'locs':peak_locs.tolist(),
-                             'gaps':gaps.tolist()}
+                             'gaps':gaps.tolist(),
+                             'frame':frame,
+                             'sn':sn,
+                             'stage':stage,
+                             'position':position,
+                             'casing_thickness':casing_thickness
+                             }
                 with open(save_file, 'w') as out_file:
                     json.dump(data_dict, out_file)
             is_csv = params[1].find('.csv', 0, len(params[1]))
             if is_csv >= 0:
                 print('Saving data as csv')
-                save_file1 = "~/data/e4pt_" + time_stamp + ".csv"
-                save_file2 = "/var/www/html/e4pt/data/e4pt_" + time_stamp + ".csv"
-                #save_file2 = "e4pt_" + time_stamp + ".csv"
-                LAST_SAVED_FILE = "./data/e4pt_" + time_stamp + ".csv"
-                #LAST_SAVED_FILE = "e4pt_" + time_stamp + ".csv"
+                meta_data = ""
+                if len(frame) > 0:
+                    meta_data = frame + "_" + sn + "_" + stage + "_" + position + "_"
+                save_file1 = "~/data/e4pt_" + meta_data + time_stamp + ".csv"
+                save_file2 = "/var/www/html/e4pt/data/e4pt_" + meta_data + time_stamp + ".csv"
+                #save_file2 = "e4pt_" + meta_data + time_stamp + ".csv"
+                LAST_SAVED_FILE = "./data/e4pt_" + meta_data + time_stamp + ".csv"
+                #LAST_SAVED_FILE = "e4pt_" + meta_data + time_stamp + ".csv"
                 #CSV output
                 print('Saving raw data to CSV file: {}'.format(LAST_SAVED_FILE))                
                 data.to_csv(save_file2, sep=',', index_label='index')
@@ -520,6 +558,7 @@ if __name__ == "__main__":
     print("Output file will be: {}".format(save_file))
     PARAMS[1] = save_file; # Save data or not ('false' or a file name)
     PARAMS[2] = 10; #Digital filter cutoff freqency. Set to 10 for now.
+    PARAMS[3] = 0; #Casing thickness - this will get filled in later
 
     # need to wait until we're sure Apache is up and running...
     sess = requests.Session()
