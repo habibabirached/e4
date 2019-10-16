@@ -365,6 +365,7 @@ function reset_data_collection() {
     current_stage = current_frame_data['stage'][current_stage_index];
     current_position_index = 0
     current_position = current_frame_data['position'][current_stage][current_position_index];
+    document.getElementById("CASING_THICKNESS").value = "";
     setup_data_collection_page();
 }
 
@@ -445,8 +446,11 @@ function set_grid_position(position, stage) {
     var positions = current_frame_data['position'][stage];
     current_position_index = positions.indexOf(position);
     current_stage_index = stages.indexOf(stage);
+    current_stage = stages[current_stage_index];
+    current_position = positions[current_position_index];
     document.getElementById("SENSOR_STAGE").selectedIndex = current_stage_index;
     document.getElementById("SENSOR_POSITION").selectedIndex = current_position_index;
+    set_position_information();
 }
 
 function do_dark_reference() {
@@ -551,6 +555,7 @@ function connectWebSocket() {
     case "data":
       console.log("Received Data Message");
       setIndicatorColor("green");
+      document.getElementById("CASING_THICKNESS").value = "";
       //console.log(msg);
       processE4PtData(msg);
       break;
