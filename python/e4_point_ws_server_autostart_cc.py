@@ -476,7 +476,7 @@ def save_data(params, data, peak_locs, gaps, *args, **kwargs):
                 save_file2 = "/var/www/html/e4pt/data/e4pt_" + meta_data + time_stamp + ".csv"
                 #save_file2 = "e4pt_" + meta_data + time_stamp + ".csv"
                 LAST_SAVED_FILE = "./data/e4pt_" + meta_data + time_stamp + ".csv"
-                #LAST_SAVED_FILE = "e4pt_" + meta_data + time_stamp + ".csv"
+                #LAST_SAVED_FILE = save_file2
                 #CSV output
                 print('Saving raw data to CSV file: {}'.format(LAST_SAVED_FILE))                
                 data.to_csv(save_file2, sep=',', index_label='index')
