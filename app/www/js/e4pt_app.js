@@ -100,11 +100,11 @@ var frame_data = [
                '3':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
                '4':['TOP', 'RIGHT', 'BOTTOM', 'LEFT']}},
     {frame:'9HA',
-     stage:['1', '2', '3', '4'],
+     stage:['1', '6', '11', '14'],
      position:{'1':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
-               '2':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
-               '3':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
-               '4':['TOP', 'RIGHT', 'BOTTOM', 'LEFT']}}
+               '6':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
+               '11':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
+               '14':['TOP', 'RIGHT', 'BOTTOM', 'LEFT']}}
 ];
 var current_stage_index = 0;
 var current_stage = 0;
@@ -727,7 +727,6 @@ function update_clearance(clearance) {
         }
     }
     plot_clearances(clearances);
-    //advance_position()
 }
 
 function plot_data() {
