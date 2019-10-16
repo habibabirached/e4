@@ -46,61 +46,65 @@ var E4PTdata = {
 
 const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
+const position_angle = {'TOP':0, 'BOTTOM':180, 'LEFT':270, 'RIGHT':90,
+                        'TOP LEFT':315, 'BOTTOM LEFT':225, 'TOP RIGHT':45, 'BOTTOM RIGHT':135};
+
+// Positions should be listed clockwise, starting at the top.
 var frame_data = [
     {frame:'6B',
      stage:['1', '2', '3', '4'],
-     position:{'1':['TOP', 'LEFT', 'BOTTOM', 'RIGHT'],
-               '2':['TOP', 'LEFT', 'BOTTOM', 'RIGHT'],
-               '3':['TOP', 'LEFT', 'BOTTOM', 'RIGHT'],
-               '4':['TOP', 'LEFT', 'BOTTOM', 'RIGHT']}},
+     position:{'1':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
+               '2':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
+               '3':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
+               '4':['TOP', 'RIGHT', 'BOTTOM', 'LEFT']}},
     {frame:'6FA',
      stage:['1', '2', '3', '4'],
-     position:{'1':['TOP', 'LEFT', 'BOTTOM', 'RIGHT'],
-               '2':['TOP', 'LEFT', 'BOTTOM', 'RIGHT'],
-               '3':['TOP', 'LEFT', 'BOTTOM', 'RIGHT'],
-               '4':['TOP', 'LEFT', 'BOTTOM', 'RIGHT']}},
+     position:{'1':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
+               '2':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
+               '3':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
+               '4':['TOP', 'RIGHT', 'BOTTOM', 'LEFT']}},
     {frame:'7E',
      stage:['1', '2', '3', '4'],
-     position:{'1':['TOP', 'LEFT', 'BOTTOM', 'RIGHT'],
-               '2':['TOP', 'LEFT', 'BOTTOM', 'RIGHT'],
-               '3':['TOP', 'LEFT', 'BOTTOM', 'RIGHT'],
-               '4':['TOP', 'LEFT', 'BOTTOM', 'RIGHT']}},
+     position:{'1':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
+               '2':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
+               '3':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
+               '4':['TOP', 'RIGHT', 'BOTTOM', 'LEFT']}},
     {frame:'7FA',
      stage:['1', '2', '3', '4'],
-     position:{'1':['TOP', 'LEFT', 'BOTTOM', 'RIGHT'],
-               '2':['TOP', 'LEFT', 'BOTTOM', 'RIGHT'],
-               '3':['TOP', 'LEFT', 'BOTTOM', 'RIGHT'],
-               '4':['TOP', 'LEFT', 'BOTTOM', 'RIGHT']}},
+     position:{'1':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
+               '2':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
+               '3':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
+               '4':['TOP', 'RIGHT', 'BOTTOM', 'LEFT']}},
     {frame:'7FA.05',
      stage:['1', '2', '3', '4'],
-     position:{'1':['TOP RIGHT', 'TOP LEFT', 'BOTTOM LEFT', 'BOTTOM RIGHT', 'TOP', 'BOTTOM'],
-               '2':['TOP', 'LEFT', 'BOTTOM', 'RIGHT'],
-               '3':['TOP', 'LEFT', 'BOTTOM', 'RIGHT'],
-               '4':['TOP', 'LEFT', 'BOTTOM', 'RIGHT']}},
+     position:{'1':['TOP', 'TOP RIGHT', 'BOTTOM RIGHT', 'BOTTOM', 'BOTTOM LEFT', 'TOP LEFT'],
+               '2':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
+               '3':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
+               '4':['TOP', 'RIGHT', 'BOTTOM', 'LEFT']}},
     {frame:'9E',
      stage:['1', '2', '3', '4'],
-     position:{'1':['TOP', 'LEFT', 'BOTTOM', 'RIGHT'],
-               '2':['TOP', 'LEFT', 'BOTTOM', 'RIGHT'],
-               '3':['TOP', 'LEFT', 'BOTTOM', 'RIGHT'],
-               '4':['TOP', 'LEFT', 'BOTTOM', 'RIGHT']}},
+     position:{'1':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
+               '2':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
+               '3':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
+               '4':['TOP', 'RIGHT', 'BOTTOM', 'LEFT']}},
     {frame:'LMS',
      stage:['1', '2', '3', '4'],
-     position:{'1':['TOP', 'LEFT', 'BOTTOM', 'RIGHT'],
-               '2':['TOP', 'LEFT', 'BOTTOM', 'RIGHT'],
-               '3':['TOP', 'LEFT', 'BOTTOM', 'RIGHT'],
-               '4':['TOP', 'LEFT', 'BOTTOM', 'RIGHT']}},
+     position:{'1':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
+               '2':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
+               '3':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
+               '4':['TOP', 'RIGHT', 'BOTTOM', 'LEFT']}},
     {frame:'7HA',
      stage:['1', '2', '3', '4'],
-     position:{'1':['TOP', 'LEFT', 'BOTTOM', 'RIGHT'],
-               '2':['TOP', 'LEFT', 'BOTTOM', 'RIGHT'],
-               '3':['TOP', 'LEFT', 'BOTTOM', 'RIGHT'],
-               '4':['TOP', 'LEFT', 'BOTTOM', 'RIGHT']}},
+     position:{'1':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
+               '2':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
+               '3':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
+               '4':['TOP', 'RIGHT', 'BOTTOM', 'LEFT']}},
     {frame:'9HA',
      stage:['1', '2', '3', '4'],
-     position:{'1':['TOP', 'LEFT', 'BOTTOM', 'RIGHT'],
-               '2':['TOP', 'LEFT', 'BOTTOM', 'RIGHT'],
-               '3':['TOP', 'LEFT', 'BOTTOM', 'RIGHT'],
-               '4':['TOP', 'LEFT', 'BOTTOM', 'RIGHT']}}
+     position:{'1':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
+               '2':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
+               '3':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
+               '4':['TOP', 'RIGHT', 'BOTTOM', 'LEFT']}}
 ];
 var current_stage_index = 0;
 var current_stage = 0;
@@ -342,14 +346,6 @@ function collect_stage_data() {
         var casing_thickness = document.getElementById("CASING_THICKNESS").value;
         requestE4PtDataWithMetaData(acquisitionTime, frame, sn, current_stage, current_position, casing_thickness);
     }
-
-    //var str = "&#x2714";
-    //var color_str = str.fontcolor("green");
-    //document.getElementById(boxID).innerHTML = color_str;
-
-    // Auto-advance    
-    //advance_position();
-    
 }
 
 function setup_data_collection() {
@@ -448,9 +444,14 @@ function set_grid_position(position, stage) {
     current_stage_index = stages.indexOf(stage);
     current_stage = stages[current_stage_index];
     current_position = positions[current_position_index];
+    set_position_information();
     document.getElementById("SENSOR_STAGE").selectedIndex = current_stage_index;
     document.getElementById("SENSOR_POSITION").selectedIndex = current_position_index;
-    set_position_information();
+    var el_id = current_position + current_stage;
+    el_id = el_id.replace(/\s+/g, '_');
+    var clearance = document.getElementById(el_id).innerHTML;
+    clearance = parseFloat(clearance);
+    update_clearance(clearance);
 }
 
 function do_dark_reference() {
@@ -615,6 +616,8 @@ function processE4PtData(msg) {
     update_scan_info();
     parse_data();
     plot_data();
+    plot_data_2();
+    advance_position();
   } catch (error) {
     console.log(error);
   }      
@@ -701,8 +704,30 @@ function update_clearance(clearance) {
     var el_id = position + stage;
     el_id = el_id.replace(/\s+/g, '_');
     var clearance_f = parseFloat(clearance.toFixed(4))
-    document.getElementById(el_id).innerHTML = clearance_f;
-    advance_position()
+    if (isNaN(clearance_f)) {
+        document.getElementById(el_id).innerHTML = "";        
+    }
+    else {
+        document.getElementById(el_id).innerHTML = clearance_f;
+    }
+    
+    clearances = [];
+    for (var i=0; i<current_frame_data['position'][stage].length; i++) {
+        var p = current_frame_data['position'][stage][i];
+        var angle = position_angle[p];
+        var el_id = p + stage;
+        el_id = el_id.replace(/\s+/g, '_');
+        var c = document.getElementById(el_id).innerHTML;
+        var c_f = parseFloat(c);
+        if (isNaN(c_f)) {
+            clearances.push("");
+        }
+        else {
+            clearances.push(c_f);
+        }
+    }
+    plot_clearances(clearances);
+    //advance_position()
 }
 
 function plot_data() {
@@ -796,6 +821,196 @@ function plot_data() {
   });
 }
 
+function plot_data_2() {
+  console.log("@e4pt_app::plot_data_2()");
+  Highcharts.chart('DATA_PLOT2', {
+    chart: {
+      renderTo: 'DATA_PLOT2',
+      spacingBottom: 0,
+      spacingTop: 80,
+      spacingLeft: 80,
+      spacingRight: 80,
+      marginBottom: 100,
+      marginTop: 80,
+      marginLeft: 80,
+      marginRight: 80,
+      backgroundColor: 'white',
+      animation: false,
+      //zoomType: "x",
+      //margin: 0,
+      padding: 0
+    },
+    boost: {
+      enabled: true,
+      //seriesThreshold: 1,
+      useGPUTranslations: true,
+      allowForce: true
+    },
+    title: {
+      text: 'e-4Pt Acquired Data'
+    },
+    style: {
+      fontFamily: 'Veranda'
+    },
+    subtitle: {
+      text: E4PTdata.date
+    },
+    yAxis: {
+      title: {
+        text: 'Blade Gap'
+      },
+      labels: {
+        style: {
+        color: 'black',
+        fontSize: 10
+        }
+      }
+    },
+    xAxis: {
+      title: {
+        text: 'Index'
+            },
+      labels: {
+        style: {
+        color: 'black',
+        fontSize: 10
+        }
+      }
+    },
+    legend: {
+      enabled: 'false',
+    },
+    tooltip: {
+      enabled: false
+    },
+    pane: {
+      startAngle: 0
+    },
+    plotOptions: {
+      series: {
+        label: { connectorAllowed: false },
+            pointStart: 0
+      }
+    },
+    series: [
+      {
+        type: 'line',
+        name: 'Confocal Sensor',
+        data: E4PTdata.data
+      },
+      {
+        type: 'scatter',
+        name: 'Gap Minima',
+        data: E4PTdata.minima
+      }
+    ],
+    responsive: {
+      rules: [{
+        condition: { maxWidth: 1000 }
+      }]
+    }
+  });
+}
+
+function plot_clearances(clearance_data) {
+  console.log("@e4pt_app::plot_clearances()");
+  var pt_interval = 360.0/clearance_data.length;
+  Highcharts.chart('CLEARANCE_PLOT', {
+    chart: {
+      renderTo: 'CLEARANCE_PLOT',
+      spacingBottom: 0,
+      spacingTop: 80,
+      spacingLeft: 80,
+      spacingRight: 80,
+      marginBottom: 100,
+      marginTop: 80,
+      marginLeft: 80,
+      marginRight: 80,
+      backgroundColor: 'white',
+      animation: false,
+      //zoomType: "x",
+      //margin: 0,
+      padding: 0,
+      polar: true
+    },
+    boost: {
+      enabled: true,
+      //seriesThreshold: 1,
+      useGPUTranslations: true,
+      allowForce: true
+    },
+    title: {
+      text: 'e-4Pt Clearance Data'
+    },
+    style: {
+      fontFamily: 'Veranda'
+    },
+    subtitle: {
+      text: E4PTdata.date
+    },
+    yAxis: {
+      min: 0,
+      title: {
+        text: 'Clearance'
+      },
+      labels: {
+        style: {
+        color: 'black',
+        fontSize: 10
+        }
+      }
+    },
+      xAxis: {
+      tickInterval: pt_interval,
+      min: 0,
+      max: 360,
+      title: {
+        text: 'Position'
+            },
+      labels: {
+        style: {
+        color: 'black',
+        fontSize: 10
+        },
+        format: '{value}°'
+      }
+    },
+    legend: {
+      enabled: 'false',
+    },
+    tooltip: {
+      enabled: false
+    },
+    pane: {
+      startAngle: 0,
+      endAngle: 360
+    },
+    plotOptions: {
+      series: {
+        label: { connectorAllowed: false },
+          pointStart: 0,
+          pointInterval: pt_interval
+      },
+      column: {
+          pointPadding: 0,
+          groupPadding: 0
+      }
+    },
+    series: [
+      {
+        type: 'line',
+        name: 'Clearances',
+        data: clearance_data
+      },
+    ],
+    responsive: {
+      rules: [{
+        condition: { maxWidth: 1000 }
+      }]
+    }
+  });
+}
+
 function loadExternalFile(){
     var input = $('#OPEN_EXTERNAL_FILE_BUTTON');
     
@@ -850,6 +1065,8 @@ function loadExternalFile(){
           update_scan_info();
           parse_data();
           plot_data();
+          plot_data_2();
+          advance_position();            
         } catch (error) {
           console.log(error);
         }
