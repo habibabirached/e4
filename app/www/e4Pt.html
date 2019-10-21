@@ -109,6 +109,27 @@
               <input class="TRACC_BUTTON" type="submit" value="Next" id="SN_SUBMIT_BUTTON"/>
           </div>
         </div>
+<!-- --------------- SENSOR MASTERING BEFORE DATA COLLECTION PAGE --------------------- -->
+	<div class="FIXED H100 Z0 INITIALIZE_SENSOR_PAGE">
+          <div id="INITIALIZE_SENSOR_PAGE" class="HIDE">
+            <H2><U>Probe Mastering</U></H2><br/>
+            <p>Before collecting data be sure to master the sensor.</p>
+            <br/>
+	    <p><U>Instructions:</U></p>
+	    <ol style="padding:40px">
+	      <li>Clean mating surfaces of the Probe and the Set Master.</li>
+	      <li>Insert Probe into the Set Master.</li>
+	      <li>Press Start.</li>
+	      <li>Wait until the screen changes.</li>
+	    </ol>
+            <input class="TRACC_BUTTON" type="submit" value="Start" id="START_MASTER_BUTTON_2"/>
+	    <input id="master_message_2" type="text" name="master_message_2" style="text-align:center;color:white" value="Ready" disabled/>
+            <br/>
+            <input class="TRACC_BUTTON" type="submit" value="Collect Data" id="COLLECT_DATA_BUTTON"/>            
+	    <br/>
+          </div>
+        </div>          
+            
 <!-- --------------- TURBINE DATA COLLECTION PAGE --------------------- -->
 	<div class="FIXED H100 Z0 TURBINE_SETUP_PAGE">
           <div id="TURBINE_SETUP_PAGE" class="HIDE">
@@ -153,7 +174,7 @@
           </div>
         </div>
 
-<!-- --------------- SENSOR MASTERING PAGE --------------------- -->
+<!-- --------------- SENSOR MASTERING & DARK REFERENCING PAGE --------------------- -->
 	<div class="FIXED H100 Z0 SENSOR_SETUP_PAGE">
           <div id="SENSOR_SETUP_PAGE" class="HIDE">
             <H2><U>Probe Mastering</U></H2><br/>

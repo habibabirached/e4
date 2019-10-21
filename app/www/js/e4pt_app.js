@@ -127,6 +127,7 @@ $(document).ready(function(){
         $("#FILE_LOADING_PAGE").fadeOut();
         $("#DB_LOADING_PAGE").fadeOut();
         $("#SENSOR_SETUP_PAGE").fadeOut();
+        $("#INITIALIZE_SENSOR_PAGE").fadeOut();        
         $("#TURBINE_SETUP_PAGE").fadeOut();
         toggle_menu();
 		
@@ -153,6 +154,14 @@ $(document).ready(function(){
         $("#SETUP_PAGE").fadeOut();
         $("#RESULTS_PAGE").fadeOut();
         $("#DATA_PLOT").fadeOut();
+        $("#INITIALIZE_SENSOR_PAGE").fadeIn();
+        initialize_sensor();
+    }, {passive: true})
+    document.getElementById("COLLECT_DATA_BUTTON").addEventListener('click', function(){
+        $("#SETUP_PAGE").fadeOut();
+        $("#RESULTS_PAGE").fadeOut();
+        $("#DATA_PLOT").fadeOut();
+        $("#INITIALIZE_SENSOR_PAGE").fadeOut();
         $("#TURBINE_SETUP_PAGE").fadeIn();
         turbine_setup();
     }, {passive: true})
@@ -209,6 +218,9 @@ $(document).ready(function(){
         sensor_setup();
     }, {passive: true})
     document.getElementById("START_MASTER_BUTTON").addEventListener('click', function(){
+	do_mastering();
+    }, {passive: true})
+    document.getElementById("START_MASTER_BUTTON_2").addEventListener('click', function(){
 	do_mastering();
     }, {passive: true})
     document.getElementById("START_DARK_REFERENCE_BUTTON").addEventListener('click', function(){
@@ -268,6 +280,14 @@ function sensor_setup() {
     $("#DB_LOADING_PAGE").fadeOut();
     $("#SENSOR_SETUP_PAGE").fadeIn();
     $("#TURBINE_SETUP_PAGE").fadeOut();
+}
+
+function initialize_sensor() {
+    console.log("@initialize_sensor")
+    setMasterMessage2("white", "green", "Ready");
+    var frm_idx = document.getElementById("FRAME_SIZE").selectedIndex;    
+    E4PTdata.serial_number = document.getElementById("SERIAL_NUMBER").value;
+    E4Ptdata.frame = frame_data[frm_idx]['frame'];
 }
 
 function turbine_setup() {
@@ -338,7 +358,7 @@ function collect_stage_data() {
     current_position = current_frame_data['position'][current_stage][current_position_index];
 
     // Collect data from the sensor.
-    var acquisitionTime = window.prompt("Please enter the acquisition time in seconds.", "15");
+    var acquisitionTime = window.prompt("Please enter the acquisition time in seconds.", "3");
     if (acquisitionTime != null) {
         //requestE4PtData(acquisitionTime);
         var sn = document.getElementById("SERIAL_NUMBER").value;
@@ -466,15 +486,19 @@ function do_mastering() {
     console.log("@do_mastering");
     sendWSMessage('do_mastering');
     setMasterMessage("black","yellow","In Progress...");
+    setMasterMessage2("black","yellow","In Progress...");
+    setIndicatorColor("red");    
 }
 
 function done_mastering() {
     setMasterMessage("white","green","Mastering complete.");
+    setMasterMessage2("white","green","Mastering complete.");
     setIndicatorColor("green");
 }
 
 function failed_mastering() {
     setMasterMessage("black","red","Mastering failed.");
+    setMasterMessage2("black","red","Mastering failed.");    
     setIndicatorColor("green");
 }
 
@@ -601,6 +625,12 @@ function setMasterMessage( txtColor, bgColor, txt ) {
     document.getElementById("master_message").style.color = txtColor;
     document.getElementById("master_message").style.background = bgColor;
     document.getElementById("master_message").value = txt;
+}
+
+function setMasterMessage2( txtColor, bgColor, txt ) {
+    document.getElementById("master_message_2").style.color = txtColor;
+    document.getElementById("master_message_2").style.background = bgColor;
+    document.getElementById("master_message_2").value = txt;
 }
 
 function processE4PtData(msg) {
