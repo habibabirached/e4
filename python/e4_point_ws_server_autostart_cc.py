@@ -48,15 +48,19 @@ import csv
 #
 #
 
+SIMULATOR = False
+
 PARAMS = ["","","",""]
 THRESHOLD = 3.99
 FILTER_ORDER = 1
 LAST_SAVED_FILE = ""
 SENSOR_HOST = "192.168.168.150"
-#SENSOR_HOST = "127.0.0.1"
 SENSOR_WEBSOCKET =  "192.168.168.41"
-#SENSOR_WEBSOCKET =  "127.0.0.1"
+if SIMULATOR == True:
+    SENSOR_HOST = "127.0.0.1"
+    SENSOR_WEBSOCKET = "127.0.0.1"
 WEBSOCKET_PORT = 3405
+
 
 def is_number(s):
     try:
@@ -187,26 +191,30 @@ async def dark_reference(websocket):
 
 async def do_mastering(websocket):
     print('@do_mastering()')
-    # send mastering command
-    tn_host = (SENSOR_HOST)
-    tn = telnetlib.Telnet(tn_host)
-    tn.read_until(bytearray('->','utf-8'))
-    print("Sending mastering command(s)")
-    # Clear previous mastering values
-    send_cmd('MASTERSIGNAL 01DIST1 NONE',tn)
-    # Set mastering value to 5mm.
-    send_cmd('MASTERSIGNAL 01DIST1 5.0',tn)
-    # Activate master value
-    tn.write(bytearray('MASTER 01DIST1 SET\n','utf-8'))
-    response = tn.read_until(bytearray('->','utf-8'))
-    response = response.decode('utf8')
-    tn.close()    
-    if response.find('out of range') == -1:
-        await send_status_message(websocket, "done_mastering")
+    if SIMULATOR == False:
+        # send mastering command
+        tn_host = (SENSOR_HOST)
+        tn = telnetlib.Telnet(tn_host)
+        tn.read_until(bytearray('->','utf-8'))
+        print("Sending mastering command(s)")
+        # Clear previous mastering values
+        send_cmd('MASTERSIGNAL 01DIST1 NONE',tn)
+        # Set mastering value to 5mm.
+        send_cmd('MASTERSIGNAL 01DIST1 5.0',tn)
+        # Activate master value
+        tn.write(bytearray('MASTER 01DIST1 SET\n','utf-8'))
+        response = tn.read_until(bytearray('->','utf-8'))
+        response = response.decode('utf8')
+        tn.close()    
+        if response.find('out of range') == -1:
+            await send_status_message(websocket, "done_mastering")
+        else:
+            await send_status_message(websocket, "failed_mastering")
+            print("Mastering complete")
     else:
-        await send_status_message(websocket, "failed_mastering")
-    print("Mastering complete")
-
+        time.sleep(3)
+        await send_status_message(websocket, "done_mastering")
+        
 def system_shutdown():
     if sys.platform == 'win32':
         print("If this were Linux, the machine would be shutting down now.")
@@ -532,7 +540,7 @@ def send_cmd(cmd,conn):
 
 if __name__ == "__main__":
 
-    if True:
+    if SIMULATOR == False:
         # Check for sensor connectivity on port 1024 (the measurement port).
         # Checking on port 23 (Telnet port) fouls up the telnet connectivity.
         sensor_reachable = check_port(SENSOR_HOST, 1024)
