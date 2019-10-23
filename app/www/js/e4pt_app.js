@@ -549,8 +549,8 @@ function connectWebSocket() {
   try {
     console.log("Connecting to WebSocket server.");
     //e4PtSocket = new WebSocket("ws://192.168.7.77:3405");
-    e4PtSocket = new WebSocket("ws://127.0.0.1:3405"); // Local testing
-    //e4PtSocket = new WebSocket("ws://192.168.168.41:3405"); // E4Pt sys.
+    //e4PtSocket = new WebSocket("ws://127.0.0.1:3405"); // Local testing
+    e4PtSocket = new WebSocket("ws://192.168.168.41:3405"); // E4Pt sys.
   } catch (err) {
     console.log("Error connecting to WebSocket server");
   }
