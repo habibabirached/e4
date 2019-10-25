@@ -419,15 +419,39 @@ def peak_find(params, data_frame):
     return peaks_avg_out, bottom_peaks, gaps
 
 def compute_clearance(peaks_avg_out, peak_locs, gaps, sensor_data):
-    avg_clearance = 0.0
     print('@compute_clearance')
     print('len(peaks_avg_out): ', len(peaks_avg_out))
     print('peak_locs: ', len(peak_locs))
     print('gaps: ', gaps)
+
+    # check for no gaps found
+    if (len(gaps) == 0):
+        print("gaps() has zero length")
+        return -9.997 # Defined value for 'cannot compute'
+
+    # check for all nan values
+    nan_count = 0
     for i in range(len(gaps)-1):
-        avg_clearance = avg_clearance + gaps[i]
-    avg_clearance = avg_clearance / len(gaps)
+        if math.isnan(gaps[i]):
+            nan_count += 1
+    if (nan_count == len(gaps)):
+        print("gaps() contains all nan entries")
+        return -9.998
+
+    avg_clearance = 0.0
+    for i in range(len(gaps)-1):
+        if math.isnan(gaps[i]) == True:
+            avg_clearance = avg_clearance + 0.0
+        else:
+            avg_clearance = avg_clearance + gaps[i]
+
+    divisor = len(gaps) - nan_count
+    avg_clearance = avg_clearance / divisor
+
     print('  avg_clearance:  ', avg_clearance)
+    if math.isnan(avg_clearance) == True:
+        print("avg_clearance computed to nan.")
+        return -9.999
     return avg_clearance
 
 def find_patterns(params, data_frame):
@@ -482,9 +506,10 @@ def save_data(params, data, peak_locs, gaps, *args, **kwargs):
                     meta_data = frame + "_" + sn + "_" + stage + "_" + position + "_"
                 save_file1 = "~/data/e4pt_" + meta_data + time_stamp + ".csv"
                 save_file2 = "/var/www/html/e4pt/data/e4pt_" + meta_data + time_stamp + ".csv"
-                #save_file2 = "e4pt_" + meta_data + time_stamp + ".csv"
                 LAST_SAVED_FILE = "./data/e4pt_" + meta_data + time_stamp + ".csv"
-                #LAST_SAVED_FILE = save_file2
+                if SIMULATOR == True:
+                    save_file2 = "e4pt_" + meta_data + time_stamp + ".csv"
+                    LAST_SAVED_FILE = save_file2
                 #CSV output
                 print('Saving raw data to CSV file: {}'.format(LAST_SAVED_FILE))                
                 data.to_csv(save_file2, sep=',', index_label='index')

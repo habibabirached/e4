@@ -287,7 +287,7 @@ function initialize_sensor() {
     setMasterMessage2("white", "green", "Ready");
     var frm_idx = document.getElementById("FRAME_SIZE").selectedIndex;    
     E4PTdata.serial_number = document.getElementById("SERIAL_NUMBER").value;
-    E4Ptdata.frame = frame_data[frm_idx]['frame'];
+    E4PTdata.frame = frame_data[frm_idx]['frame'];
 }
 
 function turbine_setup() {
@@ -382,7 +382,16 @@ function reset_data_collection() {
     current_position_index = 0
     current_position = current_frame_data['position'][current_stage][current_position_index];
     document.getElementById("CASING_THICKNESS").value = "";
+    document.getElementById("CLEARANCE_ERROR").innerHTML = "";
     setup_data_collection_page();
+    var obj = document.getElementById("DATA_PLOT2");
+    var chart = Highcharts.charts[obj.getAttribute('data-highcharts-chart')];
+    if (typeof chart !== 'undefined') {
+      if (chart.series != null) {
+        while(chart.series.length > 0)
+          chart.series[0].remove(true);
+      }
+    }
 }
 
 function setup_data_collection_page() {
@@ -655,9 +664,21 @@ function processE4PtData(msg) {
 
 function requestE4PtData(acquisitionTime) {
   console.log("Requesting " + acquisitionTime + " seconds of data");
-  if (Highcharts.charts.series != null) {
-    while(Highcharts.chart.series.length > 0)
-      Highcharts.chart.series[0].remove(true);
+  var obj1 = document.getElementById("DATA_PLOT");
+  var chart1 = Highcharts.charts[obj1.getAttribute('data-highcharts-chart')];
+  var obj2 = document.getElementById("DATA_PLOT2");
+  var chart2 = Highcharts.charts[obj2.getAttribute('data-highcharts-chart')];
+  if (typeof chart1 !== 'undefined') {    
+    if (chart1.series != null) {
+      while(chart1.series.length > 0)
+        chart1.series[0].remove(true);
+    }
+  }
+  if (typeof chart1 !== 'undefined') {    
+    if (chart2.series != null) {
+      while(chart2.series.length > 0)
+        chart2.series[0].remove(true);
+    }
   }
   message = "send_data," + acquisitionTime;
   sendWSMessage(message);
@@ -734,6 +755,16 @@ function update_clearance(clearance) {
     var el_id = position + stage;
     el_id = el_id.replace(/\s+/g, '_');
     var clearance_f = parseFloat(clearance.toFixed(4))
+    var err_id = document.getElementById("CLEARANCE_ERROR")
+    if (clearance_f == -9.997) {
+        err_id.innerHTML = "Error: No gaps detected in data.";
+    }
+    if (clearance_f == -9.998) {
+        err_id.innerHTML = "Error: gaps contains all NaN values.";
+    }
+    if (clearance_f == -9.999) {
+        err_id.innerHTML = "Error: Clearance computed to NaN value.";
+    }
     if (isNaN(clearance_f)) {
         document.getElementById(el_id).innerHTML = "";        
     }
