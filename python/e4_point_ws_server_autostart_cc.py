@@ -15,6 +15,7 @@ from asgiref.sync import async_to_sync
 import telnetlib
 import struct
 import csv
+import math
 
 # The saved data should have the following format:
 # (This is an attempt to follow the follow the format
@@ -51,7 +52,7 @@ import csv
 SIMULATOR = False
 
 PARAMS = ["","","",""]
-THRESHOLD = 3.99
+THRESHOLD = 10.0
 FILTER_ORDER = 1
 LAST_SAVED_FILE = ""
 SENSOR_HOST = "192.168.168.150"
@@ -409,13 +410,20 @@ def peak_find(params, data_frame):
         roi[roi >= THRESHOLD] = np.nan
         mean = np.nanmean(roi)
         peaks_avg_out[props['left_bases'][i]+1:props['right_bases'][i]] = mean
-        gaps[i] = mean
+        if math.isnan(mean):
+            gaps[i] = 0
+        else:
+            gaps[i] = mean
         l_idx = props['left_bases'][i] + 1
         r_idx = props['right_bases'][i]
         bottom_peaks[i] = (l_idx + r_idx)/2.0
 
     bottom_peaks = bottom_peaks[0:len(bottom_peaks)-1]
     gaps = gaps[0:len(gaps)-1]
+    print('len(peaks_avg_out): ', len(peaks_avg_out))
+    print('peaks_avg_out: ', peaks_avg_out)
+    print('gaps: ', gaps)
+
     return peaks_avg_out, bottom_peaks, gaps
 
 def compute_clearance(peaks_avg_out, peak_locs, gaps, sensor_data):
