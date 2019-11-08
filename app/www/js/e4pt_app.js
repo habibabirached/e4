@@ -615,7 +615,6 @@ function connectWebSocket() {
       break;
     case "filename":
 	console.log("Got filename: " + msg.fname);
-	setIndicatorColor("green");
 	if (msg.fname.length == 0) {
 	    console.log("No filename: returning");
 	    return;
@@ -806,7 +805,9 @@ function plot_data() {
       marginRight: 80,
       backgroundColor: 'white',
       animation: false,
-      //zoomType: "x",
+      zoomType: 'xy',
+      panning: true,
+      panKey: 'shift',
       //margin: 0,
       padding: 0
     },
@@ -851,7 +852,8 @@ function plot_data() {
       enabled: 'false',
     },
     tooltip: {
-      enabled: false
+        enabled: true,
+        valueDecimals: 2
     },
     pane: {
       startAngle: 0
