@@ -49,7 +49,7 @@ import math
 #
 #
 
-SIMULATOR = False
+SIMULATOR = True
 
 PARAMS = ["","","",""]
 THRESHOLD = 10.0
@@ -270,6 +270,7 @@ async def collect_data(params, websocket):
 
     # Use Numpy array's for data collection because they populate fast.
     datasetIds = np.zeros(num_sets*num_pts_max)
+    datasetIds.fill(-1) # fill so we can eventually tell what rows were written.
     times = np.zeros(num_sets*num_pts_max)
     displacements = np.zeros(num_sets*num_pts_max)
     point_counts = np.zeros(num_sets*num_pts_max)
@@ -311,10 +312,9 @@ async def collect_data(params, websocket):
             #print('Measurement number: ' + str(measurement_number))
             data = sock.recv(4)
             pt_count = int.from_bytes(data, byteorder='little')
-            print('frames number: ' + str(pt_count))
             data = sock.recv(4)
             counter = int.from_bytes(data, byteorder='little')
-            print('counter: ' + str(counter))
+            print('frames number: {}; counter: {}'.format(str(pt_count),str(counter)))
             for i in range(0,pt_count):
             #for i in range(0,100):
                 data = sock.recv(4)
@@ -369,7 +369,7 @@ async def collect_data(params, websocket):
     sensor_df['displacement'] = displacements
     sensor_df['intensity'] = intensities
     sensor_df['casing_thickness'] = casing_thickness
-    sensor_df = sensor_df[sensor_df.dataset_id != 0]
+    sensor_df = sensor_df[sensor_df.dataset_id != -1]
     t0 = sensor_df['timestamp'].iloc[0]
     tf = sensor_df['timestamp'].iloc[-1]
     print('t0: ' + str(t0) + '; tf: ' + str(tf))
@@ -420,7 +420,6 @@ def peak_find(params, data_frame):
 
     bottom_peaks = bottom_peaks[0:len(bottom_peaks)-1]
     gaps = gaps[0:len(gaps)-1]
-    print('len(peaks_avg_out): ', len(peaks_avg_out))
     print('peaks_avg_out: ', peaks_avg_out)
     print('gaps: ', gaps)
 
@@ -519,7 +518,7 @@ def save_data(params, data, peak_locs, gaps, *args, **kwargs):
                     save_file2 = "e4pt_" + meta_data + time_stamp + ".csv"
                     LAST_SAVED_FILE = save_file2
                 #CSV output
-                print('Saving raw data to CSV file: {}'.format(LAST_SAVED_FILE))                
+                print('Saving raw data to CSV file: {}'.format(LAST_SAVED_FILE))
                 data.to_csv(save_file2, sep=',', index_label='index')
 
 def check_port(ip,port):
