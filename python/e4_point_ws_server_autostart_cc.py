@@ -1,5 +1,6 @@
-''' Script to collect data from MTI sensor over ModBus. '''
+''' Script to collect data from Micro Epsilon sensor over TCP/IP. '''
 import sys
+import os.path
 import socket
 import binascii
 import asyncio
@@ -16,6 +17,8 @@ import telnetlib
 import struct
 import csv
 import math
+import sqlite3
+import pickle
 
 # The saved data should have the following format:
 # (This is an attempt to follow the follow the format
@@ -61,7 +64,7 @@ if SIMULATOR == True:
     SENSOR_HOST = "127.0.0.1"
     SENSOR_WEBSOCKET = "127.0.0.1"
 WEBSOCKET_PORT = 3405
-
+DB_CONN = None
 
 def is_number(s):
     try:
@@ -473,7 +476,10 @@ def find_patterns(params, data_frame):
 def save_data(params, data, peak_locs, gaps, *args, **kwargs):
     print('@save_data: len(kwargs): ', len(kwargs))    
     global LAST_SAVED_FILE
-    time_stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    global DB_CONN
+    now = datetime.utcnow()
+    unix_timestamp = int(now.timestamp())
+    time_stamp = now.strftime("%Y-%m-%d_%H-%M-%S")
     frame = ""
     sn = ""
     stage = ""
@@ -520,6 +526,59 @@ def save_data(params, data, peak_locs, gaps, *args, **kwargs):
                 #CSV output
                 print('Saving raw data to CSV file: {}'.format(LAST_SAVED_FILE))
                 data.to_csv(save_file2, sep=',', index_label='index')
+                if len(frame) > 0:
+                    if DB_CONN != None:
+                        save_dataframe_to_db(DB_CONN, unix_timestamp, time_stamp, frame, sn, stage, position, save_file2, data)
+
+def create_or_open_db(db_file):
+    print('Creating or opening', db_file)
+    db_is_new = not os.path.exists(db_file)
+    conn = sqlite3.connect(db_file)
+    if db_is_new:
+        print ('Creating schema')
+        sql = '''create table if not exists SENSOR_DATA(
+        ID INTEGER PRIMARY KEY AUTOINCREMENT,
+        UNIXTIME INT,
+        TIMESTAMP TEXT,
+        SERIAL_NUM TEXT,
+        FRAME,
+        STAGE TEXT,
+        POSITION TEXT,
+        FILE_NAME TEXT,
+        DATA BLOB
+        );'''
+        conn.execute(sql) # shortcut for conn.cursor().execute(sql)
+    else:
+        print('Schema exists\n')
+    return conn
+
+def save_dataframe_to_db(conn, unixtime, timestamp, ser_num, frame, stage, pos, f_name, dataframe):
+    global DB_CONN    
+    # convert dataframe to python pickle object
+    pickled_df = pickle.dumps(dataframe)
+    sql = '''INSERT INTO SENSOR_DATA
+        (UNIXTIME, TIMESTAMP, FRAME, SERIAL_NUM, STAGE, POSITION, FILE_NAME, DATA)
+        VALUES(?, ?, ?, ?, ?, ?, ?, ?);'''
+    conn.execute(sql, [unixtime, timestamp, ser_num, frame, stage, pos, f_name, sqlite3.Binary(pickled_df)]) 
+    conn.commit()
+
+def get_data_from_db_with_sn(conn, ser_num):
+    global DB_CONN
+    sql = "SELECT * FROM SENSOR_DATA WHERE SERIAL_NUM = \"" + ser_num + "\""
+    print('Sending SQL command to retrieve data:')
+    print('  ',sql)
+    cur = conn.cursor()
+    cur.execute(sql) 
+    rows = cur.fetchall()
+    print('Retrieved ', len(rows), ' row(s) from database.')
+    frames = []
+    for row in rows:
+        df = pickle.loads(row[1])
+        frames.append(df)
+    if len(frames) > 0:
+        return frames
+    else:
+        return []
 
 def check_port(ip,port):
     print("@check_port")
@@ -572,6 +631,8 @@ def send_cmd(cmd,conn):
 
 if __name__ == "__main__":
 
+    #global DB_CONN # Database connection
+    db_file = ""
     if SIMULATOR == False:
         # Check for sensor connectivity on port 1024 (the measurement port).
         # Checking on port 23 (Telnet port) fouls up the telnet connectivity.
@@ -591,6 +652,11 @@ if __name__ == "__main__":
         send_cmd('MEASTRANSFER SERVER/TCP 1024',tn)
         send_cmd('OUT_ETH 01INTENSITY 01DIST1 TIMESTAMP',tn)
         tn.close()
+        db_file = "~/data/e4pt.s3db"
+    else:
+        db_file = "e4pt.s3db"
+
+    DB_CONN = create_or_open_db(db_file)
     
     PARAMS[0] = 100; # Number of sets of data. Assume 100 pts/set for now.
     time_stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
