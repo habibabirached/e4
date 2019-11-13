@@ -48,71 +48,13 @@ const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep
 
 const position_angle = {'TOP':0, 'BOTTOM':180, 'LEFT':270, 'RIGHT':90,
                         'TOP LEFT':315, 'BOTTOM LEFT':225, 'TOP RIGHT':45, 'BOTTOM RIGHT':135};
-
-// Positions should be listed clockwise, starting at the top.
-var frame_data = [
-    {frame:'6B',
-     stage:['1', '2', '3', '4'],
-     position:{'1':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
-               '2':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
-               '3':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
-               '4':['TOP', 'RIGHT', 'BOTTOM', 'LEFT']}},
-    {frame:'6FA',
-     stage:['1', '2', '3', '4'],
-     position:{'1':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
-               '2':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
-               '3':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
-               '4':['TOP', 'RIGHT', 'BOTTOM', 'LEFT']}},
-    {frame:'7E',
-     stage:['1', '2', '3', '4'],
-     position:{'1':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
-               '2':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
-               '3':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
-               '4':['TOP', 'RIGHT', 'BOTTOM', 'LEFT']}},
-    {frame:'7FA',
-     stage:['1', '2', '3', '4'],
-     position:{'1':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
-               '2':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
-               '3':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
-               '4':['TOP', 'RIGHT', 'BOTTOM', 'LEFT']}},
-    {frame:'7FA.05',
-     stage:['1', '2', '3', '4'],
-     position:{'1':['TOP', 'TOP RIGHT', 'BOTTOM RIGHT', 'BOTTOM', 'BOTTOM LEFT', 'TOP LEFT'],
-               '2':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
-               '3':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
-               '4':['TOP', 'RIGHT', 'BOTTOM', 'LEFT']}},
-    {frame:'9E',
-     stage:['1', '2', '3', '4'],
-     position:{'1':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
-               '2':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
-               '3':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
-               '4':['TOP', 'RIGHT', 'BOTTOM', 'LEFT']}},
-    {frame:'LMS',
-     stage:['1', '2', '3', '4'],
-     position:{'1':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
-               '2':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
-               '3':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
-               '4':['TOP', 'RIGHT', 'BOTTOM', 'LEFT']}},
-    {frame:'7HA',
-     stage:['1', '2', '3', '4'],
-     position:{'1':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
-               '2':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
-               '3':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
-               '4':['TOP', 'RIGHT', 'BOTTOM', 'LEFT']}},
-    {frame:'9HA',
-     stage:['1', '6', '11', '14'],
-     position:{'1':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
-               '6':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
-               '11':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
-               '14':['TOP', 'RIGHT', 'BOTTOM', 'LEFT']}}
-];
 var current_stage_index = 0;
 var current_stage = 0;
 var current_position_index = 0;
 var current_position = 0;
 var current_frame_data = [];
 
-$(document).ready(function(){	
+$(document).ready(function(){
     var attachFastClick = Origami.fastclick;
     attachFastClick(document.body);
     //document.getElementById("DATA_PLOT").addEventListener('click', function(){
@@ -127,10 +69,10 @@ $(document).ready(function(){
         $("#FILE_LOADING_PAGE").fadeOut();
         $("#DB_LOADING_PAGE").fadeOut();
         $("#SENSOR_SETUP_PAGE").fadeOut();
-        $("#INITIALIZE_SENSOR_PAGE").fadeOut();        
+        $("#INITIALIZE_SENSOR_PAGE").fadeOut();
         $("#TURBINE_SETUP_PAGE").fadeOut();
         toggle_menu();
-		
+
     }, {passive: true})
     document.getElementById("FRD_BUTTON").addEventListener('click', function(){
         toggle_menu();
@@ -165,7 +107,7 @@ $(document).ready(function(){
         $("#TURBINE_SETUP_PAGE").fadeIn();
         turbine_setup();
     }, {passive: true})
-    
+
 
     function RESULTS_BUTTON_FUNC(){
         getCredentialforREST();
@@ -207,7 +149,7 @@ $(document).ready(function(){
     }, {passive: true})
     document.getElementById("GET_DATA_BUTTON").addEventListener('click', function(){
         toggle_menu();
-        $("#DATA_PLOT").fadeIn();        
+        $("#DATA_PLOT").fadeIn();
         var acquisitionTime = window.prompt("Please enter the acquisition time in seconds.", "15");
         if (acquisitionTime != null) {
           requestE4PtData(acquisitionTime);
@@ -239,7 +181,7 @@ $(document).ready(function(){
     document.getElementById("SENSOR_STAGE").addEventListener('change', function(){
         setup_data_collection();
     }, {passive: true})
-    
+
     setupAccordian()
 })
 
@@ -254,7 +196,7 @@ function setupAccordian(){
           PANEL.style.maxHeight = null;
         } else {
           PANEL.style.maxHeight = PANEL.scrollHeight + "px";
-        } 
+        }
       }
     }
 }
@@ -285,7 +227,7 @@ function sensor_setup() {
 function initialize_sensor() {
     console.log("@initialize_sensor")
     setMasterMessage2("white", "green", "Ready");
-    var frm_idx = document.getElementById("FRAME_SIZE").selectedIndex;    
+    var frm_idx = document.getElementById("FRAME_SIZE").selectedIndex;
     E4PTdata.serial_number = document.getElementById("SERIAL_NUMBER").value;
     E4PTdata.frame = frame_data[frm_idx]['frame'];
 }
@@ -319,6 +261,11 @@ function turbine_setup() {
     html = html_buf.join('\n')
     document.getElementById("SENSOR_POSITION").innerHTML = html;
     current_position_index = 0;
+
+    var spacer = current_frame_data['spacer'];
+    spacer = spacer[current_stage];
+    document.getElementById("SPACER_THICKNESS").value = spacer;
+
 }
 
 function set_frame_information() {
@@ -396,9 +343,18 @@ function reset_data_collection() {
 
 function setup_data_collection_page() {
     // Fill in the header
+    var customer = document.getElementById("CUSTOMER").value;
+    var site = document.getElementById("SITE").value;
+    var months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    var d = new Date();
+    var hh = ( '0' + d.getHours()).substr(-2);
+    var mm = ( '0' + d.getMinutes()).substr(-2);
+    var ss = ( '0' + d.getSeconds()).substr(-2);
+    var timeStr = hh + ":" + mm + ":" + ss;
+    var dateStr = months[d.getMonth()] + "-" + d.getDate() + "-" + d.getFullYear();
     E4PTdata.frame = document.getElementById("FRAME_SIZE").value;
     E4PTdata.serial_number = document.getElementById("SERIAL_NUMBER").value;
-    var header = "Frame: " + E4PTdata.frame + "; S/N: " + E4PTdata.serial_number;
+    var header = "<p>" + dateStr + "  -  " + timeStr + "</p><p>" + customer + " - " + site + "</p><p>Frame: " + E4PTdata.frame + "</p><p>S/N: " + E4PTdata.serial_number + "</p>";
     document.getElementById("TURBINE_SETUP_HEADER").innerHTML = header;
 
     document.getElementById("SENSOR_STAGE").selectedIndex = current_stage_index;
@@ -423,9 +379,9 @@ function setup_data_collection_page() {
             html_buf.push("<tr><td>" + positions[position_index] + "</td>");
             var el_id = positions[position_index] + stages[stage_index];
             el_id = el_id.replace(/\s+/g, '_');
-            html_buf.push("<td id='" + el_id + 
-                          "' onclick='set_grid_position(\"" + positions[position_index] + 
-                          "\", \"" + stages[stage_index] + 
+            html_buf.push("<td id='" + el_id +
+                          "' onclick='set_grid_position(\"" + positions[position_index] +
+                          "\", \"" + stages[stage_index] +
                           "\")'></td>");
             html_buf.push("</tr>");
         }
@@ -444,6 +400,10 @@ function setup_data_collection_page() {
     html = html_buf.join('\n')
     document.getElementById("SENSOR_POSITION").innerHTML = html;
     current_position_index = 0;
+
+    var spacer = current_frame_data['spacer'];
+    spacer = spacer[current_stage];
+    document.getElementById("SPACER_THICKNESS").value = spacer;
 }
 
 function advance_position() {
@@ -496,7 +456,7 @@ function do_mastering() {
     sendWSMessage('do_mastering');
     setMasterMessage("black","yellow","In Progress...");
     setMasterMessage2("black","yellow","In Progress...");
-    setIndicatorColor("red");    
+    setIndicatorColor("red");
 }
 
 function done_mastering() {
@@ -507,7 +467,7 @@ function done_mastering() {
 
 function failed_mastering() {
     setMasterMessage("black","red","Mastering failed.");
-    setMasterMessage2("black","red","Mastering failed.");    
+    setMasterMessage2("black","red","Mastering failed.");
     setIndicatorColor("green");
 }
 
@@ -532,7 +492,7 @@ function e4PtAlert(msg, callback=null){
         );
     } catch (err){
         alert(String(msg));
-    }               
+    }
 }
 
 // confirm function to work on iOS and web browser
@@ -550,11 +510,11 @@ function e4PtConfirm(msg, callback){
         } else {
             callback(2);//Cancel
         }
-    }   
+    }
 }
 
 function connectWebSocket() {
- 
+
   try {
     console.log("Connecting to WebSocket server.");
     //e4PtSocket = new WebSocket("ws://192.168.7.77:3405");
@@ -571,7 +531,7 @@ function connectWebSocket() {
     setIndicatorColor("green");
     //setTimeout(function(){ sendWSMessage("ping"); }, 5000); // ping after 5s
   }
- 
+
   e4PtSocket.onclose = function(evt) {
     console.log("e4PtSocket Closed: ", evt);
     setIndicatorColor("white");
@@ -621,7 +581,7 @@ function connectWebSocket() {
 	}
 	window.open(msg.fname); // Try to open/download the file.
     }
-      
+
   }
 }
 
@@ -650,7 +610,7 @@ function processE4PtData(msg) {
     console.log(err);
   }
   dataSet = E4PTdata.sets.length;
-  
+
   try {
     update_scan_info();
     parse_data();
@@ -659,7 +619,7 @@ function processE4PtData(msg) {
     advance_position();
   } catch (error) {
     console.log(error);
-  }      
+  }
 }
 
 function requestE4PtData(acquisitionTime) {
@@ -668,13 +628,13 @@ function requestE4PtData(acquisitionTime) {
   var chart1 = Highcharts.charts[obj1.getAttribute('data-highcharts-chart')];
   var obj2 = document.getElementById("DATA_PLOT2");
   var chart2 = Highcharts.charts[obj2.getAttribute('data-highcharts-chart')];
-  if (typeof chart1 !== 'undefined') {    
+  if (typeof chart1 !== 'undefined') {
     if (chart1.series != null) {
       while(chart1.series.length > 0)
         chart1.series[0].remove(true);
     }
   }
-  if (typeof chart1 !== 'undefined') {    
+  if (typeof chart1 !== 'undefined') {
     if (chart2.series != null) {
       while(chart2.series.length > 0)
         chart2.series[0].remove(true);
@@ -689,7 +649,7 @@ function requestE4PtDataWithMetaData(acquisitionTime, frame, sn, stage, position
     console.log("Meta data: " + frame + "; " + sn + "; " + stage + "; " + position);
     frame = frame.replace(/\s+/g, '_'); // replace all the spaces with underscores
     sn = sn.replace(/\s+/g, '_');
-    stage = stage.replace(/\s+/g, '_');    
+    stage = stage.replace(/\s+/g, '_');
     position = position.replace(/\s+/g, '_');
     casing_thickness = casing_thickness.replace(/\s+/g, '_');
     var message = "send_data," + acquisitionTime + "," + frame + "," + sn + "," + stage + "," + position + "," + casing_thickness;
@@ -766,12 +726,12 @@ function update_clearance(clearance) {
         err_id.innerHTML = "Error: Clearance computed to NaN value.";
     }
     if (isNaN(clearance_f)) {
-        document.getElementById(el_id).innerHTML = "";        
+        document.getElementById(el_id).innerHTML = "";
     }
     else {
         document.getElementById(el_id).innerHTML = clearance_f;
     }
-    
+
     clearances = [];
     for (var i=0; i<current_frame_data['position'][stage].length; i++) {
         var p = current_frame_data['position'][stage][i];
@@ -1076,7 +1036,7 @@ function plot_clearances(clearance_data) {
 
 function loadExternalFile(){
     var input = $('#OPEN_EXTERNAL_FILE_BUTTON');
-    
+
     if (typeof window.FileReader !== 'function') {
         e4PtAlert("The file API isn't supported on this browser yet.");
         return;
@@ -1094,7 +1054,7 @@ function loadExternalFile(){
         e4PtAlert("Please select a file before clicking 'Load'");
         return;
     }
-        
+
     if (E4PTdata.sets.length > 1) {
         e4PtConfirm("LOADING A NEW DATA SET WILL OVERWRITE IN-MEMORY DATA\n\nProceed to load this file?", function(buttonIndex) {
             if (buttonIndex==1){//OK
@@ -1105,15 +1065,15 @@ function loadExternalFile(){
         });
     } else {
         loadThisFile();
-    }    
-    
+    }
+
 
     function loadThisFile(){
         var file = input.prop('files')[0];
         var freader = new FileReader();
         freader.onload = receivedText;
         freader.readAsText(file);
-    } 
+    }
 
     function receivedText(e) {
         var lines = e.target.result;
@@ -1123,13 +1083,13 @@ function loadExternalFile(){
             console.log(err);
         }
         dataSet = E4PTdata.sets.length;
-        
+
         try {
           update_scan_info();
           parse_data();
           plot_data();
           plot_data_2();
-          advance_position();            
+          advance_position();
         } catch (error) {
           console.log(error);
         }
@@ -1139,7 +1099,7 @@ function loadExternalFile(){
         if ($("#TITLE_BAR").text() != "DATA"){
             $("#TITLE_BAR").text("DATA")
         }
-        
+
         $("#RESULTS_PAGE").fadeIn()
     }
 }

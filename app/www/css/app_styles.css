@@ -235,13 +235,13 @@ body{
 
 #POLAR_PLOT{
 	z-index: -1;
-	overflow:hidden; 
-	height:100%; 
-	width:100%; 
+	overflow:hidden;
+	height:100%;
+	width:100%;
 	position:fixed
 }
 
-.FRD_PAGE{ 
+.FRD_PAGE{
   margin: 0;
   position: absolute;
   top: 60%;
@@ -252,7 +252,7 @@ body{
   transform: translate(-50%, -50%);
 }
 
-.SETUP_PAGE{ 
+.SETUP_PAGE{
   margin: 0;
   position: absolute;
   top: 60%;
@@ -263,7 +263,7 @@ body{
   transform: translate(-50%, -50%);
 }
 
-.SENSOR_SETUP_PAGE{ 
+.SENSOR_SETUP_PAGE{
   margin: 0;
   position: absolute;
   top: 60%;
@@ -274,7 +274,7 @@ body{
   transform: translate(-50%, -50%);
 }
 
-.INITIALIZE_SENSOR_PAGE{ 
+.INITIALIZE_SENSOR_PAGE{
   margin: 0;
   position: absolute;
   top: 60%;
@@ -285,15 +285,18 @@ body{
   transform: translate(-50%, -50%);
 }
 
-.TURBINE_SETUP_PAGE{ 
+.TURBINE_SETUP_PAGE{
   margin: 0;
+	margin-left: 5%;
   position: absolute;
-  top: 60%;
+	top: 10%;
+	/*
   left: 50%;
   -ms-transform: translate(-50%, -50%);
   -moz-transform: translate(-50%, -50%);
   -webkit-transform: translate(-50%, -50%);
   transform: translate(-50%, -50%);
+	*/
 }
 
 table.sensor_super_table{
@@ -309,7 +312,7 @@ table.sensor_sub_table{
 }
 
 td.sensor_super_td {
-    padding: 1vh; 
+    padding: 1vh;
     font-size:2.5vmin;
     background-color:white;
     border-collapse:collapse!important;
@@ -320,17 +323,17 @@ td.sensor_super_td {
 }
 
 tr.sensor_super_tr {
-    padding: 1vh; 
+    padding: 1vh;
     font-size:2.5vmin;
     background-color:white;
     border-collapse:collapse!important;
-    border: none;    
+    border: none;
     text-align: center;
     width: 16.66%;
     font-weight: normal;
 }
 
-.TXTFIELD {  
+.TXTFIELD {
     font-size:24px;
 }
 
@@ -357,10 +360,10 @@ tr.sensor_super_tr {
 	margin-right: 2vw;
 	padding-left: 0.5vw;
 	width: 55vw;
-	border: 1px solid black; 
-	color: black; 
-	caret-color: black; 
-	font-size:3vw;	
+	border: 1px solid black;
+	color: black;
+	caret-color: black;
+	font-size:3vw;
 	white-space: nowrap;
 }
 
@@ -368,9 +371,9 @@ tr.sensor_super_tr {
 	float:right;
 	text-align:right;
  	margin-right: 1vw;
-	vertical-align:middle; 
-	color:white; 
-	font-size:3vw;	
+	vertical-align:middle;
+	color:white;
+	font-size:3vw;
 	white-space: nowrap;
 }
 
@@ -422,7 +425,7 @@ tr.sensor_super_tr {
 	background-color: var(--TRACC-darkgrey);
 	border: 1px solid black;
 	border-top: none;
-	border-radius: 5vmin 5vmin 5vmin 5vmin;	
+	border-radius: 5vmin 5vmin 5vmin 5vmin;
 }
 
 .OVERLAY_FULL{
@@ -615,7 +618,7 @@ tr.sensor_super_tr {
 	z-index: 1;
 	outline:none;
 	font-size: 2.5vmin;
-	margin:1vmin;	
+	margin:1vmin;
 }
 
 .INPUT_HIDE + label {
@@ -629,7 +632,7 @@ tr.sensor_super_tr {
 	opacity: 0;
 	overflow: hidden;
 	position: absolute;
-	z-index: -1;	
+	z-index: -1;
 }
 
 
@@ -651,7 +654,7 @@ tr.sensor_super_tr {
 
 .BACK_BUTTON{
 	position: fixed;
-	height:5vmin; 
+	height:5vmin;
 	left:0vmin;
 	top:0vmin;
 	border: 1px solid black;
@@ -663,11 +666,11 @@ tr.sensor_super_tr {
 }
 
 .TRACC_BUTTON:active {
-	transform: translateY(0.75vmin);	
+	transform: translateY(0.75vmin);
 }
 
 .BUTTON:active {
-	transform: translateY(0.75vmin);	
+	transform: translateY(0.75vmin);
 }
 
 #APP_VERSION{
@@ -737,7 +740,7 @@ table {
 }
 
 tr, td, th {
-    padding: 1vh; 
+    padding: 1vh;
     font-size:2.5vmin;
     color: black;
     background-color:white;
@@ -751,11 +754,11 @@ tr, td, th {
 	background-color: var(--TRACC-lightgrey);
 }
 
-#DATA_PLOT {  
+#DATA_PLOT {
   z-index: -1;
-  overflow:hidden; 
-  height:100%; 
-  width:100%; 
+  overflow:hidden;
+  height:100%;
+  width:100%;
   position:fixed
 /*
 min-width: 500px;
@@ -765,19 +768,19 @@ margin: 50px;
 */
 }
 
-#DATA_PLOT2 {  
+#DATA_PLOT2 {
   z-index: -1;
-  overflow:hidden; 
-  height:100%; 
-  width:100%; 
+  overflow:hidden;
+  height:100%;
+  width:100%;
   position:relative
 }
 
-#CLEARANCE_PLOT {  
+#CLEARANCE_PLOT {
   z-index: -1;
-  overflow:hidden; 
-  height:100%; 
-  width:100%; 
+  overflow:hidden;
+  height:100%;
+  width:100%;
   position:relative
 }
 
