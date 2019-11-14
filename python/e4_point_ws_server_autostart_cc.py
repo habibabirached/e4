@@ -11,7 +11,7 @@ import time
 import numpy as np
 import pandas as pd
 from scipy import signal
-from datetime import datetime
+from datetime import datetime, timezone
 from asgiref.sync import async_to_sync
 import telnetlib
 import struct
@@ -20,41 +20,14 @@ import math
 import sqlite3
 import pickle
 
-# The saved data should have the following format:
-# (This is an attempt to follow the follow the format
-# of the data in the file provided from the CMS801
-# system on 04/14/2015.
-#
-# Data dictionary:
-# {
-#  ['DataSet' : {
-#  ['date' : 'mm/dd/yyyy'],
-#  ['time' : '00:00:00'],
-#  ['operator' : 'Jane Doe/John Buck'],
-#  ['Stg' : '2'],
-#  ['Locn' : 'Right'],
-#  ['CaseThk' : '1.392'],
-#  ['BladeNo' : [1,2,3, ..., 999, 1000]],
-#  ['PtNo' : [1,2,3, ..., 999, 1000]],
-#  ['UsedForAvg' : [1, 1, 0, ..., 0, 1]],
-#  ['CLRMeas' : [m, m, m, ..., m, m]],
-#  ['Qual' : [0.99, 0.98, 0.99, ..., 0.99, 1.0]]
-#  }],
-#  ['DataSet' : {
-#    ...
-#  }],
-#  ...
-#  ['DataSet' : {
-#    ...
-#  }]
-# }
-#
-#
-#
-
 SIMULATOR = True
 
-PARAMS = ["","","",""]
+#PARAMS: [0]=nFrames,
+#        [1]=Save data or not ('false' or a file name),
+#        [2]=Digital Filter Cutoff Freq.(if used),
+#        [3]=Casing Thickness,
+#        [4]=Spacer Thickness
+PARAMS = ["","","","",""]
 THRESHOLD = 10.0
 FILTER_ORDER = 1
 LAST_SAVED_FILE = ""
@@ -66,6 +39,13 @@ if SIMULATOR == True:
 WEBSOCKET_PORT = 3405
 DB_CONN = None
 
+SCAN_META_DATA = {"frame":"",
+                  "serial_number":"",
+                  "customer":"",
+                  "site":"",
+                  "operator":"",
+                  "units":""}
+
 def is_number(s):
     try:
         float(s)
@@ -74,15 +54,15 @@ def is_number(s):
         return False
 
 async def ws_msg_handler(websocket, path):
+    global SCAN_META_DATA
     while True:
         rx_msg = await websocket.recv()
-        print("rx_msg: {}".format(rx_msg))
         msg = json.loads(rx_msg)
         print("WS: Message received: {}".format(msg))
-        msg_text = msg["text"]
+        msg_dict = json.loads(msg["text"])
+        msg_args = msg_dict["args"]
+        msg_args = [x.strip() for x in msg_args]
 
-        #parse the message
-        msg_args = [x.strip() for x in msg_text.split(',')]
         nSecs = 0
         if (len(msg_args) > 1):
             print("msg_args: {}".format(msg_args))
@@ -90,10 +70,6 @@ async def ws_msg_handler(websocket, path):
                 nSecs = msg_args[1]
                 nFrames = (1000.0 * float(nSecs))/100.0 # 1K samp/sec; 100 samp/frame
                 PARAMS[0] = int(nFrames)
-            else:
-                # We didn't get an acquisition time, so bail out.
-                return
-
         if msg_args[0] == 'ping':
             print("Websocket: Got ping, sending pong.")
             data_dict = {'type':'pong'}
@@ -107,6 +83,7 @@ async def ws_msg_handler(websocket, path):
             stage = ""
             position = ""
             casing_thickness = ""
+            spacer_thickness = ""
             if len(msg_args) > 2:
                 frame = msg_args[2]
                 sn = msg_args[3]
@@ -114,7 +91,9 @@ async def ws_msg_handler(websocket, path):
                 position = msg_args[5]
                 if is_number(msg_args[6]):
                     casing_thickness = float(msg_args[6])
+                    spacer_thickness = float(msg_args[7])
                     PARAMS[3] = casing_thickness
+                    PARAMS[4] = spacer_thickness
             raw_data = await collect_data(PARAMS, websocket)
             if len(PARAMS) > 2:
                 # Apply LPF
@@ -123,7 +102,8 @@ async def ws_msg_handler(websocket, path):
             sensor_data = raw_data['sensor_data']
             peaks_avg_out, peak_locs, gaps = peak_find(PARAMS, sensor_data)
             clearance = compute_clearance(peaks_avg_out, peak_locs, gaps, sensor_data)
-            save_data(PARAMS, sensor_data, peak_locs, gaps, frame=frame, sn=sn, stage=stage, position=position, casing_thickness=casing_thickness)
+            save_data(PARAMS, sensor_data, peak_locs, gaps, frame=frame, sn=sn, stage=stage, position=position, \
+                      casing_thickness=casing_thickness, spacer_thickness=spacer_thickness)
             #find_patterns(PARAMS, sensor_data['displacement'])
 
             #decimate the data we send over the web interface
@@ -139,7 +119,13 @@ async def ws_msg_handler(websocket, path):
                          'clearance':clearance}
             json_data = json.dumps(data_dict)
             await websocket.send(json_data)
-
+        if msg_args[0] == 'scan_meta_data':
+            print("Saving scan meta data...")
+            SCAN_META_DATA['frame'] = msg_args[1];
+            SCAN_META_DATA['serial_number'] = msg_args[2];
+            SCAN_META_DATA['customer'] = msg_args[3];
+            SCAN_META_DATA['site'] = msg_args[4];
+            SCAN_META_DATA['operator'] = msg_args[5];
         if msg_args[0] == 'shutdown':
             print("Got shutdown message over websocket.");
             system_shutdown()
@@ -477,7 +463,7 @@ def save_data(params, data, peak_locs, gaps, *args, **kwargs):
     print('@save_data: len(kwargs): ', len(kwargs))    
     global LAST_SAVED_FILE
     global DB_CONN
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     unix_timestamp = int(now.timestamp())
     time_stamp = now.strftime("%Y-%m-%d_%H-%M-%S")
     frame = ""
@@ -485,12 +471,14 @@ def save_data(params, data, peak_locs, gaps, *args, **kwargs):
     stage = ""
     position = ""
     casing_thickness = ""
+    spacer_thickness = ""
     if len(kwargs) > 0:
         frame = kwargs.get('frame',None)
         sn = kwargs.get('sn',None)
         stage = kwargs.get('stage',None)
         position = kwargs.get('position',None)
         casing_thickness = kwargs.get('casing_thickness',None)
+        spacer_thickness = kwargs.get('spacer_thickness',None)
     if len(params) > 1:
         if params[1] != 'false':
             is_json = params[1].find('.json', 0, len(params[1]))
@@ -507,7 +495,8 @@ def save_data(params, data, peak_locs, gaps, *args, **kwargs):
                              'sn':sn,
                              'stage':stage,
                              'position':position,
-                             'casing_thickness':casing_thickness
+                             'casing_thickness':casing_thickness,
+                             'spacer_thickness':spacer_thickness
                              }
                 with open(save_file, 'w') as out_file:
                     json.dump(data_dict, out_file)
@@ -540,6 +529,10 @@ def create_or_open_db(db_file):
         ID INTEGER PRIMARY KEY AUTOINCREMENT,
         UNIXTIME INT,
         TIMESTAMP TEXT,
+        CUSTOMER TEXT,
+        SITE TEXT,
+        OPERATOR TEXT,
+        UNITS TEXT,
         SERIAL_NUM TEXT,
         FRAME,
         STAGE TEXT,
@@ -557,9 +550,11 @@ def save_dataframe_to_db(conn, unixtime, timestamp, ser_num, frame, stage, pos, 
     # convert dataframe to python pickle object
     pickled_df = pickle.dumps(dataframe)
     sql = '''INSERT INTO SENSOR_DATA
-        (UNIXTIME, TIMESTAMP, FRAME, SERIAL_NUM, STAGE, POSITION, FILE_NAME, DATA)
-        VALUES(?, ?, ?, ?, ?, ?, ?, ?);'''
-    conn.execute(sql, [unixtime, timestamp, ser_num, frame, stage, pos, f_name, sqlite3.Binary(pickled_df)]) 
+        (UNIXTIME, TIMESTAMP, CUSTOMER, SITE, OPERATOR, UNITS, FRAME, SERIAL_NUM, STAGE, POSITION, FILE_NAME, DATA)
+        VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);'''
+    conn.execute(sql, [unixtime, timestamp, SCAN_META_DATA['customer'], SCAN_META_DATA['site'], \
+                       SCAN_META_DATA['operator'], SCAN_META_DATA['units'], SCAN_META_DATA['frame'], \
+                       SCAN_META_DATA['serial_number'], stage, pos, f_name, sqlite3.Binary(pickled_df)]) 
     conn.commit()
 
 def get_data_from_db_with_sn(conn, ser_num):
@@ -672,12 +667,14 @@ if __name__ == "__main__":
     while apache_wait:
         try:
             print('Checking for Apache...')
-            req = sess.get('http://localhost/index.html')
-            if "Apache" in req.headers['server']:
-                #Apache is running
-                print('Found Apache!')
-                sess.close()
-                apache_wait = False
+            address = 'http://localhost/index.html'
+            req = sess.get(address)
+            if 'server' in req.headers:
+                if "Apache" in req.headers['server']:
+                    #Apache is running
+                    print('Found Apache!')
+                    sess.close()
+                    apache_wait = False
             else:
                 print("(else) Waiting for Apache...")
                 time.sleep(1)

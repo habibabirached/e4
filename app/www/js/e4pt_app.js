@@ -4,6 +4,7 @@ var e4PtSocket = null;
 var WebSocket = WebSocket;
 var clientID = 312;
 var e4pt = null;
+var MAX_STR_LEN = 64;
 
 var Data_Set = function() {
     this.stage = null;
@@ -32,7 +33,8 @@ var E4PTdata = {
     "customer":"",
     "site_name":"",
     "inspection_type":"",
-    "sso":"",
+    "operator":"",
+    "units":"",
     "final":{
         "SCAN":"",
     },
@@ -90,13 +92,14 @@ $(document).ready(function(){
         $("#RESULTS_PAGE").fadeOut();
         $("#DATA_PLOT").fadeOut();
         $("#SENSOR_SETUP_PAGE").fadeIn();
-	setMasterMessage("white","green","Ready");
+	      setMasterMessage("white","green","Ready");
     }, {passive: true})
     document.getElementById("SN_SUBMIT_BUTTON").addEventListener('click', function(){
         $("#SETUP_PAGE").fadeOut();
         $("#RESULTS_PAGE").fadeOut();
         $("#DATA_PLOT").fadeOut();
         $("#INITIALIZE_SENSOR_PAGE").fadeIn();
+        send_scan_meta_data();
         initialize_sensor();
     }, {passive: true})
     document.getElementById("COLLECT_DATA_BUTTON").addEventListener('click', function(){
@@ -224,12 +227,28 @@ function sensor_setup() {
     $("#TURBINE_SETUP_PAGE").fadeOut();
 }
 
+function send_scan_meta_data() {
+  var frm_idx = document.getElementById("FRAME_SIZE").selectedIndex;
+  E4PTdata.frame = frame_data[frm_idx]['frame'];
+  E4PTdata.serial_number = document.getElementById("SERIAL_NUMBER").value;
+  if (E4PTdata.serial_number.length > MAX_STR_LEN) E4PTdata.serial_number = E4PTdata.serial_number.substr(0,MAX_STR_LEN);
+  E4PTdata.customer = document.getElementById("CUSTOMER").value;
+    if (E4PTdata.customer.length > MAX_STR_LEN) E4PTdata.customer = E4PTdata.customer.substr(0,MAX_STR_LEN);
+  E4PTdata.site_name = document.getElementById("SITE").value;
+  if (E4PTdata.site_name.length > MAX_STR_LEN) E4PTdata.site_name = E4PTdata.site_name.substr(0,MAX_STR_LEN);
+  E4PTdata.operator = document.getElementById("OPERATOR").value;
+  if (E4PTdata.operator.length > MAX_STR_LEN) E4PTdata.operator = E4PTdata.operator.substr(0,MAX_STR_LEN);
+  E4PTdata.units = document.getElementById("UNITS").value;
+  var message = "{\"args\":[\"scan_meta_data\",\"" + E4PTdata.frame + "\",\"" + E4PTdata.serial_number ;
+  message = message + "\",\"" + E4PTdata.customer + "\",\"" + E4PTdata.site_name;
+  message = message + "\",\"" + E4PTdata.operator + "\"]}";
+  console.log("message: ", message);
+  sendWSMessage(message);
+}
+
 function initialize_sensor() {
     console.log("@initialize_sensor")
     setMasterMessage2("white", "green", "Ready");
-    var frm_idx = document.getElementById("FRAME_SIZE").selectedIndex;
-    E4PTdata.serial_number = document.getElementById("SERIAL_NUMBER").value;
-    E4PTdata.frame = frame_data[frm_idx]['frame'];
 }
 
 function turbine_setup() {
@@ -311,7 +330,10 @@ function collect_stage_data() {
         var sn = document.getElementById("SERIAL_NUMBER").value;
         var frame = document.getElementById("FRAME_SIZE").value;
         var casing_thickness = document.getElementById("CASING_THICKNESS").value;
-        requestE4PtDataWithMetaData(acquisitionTime, frame, sn, current_stage, current_position, casing_thickness);
+        if (casing_thickness.length > MAX_STR_LEN) casing_thickness = casing_thickness.substr(0,MAX_STR_LEN);
+        var spacer_thickness = document.getElementById("SPACER_THICKNESS").value;
+        if (spacer_thickness.length > MAX_STR_LEN) spacer_thickness = spacer_thickness.substr(0,MAX_STR_LEN);
+        requestE4PtDataWithMetaData(acquisitionTime, frame, sn, current_stage, current_position, casing_thickness, spacer_thickness);
     }
 }
 
@@ -345,15 +367,15 @@ function setup_data_collection_page() {
     // Fill in the header
     var customer = document.getElementById("CUSTOMER").value;
     var site = document.getElementById("SITE").value;
-    var months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     var d = new Date();
     var hh = ( '0' + d.getHours()).substr(-2);
     var mm = ( '0' + d.getMinutes()).substr(-2);
     var ss = ( '0' + d.getSeconds()).substr(-2);
     var timeStr = hh + ":" + mm + ":" + ss;
-    var dateStr = months[d.getMonth()] + "-" + d.getDate() + "-" + d.getFullYear();
+    var dateStr = monthNames[d.getMonth()] + "-" + d.getDate() + "-" + d.getFullYear();
     E4PTdata.frame = document.getElementById("FRAME_SIZE").value;
     E4PTdata.serial_number = document.getElementById("SERIAL_NUMBER").value;
+    E4PTdata.date = dateStr;
     var header = "<p>" + dateStr + "  -  " + timeStr + "</p><p>" + customer + " - " + site + "</p><p>Frame: " + E4PTdata.frame + "</p><p>S/N: " + E4PTdata.serial_number + "</p>";
     document.getElementById("TURBINE_SETUP_HEADER").innerHTML = header;
 
@@ -518,8 +540,8 @@ function connectWebSocket() {
   try {
     console.log("Connecting to WebSocket server.");
     //e4PtSocket = new WebSocket("ws://192.168.7.77:3405");
-    //e4PtSocket = new WebSocket("ws://127.0.0.1:3405"); // Local testing
-    e4PtSocket = new WebSocket("ws://192.168.168.41:3405"); // E4Pt sys.
+    e4PtSocket = new WebSocket("ws://127.0.0.1:3405"); // Local testing
+    //e4PtSocket = new WebSocket("ws://192.168.168.41:3405"); // E4Pt sys.
   } catch (err) {
     console.log("Error connecting to WebSocket server");
   }
@@ -640,11 +662,11 @@ function requestE4PtData(acquisitionTime) {
         chart2.series[0].remove(true);
     }
   }
-  message = "send_data," + acquisitionTime;
+  message = "{\"args\":[\"send_data\",\"" + acquisitionTime + "\"]}";
   sendWSMessage(message);
 }
 
-function requestE4PtDataWithMetaData(acquisitionTime, frame, sn, stage, position, casing_thickness) {
+function requestE4PtDataWithMetaData(acquisitionTime, frame, sn, stage, position, casing_thickness, spacer_thickness) {
     console.log("Requesting " + acquisitionTime + " seconds of data");
     console.log("Meta data: " + frame + "; " + sn + "; " + stage + "; " + position);
     frame = frame.replace(/\s+/g, '_'); // replace all the spaces with underscores
@@ -652,7 +674,10 @@ function requestE4PtDataWithMetaData(acquisitionTime, frame, sn, stage, position
     stage = stage.replace(/\s+/g, '_');
     position = position.replace(/\s+/g, '_');
     casing_thickness = casing_thickness.replace(/\s+/g, '_');
-    var message = "send_data," + acquisitionTime + "," + frame + "," + sn + "," + stage + "," + position + "," + casing_thickness;
+    spacer_thickness = spacer_thickness.replace(/\s+/g, '_');
+    var message = "{\"args\":[\"send_data\",\"" + acquisitionTime + "\",\"" + frame + "\",";
+    message = message + "\"" + sn + "\",\"" + stage + "\",\"" + position + "\",";
+    message = message + "\"" + casing_thickness + "\",\"" + spacer_thickness + "\"]}";
     sendWSMessage(message);
 }
 
@@ -665,25 +690,19 @@ function sendWSMessage(msg_text) {
   date: Date.now()
   }
   if (msg_text.indexOf('send_data') >= 0) {
+    console.log("yellow - send_data");
       setIndicatorColor("yellow");
   }
-  if (msg_text = 'do_dark_reference') {
+  if (msg_text.indexOf('do_dark_reference') >=0) {
+    console.log("yellow - do_dark_reference");
       setIndicatorColor("yellow");
   }
   e4PtSocket.send(JSON.stringify(msg));
 }
 
 function update_scan_info(){
-  var tempDate = new Date();
-  tempDate = String(tempDate.getDate()+"-"+monthNames[tempDate.getMonth()]+"-"+tempDate.getFullYear())
-    if (tempDate.indexOf("undefined")>0 || tempDate.indexOf("NaN")>=0 ){
-      tempDate ="";
-    } else {
-      tempDate = "Date: " + String(tempDate);
-      E4PTdata.date = tempDate;
-      console.log(tempDate);
-    }
-  // Do something else with the data...
+  // Do something with the data...
+  return;
 }
 
 function parse_data() {
