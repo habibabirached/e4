@@ -46,6 +46,11 @@ SCAN_META_DATA = {"frame":"",
                   "operator":"",
                   "units":""}
 
+# Start of sensor measurement range in mm
+SMR = 11.0
+# Sensor length in mm
+SENSOR_LENGTH = 8.93 * 25.4
+
 def is_number(s):
     try:
         float(s)
@@ -82,8 +87,8 @@ async def ws_msg_handler(websocket, path):
             sn = ""
             stage = ""
             position = ""
-            casing_thickness = ""
-            spacer_thickness = ""
+            casing_thickness = 0.0
+            spacer_thickness = 0.0
             if len(msg_args) > 2:
                 frame = msg_args[2]
                 sn = msg_args[3]
@@ -101,7 +106,7 @@ async def ws_msg_handler(websocket, path):
 
             sensor_data = raw_data['sensor_data']
             peaks_avg_out, peak_locs, gaps = peak_find(PARAMS, sensor_data)
-            clearance = compute_clearance(peaks_avg_out, peak_locs, gaps, sensor_data)
+            clearance = compute_clearance(peaks_avg_out, peak_locs, gaps, sensor_data, casing_thickness, spacer_thickness)
             save_data(PARAMS, sensor_data, peak_locs, gaps, frame=frame, sn=sn, stage=stage, position=position, \
                       casing_thickness=casing_thickness, spacer_thickness=spacer_thickness)
             #find_patterns(PARAMS, sensor_data['displacement'])
@@ -121,13 +126,14 @@ async def ws_msg_handler(websocket, path):
             await websocket.send(json_data)
         if msg_args[0] == 'scan_meta_data':
             print("Saving scan meta data...")
-            SCAN_META_DATA['frame'] = msg_args[1];
-            SCAN_META_DATA['serial_number'] = msg_args[2];
-            SCAN_META_DATA['customer'] = msg_args[3];
-            SCAN_META_DATA['site'] = msg_args[4];
-            SCAN_META_DATA['operator'] = msg_args[5];
+            SCAN_META_DATA['frame'] = msg_args[1]
+            SCAN_META_DATA['serial_number'] = msg_args[2]
+            SCAN_META_DATA['customer'] = msg_args[3]
+            SCAN_META_DATA['site'] = msg_args[4]
+            SCAN_META_DATA['operator'] = msg_args[5]
+            SCAN_META_DATA['units'] = msg_args[6]
         if msg_args[0] == 'shutdown':
-            print("Got shutdown message over websocket.");
+            print("Got shutdown message over websocket.")
             system_shutdown()
 
         if msg_args[0] == 'get_data_file':
@@ -414,11 +420,16 @@ def peak_find(params, data_frame):
 
     return peaks_avg_out, bottom_peaks, gaps
 
-def compute_clearance(peaks_avg_out, peak_locs, gaps, sensor_data):
+def compute_clearance(peaks_avg_out, peak_locs, gaps, sensor_data, casing_thickness, spacer_thickness):
+    global SCAN_META_DATA
+    global SMR
+    global SENSOR_LENGTH
     print('@compute_clearance')
     print('len(peaks_avg_out): ', len(peaks_avg_out))
     print('peak_locs: ', len(peak_locs))
     print('gaps: ', gaps)
+
+    #ALL CALCULATIONS ARE DONE IN METRIC UNITS - I.E. MILLIMETERS.
 
     # check for no gaps found
     if (len(gaps) == 0):
@@ -434,21 +445,34 @@ def compute_clearance(peaks_avg_out, peak_locs, gaps, sensor_data):
         print("gaps() contains all nan entries")
         return -9.998
 
-    avg_clearance = 0.0
+    avg_displacement = 0.0
     for i in range(len(gaps)-1):
         if math.isnan(gaps[i]) == True:
-            avg_clearance = avg_clearance + 0.0
+            avg_displacement = avg_displacement + 0.0
         else:
-            avg_clearance = avg_clearance + gaps[i]
+            avg_displacement = avg_displacement + gaps[i]
 
     divisor = len(gaps) - nan_count
-    avg_clearance = avg_clearance / divisor
+    avg_displacement = avg_displacement / divisor
 
-    print('  avg_clearance:  ', avg_clearance)
-    if math.isnan(avg_clearance) == True:
-        print("avg_clearance computed to nan.")
+    print('  avg_displacement: {} ({} inches) '.format(avg_displacement, avg_displacement/25.4))
+    if math.isnan(avg_displacement) == True:
+        print("avg_displacement computed to nan.")
         return -9.999
-    return avg_clearance
+
+    if SCAN_META_DATA['units'] == 'In':
+        casing_thickness = casing_thickness * 25.4
+        spacer_thickness = spacer_thickness * 25.4
+
+    clearance = avg_displacement - SMR - SENSOR_LENGTH + spacer_thickness + casing_thickness
+
+    print('MM: SMR: {}; SL: {}; Spacer: {}; Casing: {}; Clearance: {}'.format(SMR, SENSOR_LENGTH, spacer_thickness, casing_thickness, clearance))
+
+    if SCAN_META_DATA['units'] == 'In':
+        clearance = clearance/25.4
+        print('In: SMR: {}; SL: {}; Spacer: {}; Casing: {}; Clearance: {}'.format(SMR/25.4, SENSOR_LENGTH/25.4, spacer_thickness/25.4, casing_thickness/25.4, clearance))
+
+    return clearance
 
 def find_patterns(params, data_frame):
 
