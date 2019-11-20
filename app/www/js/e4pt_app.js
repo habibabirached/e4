@@ -1,7 +1,6 @@
 
 var menu_open = false;
 var e4PtSocket = null;
-var WebSocket = WebSocket;
 var clientID = 312;
 var e4pt = null;
 var MAX_STR_LEN = 64;
@@ -59,9 +58,6 @@ var current_frame_data = [];
 $(document).ready(function(){
     var attachFastClick = Origami.fastclick;
     attachFastClick(document.body);
-    //document.getElementById("DATA_PLOT").addEventListener('click', function(){
-    //    toggle_menu();
-    //}, {passive: true})
     document.getElementById("MAIN_MENU").addEventListener('click', function(){
         $("#TITLE_BAR").text("e-4Pt Tool")
 	$("#FRD_PAGE").fadeOut();
@@ -142,10 +138,6 @@ $(document).ready(function(){
             toggle_menu();
         }
     }, {passive: true})
-    document.getElementById("CONNECT_WS_BUTTON").addEventListener('click', function(){
-        toggle_menu();
-        connectWebSocket();
-    }, {passive: true})
     document.getElementById("SHUTDOWN_BUTTON").addEventListener('click', function(){
         toggle_menu();
         systemShutdown();
@@ -185,7 +177,8 @@ $(document).ready(function(){
         setup_data_collection();
     }, {passive: true})
 
-    setupAccordian()
+    setupAccordian();
+    createWS();
 })
 
 function setupAccordian(){
@@ -535,76 +528,78 @@ function e4PtConfirm(msg, callback){
     }
 }
 
-function connectWebSocket() {
+function createWS(){
+    if (navigator.onLine){
+        if ("WebSocket" in window){
+            //console.log("WebSocket is supported by your Browser!");
+            //e4PtSocket = new ReconnectingWebSocket("ws://192.168.188.3:8080", null, {reconnectInterval: 3000});
+            e4PtSocket = new ReconnectingWebSocket("ws://127.0.0.1:3405", null, {reconnectInterval: 3000});
 
-  try {
-    console.log("Connecting to WebSocket server.");
-    //e4PtSocket = new WebSocket("ws://192.168.7.77:3405");
-    e4PtSocket = new WebSocket("ws://127.0.0.1:3405"); // Local testing
-    //e4PtSocket = new WebSocket("ws://192.168.168.41:3405"); // E4Pt sys.
-  } catch (err) {
-    console.log("Error connecting to WebSocket server");
-  }
-  if (e4PtSocket == null) return;
+            e4PtSocket.onopen = function(){
+                // Web Socket is connected, send data using send()
+                console.log("Connected to server")
+                setIndicatorColor("green");
+            };
 
-  e4PtSocket.onopen = function(evt) {
-    console.log("e4PtSocket Opened: ");
-    console.log("evt: " + evt);
-    setIndicatorColor("green");
-    //setTimeout(function(){ sendWSMessage("ping"); }, 5000); // ping after 5s
-  }
+            e4PtSocket.onmessage = function (evt){
+              var msg = JSON.parse(evt.data);
+              console.log("e4PtSocket Message Received: " + msg.type);
+              switch(msg.type) {
+              case "data":
+                console.log("Received Data Message");
+                setIndicatorColor("green");
+                document.getElementById("CASING_THICKNESS").value = "";
+                //console.log(msg);
+                processE4PtData(msg);
+                break;
+              case "status":
+                console.log("Received Status Message");
+                console.log(msg);
+                if (msg.status == "acquiring") {
+                    setIndicatorColor("red");
+                }
+                if (msg.status == "processing") {
+                    setIndicatorColor("blue");
+                }
+                if (msg.status == "done_mastering") {
+                  done_mastering();
+                }
+                if (msg.status == "failed_mastering") {
+                  failed_mastering();
+                }
+                break;
+              case "pong":
+                console.log("Got pong. Send ping.");
+                setTimeout(function(){ sendWSMessage("ping"); }, 5000); // ping after 5s
+                break;
+              case "filename":
+                console.log("Got filename: " + msg.fname);
+                if (msg.fname.length == 0) {
+                  console.log("No filename: returning");
+                  return;
+                }
+                window.open(msg.fname); // Try to open/download the file.
+              } // end of switch
+            };  // end of onmessage
 
-  e4PtSocket.onclose = function(evt) {
-    console.log("e4PtSocket Closed: ", evt);
-    setIndicatorColor("white");
-  }
+            e4PtSocket.onclose = function(){
+                console.log("DISCONNECTED");
+                setIndicatorColor("white");
+            };
 
-  e4PtSocket.onerror = function(evt) {
-    console.log("e4PtSocket error: ",evt);
-    setIndicatorColor("white");
-  }
-
-  e4PtSocket.onmessage = function(evt) {
-    var msg = JSON.parse(evt.data);
-    console.log("e4PtSocket Message Received: " + msg.type);
-    switch(msg.type) {
-    case "data":
-      console.log("Received Data Message");
-      setIndicatorColor("green");
-      document.getElementById("CASING_THICKNESS").value = "";
-      //console.log(msg);
-      processE4PtData(msg);
-      break;
-    case "status":
-      console.log("Received Status Message");
-      console.log(msg);
-      if (msg.status == "acquiring") {
-          setIndicatorColor("red");
-      }
-      if (msg.status == "processing") {
-          setIndicatorColor("blue");
-      }
-      if (msg.status == "done_mastering") {
-	  done_mastering();
-      }
-      if (msg.status == "failed_mastering") {
-	  failed_mastering();
-      }
-      break;
-    case "pong":
-      console.log("Got pong. Send ping.");
-      setTimeout(function(){ sendWSMessage("ping"); }, 5000); // ping after 5s
-      break;
-    case "filename":
-	console.log("Got filename: " + msg.fname);
-	if (msg.fname.length == 0) {
-	    console.log("No filename: returning");
-	    return;
-	}
-	window.open(msg.fname); // Try to open/download the file.
+            e4PtSocket.onerror = function(evt) {
+              console.log("e4PtSocket error: ",evt);
+              setIndicatorColor("white");
+            }
+        }
+        else{
+            // The browser doesn't support WebSocket
+            send("WebSocket NOT supported by your Browser!");
+        }
     }
-
-  }
+    else{
+        console.log('Waiting for a WiFi connection')
+    }
 }
 
 function setIndicatorColor( color ) {
