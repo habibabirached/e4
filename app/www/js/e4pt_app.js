@@ -232,9 +232,8 @@ function send_scan_meta_data() {
   E4PTdata.operator = document.getElementById("OPERATOR").value;
   if (E4PTdata.operator.length > MAX_STR_LEN) E4PTdata.operator = E4PTdata.operator.substr(0,MAX_STR_LEN);
   E4PTdata.units = document.getElementById("UNITS").value;
-  var message = "{\"args\":[\"scan_meta_data\",\"" + E4PTdata.frame + "\",\"" + E4PTdata.serial_number ;
-  message = message + "\",\"" + E4PTdata.customer + "\",\"" + E4PTdata.site_name;
-  message = message + "\",\"" + E4PTdata.operator + "\"]}";
+  var message = {"args":["scan_meta_data", E4PTdata.frame, E4PTdata.serial_number, E4PTdata.customer, E4PTdata.site_name, E4PTdata.operator, E4PTdata.units]};
+  message = JSON.stringify(message);
   console.log("message: ", message);
   sendWSMessage(message);
 }
@@ -278,6 +277,15 @@ function turbine_setup() {
     spacer = spacer[current_stage];
     document.getElementById("SPACER_THICKNESS").value = spacer;
 
+    var units = document.getElementById("UNITS").value;
+    if (units == "In") {
+        document.getElementById("CASING_THICKNESS_LABEL").innerHTML = "Casing Thickness (inches):";
+        document.getElementById("SPACER_THICKNESS_LABEL").innerHTML = "Spacer Thickness (inches):";
+    }
+    if (units == "MM") {
+        document.getElementById("CASING_THICKNESS_LABEL").innerHTML = "Casing Thickness (mm):";
+        document.getElementById("SPACER_THICKNESS_LABEL").innerHTML = "Spacer Thickness (mm):";
+    }
 }
 
 function set_frame_information() {
@@ -532,7 +540,7 @@ function createWS(){
     if (navigator.onLine){
         if ("WebSocket" in window){
             //console.log("WebSocket is supported by your Browser!");
-            //e4PtSocket = new ReconnectingWebSocket("ws://192.168.188.3:8080", null, {reconnectInterval: 3000});
+            //e4PtSocket = new ReconnectingWebSocket("ws://192.168.168.41:3405", null, {reconnectInterval: 3000});
             e4PtSocket = new ReconnectingWebSocket("ws://127.0.0.1:3405", null, {reconnectInterval: 3000});
 
             e4PtSocket.onopen = function(){
@@ -657,7 +665,9 @@ function requestE4PtData(acquisitionTime) {
         chart2.series[0].remove(true);
     }
   }
-  message = "{\"args\":[\"send_data\",\"" + acquisitionTime + "\"]}";
+  //message = "{\"args\":[\"send_data\",\"" + acquisitionTime + "\"]}";
+  message = {"args":["send_data",acquisitionTime]};
+  message = JSON.stringify(message);
   sendWSMessage(message);
 }
 
@@ -670,9 +680,8 @@ function requestE4PtDataWithMetaData(acquisitionTime, frame, sn, stage, position
     position = position.replace(/\s+/g, '_');
     casing_thickness = casing_thickness.replace(/\s+/g, '_');
     spacer_thickness = spacer_thickness.replace(/\s+/g, '_');
-    var message = "{\"args\":[\"send_data\",\"" + acquisitionTime + "\",\"" + frame + "\",";
-    message = message + "\"" + sn + "\",\"" + stage + "\",\"" + position + "\",";
-    message = message + "\"" + casing_thickness + "\",\"" + spacer_thickness + "\"]}";
+    var message = {"args":["send_data",acquisitionTime, frame, sn, stage, position, casing_thickness, spacer_thickness]};
+    message = JSON.stringify(message);
     sendWSMessage(message);
 }
 
