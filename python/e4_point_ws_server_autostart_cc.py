@@ -570,7 +570,6 @@ def create_or_open_db(db_file):
     return conn
 
 def save_dataframe_to_db(conn, unixtime, timestamp, ser_num, frame, stage, pos, f_name, dataframe):
-    global DB_CONN    
     # convert dataframe to python pickle object
     pickled_df = pickle.dumps(dataframe)
     sql = '''INSERT INTO SENSOR_DATA
@@ -582,7 +581,6 @@ def save_dataframe_to_db(conn, unixtime, timestamp, ser_num, frame, stage, pos, 
     conn.commit()
 
 def get_data_from_db_with_sn(conn, ser_num):
-    global DB_CONN
     sql = "SELECT * FROM SENSOR_DATA WHERE SERIAL_NUM = \"" + ser_num + "\""
     print('Sending SQL command to retrieve data:')
     print('  ',sql)
@@ -675,7 +673,7 @@ if __name__ == "__main__":
     else:
         db_file = "e4pt.s3db"
 
-    DB_CONN = create_or_open_db(db_file)
+    #DB_CONN = create_or_open_db(db_file)
     
     PARAMS[0] = 100; # Number of sets of data. Assume 100 pts/set for now.
     time_stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
