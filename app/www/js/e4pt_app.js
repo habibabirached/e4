@@ -665,7 +665,6 @@ function requestE4PtData(acquisitionTime) {
         chart2.series[0].remove(true);
     }
   }
-  //message = "{\"args\":[\"send_data\",\"" + acquisitionTime + "\"]}";
   message = {"args":["send_data",acquisitionTime]};
   message = JSON.stringify(message);
   sendWSMessage(message);
