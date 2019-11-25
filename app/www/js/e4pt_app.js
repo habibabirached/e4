@@ -143,11 +143,26 @@ $(document).ready(function(){
         systemShutdown();
     }, {passive: true})
     document.getElementById("GET_DATA_BUTTON").addEventListener('click', function(){
+        console.log("@GET_DATA_BUTTON event listener function.");
         toggle_menu();
         $("#DATA_PLOT").fadeIn();
-        var acquisitionTime = window.prompt("Please enter the acquisition time in seconds.", "15");
-        if (acquisitionTime != null) {
-          requestE4PtData(acquisitionTime);
+        var acquisitionTime = null;
+        console.log("@GET_DATA_BUTTON: Prompting.");
+        var nav = navigator.notification
+        if (nav != null) {
+            // We have plugins so we're in Cordova.  Use the Cordova notification.
+            console.log("@GET_DATA_BUTTON: Cordova Prompt");
+            navigator.notification.prompt('Please enter the acquisition time in seconds.',
+                                          acquisitionTimePromptCallback,
+                                          'Acquisition Time',
+                                          ['Ok','Cancel'],
+                                          '15');
+        }
+        else {
+            // No plugins, so we must not be in Cordova. Use a standard prompt.
+            console.log("@GET_DATA_BUTTON: Windows Prompt");
+            acquisitionTime = window.prompt("WPlease enter the acquisition time in seconds.", "15");
+            acquisitionTimePromptCallback({"input1":acquisitionTime});
         }
     }, {passive: true})
     document.getElementById("SENSOR_SETUP_BUTTON").addEventListener('click', function(){
@@ -180,6 +195,36 @@ $(document).ready(function(){
     setupAccordian();
     createWS();
 })
+
+function acquisitionTimePromptCallback(results) {
+    console.log("@acquisitionTimePromptCallback");
+    acquisitionTime = parseFloat(results.input1);
+    if (acquisitionTime != null) {
+        if (Number.isFinite(acquisitionTime)) {
+            if (acquisitionTime > 0) {
+                requestE4PtData(acquisitionTime);
+            }
+        }
+    }
+}
+
+function acquisitionTimePromptWithMetaDataCallback(results) {
+    console.log("@acquisitionTimePromptWithMetaDataCallback");
+    acquisitionTime = parseFloat(results.input1);
+    if (acquisitionTime != null) {
+        if (Number.isFinite(acquisitionTime)) {
+            if (acquisitionTime > 0) {
+                var sn = document.getElementById("SERIAL_NUMBER").value;
+                var frame = document.getElementById("FRAME_SIZE").value;
+                var casing_thickness = document.getElementById("CASING_THICKNESS").value;
+                if (casing_thickness.length > MAX_STR_LEN) casing_thickness = casing_thickness.substr(0,MAX_STR_LEN);
+                var spacer_thickness = document.getElementById("SPACER_THICKNESS").value;
+                if (spacer_thickness.length > MAX_STR_LEN) spacer_thickness = spacer_thickness.substr(0,MAX_STR_LEN);
+                requestE4PtDataWithMetaData(acquisitionTime, frame, sn, current_stage, current_position, casing_thickness, spacer_thickness);
+            }
+        }
+    }
+}
 
 function setupAccordian(){
     var acc = $(".ACCORDION");
@@ -325,16 +370,19 @@ function collect_stage_data() {
     current_position = current_frame_data['position'][current_stage][current_position_index];
 
     // Collect data from the sensor.
-    var acquisitionTime = window.prompt("Please enter the acquisition time in seconds.", "3");
-    if (acquisitionTime != null) {
-        //requestE4PtData(acquisitionTime);
-        var sn = document.getElementById("SERIAL_NUMBER").value;
-        var frame = document.getElementById("FRAME_SIZE").value;
-        var casing_thickness = document.getElementById("CASING_THICKNESS").value;
-        if (casing_thickness.length > MAX_STR_LEN) casing_thickness = casing_thickness.substr(0,MAX_STR_LEN);
-        var spacer_thickness = document.getElementById("SPACER_THICKNESS").value;
-        if (spacer_thickness.length > MAX_STR_LEN) spacer_thickness = spacer_thickness.substr(0,MAX_STR_LEN);
-        requestE4PtDataWithMetaData(acquisitionTime, frame, sn, current_stage, current_position, casing_thickness, spacer_thickness);
+    var nav = navigator.notification;
+    if (nav != null) {
+        // We have plugins so we're in Cordova.  Use the Cordova notification.
+        navigator.notification.prompt('Please enter the acquisition time in seconds.',
+                                      acquisitionTimePromptWithMetaDataCallback,
+                                      'Acquisition Time',
+                                      ['Ok','Cancel'],
+                                      '15');
+    }
+    else {
+        // No plugins, so we must not be in Cordova. Use a standard prompt.
+        acquisitionTime = window.prompt("WPlease enter the acquisition time in seconds.", "15");
+        acquisitionTimePromptWithMetaDataCallback({"input1":acquisitionTime});
     }
 }
 
@@ -540,8 +588,9 @@ function createWS(){
     if (navigator.onLine){
         if ("WebSocket" in window){
             //console.log("WebSocket is supported by your Browser!");
-            //e4PtSocket = new ReconnectingWebSocket("ws://192.168.168.41:3405", null, {reconnectInterval: 3000});
-            e4PtSocket = new ReconnectingWebSocket("ws://127.0.0.1:3405", null, {reconnectInterval: 3000});
+            e4PtSocket = new ReconnectingWebSocket("ws://192.168.168.41:3405", null, {reconnectInterval: 3000});
+            //e4PtSocket = new ReconnectingWebSocket("ws://192.168.1.8:3405", null, {reconnectInterval: 3000});
+	    //e4PtSocket = new ReconnectingWebSocket("ws://127.0.0.1:3405", null, {reconnectInterval: 3000});
 
             e4PtSocket.onopen = function(){
                 // Web Socket is connected, send data using send()
