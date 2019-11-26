@@ -161,7 +161,7 @@ $(document).ready(function(){
         else {
             // No plugins, so we must not be in Cordova. Use a standard prompt.
             console.log("@GET_DATA_BUTTON: Windows Prompt");
-            acquisitionTime = window.prompt("WPlease enter the acquisition time in seconds.", "15");
+            acquisitionTime = window.prompt("Please enter the acquisition time in seconds.", "15");
             acquisitionTimePromptCallback({"input1":acquisitionTime});
         }
     }, {passive: true})
@@ -190,6 +190,12 @@ $(document).ready(function(){
     }, {passive: true})
     document.getElementById("SENSOR_STAGE").addEventListener('change', function(){
         setup_data_collection();
+    }, {passive: true})
+    document.getElementById("SENSOR_POSITION").addEventListener('change', function(){
+        setup_data_collection();
+    }, {passive: true})
+    document.getElementById("CASING_THICKNESS").addEventListener('change', function(){
+        update_spacer_value();
     }, {passive: true})
 
     setupAccordian();
@@ -318,9 +324,7 @@ function turbine_setup() {
     document.getElementById("SENSOR_POSITION").innerHTML = html;
     current_position_index = 0;
 
-    var spacer = current_frame_data['spacer'];
-    spacer = spacer[current_stage];
-    document.getElementById("SPACER_THICKNESS").value = spacer;
+    update_spacer_value();
 
     var units = document.getElementById("UNITS").value;
     if (units == "In") {
@@ -381,7 +385,7 @@ function collect_stage_data() {
     }
     else {
         // No plugins, so we must not be in Cordova. Use a standard prompt.
-        acquisitionTime = window.prompt("WPlease enter the acquisition time in seconds.", "15");
+        acquisitionTime = window.prompt("Please enter the acquisition time in seconds.", "15");
         acquisitionTimePromptWithMetaDataCallback({"input1":acquisitionTime});
     }
 }
@@ -401,8 +405,17 @@ function reset_data_collection() {
     current_position = current_frame_data['position'][current_stage][current_position_index];
     document.getElementById("CASING_THICKNESS").value = "";
     document.getElementById("CLEARANCE_ERROR").innerHTML = "";
+    document.getElementById("SPACER_COLOR_LABEL").innerHTML = "";
     setup_data_collection_page();
     var obj = document.getElementById("DATA_PLOT2");
+    var chart = Highcharts.charts[obj.getAttribute('data-highcharts-chart')];
+    if (typeof chart !== 'undefined') {
+      if (chart.series != null) {
+        while(chart.series.length > 0)
+          chart.series[0].remove(true);
+      }
+    }
+    obj = document.getElementById("CLEARANCE_PLOT");
     var chart = Highcharts.charts[obj.getAttribute('data-highcharts-chart')];
     if (typeof chart !== 'undefined') {
       if (chart.series != null) {
@@ -472,9 +485,53 @@ function setup_data_collection_page() {
     document.getElementById("SENSOR_POSITION").innerHTML = html;
     current_position_index = 0;
 
-    var spacer = current_frame_data['spacer'];
-    spacer = spacer[current_stage];
-    document.getElementById("SPACER_THICKNESS").value = spacer;
+    update_spacer_value();
+}
+
+function get_spacer_information() {
+  var spacers = current_frame_data['spacers'];
+  var casing_thickness = parseFloat(document.getElementById("CASING_THICKNESS").value);
+  var positions = current_frame_data['position'];
+  positions = positions[current_stage];
+  var position = positions[current_position_index];
+  console.log("Getting spacer information for casing_thickness = ", casing_thickness, ", and position = ", position);
+  var spacer = null;
+  var spacer_found = false;
+  for (var i=0; i<spacers.length; i++) {
+    if (spacers[i].stage == current_stage) {
+      var min = parseFloat(spacers[i].min);
+      var max = parseFloat(spacers[i].max);
+      if ((casing_thickness <= max) && (casing_thickness >= min)) {
+        for(var j=0; j<spacers[i].position.length; j++) {
+          if (position == spacers[i].position[j]) {
+            spacer = {'size':spacers[i].size, 'color':spacers[i].color, 'image':spacers[i].image};
+            spacer_found = true;
+            break;
+          }
+        }
+        if (spacer_found == true) break;
+      }
+    }
+  }
+  return spacer;
+}
+
+function update_spacer_value() {
+  console.log("@update_spacer_value");
+  var spacer = get_spacer_information();
+  var spacer_value =  null;
+  var spacer_color = "";
+  if (spacer == null) {
+    spacer_value = "Correct casing thickness.";
+    spacer = {'color':'white'};
+  }
+  else {
+    spacer_value = spacer.size;
+    spacer_color = "Spacer color is " + spacer.color;
+  }
+  document.getElementById("SPACER_THICKNESS").value = spacer_value;
+  document.getElementById("SPACER_COLOR_LABEL").innerHTML = spacer_color;
+  document.getElementById("SPACER_COLOR_LABEL").style.color = spacer.color;
 }
 
 function advance_position() {
@@ -512,6 +569,7 @@ function set_grid_position(position, stage) {
     var clearance = document.getElementById(el_id).innerHTML;
     clearance = parseFloat(clearance);
     update_clearance(clearance);
+    update_spacer_value();
 }
 
 function do_dark_reference() {
@@ -590,7 +648,7 @@ function createWS(){
             //console.log("WebSocket is supported by your Browser!");
             e4PtSocket = new ReconnectingWebSocket("ws://192.168.168.41:3405", null, {reconnectInterval: 3000});
             //e4PtSocket = new ReconnectingWebSocket("ws://192.168.1.8:3405", null, {reconnectInterval: 3000});
-	    //e4PtSocket = new ReconnectingWebSocket("ws://127.0.0.1:3405", null, {reconnectInterval: 3000});
+	          //e4PtSocket = new ReconnectingWebSocket("ws://127.0.0.1:3405", null, {reconnectInterval: 3000});
 
             e4PtSocket.onopen = function(){
                 // Web Socket is connected, send data using send()
