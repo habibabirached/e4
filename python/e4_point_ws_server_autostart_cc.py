@@ -20,7 +20,7 @@ import math
 import sqlite3
 import pickle
 
-SIMULATOR = True
+SIMULATOR = False
 
 #PARAMS: [0]=nFrames,
 #        [1]=Save data or not ('false' or a file name),
@@ -36,6 +36,7 @@ SENSOR_WEBSOCKET =  "192.168.168.41"
 if SIMULATOR == True:
     SENSOR_HOST = "127.0.0.1"
     SENSOR_WEBSOCKET = "127.0.0.1"
+    #SENSOR_WEBSOCKET = "192.168.1.8"
 WEBSOCKET_PORT = 3405
 DB_CONN = None
 
@@ -66,7 +67,9 @@ async def ws_msg_handler(websocket, path):
         print("WS: Message received: {}".format(msg))
         msg_dict = json.loads(msg["text"])
         msg_args = msg_dict["args"]
-        msg_args = [x.strip() for x in msg_args]
+        for i in range(0,len(msg_args)):
+            if isinstance(msg_args[i], str):
+                msg_args[i] = msg_args[i].strip()
 
         nSecs = 0
         if (len(msg_args) > 1):
@@ -685,7 +688,7 @@ if __name__ == "__main__":
 
     # need to wait until we're sure Apache is up and running...
     sess = requests.Session()
-    apache_wait = True
+    apache_wait = False
     while apache_wait:
         try:
             print('Checking for Apache...')
