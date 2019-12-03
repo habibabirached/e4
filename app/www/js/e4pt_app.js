@@ -574,7 +574,9 @@ function set_grid_position(position, stage) {
 
 function do_dark_reference() {
     console.log("@do_dark_reference");
-    sendWSMessage('do_dark_reference');
+    var message = {"args":["do_dark_reference"]};
+    message = JSON.stringify(message);
+    sendWSMessage(message);
     $("#SENSOR_SETUP_PAGE").fadeOut();
     $("#RESULTS_PAGE").fadeIn();
     $("#DATA_PLOT").fadeIn();
@@ -582,7 +584,9 @@ function do_dark_reference() {
 
 function do_mastering() {
     console.log("@do_mastering");
-    sendWSMessage('do_mastering');
+    var message = {"args":["do_mastering"]};
+    message = JSON.stringify(message);
+    sendWSMessage(message);
     setMasterMessage("black","yellow","In Progress...");
     setMasterMessage2("black","yellow","In Progress...");
     setIndicatorColor("red");
@@ -601,13 +605,17 @@ function failed_mastering() {
 }
 
 function systemShutdown() {
-  console.log("@systemShutdown");
-  sendWSMessage('shutdown');
+    console.log("@systemShutdown");
+    var message = {"args":["shutdown"]};
+    message = JSON.stringify(message);
+    sendWSMessage(message);
 }
 
 function doFileDownload() {
     console.log("@doFileDownload");
-    sendWSMessage('get_data_file');
+    var message = {"args":["get_data_file"]};
+    message = JSON.stringify(message);
+    sendWSMessage(message);
 }
 
 // alert function to work on iOS and web browser
@@ -648,7 +656,7 @@ function createWS(){
             //console.log("WebSocket is supported by your Browser!");
             e4PtSocket = new ReconnectingWebSocket("ws://192.168.168.41:3405", null, {reconnectInterval: 3000});
             //e4PtSocket = new ReconnectingWebSocket("ws://192.168.1.8:3405", null, {reconnectInterval: 3000});
-	          //e4PtSocket = new ReconnectingWebSocket("ws://127.0.0.1:3405", null, {reconnectInterval: 3000});
+	    //e4PtSocket = new ReconnectingWebSocket("ws://127.0.0.1:3405", null, {reconnectInterval: 3000});
 
             e4PtSocket.onopen = function(){
                 // Web Socket is connected, send data using send()
@@ -685,7 +693,9 @@ function createWS(){
                 break;
               case "pong":
                 console.log("Got pong. Send ping.");
-                setTimeout(function(){ sendWSMessage("ping"); }, 5000); // ping after 5s
+                var message = {"args":["ping"]};
+                message = JSON.stringify(message);
+                setTimeout(function(){ sendWSMessage(message); }, 5000); // ping after 5s
                 break;
               case "filename":
                 console.log("Got filename: " + msg.fname);
