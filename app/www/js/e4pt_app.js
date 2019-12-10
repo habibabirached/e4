@@ -188,6 +188,9 @@ $(document).ready(function(){
     document.getElementById("COLLECTION_RESET_BUTTON").addEventListener('click', function(){
         reset_data_collection();
     }, {passive: true})
+    document.getElementById("CUSTOMER_REPORT_BUTTON").addEventListener('click', function(){
+        generate_customer_report();
+    }, {passive: true})
     document.getElementById("SENSOR_STAGE").addEventListener('change', function(){
         setup_data_collection();
     }, {passive: true})
@@ -425,6 +428,13 @@ function reset_data_collection() {
     }
 }
 
+function generate_customer_report() {
+  // This call gets the entire HTML report in memory.
+  var reportHTML = generateHTMLReport(E4PTdata, current_frame_data);
+  var newWindow = window.open();
+  newWindow.document.write(reportHTML);
+}
+
 function setup_data_collection_page() {
     // Fill in the header
     var customer = document.getElementById("CUSTOMER").value;
@@ -656,7 +666,7 @@ function createWS(){
             //console.log("WebSocket is supported by your Browser!");
             e4PtSocket = new ReconnectingWebSocket("ws://192.168.168.41:3405", null, {reconnectInterval: 3000});
             //e4PtSocket = new ReconnectingWebSocket("ws://192.168.1.8:3405", null, {reconnectInterval: 3000});
-	    //e4PtSocket = new ReconnectingWebSocket("ws://127.0.0.1:3405", null, {reconnectInterval: 3000});
+	          //e4PtSocket = new ReconnectingWebSocket("ws://127.0.0.1:3405", null, {reconnectInterval: 3000});
 
             e4PtSocket.onopen = function(){
                 // Web Socket is connected, send data using send()
