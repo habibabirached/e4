@@ -10,10 +10,9 @@ function generateHTMLReport(e4ptData, current_frame_data) {
   closePg1();
   makePageBanner();
   makePg2Header(0, 0, 0, 0);
-  makePg2Table("Opening", current_frame_data["stage"], current_frame_data["position"]);
-  makePg2Table("Closing", current_frame_data["stage"], current_frame_data["position"]);
+  makePg2Table("Opening", current_frame_data["stage"], current_frame_data["position"], e4ptData);
+  makePg2Table("Closing", current_frame_data["stage"], current_frame_data["position"], e4ptData);
   reportHTML = reportHTML + "</div></body></html>";
-  console.log("HTML Length: " + reportHTML.length);
   return reportHTML;
 };
 
@@ -64,9 +63,7 @@ function makeCircleTables(stages, positions) {
   var td_idx = 0;
   for (var j=0; j<stages.length; j++) {
 
-    //console.log("makeCircleTables: td_idx = " + td_idx);
     if ((td_idx % 2) == 0) {
-      //console.log("makeCircleTables: starting <tr>");
       reportHTML = reportHTML + "<tr>";
     }
 
@@ -92,13 +89,11 @@ function makeCircleTables(stages, positions) {
     td_idx += 1;
 
     if (((td_idx % 2) == 0) || (j == stages.length-1)) {
-      //console.log("makeCircleTables: ending </tr>");
       reportHTML = reportHTML + "</tr>";
     }
 
   }
   reportHTML = reportHTML + "</table>";
-  //console.log("reportHTML:\n" + reportHTML);
 };
 
 function closePg1() {
@@ -124,7 +119,7 @@ function onlyUnique(value, index, self) {
     return self.indexOf(value) === index;
 }
 
-function makePg2Table(state, stages, positions, clearances) {
+function makePg2Table(state, stages, positions, data) {
 
    // Get only the unique positions as they will be enumerated in the header
   var allPositions = [];
@@ -162,20 +157,27 @@ function makePg2Table(state, stages, positions, clearances) {
   // Per-stage clearance data
   for (var j=0; j<stages.length; j++) {
     reportHTML = reportHTML + "<tr>";
-    reportHTML = reportHTML + "<td class=\"tCell1\">";
+    var id = state.charAt(0) + "_stg_" + stages[j]; // e.g. "O_stg_1", "C_stg_6"
+    reportHTML = reportHTML + "<td class=\"tCell1\" id=\"" + id + "\">";
     reportHTML = reportHTML + stages[j];
     reportHTML = reportHTML + "</td>";
     pos = positions[stages[j]];
     for (var i=0; i<uniquePositions.length; i++) {
-      if (pos == uniquePositions[i]) {
-        reportHTML = reportHTML + "<td class=\"tCell2\">";
-        reportHTML = reportHTML + "MD";  // figure out how to get this data later
+      if (Object.values(pos).includes(uniquePositions[i])) {
+        var tip_clearance = get_tip_clearance(state, stages[j], uniquePositions[i], data);
+        var case_thickness = get_casing_thickness(state, stages[j], uniquePositions[i], data);
+        console.log("Stage: ", stages[j], " Position: ", uniquePositions[i], " Clearance: ", tip_clearance);
+        id = state.charAt(0) + "_md_" + stages[j] + "_" + abbreviated_position(uniquePositions[i]); // e.g. "O_md_1_L", "C_md_6_BR"
+        reportHTML = reportHTML + "<td class=\"tCell2\" id=\"" + id + "\">";
+        reportHTML = reportHTML + "";  // figure out how to get this data later
         reportHTML = reportHTML + "</td>";
-        reportHTML = reportHTML + "<td class=\"tCell2\">";
-        reportHTML = reportHTML + "DSC";  // figure out how to get this data later
+        id = state.charAt(0) + "_dsc_" + stages[j] + "_" + abbreviated_position(uniquePositions[i]); // e.g. "O_dmc_1_L", "C_dmc_6_BR"
+        reportHTML = reportHTML + "<td class=\"tCell2\" id=\"" + id + "\">";
+        reportHTML = reportHTML + case_thickness;  // figure out how to get this data later
         reportHTML = reportHTML + "</td>";
-        reportHTML = reportHTML + "<td class=\"tCell2\">";
-        reportHTML = reportHTML + "TC";  // figure out how to get this data later
+        id = state.charAt(0) + "_tc_" + stages[j] + "_" + abbreviated_position(uniquePositions[i]); // e.g. "O_tc_1_L", "C_tc_6_BR"
+        reportHTML = reportHTML + "<td class=\"tCell2\" id=\"" + id + "\">";
+        reportHTML = reportHTML + tip_clearance;  // figure out how to get this data later
         reportHTML = reportHTML + "</td>";
       }
       else {
@@ -185,4 +187,41 @@ function makePg2Table(state, stages, positions, clearances) {
     reportHTML = reportHTML + "</tr>";
   }
   reportHTML = reportHTML + "</table>";
-};
+}
+
+function abbreviated_position(pos) {
+  if (pos == "TOP") return "T";
+  if (pos == "BOTTOM") return "B";
+  if (pos == "LEFT") return "L";
+  if (pos == "RIGHT") return "R";
+  if (pos == "TOP RIGHT") return "TR";
+  if (pos == "TOP LEFT") return "TL";
+  if (pos == "BOTTOM RIGHT") return "BR";
+  if (pos == "BOTTOM LEFT") return "BL";
+}
+
+function get_tip_clearance(state, stage, position, data) {
+  for (var i=0; i<data.sets.length; i++) {
+    if ( data.sets[i].state.toUpperCase() == state.toUpperCase()) {
+      if ( data.sets[i].stage.toUpperCase() == stage.toUpperCase()) {
+        if (data.sets[i].position.toUpperCase() == position.toUpperCase()) {
+          return data.sets[i].clearance.toFixed(4);
+        }
+      }
+    }
+  }
+  return "";
+}
+
+function get_casing_thickness(state, stage, position, data) {
+  for (var i=0; i<data.sets.length; i++) {
+    if ( data.sets[i].state.toUpperCase() == state.toUpperCase()) {
+      if ( data.sets[i].stage.toUpperCase() == stage.toUpperCase()) {
+        if (data.sets[i].position.toUpperCase() == position.toUpperCase()) {
+          return data.sets[i].case_thickness.toFixed(4);
+        }
+      }
+    }
+  }
+  return "";
+}

@@ -7,20 +7,22 @@ var MAX_STR_LEN = 64;
 
 var Data_Set = function() {
     this.stage = null;
-    this.location = null;
+    this.position = null;
     this.case_thickness = null;
     this.pts = null;
     this.clearance = null;
     this.quality = null;
+    this.state = null;
 };
 
-Data_Set.prototype.add_data = function(stage, location, case_thickness, blade_number, pts, used_in_avg, clearance, quality) {
+Data_Set.prototype.add_data = function(state, stage, position, case_thickness, blade_number, pts, used_in_avg, clearance, quality) {
     this.stage = stage;
-    this.location = location;
+    this.position = position;
     this.case_thickness = case_thickness;
     this.pts = pts;
     this.clearance = clearance;
     this.quality = quality;
+    this.state = state;
 };
 
 var E4PTdata = {
@@ -34,6 +36,7 @@ var E4PTdata = {
     "inspection_type":"",
     "operator":"",
     "units":"",
+    "state":"",
     "final":{
         "SCAN":"",
     },
@@ -178,8 +181,10 @@ $(document).ready(function(){
     document.getElementById("START_DARK_REFERENCE_BUTTON").addEventListener('click', function(){
 	do_dark_reference();
     }, {passive: true})
-    document.getElementById("DOWNLOAD_FILE_BUTTON").addEventListener('click', function(){
-        toggle_menu();
+    document.getElementById("DOWNLOAD_FILE_BUTTON_01").addEventListener('click', function(){
+	doFileDownload();
+    }, {passive: true})
+    document.getElementById("DOWNLOAD_FILE_BUTTON_02").addEventListener('click', function(){
 	doFileDownload();
     }, {passive: true})
     document.getElementById("STAGE_COLLECT_BUTTON").addEventListener('click', function(){
@@ -286,7 +291,8 @@ function send_scan_meta_data() {
   E4PTdata.operator = document.getElementById("OPERATOR").value;
   if (E4PTdata.operator.length > MAX_STR_LEN) E4PTdata.operator = E4PTdata.operator.substr(0,MAX_STR_LEN);
   E4PTdata.units = document.getElementById("UNITS").value;
-  var message = {"args":["scan_meta_data", E4PTdata.frame, E4PTdata.serial_number, E4PTdata.customer, E4PTdata.site_name, E4PTdata.operator, E4PTdata.units]};
+  E4PTdata.state = document.getElementById("TURBINE_STATE").value;
+  var message = {"args":["scan_meta_data", E4PTdata.frame, E4PTdata.serial_number, E4PTdata.customer, E4PTdata.site_name, E4PTdata.operator, E4PTdata.units, E4PTdata.state]};
   message = JSON.stringify(message);
   console.log("message: ", message);
   sendWSMessage(message);
@@ -431,8 +437,9 @@ function reset_data_collection() {
 function generate_customer_report() {
   // This call gets the entire HTML report in memory.
   var reportHTML = generateHTMLReport(E4PTdata, current_frame_data);
-  var newWindow = window.open();
-  newWindow.document.write(reportHTML);
+  //var newWindow = window.open();
+  //newWindow.document.write(reportHTML);
+  return;
 }
 
 function setup_data_collection_page() {
@@ -545,6 +552,11 @@ function update_spacer_value() {
 }
 
 function advance_position() {
+    // Don't try to advance the position if we're not set up for it.
+    // (i.e. if we're not on the right page)
+    console.log("@advance_position");
+    if (current_frame_data['position'] == null) return;
+    console.log("@advance_position - continuing");
     // Auto-advance
     var stages = current_frame_data['stage'];
     var positions = current_frame_data['position'][current_stage];
@@ -564,7 +576,7 @@ function advance_position() {
 }
 
 function set_grid_position(position, stage) {
-    //console.log("@set_grid_position: pos: ", position, "; stage: ", stage);
+    console.log("@set_grid_position: pos: ", position, "; stage: ", stage);
     var stages = current_frame_data['stage'];
     var positions = current_frame_data['position'][stage];
     current_position_index = positions.indexOf(position);
@@ -664,9 +676,9 @@ function createWS(){
     if (navigator.onLine){
         if ("WebSocket" in window){
             //console.log("WebSocket is supported by your Browser!");
-            e4PtSocket = new ReconnectingWebSocket("ws://192.168.168.41:3405", null, {reconnectInterval: 3000});
+            //e4PtSocket = new ReconnectingWebSocket("ws://192.168.168.41:3405", null, {reconnectInterval: 3000});
             //e4PtSocket = new ReconnectingWebSocket("ws://192.168.1.8:3405", null, {reconnectInterval: 3000});
-	          //e4PtSocket = new ReconnectingWebSocket("ws://127.0.0.1:3405", null, {reconnectInterval: 3000});
+	          e4PtSocket = new ReconnectingWebSocket("ws://127.0.0.1:3405", null, {reconnectInterval: 3000});
 
             e4PtSocket.onopen = function(){
                 // Web Socket is connected, send data using send()
@@ -708,12 +720,17 @@ function createWS(){
                 setTimeout(function(){ sendWSMessage(message); }, 5000); // ping after 5s
                 break;
               case "filename":
-                console.log("Got filename: " + msg.fname);
-                if (msg.fname.length == 0) {
-                  console.log("No filename: returning");
-                  return;
+                {
+                  console.log("Got filename: " + msg.fname);
+                  if (msg.fname.length == 0) {
+                    console.log("No filename: returning");
+                    return;
+                  }
+                  //var dl_file = "data/" + msg.fname;
+                  var dl_file = "data/" + "dummy.csv";
+                  window.open(dl_file, "_blank"); // Try to open/download the file.
+                  break;
                 }
-                window.open(msg.fname); // Try to open/download the file.
               } // end of switch
             };  // end of onmessage
 
@@ -764,10 +781,12 @@ function processE4PtData(msg) {
   dataSet = E4PTdata.sets.length;
 
   try {
-    update_scan_info();
+    update_scan_info(); // currently does nothing
     parse_data();
     plot_data();
-    plot_data_2();
+    if (current_frame_data['position'] != null) {
+      plot_data_2();
+    }
     advance_position();
   } catch (error) {
     console.log(error);
@@ -836,23 +855,29 @@ function update_scan_info(){
 }
 
 function parse_data() {
+  console.log("@parse_data");
   var minima = new Array(E4PTdata.locs.length);
   for (var i=0; i<E4PTdata.locs.length; i++) {
     minima[i] = [E4PTdata.locs[i], E4PTdata.gaps[i]];
   }
     E4PTdata.minima = minima;
     console.log("Clearance average: ", E4PTdata.clearance);
-    update_clearance(E4PTdata.clearance);
-    //var set = new DataSet();
-    //set.stage = current_stage;
-    //set.location = current_position;
-    //set.case_thickness = document.getElementById("CASING_THICKNESS").value;
-    //set.clearance = E4PTdata.clearance;
-    //set.pts = E4PTdata.data;
-    //set.quality = E4PTdata.intensity;
+    // Only update the clearance info if we have all the data to do so.
+    if (current_frame_data['position'] != null) {
+      update_clearance(E4PTdata.clearance);
+    }
+
     E4PTdata.frame = document.getElementById("FRAME_SIZE").value;
     E4PTdata.serial_number = document.getElementById("SERIAL_NUMBER").value;
-    //E4PTdata.sets = E4PTdata.sets.push(set);
+    var set = new Data_Set();
+    set.stage = current_stage;
+    set.position = current_position;
+    set.case_thickness = E4PTdata.casing_thickness;
+    set.clearance = E4PTdata.clearance;
+    set.state = E4PTdata.state;
+    set.pts = E4PTdata.data;
+    //set.quality = E4PTdata.intensity;
+    E4PTdata.sets.push(set);
 }
 
 function update_clearance(clearance) {
@@ -977,7 +1002,8 @@ function plot_data() {
       {
         type: 'line',
         name: 'Confocal Sensor',
-        data: E4PTdata.data
+        //data: E4PTdata.data
+        data: E4PTdata.sets[E4PTdata.sets.length-1].pts
       },
       {
         type: 'scatter',
@@ -1068,7 +1094,8 @@ function plot_data_2() {
       {
         type: 'line',
         name: 'Confocal Sensor',
-        data: E4PTdata.data
+        //data: E4PTdata.data
+        data: E4PTdata.sets[E4PTdata.sets.length-1].pts
       },
       {
         type: 'scatter',
@@ -1234,10 +1261,12 @@ function loadExternalFile(){
         dataSet = E4PTdata.sets.length;
 
         try {
-          update_scan_info();
+          update_scan_info(); // currently does nothing.
           parse_data();
           plot_data();
-          plot_data_2();
+          if (current_frame_data['position'] != null) {
+            plot_data_2();
+          }
           advance_position();
         } catch (error) {
           console.log(error);
