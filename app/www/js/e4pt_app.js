@@ -5,6 +5,11 @@ var clientID = 312;
 var e4pt = null;
 var MAX_STR_LEN = 64;
 
+var local_db = new PouchDB('e4ptdb');
+
+// Replace with remote instance when we get to that point.
+//var remoteCouch = 'http://xxx.xxx.xxx.xxx/remote_e4ptdb';
+
 var Data_Set = function() {
     this.stage = null;
     this.position = null;
@@ -41,6 +46,7 @@ var E4PTdata = {
         "SCAN":"",
     },
     "date": "",
+    "time": "",
     "sets":[],
     "locs":[],
     "minima":[],
@@ -72,11 +78,14 @@ $(document).ready(function(){
         $("#SENSOR_SETUP_PAGE").fadeOut();
         $("#INITIALIZE_SENSOR_PAGE").fadeOut();
         $("#TURBINE_SETUP_PAGE").fadeOut();
+        $("#LOCAL_DATA_PAGE").fadeOut();
         toggle_menu();
 
     }, {passive: true})
     document.getElementById("FRD_BUTTON").addEventListener('click', function(){
         toggle_menu();
+        //addDBDummyData(); // just a way to add dummy data for testing.
+        //clearDB();
 	$("#DATA_PLOT").fadeOut();
         $("#FRD_PAGE").fadeIn();
     }, {passive: true})
@@ -90,6 +99,7 @@ $(document).ready(function(){
         $("#SETUP_PAGE").fadeOut();
         $("#RESULTS_PAGE").fadeOut();
         $("#DATA_PLOT").fadeOut();
+        $("#LOCAL_DATA_PAGE").fadeOut();
         $("#SENSOR_SETUP_PAGE").fadeIn();
 	      setMasterMessage("white","green","Ready");
     }, {passive: true})
@@ -98,6 +108,7 @@ $(document).ready(function(){
         $("#RESULTS_PAGE").fadeOut();
         $("#DATA_PLOT").fadeOut();
         $("#INITIALIZE_SENSOR_PAGE").fadeIn();
+        $("#LOCAL_DATA_PAGE").fadeOut();
         send_scan_meta_data();
         initialize_sensor();
     }, {passive: true})
@@ -106,6 +117,7 @@ $(document).ready(function(){
         $("#RESULTS_PAGE").fadeOut();
         $("#DATA_PLOT").fadeOut();
         $("#INITIALIZE_SENSOR_PAGE").fadeOut();
+        $("#LOCAL_DATA_PAGE").fadeOut();
         $("#TURBINE_SETUP_PAGE").fadeIn();
         turbine_setup();
     }, {passive: true})
@@ -126,18 +138,18 @@ $(document).ready(function(){
     //document.getElementById("OPEN_EXTERNAL_FILE_BUTTON").addEventListener('click', function(){
     //    document.getElementById("OPEN_EXTERNAL_FILE_BUTTON").value =null;
     //}, {passive: true})
-    document.getElementById("OPEN_BUTTON_DEVICE").addEventListener('click', function(){
+    document.getElementById("OPEN_LOCAL_DATA").addEventListener('click', function(){
         try {
-            listInternalFile();
+            listInternalFiles();
             SELECTED_FILE = "";
             toggle_menu();
             if ($("#TITLE_BAR").text() != "OPEN FROM DEVICE"){
-                $("#TITLE_BAR").text("OPEN FROM DEVICE")
+                $("#TITLE_BAR").text("OPEN FROM DEVICE");
             }
-            $("#FILE_LOADING_PAGE").fadeIn()
+            $("#LOCAL_DATA_PAGE").fadeIn();
         } catch (err) {
-            $("#OPEN_EXTERNAL_FILE_BUTTON").trigger("click")
-            $("#OPEN_EXTERNAL_FILE_BUTTON").trigger("change")
+            console.log("Error getting local files.");
+            console.log(err);
             toggle_menu();
         }
     }, {passive: true})
@@ -277,6 +289,7 @@ function sensor_setup() {
     $("#DB_LOADING_PAGE").fadeOut();
     $("#SENSOR_SETUP_PAGE").fadeIn();
     $("#TURBINE_SETUP_PAGE").fadeOut();
+    $("#LOCAL_DATA_PAGE").fadeOut();
 }
 
 function send_scan_meta_data() {
@@ -454,7 +467,9 @@ function setup_data_collection_page() {
     var dateStr = monthNames[d.getMonth()] + "-" + d.getDate() + "-" + d.getFullYear();
     E4PTdata.frame = document.getElementById("FRAME_SIZE").value;
     E4PTdata.serial_number = document.getElementById("SERIAL_NUMBER").value;
+    E4PTdata.description = document.getElementById("DESCRIPTION").value;
     E4PTdata.date = dateStr;
+    E4PTdata.time = hh + ":" + mm;
     var header = "<p>" + dateStr + "  -  " + timeStr + "</p><p>" + customer + " - " + site + "</p><p>Frame: " + E4PTdata.frame + "</p><p>S/N: " + E4PTdata.serial_number + "</p>";
     document.getElementById("TURBINE_SETUP_HEADER").innerHTML = header;
 
@@ -600,6 +615,7 @@ function do_dark_reference() {
     message = JSON.stringify(message);
     sendWSMessage(message);
     $("#SENSOR_SETUP_PAGE").fadeOut();
+    $("#LOCAL_DATA_PAGE").fadeOut();
     $("#RESULTS_PAGE").fadeIn();
     $("#DATA_PLOT").fadeIn();
 }
@@ -1297,4 +1313,149 @@ function doSSO() {
   var replacementUri = authServerUri;
   console.log("replacementUri: " + replacementUri);
   window.location.replace(replacementUri);
+}
+
+// Initialise a sync with the remote server
+function sync() {
+  syncDom.setAttribute('data-sync-state', 'syncing');
+  var opts = {live: true};
+  local_db.replicate.to(remoteCouch, opts, syncError);
+  local_db.replicate.from(remoteCouch, opts, syncError);
+}
+
+// There was some form or error syncing
+function syncError() {
+  syncDom.setAttribute('data-sync-state', 'error');
+}
+
+function addDBEntry(e4pt_data) {
+  var newUUID = uuidv4();
+  // construct the document to add.
+  var entry = {
+    _id: newUUID,
+    ofs_id: e4pt_data.ofs_id,
+    frame: e4pt_data.frame,
+    serial_number: e4pt_data.serial_number,
+    data_name: e4pt_data.data_name,
+    description: e4pt_data.description,
+    customer: e4pt_data.customer,
+    site_name: e4pt_data.site_name,
+    inspection_type: e4pt_data.inspection_type,
+    operator: e4pt_data.operator,
+    units: e4pt_data.units,
+    state: e4pt_data.state,
+    final: e4pt_data.final,
+    date: e4pt_data.date,
+    time: e4pt_data.time,
+    //sets: e4pt_data.sets, // Not sure yet if we want to be saving all the raw data.
+    //locs: e4pt_data.locs,
+    //minima: e4pt_data.minima,
+    clearance: e4pt_data.clearance,
+    alreadyOnLDB: e4pt_data.alreadyOnLDB,
+  }
+
+  local_db.put(entry, function callback(err, result) {
+    if (!err) {
+      console.log('Successfully added an entry!');
+    }
+  });
+}
+
+function getDBEntry(uuid) {
+  return local_db.get(uuid);
+}
+
+function getAllDBEntries() {
+  local_db.allDocs({include_docs: true, descending: true}, function(err, docs) {
+    console.log("offset: " + docs.offset + "; total_rows: " + docs.total_rows);
+    redrawDataSetsUI(docs.rows);
+  });
+}
+
+function redrawDataSetsUI(rows) {
+  console.log("@redrawDataSetsUI");
+  var prev_tbody = document.getElementById("LOCAL_DATA_TABLE_BODY");
+  var tbody = document.createElement("tbody");
+  tbody.setAttribute("id","LOCAL_DATA_TABLE_BODY");
+  // Create the table body.
+  for (var i=0; i<rows.length; i++) {
+    console.log("Row: id:" + rows[i].doc._id + "; rev: " + rows[i].doc._rev);
+    var new_row = tbody.insertRow(-1);
+    var cell1 = new_row.insertCell(-1);
+    cell1.innerHTML = rows[i].doc.frame;
+    var cell2 = new_row.insertCell(-1);
+    cell2.innerHTML = rows[i].doc.serial_number;
+    var cell3 = new_row.insertCell(-1);
+    cell3.innerHTML = rows[i].doc.description;
+    var cell4 = new_row.insertCell(-1);
+    cell4.innerHTML = rows[i].doc.date;
+    var cell5 = new_row.insertCell(-1);
+    cell5.innerHTML = rows[i].doc.time;
+  }
+  prev_tbody.parentNode.replaceChild(tbody, prev_tbody);
+}
+
+function addDBDummyData() {
+  var tmpData1 = {};
+  tmpData1.frame = "7FA.05";
+  tmpData1.serial_number = "246810";
+  tmpData1.description = "Description 1";
+  tmpData1.date = "Jul-04-1776";
+  tmpData1.time = "13:13";
+  addDBEntry(tmpData1);
+  tmpData1.frame = "7FA.05";
+  tmpData1.serial_number = "135790";
+  tmpData1.description = "Description 2";
+  tmpData1.date = "Jul-24-1969";
+  tmpData1.time = "20:17";
+  addDBEntry(tmpData1);
+}
+
+// Not sure if we'll need this in production, but for development it could
+// be handy.
+function clearDB() {
+  if (false) {
+    // This method 'removes' the objects from the pouchdb.
+    // However, pouchdb retains the objects and just marks them deleted.
+    // This can cause a memory buildup, but may be more sync-friendly.
+    //  The 'else' statement below provides and alternate method by just
+    // destroying the DB and re-creating it.  I'm not sure of the implications
+    // of this on syncing, but it is a brute-force method.
+    local_db.allDocs({include_docs: true, descending: true}, function(err, docs) {
+      console.log("Clearing DB");
+      for (var i=0; i<docs.rows.length; i++) {
+        console.log("Removing doc: ", docs.rows[i].id);
+        var doc = docs.rows[i].doc;
+        local_db.remove(doc, function(err, response) {
+          if (err) {
+            console.log("Error removing document:\n", err);
+          }
+        });
+      }
+    });
+  }
+  else {
+    local_db.destroy(function (err, response) {
+      if (err) {
+        console.log("Error destroying database:\n", err);
+        return;
+      } else {
+        console.log("Database destroyed. Creating new empty database.");
+        local_db = new PouchDB('e4ptdb');
+      }
+    });
+  }
+}
+
+// uuidv4 function grabbed from:
+// https://stackoverflow.com/questions/105034/create-guid-uuid-in-javascript
+function uuidv4() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
+function listInternalFiles() {
+  getAllDBEntries();
 }

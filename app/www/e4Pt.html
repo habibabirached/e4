@@ -46,7 +46,7 @@
             <BR/><BR/>
             <div id="FRD_BUTTON" class="TRACC_BUTTON">FRD</div>
             <div id="SETUP_BUTTON" class="TRACC_BUTTON">MEASURE TURBINE</div>
-            <div id="OPEN_BUTTON_DEVICE" class="TRACC_BUTTON">OPEN LOCAL</div>
+            <div id="OPEN_LOCAL_DATA" class="TRACC_BUTTON">OPEN LOCAL</div>
             <div id="GET_DATA_BUTTON" class="TRACC_BUTTON">GET DATA</div>
             <div id="SENSOR_SETUP_BUTTON" class="TRACC_BUTTON">SENSOR SETUP</div>
             <div id="SHUTDOWN_BUTTON" class="TRACC_BUTTON">SHUTDOWN</div>
@@ -125,6 +125,9 @@
                     <option value="OPENING">Opening</option>
                     <option value="CLOSING">Closing</option>
                     </select>
+                    <br/><br/>
+                    <H2>Description</H2>
+                    <textarea id="DESCRIPTION" class="BORDER_BLACK_1 TXTFIELD" name="description" cols="40" rows="3"></textarea>
                     <br/><br/>
                     <input class="TRACC_BUTTON" type="submit" value="Next" id="SN_SUBMIT_BUTTON"/>
                     </div>
@@ -230,10 +233,32 @@
                 </div>
             </div>
 
+            <!-- --------------- LOCAL STORED DATA TABLE PAGE --------------------- -->
+            <div class="FIXED H100 Z0 LOCAL_DATA_PAGE">
+              <div id="LOCAL_DATA_PAGE" class="HIDE">
+                <H2><U>Local Data</U></H2><br/>
+                <table id="LOCAL_DATA_TABLE" style="width:80%">
+                  <thead id="LOCAL_DATA_TABLE_HEADER">
+                    <tr>
+                      <th class="local_data_header">Frame</th>
+                      <th class="local_data_header">S/N</th>
+                      <th class="local_data_header">Description</th>
+                      <th class="local_data_header">Date</th>
+                      <th class="local_data_header">Time</th>
+                    </tr>
+                  </thead>
+                  <tbody id="LOCAL_DATA_TABLE_BODY">
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+
             <!-- --------------- IMPORTS ------------------------- -->
             <script src="./js/lib/highcharts/highcharts6_0_4.js"></script>
             <script src="./js/lib/highcharts/highcharts_more.js"></script>
             <script src="./js/lib/reconnecting-ws.js"></script>
+            <script src="./js/lib/pouchdb-7.1.1.min.js"></script>
             <script src="./js/e4pt_config.js"></script>
             <script src="./js/e4pt_app.js"></script>
             <script src="./js/report.js"></script>
