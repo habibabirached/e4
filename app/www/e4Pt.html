@@ -237,14 +237,14 @@
             <div class="FIXED H100 Z0 LOCAL_DATA_PAGE">
               <div id="LOCAL_DATA_PAGE" class="HIDE">
                 <H2><U>Local Data</U></H2><br/>
-                <table id="LOCAL_DATA_TABLE" style="width:80%">
+                <table id="LOCAL_DATA_TABLE" class="local_data_table">
                   <thead id="LOCAL_DATA_TABLE_HEADER">
                     <tr>
-                      <th class="local_data_header">Frame</th>
-                      <th class="local_data_header">S/N</th>
-                      <th class="local_data_header">Description</th>
-                      <th class="local_data_header">Date</th>
-                      <th class="local_data_header">Time</th>
+                      <th class="local_data_header" onclick="sortTable(0)">Frame</th>
+                      <th class="local_data_header" onclick="sortTable(1)">S/N</th>
+                      <th class="local_data_header" onclick="sortTable(2)">Description</th>
+                      <th class="local_data_header" onclick="sortTable(3)">Date</th>
+                      <th class="local_data_header" onclick="sortTable(4)">Time</th>
                     </tr>
                   </thead>
                   <tbody id="LOCAL_DATA_TABLE_BODY">

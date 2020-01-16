@@ -299,6 +299,13 @@ body{
 	*/
 }
 
+.LOCAL_DATA_PAGE{
+  margin: 0;
+	margin-left: 5%;
+  position: absolute;
+	top: 10%;
+}
+
 table.sensor_super_table{
   border-collapse:collapse!important;
   width:75%;
@@ -331,6 +338,12 @@ tr.sensor_super_tr {
     text-align: center;
     width: 16.66%;
     font-weight: normal;
+}
+
+table.local_data_table{
+  border-collapse:collapse!important;
+  width:75%;
+  left: 25%;
 }
 
 th.local_data_header {
