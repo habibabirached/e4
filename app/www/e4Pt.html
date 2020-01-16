@@ -184,7 +184,7 @@
                     <input class="BORDER_BLACK_1 TXTFIELD" type="text" id="CASING_THICKNESS" value=""/><br/><br/>
                     <H2 id="SPACER_THICKNESS_LABEL">Spacer Thickness (inches):</H2>
                     <input class="BORDER_BLACK_1 TXTFIELD" type="text" id="SPACER_THICKNESS" value=""/><p id="SPACER_COLOR_LABEL"></p>
-                    <p id="CLEARANCE_ERROR">foo</p>
+                    <p id="CLEARANCE_ERROR"></p>
                     <br/>
                     <br/>
                     <input class="TRACC_BUTTON" type="submit" value="GO!" id="STAGE_COLLECT_BUTTON"/>
@@ -240,11 +240,12 @@
                 <table id="LOCAL_DATA_TABLE" class="local_data_table">
                   <thead id="LOCAL_DATA_TABLE_HEADER">
                     <tr>
-                      <th class="local_data_header" onclick="sortTable(0)">Frame</th>
-                      <th class="local_data_header" onclick="sortTable(1)">S/N</th>
-                      <th class="local_data_header" onclick="sortTable(2)">Description</th>
-                      <th class="local_data_header" onclick="sortTable(3)">Date</th>
-                      <th class="local_data_header" onclick="sortTable(4)">Time</th>
+                      <th class="local_data_header" style="display:none;">UUID</th> <!-- not visible -->
+                      <th class="local_data_header" onclick="sortTable(1)">Frame</th>
+                      <th class="local_data_header" onclick="sortTable(2)">S/N</th>
+                      <th class="local_data_header" onclick="sortTable(3)">Description</th>
+                      <th class="local_data_header" onclick="sortTable(4)">Date</th>
+                      <th class="local_data_header" onclick="sortTable(5)">Time</th>
                     </tr>
                   </thead>
                   <tbody id="LOCAL_DATA_TABLE_BODY">

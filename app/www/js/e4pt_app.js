@@ -14,7 +14,7 @@ var Data_Set = function() {
     this.stage = null;
     this.position = null;
     this.case_thickness = null;
-    this.pts = null;
+    //this.pts = null;
     this.clearance = null;
     this.quality = null;
     this.state = null;
@@ -24,7 +24,7 @@ Data_Set.prototype.add_data = function(state, stage, position, case_thickness, b
     this.stage = stage;
     this.position = position;
     this.case_thickness = case_thickness;
-    this.pts = pts;
+    //this.pts = pts;
     this.clearance = clearance;
     this.quality = quality;
     this.state = state;
@@ -50,8 +50,10 @@ var E4PTdata = {
     "sets":[],
     "locs":[],
     "minima":[],
+    "data":[],
     "clearance":"",
     "alreadyOnLDB":"false"
+
 }
 
 const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -69,9 +71,9 @@ $(document).ready(function(){
     attachFastClick(document.body);
     document.getElementById("MAIN_MENU").addEventListener('click', function(){
         $("#TITLE_BAR").text("e-4Pt Tool")
-	$("#FRD_PAGE").fadeOut();
-	$("#SETUP_PAGE").fadeOut();
-	$("#SCAN_INFO_PAGE").fadeOut();
+	      $("#FRD_PAGE").fadeOut();
+	      $("#SETUP_PAGE").fadeOut();
+	      $("#SCAN_INFO_PAGE").fadeOut();
         $("#RESULTS_PAGE").fadeOut();
         $("#FILE_LOADING_PAGE").fadeOut();
         $("#DB_LOADING_PAGE").fadeOut();
@@ -80,7 +82,6 @@ $(document).ready(function(){
         $("#TURBINE_SETUP_PAGE").fadeOut();
         $("#LOCAL_DATA_PAGE").fadeOut();
         toggle_menu();
-
     }, {passive: true})
     document.getElementById("FRD_BUTTON").addEventListener('click', function(){
         toggle_menu();
@@ -119,7 +120,7 @@ $(document).ready(function(){
         $("#INITIALIZE_SENSOR_PAGE").fadeOut();
         $("#LOCAL_DATA_PAGE").fadeOut();
         $("#TURBINE_SETUP_PAGE").fadeIn();
-        turbine_setup();
+        turbine_setup(true);
     }, {passive: true})
 
 
@@ -317,13 +318,15 @@ function initialize_sensor() {
     setMasterMessage2("white", "green", "Ready");
 }
 
-function turbine_setup() {
+function turbine_setup(reset) {
 
     // Get frame type
     var frm_idx = document.getElementById("FRAME_SIZE").selectedIndex;
     current_frame_data = frame_data[frm_idx];
 
-    reset_data_collection();
+    if (reset == true) {
+      reset_data_collection();
+    }
 
     // Setup the Stage options
     html_buf = [];
@@ -418,7 +421,7 @@ function setup_data_collection() {
     current_stage = current_frame_data['stage'][current_stage_index];
     current_position_index = 0
     current_position = current_frame_data['position'][current_stage][current_position_index];
-    setup_data_collection_page();
+    setup_data_collection_page("","");
 }
 
 function reset_data_collection() {
@@ -429,7 +432,7 @@ function reset_data_collection() {
     document.getElementById("CASING_THICKNESS").value = "";
     document.getElementById("CLEARANCE_ERROR").innerHTML = "";
     document.getElementById("SPACER_COLOR_LABEL").innerHTML = "";
-    setup_data_collection_page();
+    setup_data_collection_page("","");
     var obj = document.getElementById("DATA_PLOT2");
     var chart = Highcharts.charts[obj.getAttribute('data-highcharts-chart')];
     if (typeof chart !== 'undefined') {
@@ -456,16 +459,20 @@ function generate_customer_report() {
   return;
 }
 
-function setup_data_collection_page() {
+function setup_data_collection_page(dateStr, timeStr) {
     // Fill in the header
     var customer = document.getElementById("CUSTOMER").value;
     var site = document.getElementById("SITE").value;
     var d = new Date();
-    var hh = ( '0' + d.getHours()).substr(-2);
-    var mm = ( '0' + d.getMinutes()).substr(-2);
-    var ss = ( '0' + d.getSeconds()).substr(-2);
-    var timeStr = hh + ":" + mm + ":" + ss;
-    var dateStr = monthNames[d.getMonth()] + "-" + d.getDate() + "-" + d.getFullYear();
+    if (timeStr.length == 0) {
+      var hh = ( '0' + d.getHours()).substr(-2);
+      var mm = ( '0' + d.getMinutes()).substr(-2);
+      var ss = ( '0' + d.getSeconds()).substr(-2);
+      timeStr = hh + ":" + mm + ":" + ss;
+    }
+    if (dateStr.length == 0) {
+        dateStr = monthNames[d.getMonth()] + "-" + d.getDate() + "-" + d.getFullYear();
+    }
     E4PTdata.frame = document.getElementById("FRAME_SIZE").value;
     E4PTdata.serial_number = document.getElementById("SERIAL_NUMBER").value;
     E4PTdata.description = document.getElementById("DESCRIPTION").value;
@@ -892,7 +899,7 @@ function parse_data() {
     set.case_thickness = E4PTdata.casing_thickness;
     set.clearance = E4PTdata.clearance;
     set.state = E4PTdata.state;
-    set.pts = E4PTdata.data;
+    //set.pts = E4PTdata.data;
     //set.quality = E4PTdata.intensity;
     E4PTdata.sets.push(set);
 }
@@ -1019,8 +1026,8 @@ function plot_data() {
       {
         type: 'line',
         name: 'Confocal Sensor',
-        //data: E4PTdata.data
-        data: E4PTdata.sets[E4PTdata.sets.length-1].pts
+        data: E4PTdata.data
+        //data: E4PTdata.sets[E4PTdata.sets.length-1].pts
       },
       {
         type: 'scatter',
@@ -1111,8 +1118,8 @@ function plot_data_2() {
       {
         type: 'line',
         name: 'Confocal Sensor',
-        //data: E4PTdata.data
-        data: E4PTdata.sets[E4PTdata.sets.length-1].pts
+        data: E4PTdata.data
+        //data: E4PTdata.sets[E4PTdata.sets.length-1].pts
       },
       {
         type: 'scatter',
@@ -1349,10 +1356,11 @@ function addDBEntry(e4pt_data) {
     date: e4pt_data.date,
     time: e4pt_data.time,
     sets: e4pt_data.sets,
-    //locs: e4pt_data.locs,  // Probably shouldn't try to save this dense data
-    //minima: e4pt_data.minima, // Probably shouldn't try to save this dense data
-    clearance: e4pt_data.clearance,
     alreadyOnLDB: e4pt_data.alreadyOnLDB,
+    // We don't save the locs, minima, or data elements of e4pt_data because it
+    // contains dense data and could overwhelm the database & browser memory.
+    // We also don't save the clearance element because it is saved in the sets
+    // element.
   }
 
   local_db.put(entry, function callback(err, result) {
@@ -1382,15 +1390,26 @@ function redrawDataSetsUI(rows) {
   for (var i=0; i<rows.length; i++) {
     console.log("Row: id:" + rows[i].doc._id + "; rev: " + rows[i].doc._rev);
     var new_row = tbody.insertRow(-1);
+    // save the ID in a hidden column so we can get it to retrieve the data.
+    // The first column is hidden.
+    var cell0 = new_row.insertCell(-1);
+    cell0.innerHTML = rows[i].doc._id;
+    cell0.setAttribute("style","display:none;");
+    var clickFn = "loadLocalData(\"" + rows[i].doc._id + "\")";
     var cell1 = new_row.insertCell(-1);
+    cell1.setAttribute("onclick",clickFn);
     cell1.innerHTML = rows[i].doc.frame;
     var cell2 = new_row.insertCell(-1);
+    cell2.setAttribute("onclick",clickFn);
     cell2.innerHTML = rows[i].doc.serial_number;
     var cell3 = new_row.insertCell(-1);
+    cell3.setAttribute("onclick",clickFn);
     cell3.innerHTML = rows[i].doc.description;
     var cell4 = new_row.insertCell(-1);
+    cell4.setAttribute("onclick",clickFn);
     cell4.innerHTML = rows[i].doc.date;
     var cell5 = new_row.insertCell(-1);
+    cell5.setAttribute("onclick",clickFn);
     cell5.innerHTML = rows[i].doc.time;
   }
   prev_tbody.parentNode.replaceChild(tbody, prev_tbody);
@@ -1398,18 +1417,51 @@ function redrawDataSetsUI(rows) {
 
 function addDBDummyData() {
   var tmpData1 = {};
+  tmpData1.ofs_id = 12345;
   tmpData1.frame = "7FA.05";
   tmpData1.serial_number = "246810";
+  tmpData1.data_name = "none";
   tmpData1.description = "Description 1";
+  tmpData1.customer = "GE Research";
+  tmpData1.site_name = "Niskayuna";
+  tmpData1.inspection_type = "type 1";
+  tmpData1.operator = "200005229";
+  tmpData1.units = "inches";
+  tmpData1.state = "opening";
+  tmpData1.final = false;
   tmpData1.date = "Jul-04-1776";
   tmpData1.time = "13:13";
+  var set1 = new Data_Set();
+  set1.stage = 5;
+  set1.position = "TOP";
+  set1.case_thickness = 4.967;
+  set1.clearance = 3.1415;
+  set1.state = "opening";
+  tmpData1.sets = [set1];
   addDBEntry(tmpData1);
-  tmpData1.frame = "7FA.05";
-  tmpData1.serial_number = "135790";
-  tmpData1.description = "Description 2";
-  tmpData1.date = "Jul-24-1969";
-  tmpData1.time = "20:17";
-  addDBEntry(tmpData1);
+  var tmpData2 = {};
+  tmpData2.ofs_id = 67890;
+  tmpData2.frame = "6B";
+  tmpData2.serial_number = "135790";
+  tmpData2.data_name = "none";
+  tmpData2.description = "Description 2";
+  tmpData2.customer = "GE Power";
+  tmpData2.site_name = "Greenville";
+  tmpData2.inspection_type = "type 2";
+  tmpData2.operator = "Sandra Kolvick";
+  tmpData2.units = "mm";
+  tmpData2.state = "closing";
+  tmpData2.final = true;
+  tmpData2.date = "Jul-24-1969";
+  tmpData2.time = "20:17";
+  var set2 = new Data_Set();
+  set2.stage = 17;
+  set2.position = "BOTTOM";
+  set2.case_thickness = 4.321;
+  set2.clearance = 1.4142;
+  set2.state = "closing";
+  tmpData2.sets = [set2];
+  addDBEntry(tmpData2);
 }
 
 // Not sure if we'll need this in production, but for development it could
@@ -1515,4 +1567,61 @@ function sortTable(n) {
       }
     }
   }
+}
+
+function loadLocalData(id) {
+  console.log("@loadLocalData: id = ", id);
+  local_db.get(id, function(err, doc) {
+    console.log("Row: ", doc);
+    var frm_idx = 0;
+    for (frm_idx=0; frm_idx<frame_data.length; frm_idx++) {
+      if (frame_data[frm_idx].frame == doc.frame) {
+        break;
+      }
+    }
+    document.getElementById("FRAME_SIZE").selectedIndex = frm_idx;
+    document.getElementById("UNITS").value = doc.units;
+    document.getElementById("CUSTOMER").value = doc.customer;
+    document.getElementById("SITE").value = doc.site_name;
+    document.getElementById("FRAME_SIZE").value = doc.frame;
+    document.getElementById("SERIAL_NUMBER").value = doc.serial_number;
+    document.getElementById("DESCRIPTION").value = doc.description;
+    current_frame_data = frame_data[frm_idx];
+    current_stage_index = 0;
+    current_stage = current_frame_data.stage[0];
+    current_position_index = 0;
+    current_position = current_frame_data.position[current_stage][0];
+
+    $("#LOCAL_DATA_PAGE").fadeOut();
+    // Have to set up the data collection page before we can populate
+    // the clearance entries in the tables.
+    setup_data_collection_page(doc.date, doc.time);
+
+    for (var i=0; i<doc.sets.length; i++) {
+      var pos = doc.sets[i].position;
+      var stg = doc.sets[i].stage;
+      var clr = doc.sets[i].clearance;
+      var clr_f = parseFloat(clr.toFixed(4));
+      var positions = current_frame_data.position[stg];
+      var stages = current_frame_data.stage;
+      var position_index = 0;
+      for (position_index = 0; position_index<positions.length; position_index++) {
+        if (positions[position_index] == pos) {
+          break;
+        }
+      }
+      var stage_index = 0;
+      for (stage_index = 0; stage_index < stages.length; stage_index++) {
+        if (stages[stage_index] == stg) {
+          break;
+        }
+      }
+      var el_id = positions[position_index] + stages[stage_index];
+      el_id = el_id.replace(/\s+/g, '_');
+      document.getElementById(el_id).innerHTML = clr_f;
+    }
+
+    turbine_setup(false);
+    $("#TURBINE_SETUP_PAGE").fadeIn();
+  });
 }
