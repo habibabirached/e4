@@ -87,12 +87,12 @@ $(document).ready(function(){
         toggle_menu();
         //addDBDummyData(); // just a way to add dummy data for testing.
         //clearDB();
-	$("#DATA_PLOT").fadeOut();
+	      $("#DATA_PLOT").fadeOut();
         $("#FRD_PAGE").fadeIn();
     }, {passive: true})
     document.getElementById("SETUP_BUTTON").addEventListener('click', function(){
         toggle_menu();
-	$("#DATA_PLOT").fadeOut();
+	      $("#DATA_PLOT").fadeOut();
         $("#SETUP_PAGE").fadeIn();
         set_frame_information();
     }, {passive: true})
@@ -366,11 +366,22 @@ function turbine_setup(reset) {
 function set_frame_information() {
     var html_buf = [];
     var frmIdx = 0;
+    var frame = "";
+    var selectedIndex = 0;
     for (frmIdx = 0; frmIdx < frame_data.length; frmIdx++) {
         html_buf.push("<option value='" + frame_data[frmIdx]['frame'] + "'>" + frame_data[frmIdx]['frame'] + "</option>");
+        if (current_frame_data.length != 0) {
+          if (current_frame_data.frame == frame_data[frmIdx]) {
+            selectedIndex = frmIdx;
+          }
+        }
     }
     var html = html_buf.join('\n');
     document.getElementById("FRAME_SIZE").innerHTML = html;
+    if (current_frame_data.length != 0) {
+      document.getElementById("FRAME_SIZE").selectedIndex = selectedIndex;
+      document.getElementById("FRAME_SIZE").value = current_frame_data.frame;
+    }
 }
 
 function set_position_information() {
@@ -1426,7 +1437,7 @@ function addDBDummyData() {
   tmpData1.site_name = "Niskayuna";
   tmpData1.inspection_type = "type 1";
   tmpData1.operator = "200005229";
-  tmpData1.units = "inches";
+  tmpData1.units = "In";
   tmpData1.state = "opening";
   tmpData1.final = false;
   tmpData1.date = "Jul-04-1776";
@@ -1449,7 +1460,7 @@ function addDBDummyData() {
   tmpData2.site_name = "Greenville";
   tmpData2.inspection_type = "type 2";
   tmpData2.operator = "Sandra Kolvick";
-  tmpData2.units = "mm";
+  tmpData2.units = "MM";
   tmpData2.state = "closing";
   tmpData2.final = true;
   tmpData2.date = "Jul-24-1969";
@@ -1580,12 +1591,19 @@ function loadLocalData(id) {
       }
     }
     document.getElementById("FRAME_SIZE").selectedIndex = frm_idx;
+    document.getElementById("FRAME_SIZE").value = doc.frame;
     document.getElementById("UNITS").value = doc.units;
     document.getElementById("CUSTOMER").value = doc.customer;
     document.getElementById("SITE").value = doc.site_name;
-    document.getElementById("FRAME_SIZE").value = doc.frame;
     document.getElementById("SERIAL_NUMBER").value = doc.serial_number;
     document.getElementById("DESCRIPTION").value = doc.description;
+    document.getElementById("OPERATOR").value = doc.operator;
+    if (doc.units == "In") {
+      document.getElementById("UNITS").selectedIndex = 0;
+    }
+    if (doc.units == "MM") {
+      document.getElementById("UNITS").selectedIndex = 1;
+    }
     current_frame_data = frame_data[frm_idx];
     current_stage_index = 0;
     current_stage = current_frame_data.stage[0];

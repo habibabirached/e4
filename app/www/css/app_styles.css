@@ -342,8 +342,9 @@ tr.sensor_super_tr {
 
 table.local_data_table{
   border-collapse:collapse!important;
-  width:75%;
-  left: 25%;
+	width:80%;
+	margin-left:10%;
+	margin-right:10%;
 }
 
 th.local_data_header {
