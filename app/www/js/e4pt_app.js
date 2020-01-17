@@ -85,8 +85,7 @@ $(document).ready(function(){
     }, {passive: true})
     document.getElementById("FRD_BUTTON").addEventListener('click', function(){
         toggle_menu();
-        //addDBDummyData(); // just a way to add dummy data for testing.
-	      $("#DATA_PLOT").fadeOut();
+	$("#DATA_PLOT").fadeOut();
         $("#FRD_PAGE").fadeIn();
     }, {passive: true})
     document.getElementById("SETUP_BUTTON").addEventListener('click', function(){
@@ -122,7 +121,16 @@ $(document).ready(function(){
         turbine_setup(true);
     }, {passive: true})
     document.getElementById("CLEAR_DB_BUTTON").addEventListener('click', function(){
-        clearDB();
+        e4PtConfirm("Are you sure you want to clear all data from this database?",
+          function(idx) {
+            if (idx == 1) {
+              console.log("Clearing database.");
+              clearDB();
+            }
+            else {
+              console.log("Database clear was cancelled.");
+            }
+          });
     }, {passive: true})
 
     function RESULTS_BUTTON_FUNC(){
@@ -1545,6 +1553,7 @@ function clearDB() {
       } else {
         console.log("Database destroyed. Creating new empty database.");
         local_db = new PouchDB('e4ptdb');
+        setTimeout(function(){listInternalFiles();}, 1000);
       }
     });
   }
