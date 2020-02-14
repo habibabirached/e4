@@ -72,12 +72,16 @@ async def ws_msg_handler(websocket, path):
                 msg_args[i] = msg_args[i].strip()
 
         nSecs = 0
+        meas_rate = 0
         if (len(msg_args) > 1):
             print("msg_args: {}".format(msg_args))
             if is_number(msg_args[1]):
-                nSecs = msg_args[1]
-                nFrames = (1000.0 * float(nSecs))/100.0 # 1K samp/sec; 100 samp/frame
-                PARAMS[0] = int(nFrames)
+                if msg_args[0] == 'send_data':
+                    nSecs = msg_args[1]
+                    nFrames = (1000.0 * float(nSecs))/100.0 # 1K samp/sec; 100 samp/frame
+                    PARAMS[0] = int(nFrames)
+                if msg_args[0] == 'set_measuring_rate':
+                    meas_rate = msg_args[1];
         if msg_args[0] == 'ping':
             print("Websocket: Got ping, sending pong.")
             data_dict = {'type':'pong'}
@@ -152,6 +156,9 @@ async def ws_msg_handler(websocket, path):
 
         if msg_args[0] == 'do_mastering':
             await do_mastering(websocket)
+
+        if msg_args[0] == 'set_measuring_rate':
+            await set_measuring_rate(meas_rate)
 
 async def dark_reference(websocket):
     print('@dark_reference()')
@@ -599,6 +606,15 @@ def get_data_from_db_with_sn(conn, ser_num):
         return frames
     else:
         return []
+
+async def set_measuring_rate(mr):
+    if SIMULATOR == False:
+        tn_host = (SENSOR_HOST)
+        tn = telnetlib.Telnet(tn_host)
+        tn.read_until(bytearray('->','utf-8'))
+        send_cmd('MEASRATE',mr)
+    else:
+        print("This is where the measurement rate would be set to ", mr)
 
 def check_port(ip,port):
     print("@check_port")

@@ -181,6 +181,9 @@ $(document).ready(function(){
     document.getElementById("START_DARK_REFERENCE_BUTTON").addEventListener('click', function(){
 	do_dark_reference();
     }, {passive: true})
+    document.getElementById("SET_MEASUREMENT_RATE_BUTTON").addEventListener('click', function(){
+  set_measurement_rate();
+    }, {passive: true})
     document.getElementById("DOWNLOAD_FILE_BUTTON_01").addEventListener('click', function(){
 	doFileDownload();
     }, {passive: true})
@@ -367,6 +370,27 @@ function set_position_information() {
     }
     var html = html_buf.join('\n');
     document.getElementById("SENSOR_POSITION").innerHTML = html;
+}
+
+function set_measurement_rate() {
+  meas_rate_text = document.getElementById("MEASUREMENT_RATE").value;
+  var meas_rate_f = parseFloat(meas_rate_text);
+  // Make sure the text is a number
+  if ( (isNaN(meas_rate_f)) || (typeof(meas_rate_f) != "number")) {
+    e4PtAlert("Measurement rate is not a number.");
+    return;
+  }
+  if (meas_rate_f < 0.1) {
+    meas_rate_f = 0.1;
+    document.getElementById("MEASUREMENT_RATE").value = 0.1;
+  }
+  if (meas_rate_f > 6.5) {
+    meas_rate_f = 6.5;
+    document.getElementById("MEASUREMENT_RATE").value = 6.5;
+  }
+  message = {"args":["set_measuring_rate",meas_rate_f]};
+  message = JSON.stringify(message);
+  sendWSMessage(message);
 }
 
 function collect_stage_data() {
