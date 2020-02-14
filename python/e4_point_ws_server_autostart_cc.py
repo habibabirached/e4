@@ -45,7 +45,8 @@ SCAN_META_DATA = {"frame":"",
                   "customer":"",
                   "site":"",
                   "operator":"",
-                  "units":""}
+                  "units":"",
+                  "state":""}
 
 # Start of sensor measurement range in mm
 SMR = 11.0
@@ -124,7 +125,9 @@ async def ws_msg_handler(websocket, path):
                          'intensity':int_df.tolist(),
                          'locs':peak_locs.tolist(),
                          'gaps':gaps.tolist(),
-                         'clearance':clearance}
+                         'clearance':clearance,
+                         'casing_thickness':casing_thickness,
+                         'spacer_thickness':spacer_thickness}
             json_data = json.dumps(data_dict)
             await websocket.send(json_data)
         if msg_args[0] == 'scan_meta_data':
@@ -135,6 +138,7 @@ async def ws_msg_handler(websocket, path):
             SCAN_META_DATA['site'] = msg_args[4]
             SCAN_META_DATA['operator'] = msg_args[5]
             SCAN_META_DATA['units'] = msg_args[6]
+            SCAN_META_DATA['state'] = msg_args[7]
         if msg_args[0] == 'shutdown':
             print("Got shutdown message over websocket.")
             system_shutdown()
@@ -142,8 +146,11 @@ async def ws_msg_handler(websocket, path):
         if msg_args[0] == 'get_data_file':
             global LAST_SAVED_FILE
             print("Got filename request. File is {}".format(LAST_SAVED_FILE));
+            dl_file = LAST_SAVED_FILE
+            if SIMULATOR == True:
+                dl_file = LAST_SAVED_FILE.replace("app/www/","")
             data_dict = {'type':'filename',
-                         'fname':LAST_SAVED_FILE}
+                         'fname':dl_file}
             json_data = json.dumps(data_dict)
             await websocket.send(json_data)
 
@@ -537,7 +544,7 @@ def save_data(params, data, peak_locs, gaps, *args, **kwargs):
                 save_file2 = "/var/www/html/e4pt/data/e4pt_" + meta_data + time_stamp + ".csv"
                 LAST_SAVED_FILE = "./data/e4pt_" + meta_data + time_stamp + ".csv"
                 if SIMULATOR == True:
-                    save_file2 = "e4pt_" + meta_data + time_stamp + ".csv"
+                    save_file2 = "../app/www/data/e4pt_" + meta_data + time_stamp + ".csv"
                     LAST_SAVED_FILE = save_file2
                 #CSV output
                 print('Saving raw data to CSV file: {}'.format(LAST_SAVED_FILE))
