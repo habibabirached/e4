@@ -31,6 +31,7 @@ PARAMS = ["","","","",""]
 THRESHOLD = 10.0
 FILTER_ORDER = 1
 LAST_SAVED_FILE = ""
+MEASUREMENT_RATE = 1.000 # units are kHz
 SENSOR_HOST = "192.168.168.150"
 SENSOR_WEBSOCKET =  "192.168.168.41"
 if SIMULATOR == True:
@@ -61,6 +62,7 @@ def is_number(s):
 
 async def ws_msg_handler(websocket, path):
     global SCAN_META_DATA
+    global MEASUREMENT_RATE
     while True:
         rx_msg = await websocket.recv()
         msg = json.loads(rx_msg)
@@ -78,10 +80,10 @@ async def ws_msg_handler(websocket, path):
             if is_number(msg_args[1]):
                 if msg_args[0] == 'send_data':
                     nSecs = msg_args[1]
-                    nFrames = (1000.0 * float(nSecs))/100.0 # 1K samp/sec; 100 samp/frame
+                    nFrames = ((MEASUREMENT_RATE * 1000.0) * float(nSecs))/100.0 # N Ksamp/sec; 100 samp/frame
                     PARAMS[0] = int(nFrames)
                 if msg_args[0] == 'set_measuring_rate':
-                    meas_rate = msg_args[1];
+                    meas_rate = msg_args[1]; # meas_rate should be in kHz.
         if msg_args[0] == 'ping':
             print("Websocket: Got ping, sending pong.")
             data_dict = {'type':'pong'}
@@ -158,9 +160,11 @@ async def ws_msg_handler(websocket, path):
             await do_mastering(websocket)
 
         if msg_args[0] == 'set_measuring_rate':
+            # meas_rate should be in kHz.
             await set_measuring_rate(meas_rate)
 
 async def dark_reference(websocket):
+    global MEASUREMENT_RATE
     print('@dark_reference()')
     # send dark reference command
     tn_host = (SENSOR_HOST)
@@ -172,7 +176,7 @@ async def dark_reference(websocket):
     print("Dark correction complete")
     #next do data collection and show results
     nSecs = 10
-    nFrames = (1000.0 * float(nSecs))/100.0 # 1K samp/sec; 100 samp/frame
+    nFrames = ((MEASUREMENT_RATE * 1000.0) * float(nSecs))/100.0 # 1K samp/sec; 100 samp/frame
     PARAMS[0] = int(nFrames)
     print("Acquiring Data")          
     raw_data = await collect_data(PARAMS, websocket)
@@ -607,12 +611,16 @@ def get_data_from_db_with_sn(conn, ser_num):
     else:
         return []
 
+# set_measuring_rate(mr) sets the measurement rate of the sensor. The argument,
+# mr, is specified in kHz.
 async def set_measuring_rate(mr):
+    global MEASUREMENT_RATE
     if SIMULATOR == False:
         tn_host = (SENSOR_HOST)
         tn = telnetlib.Telnet(tn_host)
         tn.read_until(bytearray('->','utf-8'))
         send_cmd('MEASRATE',mr)
+        MEASUREMENT_RATE = mr
     else:
         print("This is where the measurement rate would be set to ", mr)
 
@@ -687,6 +695,7 @@ if __name__ == "__main__":
         send_cmd('OUTPUT ETHERNET',tn)
         send_cmd('MEASTRANSFER SERVER/TCP 1024',tn)
         send_cmd('OUT_ETH 01INTENSITY 01DIST1 TIMESTAMP',tn)
+        send_cmd('MEASRATE', 1000)
         tn.close()
         db_file = "~/data/e4pt.s3db"
     else:
