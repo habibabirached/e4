@@ -704,9 +704,9 @@ function createWS(){
     if (navigator.onLine){
         if ("WebSocket" in window){
             //console.log("WebSocket is supported by your Browser!");
-            //e4PtSocket = new ReconnectingWebSocket("ws://192.168.168.41:3405", null, {reconnectInterval: 3000});
+            e4PtSocket = new ReconnectingWebSocket("ws://192.168.168.41:3405", null, {reconnectInterval: 3000});
             //e4PtSocket = new ReconnectingWebSocket("ws://192.168.1.8:3405", null, {reconnectInterval: 3000});
-	          e4PtSocket = new ReconnectingWebSocket("ws://127.0.0.1:3405", null, {reconnectInterval: 3000});
+	    //e4PtSocket = new ReconnectingWebSocket("ws://127.0.0.1:3405", null, {reconnectInterval: 3000});
 
             e4PtSocket.onopen = function(){
                 // Web Socket is connected, send data using send()
