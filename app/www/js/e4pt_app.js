@@ -182,7 +182,10 @@ $(document).ready(function(){
 	do_dark_reference();
     }, {passive: true})
     document.getElementById("SET_MEASUREMENT_RATE_BUTTON").addEventListener('click', function(){
-  set_measurement_rate();
+  set_measurement_rate("1");
+    }, {passive: true})
+    document.getElementById("SET_MEASUREMENT_RATE_BUTTON_2").addEventListener('click', function(){
+  set_measurement_rate("2");
     }, {passive: true})
     document.getElementById("DOWNLOAD_FILE_BUTTON_01").addEventListener('click', function(){
 	doFileDownload();
@@ -372,8 +375,9 @@ function set_position_information() {
     document.getElementById("SENSOR_POSITION").innerHTML = html;
 }
 
-function set_measurement_rate() {
-  meas_rate_text = document.getElementById("MEASUREMENT_RATE").value;
+function set_measurement_rate(idx) {
+  var el_id = "MEASUREMENT_RATE_" + idx;
+  meas_rate_text = document.getElementById(el_id).value;
   var meas_rate_f = parseFloat(meas_rate_text);
   // Make sure the text is a number
   if ( (isNaN(meas_rate_f)) || (typeof(meas_rate_f) != "number")) {
@@ -382,11 +386,11 @@ function set_measurement_rate() {
   }
   if (meas_rate_f < 0.1) {
     meas_rate_f = 0.1;
-    document.getElementById("MEASUREMENT_RATE").value = 0.1;
+    document.getElementById(el_id).value = 0.1;
   }
   if (meas_rate_f > 6.5) {
     meas_rate_f = 6.5;
-    document.getElementById("MEASUREMENT_RATE").value = 6.5;
+    document.getElementById(el_id).value = 6.5;
   }
   message = {"args":["set_measuring_rate",meas_rate_f]};
   message = JSON.stringify(message);
