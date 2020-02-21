@@ -203,10 +203,10 @@ $(document).ready(function(){
         generate_customer_report();
     }, {passive: true})
     document.getElementById("SENSOR_STAGE").addEventListener('change', function(){
-        setup_data_collection();
+        setup_data_collection(true);
     }, {passive: true})
     document.getElementById("SENSOR_POSITION").addEventListener('change', function(){
-        setup_data_collection();
+        setup_data_collection(false);
     }, {passive: true})
     document.getElementById("CASING_THICKNESS").addEventListener('change', function(){
         update_spacer_value();
@@ -427,12 +427,12 @@ function collect_stage_data() {
     }
 }
 
-function setup_data_collection() {
+function setup_data_collection(update_position) {
     current_stage_index = document.getElementById("SENSOR_STAGE").selectedIndex;
     current_stage = current_frame_data['stage'][current_stage_index];
-    current_position_index = 0
+    current_position_index = document.getElementById("SENSOR_POSITION").selectedIndex;
     current_position = current_frame_data['position'][current_stage][current_position_index];
-    setup_data_collection_page();
+    setup_data_collection_page(update_position);
 }
 
 function reset_data_collection() {
@@ -470,7 +470,7 @@ function generate_customer_report() {
   return;
 }
 
-function setup_data_collection_page() {
+function setup_data_collection_page(update_position) {
     // Fill in the header
     var customer = document.getElementById("CUSTOMER").value;
     var site = document.getElementById("SITE").value;
@@ -485,7 +485,6 @@ function setup_data_collection_page() {
     E4PTdata.date = dateStr;
     var header = "<p>" + dateStr + "  -  " + timeStr + "</p><p>" + customer + " - " + site + "</p><p>Frame: " + E4PTdata.frame + "</p><p>S/N: " + E4PTdata.serial_number + "</p>";
     document.getElementById("TURBINE_SETUP_HEADER").innerHTML = header;
-
     document.getElementById("SENSOR_STAGE").selectedIndex = current_stage_index;
     document.getElementById("SENSOR_POSITION").selectedIndex = current_position_index;
     var html_buf = [];
@@ -521,14 +520,16 @@ function setup_data_collection_page() {
     document.getElementById("SENSOR_DATA_TABLE").innerHTML = html;
 
     // Update the positions selector based on the current stage.
-    var positions = current_frame_data['position'];
-    positions = positions[current_stage];
-    for (position_index = 0; position_index < positions.length; position_index++) {
+    if (update_position) {
+      var positions = current_frame_data['position'];
+      positions = positions[current_stage];
+      for (position_index = 0; position_index < positions.length; position_index++) {
         html_buf.push("<option value='" + positions[position_index] + "'>" + positions[position_index] + "</option>");
+      }
+      html = html_buf.join('\n')
+      document.getElementById("SENSOR_POSITION").innerHTML = html;
+      current_position_index = 0;
     }
-    html = html_buf.join('\n')
-    document.getElementById("SENSOR_POSITION").innerHTML = html;
-    current_position_index = 0;
 
     update_spacer_value();
 }
