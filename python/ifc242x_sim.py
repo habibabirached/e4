@@ -33,6 +33,10 @@ def make_rotor_data():
     noise = [noise[i]/100 for i in range(0,len(noise))]
     data = [15.0] * int(samples_per_rotor+0.5)      # data list initialized with max sensor value.
     blade_dist = [1.0] * BLADES_PER_STAGE           # distance to each blade tip
+
+    # No blades (for test purposes).
+    # blade_dist = [ 15.0 + noise[i] for i in range(0,len(blade_dist))]
+    
     blade_dist = [blade_dist[i] + noise[i] for i in range(0,len(blade_dist))]
     # A 'section' of the rotor here means a section containing a blade
     # and the gap until the next blade.

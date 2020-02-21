@@ -204,6 +204,12 @@ $(document).ready(function(){
     document.getElementById("START_DARK_REFERENCE_BUTTON").addEventListener('click', function(){
 	do_dark_reference();
     }, {passive: true})
+    document.getElementById("SET_MEASUREMENT_RATE_BUTTON").addEventListener('click', function(){
+  set_measurement_rate("1");
+    }, {passive: true})
+    document.getElementById("SET_MEASUREMENT_RATE_BUTTON_2").addEventListener('click', function(){
+  set_measurement_rate("2");
+    }, {passive: true})
     document.getElementById("DOWNLOAD_FILE_BUTTON_01").addEventListener('click', function(){
 	doFileDownload();
     }, {passive: true})
@@ -220,10 +226,10 @@ $(document).ready(function(){
         generate_customer_report();
     }, {passive: true})
     document.getElementById("SENSOR_STAGE").addEventListener('change', function(){
-        setup_data_collection();
+        setup_data_collection(true);
     }, {passive: true})
     document.getElementById("SENSOR_POSITION").addEventListener('change', function(){
-        setup_data_collection();
+        setup_data_collection(false);
     }, {passive: true})
     document.getElementById("CASING_THICKNESS").addEventListener('change', function(){
         update_spacer_value();
@@ -409,6 +415,28 @@ function set_position_information() {
     document.getElementById("SENSOR_POSITION").innerHTML = html;
 }
 
+function set_measurement_rate(idx) {
+  var el_id = "MEASUREMENT_RATE_" + idx;
+  meas_rate_text = document.getElementById(el_id).value;
+  var meas_rate_f = parseFloat(meas_rate_text);
+  // Make sure the text is a number
+  if ( (isNaN(meas_rate_f)) || (typeof(meas_rate_f) != "number")) {
+    e4PtAlert("Measurement rate is not a number.");
+    return;
+  }
+  if (meas_rate_f < 0.1) {
+    meas_rate_f = 0.1;
+    document.getElementById(el_id).value = 0.1;
+  }
+  if (meas_rate_f > 6.5) {
+    meas_rate_f = 6.5;
+    document.getElementById(el_id).value = 6.5;
+  }
+  message = {"args":["set_measuring_rate",meas_rate_f]};
+  message = JSON.stringify(message);
+  sendWSMessage(message);
+}
+
 function collect_stage_data() {
     // Make sure the plot doesn't show on screen
     var position = document.getElementById("SENSOR_POSITION").value;
@@ -439,12 +467,12 @@ function collect_stage_data() {
     }
 }
 
-function setup_data_collection() {
+function setup_data_collection(update_position) {
     current_stage_index = document.getElementById("SENSOR_STAGE").selectedIndex;
     current_stage = current_frame_data['stage'][current_stage_index];
-    current_position_index = 0
+    current_position_index = document.getElementById("SENSOR_POSITION").selectedIndex;
     current_position = current_frame_data['position'][current_stage][current_position_index];
-    setup_data_collection_page("","");
+    setup_data_collection_page("", "", update_position);
 }
 
 function reset_data_collection() {
@@ -456,7 +484,7 @@ function reset_data_collection() {
     document.getElementById("CASING_THICKNESS").value = "";
     document.getElementById("CLEARANCE_ERROR").innerHTML = "";
     document.getElementById("SPACER_COLOR_LABEL").innerHTML = "";
-    setup_data_collection_page("","");
+    setup_data_collection_page("", "", true);
     var obj = document.getElementById("DATA_PLOT2");
     var chart = Highcharts.charts[obj.getAttribute('data-highcharts-chart')];
     if (typeof chart !== 'undefined') {
@@ -483,7 +511,7 @@ function generate_customer_report() {
   return;
 }
 
-function setup_data_collection_page(dateStr, timeStr) {
+function setup_data_collection_page(dateStr, timeStr, update_position) {
     // Fill in the header
     var customer = document.getElementById("CUSTOMER").value;
     var site = document.getElementById("SITE").value;
@@ -504,7 +532,6 @@ function setup_data_collection_page(dateStr, timeStr) {
     E4PTdata.time = timeStr;
     var header = "<p>" + dateStr + "  -  " + timeStr + "</p><p>" + customer + " - " + site + "</p><p>Frame: " + E4PTdata.frame + "</p><p>S/N: " + E4PTdata.serial_number + "</p>";
     document.getElementById("TURBINE_SETUP_HEADER").innerHTML = header;
-
     document.getElementById("SENSOR_STAGE").selectedIndex = current_stage_index;
     document.getElementById("SENSOR_POSITION").selectedIndex = current_position_index;
     var html_buf = [];
@@ -540,14 +567,16 @@ function setup_data_collection_page(dateStr, timeStr) {
     document.getElementById("SENSOR_DATA_TABLE").innerHTML = html;
 
     // Update the positions selector based on the current stage.
-    var positions = current_frame_data['position'];
-    positions = positions[current_stage];
-    for (position_index = 0; position_index < positions.length; position_index++) {
+    if (update_position) {
+      var positions = current_frame_data['position'];
+      positions = positions[current_stage];
+      for (position_index = 0; position_index < positions.length; position_index++) {
         html_buf.push("<option value='" + positions[position_index] + "'>" + positions[position_index] + "</option>");
+      }
+      html = html_buf.join('\n')
+      document.getElementById("SENSOR_POSITION").innerHTML = html;
+      current_position_index = 0;
     }
-    html = html_buf.join('\n')
-    document.getElementById("SENSOR_POSITION").innerHTML = html;
-    current_position_index = 0;
 
     update_spacer_value();
 }
@@ -724,9 +753,9 @@ function createWS(){
     if (navigator.onLine){
         if ("WebSocket" in window){
             //console.log("WebSocket is supported by your Browser!");
-            //e4PtSocket = new ReconnectingWebSocket("ws://192.168.168.41:3405", null, {reconnectInterval: 3000});
+            e4PtSocket = new ReconnectingWebSocket("ws://192.168.168.41:3405", null, {reconnectInterval: 3000});
             //e4PtSocket = new ReconnectingWebSocket("ws://192.168.1.8:3405", null, {reconnectInterval: 3000});
-	          e4PtSocket = new ReconnectingWebSocket("ws://127.0.0.1:3405", null, {reconnectInterval: 3000});
+	    //e4PtSocket = new ReconnectingWebSocket("ws://127.0.0.1:3405", null, {reconnectInterval: 3000});
 
             e4PtSocket.onopen = function(){
                 // Web Socket is connected, send data using send()
@@ -1678,7 +1707,7 @@ function loadLocalData(id) {
     // Have to set up the data collection page before we can populate
     // the clearance entries in the tables.
     //var tmp = document.getElementById("FRAME_SIZE").selectedIndex;
-    setup_data_collection_page(doc.date, doc.time);
+      setup_data_collection_page(doc.date, doc.time, true);
 
     for (var i=0; i<doc.sets.length; i++) {
       var pos = doc.sets[i].position;

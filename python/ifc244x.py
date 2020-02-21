@@ -25,8 +25,9 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.settimeout(2)
 
 # Connect the socket to the port where the server is listening
-server_address = ("192.168.168.150", 1024)
+#server_address = ("192.168.168.150", 1024)
 #server_address = ("169.254.168.150", 1024)
+server_address = ("127.0.0.1", 1024)
 print('connecting to port...')
 sock.connect(server_address)
 print('connected')

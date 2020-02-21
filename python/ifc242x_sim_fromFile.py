@@ -31,6 +31,7 @@ def read_rotor_data(data_file):
 
 def make_data_frame(counter, displacements, intensities):
     global DATA_PTR
+    global SAMPLE_RATE
     t_idx = counter * NUMBER_OF_FRAMES
     data = b'DATA'
     data = b''.join([data, b'\x00\x00\x00\x00']) # order number
