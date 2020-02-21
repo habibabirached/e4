@@ -42,7 +42,7 @@ frame_data = [
      'max_turn_time':0,
      'rotor_mode':'rotating',
      'measure_mode':'dynamic',
-     'option','full_turn'
+     'option':'full_turn'
     },
     {'frame':'6FA',
      'stage':['2', '6', '10', '15'],
@@ -98,7 +98,7 @@ frame_data = [
      'max_turn_time':0,
      'rotor_mode':'rotating',
      'measure_mode':'dynamic',
-     'option','full_turn'
+     'option':'full_turn'
     },
     {'frame':'7E',
      'stage':['7', '12', '17'],
@@ -153,7 +153,7 @@ frame_data = [
      'max_turn_time':25,
      'rotor_mode':'rotating',
      'measure_mode':'dynamic',
-     'option','quarter_turn'     
+     'option':'quarter_turn'
     },
     {'frame':'7FA+e',
      'stage':['2', '5', '10', '17'],
@@ -178,7 +178,7 @@ frame_data = [
      'max_turn_time':0,
      'rotor_mode':'rotating',
      'measure_mode':'dynamic',
-     'option','full_turn'
+     'option':'full_turn'
     },
     {'frame':'7FA.05',
      'stage':['1', '5', '9', '14'],
@@ -234,7 +234,7 @@ frame_data = [
      'max_turn_time':0,
      'rotor_mode':'rotating',
      'measure_mode':'dynamic',
-     'option','full_turn'
+     'option':'full_turn'
     },
     {'frame':'7FA.05-TEST',
      'stage':['1', '5', '9', '14'],
@@ -285,12 +285,12 @@ frame_data = [
              'tip_diameter':69.714,
              'blade_width':0.42
          },
-     },     
+     },
      'turning_gear_rpm':6.9,
      'max_turn_time':0,
      'rotor_mode':'rotating',
      'measure_mode':'dynamic',
-     'option','full_turn'
+     'option':'full_turn'
     },
     {'frame':'7FB',
      'stage':['2', '5', '11', '16', '17'],
@@ -353,7 +353,7 @@ frame_data = [
      'max_turn_time':0,
      'rotor_mode':'rotating',
      'measure_mode':'dynamic',
-     'option','full_turn'
+     'option':'full_turn'
     },
     {'frame':'7HA.01',
      'stage':['6', '10', '14'],
@@ -371,7 +371,7 @@ frame_data = [
      'max_turn_time':0,
      'rotor_mode':'rotating',
      'measure_mode':'dynamic',
-     'option','full_turn'
+     'option':'full_turn'
     },
     {'frame':'7HA.02',
      'stage':['1', '6', '10', '14'],
@@ -390,7 +390,7 @@ frame_data = [
      'max_turn_time':0,
      'rotor_mode':'rotating',
      'measure_mode':'dynamic',
-     'option','full_turn'
+     'option':'full_turn'
     },
     {'frame':'9E',
      'stage':['1', '2', '8', '14', '17'],
@@ -459,7 +459,7 @@ frame_data = [
      'max_turn_time':90.0,
      'rotor_mode':'rotating',
      'measure_mode':'dynamic',
-     'option','tenth_turn'
+     'option':'tenth_turn'
     },
     {'frame':'9FA',
      'stage':['2', '5', '10', '17'],
@@ -547,7 +547,7 @@ frame_data = [
      'max_turn_time':0,
      'rotor_mode':'rotating',
      'measure_mode':'dynamic',
-     'option','full_turn'
+     'option':'full_turn'
     },
     {'frame':'9FB',
      'stage':['2', '5', '11', '16', '17'],
@@ -610,7 +610,7 @@ frame_data = [
      'max_turn_time':0,
      'rotor_mode':'rotating',
      'measure_mode':'dynamic',
-     'option','full_turn'
+     'option':'full_turn'
     },
     {'frame':'LMS',
      'stage':['0', '3', '5'],
@@ -621,7 +621,7 @@ frame_data = [
          {'stage':'0', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'1.728', 'color':'RED', 'image':'LMS-R0'},
          {'stage':'3', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'1.468', 'color':'BLUE', 'image':'LMS-R3'},
          {'stage':'5', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'1.168', 'color':'BLACK', 'image':'LMS-R5'}
-     ]
+     ],
      'stage_info':{
          '0':{
              'RIGHT':['A', 14.06, 15.0, 1.74],
@@ -649,14 +649,14 @@ frame_data = [
              'blade_count':32,
              'tip_diameter':84.967,
              'blade_width':0.305
-         },
+         }
      },
      'turning_gear_rpm':6.9,
      'max_turn_time':0,
      'rotor_mode':'rotating',
      'measure_mode':'dynamic',
-     'option','full_turn'
-     }
+     'option':'full_turn'
+   },
     {'frame':'9HA.01',
      'stage':['1', '6', '10', '14'],
      'position':{'1':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
@@ -668,7 +668,7 @@ frame_data = [
          {'stage':'6', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'4.281', 'color':'BLUE', 'image':'9HA01-R6'},
          {'stage':'10', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'1.533', 'color':'BLACK', 'image':'9HA01-R11'},
          {'stage':'14', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'3.575', 'color':'GREEN', 'image':'9HA01-R14'}
-     ],
+     ]
     },
     {'frame':'9HA.02',
      'stage':['1', '6', '11', '14'],
