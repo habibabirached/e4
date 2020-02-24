@@ -226,10 +226,10 @@ $(document).ready(function(){
         generate_customer_report();
     }, {passive: true})
     document.getElementById("SENSOR_STAGE").addEventListener('change', function(){
-        setup_data_collection(true);
+        set_stage();
     }, {passive: true})
     document.getElementById("SENSOR_POSITION").addEventListener('change', function(){
-        setup_data_collection(false);
+        set_position();
     }, {passive: true})
     document.getElementById("CASING_THICKNESS").addEventListener('change', function(){
         update_spacer_value();
@@ -346,25 +346,10 @@ function turbine_setup(reset) {
     }
 
     // Setup the Stage options
-    html_buf = [];
-    var stages = current_frame_data['stage'];
-    for (stage_index = 0; stage_index < stages.length; stage_index++) {
-        html_buf.push("<option value='" + stages[stage_index] + "'>" + stages[stage_index] + "</option>");
-    }
-    html = html_buf.join('\n')
-    document.getElementById("SENSOR_STAGE").innerHTML = html;
-    current_stage_index = document.getElementById("SENSOR_STAGE").selectedIndex;
-    current_stage = stages[current_stage_index];
+    set_stage_information();
 
     // Setup the position options
-    html_buf = [];
-    var positions = current_frame_data['position'];
-    positions = positions[current_stage];
-    for (position_index = 0; position_index < positions.length; position_index++) {
-        html_buf.push("<option value='" + positions[position_index] + "'>" + positions[position_index] + "</option>");
-    }
-    html = html_buf.join('\n')
-    document.getElementById("SENSOR_POSITION").innerHTML = html;
+    set_position_information();
     current_position_index = 0;
 
     update_spacer_value();
@@ -404,7 +389,6 @@ function set_frame_information() {
 
 function set_position_information() {
     var html_buf = [];
-    var html = html_buf.join('\n');
     var positions = current_frame_data['position'];
     positions = positions[current_stage];
     var posIdx = 0;
@@ -413,6 +397,31 @@ function set_position_information() {
     }
     var html = html_buf.join('\n');
     document.getElementById("SENSOR_POSITION").innerHTML = html;
+}
+
+function set_stage_information() {
+    html_buf = [];
+    var stages = current_frame_data['stage'];
+    for (stage_index = 0; stage_index < stages.length; stage_index++) {
+      html_buf.push("<option value='" + stages[stage_index] + "'>" + stages[stage_index] + "</option>");
+    }
+    html = html_buf.join('\n')
+    document.getElementById("SENSOR_STAGE").innerHTML = html;
+    current_stage_index = document.getElementById("SENSOR_STAGE").selectedIndex;
+    current_stage = stages[current_stage_index];
+    set_position_information(); // When you change the stage, the position information changes too.
+    current_position_index = 0;
+}
+
+function set_stage() {
+  current_stage_index = document.getElementById("SENSOR_STAGE").selectedIndex;
+  current_stage = current_frame_data['stage'][current_stage_index];
+  set_position_information();
+}
+
+function set_position() {
+  current_position_index =  document.getElementById("SENSOR_POSITION").selectedIndex;
+  current_position = current_frame_data['position'][current_stage][current_position_index];
 }
 
 function set_measurement_rate(idx) {
@@ -506,8 +515,9 @@ function reset_data_collection() {
 function generate_customer_report() {
   // This call gets the entire HTML report in memory.
   var reportHTML = generateHTMLReport(E4PTdata, current_frame_data);
-  //var newWindow = window.open();
-  //newWindow.document.write(reportHTML);
+  //console.log("reportHTML:\n",reportHTML);
+  var newWindow = window.open();
+  newWindow.document.write(reportHTML);
   return;
 }
 
@@ -568,13 +578,7 @@ function setup_data_collection_page(dateStr, timeStr, update_position) {
 
     // Update the positions selector based on the current stage.
     if (update_position) {
-      var positions = current_frame_data['position'];
-      positions = positions[current_stage];
-      for (position_index = 0; position_index < positions.length; position_index++) {
-        html_buf.push("<option value='" + positions[position_index] + "'>" + positions[position_index] + "</option>");
-      }
-      html = html_buf.join('\n')
-      document.getElementById("SENSOR_POSITION").innerHTML = html;
+      set_position_information();
       current_position_index = 0;
     }
 
