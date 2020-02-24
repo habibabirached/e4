@@ -6,7 +6,7 @@ function generateHTMLReport(e4ptData, current_frame_data) {
   reportHTML = createPageTop();
   makePageBanner();
   makePg1InfoTable(e4ptData);
-  makeCircleTables(current_frame_data["stage"], current_frame_data["position"]);
+  makeCircleTables(current_frame_data["stage"], current_frame_data["position"], e4ptData);
   closePg1();
   makePageBanner();
   makePg2Header(0, 0, 0, 0);
@@ -58,7 +58,7 @@ function makePg1InfoTable(e4ptData) {
   reportHTML = reportHTML + "<td class=\"hcell\">Photos Attached?</td><td class=\"hcell\" id=\"photos\"></td></tr></table>";
 };
 
-function makeCircleTables(stages, positions) {
+function makeCircleTables(stages, positions, data) {
   reportHTML = reportHTML + "<table>";
   var td_idx = 0;
   for (var j=0; j<stages.length; j++) {
@@ -66,24 +66,46 @@ function makeCircleTables(stages, positions) {
     if ((td_idx % 2) == 0) {
       reportHTML = reportHTML + "<tr>";
     }
-
     reportHTML = reportHTML + "<td><table>";
     reportHTML = reportHTML + "<tr><td></td><td></td><td></td><td class=\"cCell0\">Probe Hole Check</td><td></td><td></td><td></td></tr>";
-    reportHTML = reportHTML + "<tr><td></td><td></td><td>O</td><td class=\"cCell2\" id=\"OT_" + stages[j] + "\"></td><td></td><td></td><td></td></tr>";
-    reportHTML = reportHTML + "<tr><td>O</td><td class=\"cCell2\" id=\"OTL_" + stages[j] + "\"></td><td>C</td><td class=\"cCell2\" id=\"CT_";
-    reportHTML = reportHTML + stages[j] + "\"></td><td></td><td class=\"cCell2\" id=\"OTR_" + stages[j] + "\"></td><td>O</td></tr>";
-    reportHTML = reportHTML + "<tr><td>C</td><td class=\"cCell2\" id=\"CTL_" + stages[j] + "\"></td><td></td><td></td><td></td><td class=\"cCell2\" id=\"CTR_" + stages[j] + "\"></td><td>C</td></tr>";
+    var tip_clr = get_tip_clearance("opening", stages[j], "top", data);
+    reportHTML = reportHTML + "<tr><td></td><td></td><td>O</td><td class=\"cCell2\" id=\"OT_" + stages[j] + "\">" + tip_clr + "</td><td></td><td></td><td></td></tr>";
+    tip_clr = get_tip_clearance("opening", stages[j], "top left", data);
+    reportHTML = reportHTML + "<tr><td>O</td><td class=\"cCell2\" id=\"OTL_" + stages[j] + "\">" + tip_clr +"</td>";
+    tip_clr = get_tip_clearance("closing", stages[j], "top", data);
+    reportHTML = reportHTML + "<td>C</td><td class=\"cCell2\" id=\"CT_" + stages[j] + "\">" + tip_clr + "</td>";
+    tip_clr = get_tip_clearance("opening", stages[j], "top right", data);
+    reportHTML = reportHTML + "<td></td><td class=\"cCell2\" id=\"OTR_" + stages[j] + "\">" + tip_clr + "</td><td>O</td></tr>";
+    tip_clr = get_tip_clearance("closing", stages[j], "top left", data);
+    reportHTML = reportHTML + "<tr><td>C</td><td class=\"cCell2\" id=\"CTL_" + stages[j] + "\">" + tip_clr + "</td>";
+    reportHTML = reportHTML + "<td></td><td></td><td></td><td class=\"cCell2\" id=\"CTR_" + stages[j] + "\"></td><td>C</td></tr>";
     reportHTML = reportHTML + "<tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>";
     reportHTML = reportHTML + "<tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>";
-    reportHTML = reportHTML + "<tr><td>O<br/>C</td><td class=\"cCell2\" id=\"OCL_" + stages[j] + "\"></td><td></td><td class=\"circleCell\" id=\"stageCell_1\"><b>Stage ";
-    reportHTML = reportHTML + stages[j];
-    reportHTML = reportHTML + " Clearance</b></td><td></td><td class=\"cCell2\" id=\"OCR_" + stages[j] + "\"></td><td>O<br/>C</td></tr>";
+    var otip_clr = get_tip_clearance("opening", stages[j], "left", data);
+    var ctip_clr = get_tip_clearance("closing", stages[j], "left", data);
+    reportHTML = reportHTML + "<tr><td>O<br/>C</td><td class=\"cCell2\" id=\"OCL_" + stages[j] + "\"></td>" + otip_clr + "<br/>" + ctip_clr + "<td></td>";
+    reportHTML = reportHTML + "<td class=\"circleCell\" id=\"stageCell_1\"><b>Stage " + stages[j];
+    otip_clr = get_tip_clearance("opening", stages[j], "left", data);
+    ctip_clr = get_tip_clearance("closing", stages[j], "left", data);
+    reportHTML = reportHTML + " Clearance</b></td><td></td><td class=\"cCell2\" id=\"OCR_" + stages[j] + "\">" + otip_clr + "<br/>" + ctip_clr + "</td>";
+    reportHTML = reportHTML + "<td>O<br/>C</td></tr>";
     reportHTML = reportHTML + "<tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>";
     reportHTML = reportHTML + "<tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>";
     reportHTML = reportHTML + "<tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>";
-    reportHTML = reportHTML + "<tr><td>O</td><td class=\"cCell2\" id=\"OBL_" + stages[j] + "\"></td><td></td><td></td><td></td><td class=\"cCell2\" id=\"OBR_" + stages[j] + "\"></td><td>O</td></tr>";
-    reportHTML = reportHTML + "<tr><td>C</td><td class=\"cCell2\" id=\"CBL_" + stages[j] + "\"></td><td>O</td><td class=\"cCell2\" id=\"OB_" + stages[j] + "\"></td><td></td><td class=\"cCell2\" id=\"CBR_" + stages[j] + "\"></td><td>C</td></tr>";
-    reportHTML = reportHTML + "<tr><td></td><td></td><td>C</td><td class=\"cCell2\" id=\"CB_" + stages[j] + "\"></td><td></td><td></td><td></td></tr>";
+    tip_clr = get_tip_clearance("opening", stages[j], "bottom left", data);
+    reportHTML = reportHTML + "<tr><td>O</td><td class=\"cCell2\" id=\"OBL_" + stages[j] + "\">" + tip_clr + "</td>";
+    tip_clr = get_tip_clearance("opening", stages[j], "bottom right", data);
+    reportHTML = reportHTML + "<td></td><td></td><td></td><td class=\"cCell2\" id=\"OBR_" + stages[j] + "\">" + tip_clr + "</td>";
+    reportHTML = reportHTML + "<td>O</td></tr>";
+    tip_clr = get_tip_clearance("closing", stages[j], "bottom left", data);
+    reportHTML = reportHTML + "<tr><td>C</td><td class=\"cCell2\" id=\"CBL_" + stages[j] + "\">" + tip_clr + "</td>";
+    tip_clr = get_tip_clearance("opening", stages[j], "bottom", data);
+    reportHTML = reportHTML + "<td>O</td><td class=\"cCell2\" id=\"OB_" + stages[j] + "\">" + tip_clr + "</td>";
+    tip_clr = get_tip_clearance("closing", stages[j], "bottom right", data);
+    reportHTML = reportHTML + "<td></td><td class=\"cCell2\" id=\"CBR_" + stages[j] + "\"></td>" + tip_clr + "<td>C</td></tr>";
+    tip_clr = get_tip_clearance("closing", stages[j], "bottom", data);
+    reportHTML = reportHTML + "<tr><td></td><td></td><td>C</td><td class=\"cCell2\" id=\"CB_" + stages[j] + "\">" + tip_clr + "</td>";
+    reportHTML = reportHTML + "<td></td><td></td><td></td></tr>";
     reportHTML = reportHTML + "</table></td>";
 
     td_idx += 1;
@@ -203,7 +225,8 @@ function abbreviated_position(pos) {
 function get_tip_clearance(state, stage, position, data) {
   for (var i=0; i<data.sets.length; i++) {
     if ( data.sets[i].state.toUpperCase() == state.toUpperCase()) {
-      if ( data.sets[i].stage.toUpperCase() == stage.toUpperCase()) {
+      var stgStr1 = data.sets[i].stage.toString();
+      if ( stgStr1 == stage ) {
         if (data.sets[i].position.toUpperCase() == position.toUpperCase()) {
           return data.sets[i].clearance.toFixed(4);
         }
@@ -216,7 +239,8 @@ function get_tip_clearance(state, stage, position, data) {
 function get_casing_thickness(state, stage, position, data) {
   for (var i=0; i<data.sets.length; i++) {
     if ( data.sets[i].state.toUpperCase() == state.toUpperCase()) {
-      if ( data.sets[i].stage.toUpperCase() == stage.toUpperCase()) {
+      var stgStr1 = data.sets[i].stage.toString();
+      if ( stgStr1 == stage ) {
         if (data.sets[i].position.toUpperCase() == position.toUpperCase()) {
           return data.sets[i].case_thickness.toFixed(4);
         }
