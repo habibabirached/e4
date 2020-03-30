@@ -989,9 +989,16 @@ function requestE4PtDataWithMetaData(acquisitionTime, frame, sn, stage, position
     position = position.replace(/\s+/g, '_');
     casing_thickness = casing_thickness.replace(/\s+/g, '_');
     spacer_thickness = spacer_thickness.replace(/\s+/g, '_');
-    var message = {"args":["send_data",acquisitionTime, frame, sn, stage, position, casing_thickness, spacer_thickness]};
-    message = JSON.stringify(message);
-    sendWSMessage(message);
+    var message = {"args":["send_data",acquisitionTime, frame, sn, stage, position, casing_thickness, spacer_thickness]};    
+    if (communicationChannel == "WebSocket") {
+        message = JSON.stringify(message);
+        sendWSMessage(message);
+    }
+    else if (communicationChannel == "Plugin") {
+        window.plugins.IFC242x.messageToDevice(message, function(msg) {
+                                               pluginMessage(msg);
+                                               }, null);
+    }
 }
 
 function sendWSMessage(msg_text) {
