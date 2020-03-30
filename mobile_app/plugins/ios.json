@@ -21,6 +21,12 @@
     },
     "IFC242xPlugin": {
       "PACKAGE_NAME": "com.ge.ent.e4PtTool"
+    },
+    "cordova-plugin-email-composer": {
+      "PACKAGE_NAME": "com.ge.ent.e4PtTool"
+    },
+    "doc_picker_plugin": {
+      "PACKAGE_NAME": "com.ge.ent.e4PtTool"
     }
   },
   "dependent_plugins": {}

@@ -29,4 +29,6 @@
     <plugin name="IFC242xPlugin" spec="git+ssh://git@github.build.ge.com:iacquire-grc/IFC242xPlugin.git" />
     <engine name="windows" spec="^6.0.1" />
     <engine name="ios" spec="^4.5.5" />
+    <plugin name="cordova-plugin-email-composer" spec="^0.8.3" />
+    <plugin name="doc_picker_plugin" spec="git+ssh://git@github.build.ge.com:iacquire-grc/doc_picker_plugin.git" />
 </widget>

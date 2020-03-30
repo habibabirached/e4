@@ -62,4 +62,10 @@
     <preference name="PageLength" value="0" />
     <preference name="PaginationBreakingMode" value="page" />
     <preference name="PaginationMode" value="unpaginated" />
+    <feature name="EmailComposer">
+        <param name="ios-package" value="APPEmailComposer" />
+    </feature>
+    <feature name="DocPickerViewController">
+        <param name="ios-package" value="DocPickerViewController" />
+    </feature>
 </widget>

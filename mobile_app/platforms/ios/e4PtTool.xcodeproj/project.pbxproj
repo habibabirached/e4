@@ -5,7 +5,6 @@
 	};
 	objectVersion = 46;
 	objects = {
-
 /* Begin PBXBuildFile section */
 		0207DA581B56EA530066E2B4 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0207DA571B56EA530066E2B4 /* Images.xcassets */; };
 		12344B51C8B2431DB9B76BAD /* CDVIFC242x.m in Sources */ = {isa = PBXBuildFile; fileRef = 56C8BA499AC34BA1A23C72AD /* CDVIFC242x.m */; };
@@ -24,6 +23,10 @@
 		B177BED084C54F97B0E45E3F /* CDVViewController+SplashScreen.m in Sources */ = {isa = PBXBuildFile; fileRef = 7D07F741581B4BC4950B8517 /* CDVViewController+SplashScreen.m */; };
 		E6B8C8A339B442718FBBA478 /* PSPDFThreadSafeMutableDictionary.m in Sources */ = {isa = PBXBuildFile; fileRef = 8413A95B5A0C405489F3C753 /* PSPDFThreadSafeMutableDictionary.m */; settings = {COMPILER_FLAGS = "-w"; }; };
 		F06FAF3AEB4B4AE49CF978C8 /* CDVNotification.bundle in Resources */ = {isa = PBXBuildFile; fileRef = C2DD6451BE364BA9B9E7EC11 /* CDVNotification.bundle */; };
+		AECECE90239940D384C42BDC /* APPEmailComposer.m in Sources */ = {isa = PBXBuildFile; fileRef = B29622D9B5F34808B6F43C89 /* APPEmailComposer.m */; };
+		7FFB267431384ABE884D40FB /* APPEmailComposerImpl.m in Sources */ = {isa = PBXBuildFile; fileRef = FAF50F29E03C46D0A3AC2F21 /* APPEmailComposerImpl.m */; };
+		253E32C8092341E0AEB6649C /* MessageUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CCE63CF7E6EF4582BDB40A42 /* MessageUI.framework */; };
+		B38AD2C52FF54E2DB04CE599 /* DocPickerViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = F284747490554097886D206D /* DocPickerViewController.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -88,6 +91,13 @@
 		EB87FDF41871DAF40020F90C /* config.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; name = config.xml; path = ../../config.xml; sourceTree = "<group>"; };
 		ED33DF2A687741AEAF9F8254 /* Bridging-Header.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "Bridging-Header.h"; sourceTree = "<group>"; };
 		F840E1F0165FE0F500CFE078 /* config.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; name = config.xml; path = e4PtTool/config.xml; sourceTree = "<group>"; };
+		B29622D9B5F34808B6F43C89 /* APPEmailComposer.m */ = {isa = PBXFileReference; name = "APPEmailComposer.m"; path = "cordova-plugin-email-composer/APPEmailComposer.m"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; explicitFileType = undefined; includeInIndex = 0; };
+		FAF50F29E03C46D0A3AC2F21 /* APPEmailComposerImpl.m */ = {isa = PBXFileReference; name = "APPEmailComposerImpl.m"; path = "cordova-plugin-email-composer/APPEmailComposerImpl.m"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; explicitFileType = undefined; includeInIndex = 0; };
+		28E4993C285E475890ABF8B5 /* APPEmailComposer.h */ = {isa = PBXFileReference; name = "APPEmailComposer.h"; path = "cordova-plugin-email-composer/APPEmailComposer.h"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; explicitFileType = undefined; includeInIndex = 0; };
+		A676682883DD482C83E35E5B /* APPEmailComposerImpl.h */ = {isa = PBXFileReference; name = "APPEmailComposerImpl.h"; path = "cordova-plugin-email-composer/APPEmailComposerImpl.h"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; explicitFileType = undefined; includeInIndex = 0; };
+		CCE63CF7E6EF4582BDB40A42 /* MessageUI.framework */ = {isa = PBXFileReference; name = "MessageUI.framework"; path = "System/Library/Frameworks/MessageUI.framework"; sourceTree = SDKROOT; fileEncoding = undefined; lastKnownFileType = wrapper.framework; explicitFileType = undefined; includeInIndex = 0; };
+		F284747490554097886D206D /* DocPickerViewController.m */ = {isa = PBXFileReference; name = "DocPickerViewController.m"; path = "doc_picker_plugin/DocPickerViewController.m"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; explicitFileType = undefined; includeInIndex = 0; };
+		BC69AA3F80664CE7A7A12478 /* DocPickerViewController.h */ = {isa = PBXFileReference; name = "DocPickerViewController.h"; path = "doc_picker_plugin/DocPickerViewController.h"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; explicitFileType = undefined; includeInIndex = 0; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -97,6 +107,7 @@
 			files = (
 				301BF552109A68D80062928A /* libCordova.a in Frameworks */,
 				325F01D33B3C44F8B5BC6CB7 /* AudioToolbox.framework in Frameworks */,
+				253E32C8092341E0AEB6649C /* MessageUI.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -170,6 +181,7 @@
 			isa = PBXGroup;
 			children = (
 				27C8AE50A7134DBBB4D8437E /* AudioToolbox.framework */,
+				CCE63CF7E6EF4582BDB40A42 /* MessageUI.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -210,6 +222,12 @@
 				7A182A3C4420476FA1D2B3CB /* CDVNotification.h */,
 				56C8BA499AC34BA1A23C72AD /* CDVIFC242x.m */,
 				3DD394F9D31A439ABD46EB3D /* CDVIFC242x.h */,
+				B29622D9B5F34808B6F43C89 /* APPEmailComposer.m */,
+				FAF50F29E03C46D0A3AC2F21 /* APPEmailComposerImpl.m */,
+				28E4993C285E475890ABF8B5 /* APPEmailComposer.h */,
+				A676682883DD482C83E35E5B /* APPEmailComposerImpl.h */,
+				F284747490554097886D206D /* DocPickerViewController.m */,
+				BC69AA3F80664CE7A7A12478 /* DocPickerViewController.h */,
 			);
 			name = Plugins;
 			path = e4PtTool/Plugins;
@@ -346,6 +364,9 @@
 				AA9640D5085245598684DEA5 /* sqlite3.c in Sources */,
 				9CD76C0C67F6429C9B2A9F53 /* CDVNotification.m in Sources */,
 				12344B51C8B2431DB9B76BAD /* CDVIFC242x.m in Sources */,
+				AECECE90239940D384C42BDC /* APPEmailComposer.m in Sources */,
+				7FFB267431384ABE884D40FB /* APPEmailComposerImpl.m in Sources */,
+				B38AD2C52FF54E2DB04CE599 /* DocPickerViewController.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

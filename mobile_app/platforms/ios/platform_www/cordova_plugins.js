@@ -31,6 +31,23 @@ module.exports = [
     "clobbers": [
       "window.plugins.IFC242xPlugin"
     ]
+  },
+  {
+    "id": "cordova-plugin-email-composer.EmailComposer",
+    "file": "plugins/cordova-plugin-email-composer/www/email_composer.js",
+    "pluginId": "cordova-plugin-email-composer",
+    "clobbers": [
+      "cordova.plugins.email",
+      "plugin.email"
+    ]
+  },
+  {
+    "id": "doc_picker_plugin.DocPickerViewController",
+    "file": "plugins/doc_picker_plugin/www/boxdocpicker.js",
+    "pluginId": "doc_picker_plugin",
+    "clobbers": [
+      "window.plugins.doc_picker_plugin"
+    ]
   }
 ];
 module.exports.metadata = 
@@ -40,7 +57,9 @@ module.exports.metadata =
   "cordova-plugin-whitelist": "1.3.4",
   "cordova-sqlite-storage": "3.4.0",
   "cordova-plugin-dialogs": "2.0.2",
-  "IFC242xPlugin": "0.1.0"
+  "IFC242xPlugin": "0.1.0",
+  "cordova-plugin-email-composer": "0.8.3",
+  "doc_picker_plugin": "0.2.0"
 };
 // BOTTOM OF METADATA
 });

@@ -1,0 +1,70 @@
+{
+  "_from": "cordova-plugin-email-composer@0.8.3",
+  "_id": "cordova-plugin-email-composer@0.8.3",
+  "_inBundle": false,
+  "_integrity": "sha1-HsMf81t9DZpiwDVqbo7eOowbAz8=",
+  "_location": "/cordova-plugin-email-composer",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "version",
+    "registry": true,
+    "raw": "cordova-plugin-email-composer@0.8.3",
+    "name": "cordova-plugin-email-composer",
+    "escapedName": "cordova-plugin-email-composer",
+    "rawSpec": "0.8.3",
+    "saveSpec": null,
+    "fetchSpec": "0.8.3"
+  },
+  "_requiredBy": [
+    "#USER",
+    "/"
+  ],
+  "_resolved": "https://registry.npmjs.org/cordova-plugin-email-composer/-/cordova-plugin-email-composer-0.8.3.tgz",
+  "_shasum": "1ec31ff35b7d0d9a62c0356a6e8ede3a8c1b033f",
+  "_spec": "cordova-plugin-email-composer@0.8.3",
+  "_where": "/Users/200005229/geGitHub/e4PtTool/mobile_app",
+  "author": {
+    "name": "Sebastián Katzer"
+  },
+  "bugs": {
+    "url": "https://github.com/katzer/cordova-plugin-email-composer/issues"
+  },
+  "bundleDependencies": false,
+  "cordova": {
+    "id": "de.appplant.cordova.plugin.email-composer",
+    "platforms": [
+      "ios",
+      "android",
+      "amazon-fireos",
+      "windows",
+      "browser"
+    ]
+  },
+  "deprecated": false,
+  "description": "Provides access to the standard interface that manages the editing and sending an email message",
+  "engines": [
+    {
+      "name": "cordova",
+      "version": ">=3.0.0"
+    }
+  ],
+  "homepage": "https://github.com/katzer/cordova-plugin-email-composer",
+  "keywords": [
+    "appplant",
+    "email",
+    "cordova",
+    "ecosystem:cordova",
+    "cordova-ios",
+    "cordova-android",
+    "cordova-amazon-fireos",
+    "cordova-windows",
+    "cordova-browser"
+  ],
+  "license": "Apache 2.0",
+  "name": "cordova-plugin-email-composer",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/katzer/cordova-plugin-email-composer.git"
+  },
+  "version": "0.8.3"
+}
