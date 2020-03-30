@@ -7,6 +7,8 @@ var MAX_STR_LEN = 64;
 
 var local_db = new PouchDB('e4ptdb');
 
+var communicationChannel = "Plugin"; // "WebSocket" or "Plugin"
+
 // Replace with remote instance when we get to that point.
 //var remoteCouch = 'http://xxx.xxx.xxx.xxx/remote_e4ptdb';
 
@@ -182,12 +184,12 @@ $(document).ready(function(){
                                           acquisitionTimePromptCallback,
                                           'Acquisition Time',
                                           ['Ok','Cancel'],
-                                          '15');
+                                          '3');
         }
         else {
             // No plugins, so we must not be in Cordova. Use a standard prompt.
             console.log("@GET_DATA_BUTTON: Windows Prompt");
-            acquisitionTime = window.prompt("Please enter the acquisition time in seconds.", "15");
+            acquisitionTime = window.prompt("Please enter the acquisition time in seconds.", "3");
             acquisitionTimePromptCallback({"input1":acquisitionTime});
         }
     }, {passive: true})
@@ -236,7 +238,9 @@ $(document).ready(function(){
     }, {passive: true})
 
     setupAccordian();
-    createWS();
+    if (communicationChannel == "WebSocket") {
+        createWS();
+    }
 })
 
 function acquisitionTimePromptCallback(results) {
@@ -285,12 +289,26 @@ function setupAccordian(){
     }
 }
 
+// When the menu the code looks for Plugins.  If present, it sets the
+// communication method and indicates that it is connected.
 function toggle_menu() {
 	if (menu_open){
 		$('#LEFT_MENU').animate({"margin-left": '-=25vmin'});
 		menu_open = false;
 	}
 	else{
+        var plugins = window.plugins;
+        if (plugins != null) {
+            communicationChannel = "Plugin";
+            var message = {"args":["pluginConnected"]};
+            window.plugins.IFC242x.messageToDevice(message, function(msg) {
+                                                   pluginMessage(msg);
+                                                   }, null);
+        }
+        else {
+            communicationChannel = "WebSocket";
+        }
+
 		$('#LEFT_MENU').animate({"margin-left": '+=25vmin'});
 		menu_open = true;
 	}
@@ -442,8 +460,13 @@ function set_measurement_rate(idx) {
     document.getElementById(el_id).value = 6.5;
   }
   message = {"args":["set_measuring_rate",meas_rate_f]};
-  message = JSON.stringify(message);
-  sendWSMessage(message);
+  if (communicationChannel == "WebSocket") {
+      message = JSON.stringify(message);
+      sendWSMessage(message);
+  }
+  else if (communicationChannel == "Plugin") {
+      window.plugins.IFC242x.messageToDevice(message, null, null);
+  }
 }
 
 function collect_stage_data() {
@@ -467,11 +490,11 @@ function collect_stage_data() {
                                       acquisitionTimePromptWithMetaDataCallback,
                                       'Acquisition Time',
                                       ['Ok','Cancel'],
-                                      '15');
+                                      '3');
     }
     else {
         // No plugins, so we must not be in Cordova. Use a standard prompt.
-        acquisitionTime = window.prompt("Please enter the acquisition time in seconds.", "15");
+        acquisitionTime = window.prompt("Please enter the acquisition time in seconds.", "3");
         acquisitionTimePromptWithMetaDataCallback({"input1":acquisitionTime});
     }
 }
@@ -677,8 +700,15 @@ function set_grid_position(position, stage) {
 function do_dark_reference() {
     console.log("@do_dark_reference");
     var message = {"args":["do_dark_reference"]};
-    message = JSON.stringify(message);
-    sendWSMessage(message);
+    if (communicationChannel == "WebSocket") {
+        message = JSON.stringify(message);
+        sendWSMessage(message);
+    }
+    else if (communicationChannel == "Plugin") {
+        window.plugins.IFC242x.messageToDevice(message, function(msg) {
+                                               pluginMessage(msg);
+                                               }, null);
+    }
     $("#SENSOR_SETUP_PAGE").fadeOut();
     $("#LOCAL_DATA_PAGE").fadeOut();
     $("#RESULTS_PAGE").fadeIn();
@@ -688,14 +718,25 @@ function do_dark_reference() {
 function do_mastering() {
     console.log("@do_mastering");
     var message = {"args":["do_mastering"]};
-    message = JSON.stringify(message);
-    sendWSMessage(message);
+    if (communicationChannel == "WebSocket") {
+        message = JSON.stringify(message);
+        sendWSMessage(message);
+    }
+    else if (communicationChannel == "Plugin") {
+        window.plugins.IFC242x.messageToDevice(message, function(msg) {
+                                               pluginMessage(msg);
+                                               if (msg.status == "connected") {
+                                                 done_mastering();
+                                               }
+                                               }, null);
+    }
     setMasterMessage("black","yellow","In Progress...");
     setMasterMessage2("black","yellow","In Progress...");
     setIndicatorColor("red");
 }
 
 function done_mastering() {
+    console.log("@done_mastering");
     setMasterMessage("white","green","Mastering complete.");
     setMasterMessage2("white","green","Mastering complete.");
     setIndicatorColor("green");
@@ -835,6 +876,39 @@ function createWS(){
     }
 }
 
+function pluginMessage(msg) {
+    console.log("@pluginMessage: msg.type = ", msg.type);
+    switch(msg.type) {
+        case "status":
+            console.log("Received Status Message");
+            console.log(msg);
+            if (msg.status == "connected") {
+                setIndicatorColor("green");
+            }
+            if (msg.status == "acquiring") {
+                setIndicatorColor("red");
+            }
+            if (msg.status == "processing") {
+                setIndicatorColor("blue");
+            }
+            if (msg.status == "done_mastering") {
+                done_mastering();
+            }
+            if (msg.status == "failed_mastering") {
+                failed_mastering();
+            }
+            break;
+        case "data":
+            console.log("Received Data Message");
+            setIndicatorColor("green");
+            document.getElementById("CASING_THICKNESS").value = "";
+            msg.data = JSON.parse(msg.data);
+            msg.intensity = JSON.parse(msg.intensity);
+            processE4PtData(msg);
+            break;
+    }
+}
+
 function setIndicatorColor( color ) {
     document.getElementById("indicator-pulse").style.background = color;
     document.getElementById("indicator-solid").style.background = color;
@@ -886,15 +960,24 @@ function requestE4PtData(acquisitionTime) {
         chart1.series[0].remove(true);
     }
   }
-  if (typeof chart1 !== 'undefined') {
+  if (typeof chart2 !== 'undefined') {
     if (chart2.series != null) {
       while(chart2.series.length > 0)
         chart2.series[0].remove(true);
     }
   }
-  message = {"args":["send_data",acquisitionTime]};
-  message = JSON.stringify(message);
-  sendWSMessage(message);
+    // send_data needs args: acquisition time and casing thickness
+    // Casing thickness can be zero here.
+    message = {"args":["send_data",acquisitionTime,"0.0"]};
+    if (communicationChannel == "WebSocket") {
+        message = JSON.stringify(message);
+        sendWSMessage(message);
+    }
+    else if (communicationChannel == "Plugin") {
+        window.plugins.IFC242x.messageToDevice(message, function(msg) {
+                                                pluginMessage(msg);
+                                               }, null);
+    }
 }
 
 function requestE4PtDataWithMetaData(acquisitionTime, frame, sn, stage, position, casing_thickness, spacer_thickness) {
@@ -936,12 +1019,17 @@ function update_scan_info(){
 }
 
 function parse_data() {
-  console.log("@parse_data");
-  var minima = new Array(E4PTdata.locs.length);
-  for (var i=0; i<E4PTdata.locs.length; i++) {
-    minima[i] = [E4PTdata.locs[i], E4PTdata.gaps[i]];
-  }
-    E4PTdata.minima = minima;
+    console.log("@parse_data");
+    if (E4PTdata.locs.length > 0) {
+        var minima = new Array(E4PTdata.locs.length);
+        for (var i=0; i<E4PTdata.locs.length; i++) {
+            minima[i] = [E4PTdata.locs[i], E4PTdata.gaps[i]];
+        }
+        E4PTdata.minima = minima;
+    }
+    else {
+        E4PTdata.minima = [];
+    }
     console.log("Clearance average: ", E4PTdata.clearance);
     // Only update the clearance info if we have all the data to do so.
     if (current_frame_data['position'] != null) {
@@ -1426,7 +1514,7 @@ function addDBEntry(e4pt_data) {
     entry._id = e4pt_data.pouchdb_id;
     local_db.put(entry, function callback(err, result) {
       if (!err) {
-        console.log('Successfully added an entry!');
+        console.log('PouchDB: Successfully added an entry!');
       }
     });
   }
