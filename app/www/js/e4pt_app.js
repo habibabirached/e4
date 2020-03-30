@@ -56,7 +56,7 @@ var E4PTdata = {
     "clearance":"",
     "alreadyOnLDB":"false",
     "pouchdb_id": ""
-}
+};
 
 const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -72,7 +72,7 @@ $(document).ready(function(){
     var attachFastClick = Origami.fastclick;
     attachFastClick(document.body);
     document.getElementById("MAIN_MENU").addEventListener('click', function(){
-        $("#TITLE_BAR").text("e-4Pt Tool")
+              $("#TITLE_BAR").text("e-4Pt Tool");
 	      $("#FRD_PAGE").fadeOut();
 	      $("#SETUP_PAGE").fadeOut();
 	      $("#SCAN_INFO_PAGE").fadeOut();
@@ -84,18 +84,18 @@ $(document).ready(function(){
         $("#TURBINE_SETUP_PAGE").fadeOut();
         $("#LOCAL_DATA_PAGE").fadeOut();
         toggle_menu();
-    }, {passive: true})
+    }, {passive: true});
     document.getElementById("FRD_BUTTON").addEventListener('click', function(){
         toggle_menu();
 	$("#DATA_PLOT").fadeOut();
         $("#FRD_PAGE").fadeIn();
-    }, {passive: true})
+    }, {passive: true});
     document.getElementById("SETUP_BUTTON").addEventListener('click', function(){
         toggle_menu();
 	      $("#DATA_PLOT").fadeOut();
         $("#SETUP_PAGE").fadeIn();
         set_frame_information();
-    }, {passive: true})
+    }, {passive: true});
     document.getElementById("SENSOR_SETUP_BUTTON").addEventListener('click', function(){
         $("#SETUP_PAGE").fadeOut();
         $("#RESULTS_PAGE").fadeOut();
@@ -103,7 +103,7 @@ $(document).ready(function(){
         $("#LOCAL_DATA_PAGE").fadeOut();
         $("#SENSOR_SETUP_PAGE").fadeIn();
 	      setMasterMessage("white","green","Ready");
-    }, {passive: true})
+    }, {passive: true});
     document.getElementById("SN_SUBMIT_BUTTON").addEventListener('click', function(){
         $("#SETUP_PAGE").fadeOut();
         $("#RESULTS_PAGE").fadeOut();
@@ -112,7 +112,7 @@ $(document).ready(function(){
         $("#LOCAL_DATA_PAGE").fadeOut();
         send_scan_meta_data();
         initialize_sensor();
-    }, {passive: true})
+    }, {passive: true});
     document.getElementById("COLLECT_DATA_BUTTON").addEventListener('click', function(){
         $("#SETUP_PAGE").fadeOut();
         $("#RESULTS_PAGE").fadeOut();
@@ -121,7 +121,7 @@ $(document).ready(function(){
         $("#LOCAL_DATA_PAGE").fadeOut();
         $("#TURBINE_SETUP_PAGE").fadeIn();
         turbine_setup(true);
-    }, {passive: true})
+    }, {passive: true});
     document.getElementById("CLEAR_DB_BUTTON").addEventListener('click', function(){
         e4PtConfirm("Are you sure you want to clear all data from this database?",
           function(idx) {
@@ -133,16 +133,16 @@ $(document).ready(function(){
               console.log("Database clear was cancelled.");
             }
           });
-    }, {passive: true})
+    }, {passive: true});
 
     function RESULTS_BUTTON_FUNC(){
         getCredentialforREST();
-        toggle_menu()
+        toggle_menu();
         if ($("#TITLE_BAR").text() != "RESULTS"){
-            $("#TITLE_BAR").text("RESULTS")
+            $("#TITLE_BAR").text("RESULTS");
         }
-        createTable()
-        $("#RESULTS_PAGE").fadeIn()
+        createTable();
+        $("#RESULTS_PAGE").fadeIn();
     }
     //document.getElementById("OPEN_EXTERNAL_FILE_BUTTON").addEventListener('change', function(){
     //    loadExternalFile();
@@ -165,18 +165,18 @@ $(document).ready(function(){
             console.log(err);
             toggle_menu();
         }
-    }, {passive: true})
+    }, {passive: true});
     document.getElementById("SHUTDOWN_BUTTON").addEventListener('click', function(){
         toggle_menu();
         systemShutdown();
-    }, {passive: true})
+    }, {passive: true});
     document.getElementById("GET_DATA_BUTTON").addEventListener('click', function(){
         console.log("@GET_DATA_BUTTON event listener function.");
         toggle_menu();
         $("#DATA_PLOT").fadeIn();
         var acquisitionTime = null;
         console.log("@GET_DATA_BUTTON: Prompting.");
-        var nav = navigator.notification
+        var nav = navigator.notification;
         if (nav != null) {
             // We have plugins so we're in Cordova.  Use the Cordova notification.
             console.log("@GET_DATA_BUTTON: Cordova Prompt");
@@ -192,59 +192,60 @@ $(document).ready(function(){
             acquisitionTime = window.prompt("Please enter the acquisition time in seconds.", "3");
             acquisitionTimePromptCallback({"input1":acquisitionTime});
         }
-    }, {passive: true})
+    }, {passive: true});
     document.getElementById("SENSOR_SETUP_BUTTON").addEventListener('click', function(){
         toggle_menu();
         sensor_setup();
-    }, {passive: true})
+    }, {passive: true});
     document.getElementById("START_MASTER_BUTTON").addEventListener('click', function(){
 	do_mastering();
-    }, {passive: true})
+    }, {passive: true});
     document.getElementById("START_MASTER_BUTTON_2").addEventListener('click', function(){
 	do_mastering();
-    }, {passive: true})
+    }, {passive: true});
     document.getElementById("START_DARK_REFERENCE_BUTTON").addEventListener('click', function(){
 	do_dark_reference();
-    }, {passive: true})
+    }, {passive: true});
     document.getElementById("SET_MEASUREMENT_RATE_BUTTON").addEventListener('click', function(){
   set_measurement_rate("1");
-    }, {passive: true})
+    }, {passive: true});
     document.getElementById("SET_MEASUREMENT_RATE_BUTTON_2").addEventListener('click', function(){
   set_measurement_rate("2");
-    }, {passive: true})
+    }, {passive: true});
     document.getElementById("DOWNLOAD_FILE_BUTTON_01").addEventListener('click', function(){
 	doFileDownload();
-    }, {passive: true})
+    }, {passive: true});
     document.getElementById("DOWNLOAD_FILE_BUTTON_02").addEventListener('click', function(){
 	doFileDownload();
-    }, {passive: true})
+    }, {passive: true});
     document.getElementById("STAGE_COLLECT_BUTTON").addEventListener('click', function(){
-        collect_stage_data();
-    }, {passive: true})
+    collect_stage_data();
+    }, {passive: true});
     document.getElementById("COLLECTION_RESET_BUTTON").addEventListener('click', function(){
         reset_data_collection();
-    }, {passive: true})
+    }, {passive: true});
     document.getElementById("CUSTOMER_REPORT_BUTTON").addEventListener('click', function(){
         generate_customer_report();
-    }, {passive: true})
+    }, {passive: true});
     document.getElementById("SENSOR_STAGE").addEventListener('change', function(){
         set_stage();
-    }, {passive: true})
+    }, {passive: true});
     document.getElementById("SENSOR_POSITION").addEventListener('change', function(){
         set_position();
-    }, {passive: true})
+    }, {passive: true});
     document.getElementById("CASING_THICKNESS").addEventListener('change', function(){
         update_spacer_value();
-    }, {passive: true})
+    }, {passive: true});
 
     setupAccordian();
     if (communicationChannel == "WebSocket") {
         createWS();
     }
-})
+});
 
 function acquisitionTimePromptCallback(results) {
     console.log("@acquisitionTimePromptCallback");
+    current_frame_data = [];
     acquisitionTime = parseFloat(results.input1);
     if (acquisitionTime != null) {
         if (Number.isFinite(acquisitionTime)) {
@@ -285,7 +286,7 @@ function setupAccordian(){
         } else {
           PANEL.style.maxHeight = PANEL.scrollHeight + "px";
         }
-      }
+      };
     }
 }
 
@@ -315,7 +316,7 @@ function toggle_menu() {
 }
 
 function sensor_setup() {
-    console.log("@sensor_setup")
+    console.log("@sensor_setup");
     $("#FRD_PAGE").fadeOut();
     $("#SETUP_PAGE").fadeOut();
     $("#SCAN_INFO_PAGE").fadeOut();
@@ -330,7 +331,7 @@ function sensor_setup() {
 function send_scan_meta_data() {
   // Here we get values from the UI, but we make sure they don't overrun bounds.
   var frm_idx = document.getElementById("FRAME_SIZE").selectedIndex;
-  E4PTdata.frame = frame_data[frm_idx]['frame'];
+  E4PTdata.frame = frame_data[frm_idx].frame;
   E4PTdata.serial_number = document.getElementById("SERIAL_NUMBER").value;
   if (E4PTdata.serial_number.length > MAX_STR_LEN) E4PTdata.serial_number = E4PTdata.serial_number.substr(0,MAX_STR_LEN);
   E4PTdata.customer = document.getElementById("CUSTOMER").value;
@@ -342,13 +343,21 @@ function send_scan_meta_data() {
   E4PTdata.units = document.getElementById("UNITS").value;
   E4PTdata.state = document.getElementById("TURBINE_STATE").value;
   var message = {"args":["scan_meta_data", E4PTdata.frame, E4PTdata.serial_number, E4PTdata.customer, E4PTdata.site_name, E4PTdata.operator, E4PTdata.units, E4PTdata.state]};
-  message = JSON.stringify(message);
   console.log("message: ", message);
-  sendWSMessage(message);
+
+  if (communicationChannel == "WebSocket") {
+    message = JSON.stringify(message);
+    sendWSMessage(message);
+  }
+  else if (communicationChannel == "Plugin") {
+    window.plugins.IFC242x.messageToDevice(message, function(msg) {
+                                            pluginMessage(msg);
+                                           }, null);
+  }
 }
 
 function initialize_sensor() {
-    console.log("@initialize_sensor")
+    console.log("@initialize_sensor");
     setMasterMessage2("white", "green", "Ready");
 }
 
@@ -423,7 +432,7 @@ function set_stage_information() {
     for (stage_index = 0; stage_index < stages.length; stage_index++) {
       html_buf.push("<option value='" + stages[stage_index] + "'>" + stages[stage_index] + "</option>");
     }
-    html = html_buf.join('\n')
+    html = html_buf.join('\n');
     document.getElementById("SENSOR_STAGE").innerHTML = html;
     current_stage_index = document.getElementById("SENSOR_STAGE").selectedIndex;
     current_stage = stages[current_stage_index];
@@ -511,7 +520,7 @@ function reset_data_collection() {
     E4PTdata.sets = [];
     current_stage_index = 0;
     current_stage = current_frame_data['stage'][current_stage_index];
-    current_position_index = 0
+    current_position_index = 0;
     current_position = current_frame_data['position'][current_stage][current_position_index];
     document.getElementById("CASING_THICKNESS").value = "";
     document.getElementById("CLEARANCE_ERROR").innerHTML = "";
@@ -526,11 +535,11 @@ function reset_data_collection() {
       }
     }
     obj = document.getElementById("CLEARANCE_PLOT");
-    var chart = Highcharts.charts[obj.getAttribute('data-highcharts-chart')];
-    if (typeof chart !== 'undefined') {
-      if (chart.series != null) {
-        while(chart.series.length > 0)
-          chart.series[0].remove(true);
+    var chart2 = Highcharts.charts[obj.getAttribute('data-highcharts-chart')];
+    if (typeof chart2 !== 'undefined') {
+      if (chart2.series != null) {
+        while(chart2.series.length > 0)
+          chart2.series[0].remove(true);
       }
     }
 }
@@ -596,7 +605,7 @@ function setup_data_collection_page(dateStr, timeStr, update_position) {
         html_buf.push("</table></td>");
     }
     html_buf.push("</tr>");
-    html = html_buf.join('\n')
+    html = html_buf.join('\n');
     document.getElementById("SENSOR_DATA_TABLE").innerHTML = html;
 
     // Update the positions selector based on the current stage.
@@ -668,11 +677,11 @@ function advance_position() {
     //console.log("positions: ", positions);
 
     current_position_index = (current_position_index + 1) % positions.length;
-    current_position = positions[current_position_index]
+    current_position = positions[current_position_index];
     if (current_position_index == 0) {
         current_stage_index = (current_stage_index + 1) % stages.length;
-        current_stage = stages[current_stage_index]
-        set_position_information()
+        current_stage = stages[current_stage_index];
+        set_position_information();
     }
     document.getElementById("SENSOR_STAGE").selectedIndex = current_stage_index;
     document.getElementById("SENSOR_POSITION").selectedIndex = current_position_index;
@@ -804,7 +813,7 @@ function createWS(){
 
             e4PtSocket.onopen = function(){
                 // Web Socket is connected, send data using send()
-                console.log("Connected to server")
+                console.log("Connected to server");
                 setIndicatorColor("green");
             };
 
@@ -864,7 +873,7 @@ function createWS(){
             e4PtSocket.onerror = function(evt) {
               console.log("e4PtSocket error: ",evt);
               setIndicatorColor("white");
-            }
+            };
         }
         else{
             // The browser doesn't support WebSocket
@@ -872,7 +881,7 @@ function createWS(){
         }
     }
     else{
-        console.log('Waiting for a WiFi connection')
+        console.log('Waiting for a WiFi connection');
     }
 }
 
@@ -1008,7 +1017,7 @@ function sendWSMessage(msg_text) {
   type: "message",
   id: clientID,
   date: Date.now()
-  }
+  };
   if (msg_text.indexOf('send_data') >= 0) {
     console.log("yellow - send_data");
       setIndicatorColor("yellow");
@@ -1065,8 +1074,11 @@ function update_clearance(clearance) {
     var position = current_frame_data['position'][stage][current_position_index];
     var el_id = position + stage;
     el_id = el_id.replace(/\s+/g, '_');
-    var clearance_f = parseFloat(clearance.toFixed(4))
-    var err_id = document.getElementById("CLEARANCE_ERROR")
+    if (clearance.length == 0) {
+        clearance = 0.0;
+    }
+    var clearance_f = parseFloat(clearance.toFixed(4));
+    var err_id = document.getElementById("CLEARANCE_ERROR");
     if (clearance_f == -9.997) {
         err_id.innerHTML = "Error: No gaps detected in data.";
     }
@@ -1450,12 +1462,12 @@ function loadExternalFile(){
         }
 
         console.log("Data Loaded from an external file");
-        $("#FILE_LOADING_PAGE").fadeOut()
+        $("#FILE_LOADING_PAGE").fadeOut();
         if ($("#TITLE_BAR").text() != "DATA"){
-            $("#TITLE_BAR").text("DATA")
+            $("#TITLE_BAR").text("DATA");
         }
 
-        $("#RESULTS_PAGE").fadeIn()
+        $("#RESULTS_PAGE").fadeIn();
     }
 }
 
@@ -1468,7 +1480,7 @@ function doSSO() {
     scope: "openid+profile",
     client_id: "GEPW_FFA_TRACC_01",
     redirect_uri: "TRaCC://authorization_grant/"
-  }
+  };
   // Redirect to Authorization page.
   //var replacementUri = authServerUri + "?" + $.param(authParams);
   var replacementUri = authServerUri;
@@ -1513,7 +1525,7 @@ function addDBEntry(e4pt_data) {
     // contains dense data and could overwhelm the database & browser memory.
     // We also don't save the clearance element because it is saved in the sets
     // element.
-  }
+  };
 
   if (e4pt_data.pouchdb_id.length == 0) {
     // This is a new db entry, so get a new id.
