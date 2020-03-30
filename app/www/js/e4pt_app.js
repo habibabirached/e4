@@ -760,15 +760,27 @@ function failed_mastering() {
 function systemShutdown() {
     console.log("@systemShutdown");
     var message = {"args":["shutdown"]};
-    message = JSON.stringify(message);
-    sendWSMessage(message);
+    if (communicationChannel == "WebSocket") {
+        message = JSON.stringify(message);
+        sendWSMessage(message);
+    }
+    else if (communicationChannel == "Plugin") {
+        e4PtAlert("This system does not support shutdown.",null);
+    }
 }
 
 function doFileDownload() {
     console.log("@doFileDownload");
     var message = {"args":["get_data_file"]};
-    message = JSON.stringify(message);
-    sendWSMessage(message);
+    if (communicationChannel == "WebSocket") {
+        message = JSON.stringify(message);
+        sendWSMessage(message);
+    }
+    else if (communicationChannel == "Plugin") {
+        window.plugins.IFC242x.messageToDevice(message, function(msg) {
+                                               pluginMessage(msg);
+                                               }, null);
+    }
 }
 
 // alert function to work on iOS and web browser
@@ -915,6 +927,9 @@ function pluginMessage(msg) {
             msg.intensity = JSON.parse(msg.intensity);
             processE4PtData(msg);
             break;
+        case "filename":
+            console.log("Recieved Filename Message: ", msg.fname);
+            
     }
 }
 
