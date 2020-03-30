@@ -1,0 +1,53 @@
+{
+  "_from": "git+ssh://git@github.build.ge.com:iacquire-grc/IFC242xPlugin.git",
+  "_id": "IFC242xPlugin@0.1.0",
+  "_inBundle": false,
+  "_integrity": "",
+  "_location": "/IFC242xPlugin",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "git",
+    "raw": "git+ssh://git@github.build.ge.com:iacquire-grc/IFC242xPlugin.git",
+    "rawSpec": "git+ssh://git@github.build.ge.com:iacquire-grc/IFC242xPlugin.git",
+    "saveSpec": "git+ssh://git@github.build.ge.com:iacquire-grc/IFC242xPlugin.git",
+    "fetchSpec": "git@github.build.ge.com:iacquire-grc/IFC242xPlugin.git",
+    "gitCommittish": null
+  },
+  "_requiredBy": [
+    "#USER",
+    "/"
+  ],
+  "_resolved": "git+ssh://git@github.build.ge.com:iacquire-grc/IFC242xPlugin.git#4dab1214afb20675fa0638adacc6521d32a6d1bd",
+  "_spec": "git+ssh://git@github.build.ge.com:iacquire-grc/IFC242xPlugin.git",
+  "_where": "/Users/200005229/geGitHub/e4PtTool/mobile_app",
+  "author": {
+    "name": "Glen Brooksby"
+  },
+  "bundleDependencies": false,
+  "cordova": {
+    "id": "IFC242xPlugin@0.1.0",
+    "platforms": [
+      "ios"
+    ]
+  },
+  "deprecated": false,
+  "description": "Cordova IFC242x Plugin",
+  "engines": [
+    {
+      "name": "cordova",
+      "version": ">=3.0.0"
+    }
+  ],
+  "keywords": [
+    "credentials",
+    "ecosystem:cordova",
+    "cordova-ios"
+  ],
+  "license": "GE Proprietary",
+  "name": "IFC242xPlugin",
+  "repository": {
+    "type": "git",
+    "url": "git@github.build.ge.com:iacquire-grc/IFC242xPlugin.git"
+  },
+  "version": "0.1.0"
+}

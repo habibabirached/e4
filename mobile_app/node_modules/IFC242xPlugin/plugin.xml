@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0" id="IFC242xPlugin" version="0.1.0">
+	<name>IFC242x</name>
+	<author>GE</author>
+	<description>Cordova IFC242x Plugin</description>
+	<keywords>wirlessdevice</keywords>
+	<engines>
+		<engine name="cordova" version=">=3.0.0" />
+	</engines>
+	<js-module src="www/ifc242x.js" name="IFC242x">
+		<clobbers target="window.plugins.IFC242xPlugin" />
+	</js-module>
+	<platform name="ios">
+		<config-file target="config.xml" parent="/*">
+			<feature name="IFC242x">
+				<param name="ios-package" value="CDVIFC242x" />
+			</feature>
+		</config-file>
+		<header-file src="src/ios/CDVIFC242x.h" />
+		<source-file src="src/ios/CDVIFC242x.m" />
+	</platform>
+</plugin>
