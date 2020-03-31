@@ -47,7 +47,7 @@
 - (NSArray*) canSendMail:(NSString*)scheme
 {
     bool canSendMail = [MFMailComposeViewController canSendMail];
-    bool withScheme  = false;
+    __block bool withScheme  = false;
     
     if (![scheme hasSuffix:@":"]) {
         scheme = [scheme stringByAppendingString:@":"];
@@ -59,8 +59,10 @@
     NSURL *url = [[NSURL URLWithString:scheme]
                     absoluteURL];
 
-    withScheme = [[UIApplication sharedApplication]
-                   canOpenURL:url];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        withScheme = [[UIApplication sharedApplication]
+                      canOpenURL:url];
+    });
 
     if (TARGET_IPHONE_SIMULATOR && [scheme hasPrefix:@"mailto:"]) {
         canSendMail = withScheme = true;
