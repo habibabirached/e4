@@ -29,6 +29,9 @@
 		F06FAF3AEB4B4AE49CF978C8 /* CDVNotification.bundle in Resources */ = {isa = PBXBuildFile; fileRef = C2DD6451BE364BA9B9E7EC11 /* CDVNotification.bundle */; };
 		EA684278A7C74071832800BB /* PDFGenerator.m in Sources */ = {isa = PBXBuildFile; fileRef = E4617DF62F9A4FABAAF83BF9 /* PDFGenerator.m */; };
 		D74950605D5B42578415BED7 /* BNHtmlPdfKit.m in Sources */ = {isa = PBXBuildFile; fileRef = 6F467D4C84704BCF8BAAA0C6 /* BNHtmlPdfKit.m */; };
+		E02822E856E4435A81090064 /* CDVFile.m in Sources */ = {isa = PBXBuildFile; fileRef = 2BA508C2EE2E4C4FB711E8DE /* CDVFile.m */; };
+		4EAFAC365C2440FCAF8A946A /* CDVLocalFilesystem.m in Sources */ = {isa = PBXBuildFile; fileRef = 300DBDE79B6643A08EBC896B /* CDVLocalFilesystem.m */; };
+		B2E791A5CE924817ABCAD8BF /* CDVAssetLibraryFilesystem.m in Sources */ = {isa = PBXBuildFile; fileRef = 073C0EFA0CE24C3E9CCE448D /* CDVAssetLibraryFilesystem.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -104,6 +107,12 @@
 		6F467D4C84704BCF8BAAA0C6 /* BNHtmlPdfKit.m */ = {isa = PBXFileReference; name = "BNHtmlPdfKit.m"; path = "cordova-pdf-generator/BNHtmlPdfKit.m"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; explicitFileType = undefined; includeInIndex = 0; };
 		109F97A98424414DB9924DFB /* BNHtmlPdfKit.h */ = {isa = PBXFileReference; name = "BNHtmlPdfKit.h"; path = "cordova-pdf-generator/BNHtmlPdfKit.h"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; explicitFileType = undefined; includeInIndex = 0; };
 		8B80FF68F15F40AFA308F52B /* PDFGenerator.h */ = {isa = PBXFileReference; name = "PDFGenerator.h"; path = "cordova-pdf-generator/PDFGenerator.h"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; explicitFileType = undefined; includeInIndex = 0; };
+		2BA508C2EE2E4C4FB711E8DE /* CDVFile.m */ = {isa = PBXFileReference; name = "CDVFile.m"; path = "cordova-plugin-file/CDVFile.m"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; explicitFileType = undefined; includeInIndex = 0; };
+		300DBDE79B6643A08EBC896B /* CDVLocalFilesystem.m */ = {isa = PBXFileReference; name = "CDVLocalFilesystem.m"; path = "cordova-plugin-file/CDVLocalFilesystem.m"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; explicitFileType = undefined; includeInIndex = 0; };
+		073C0EFA0CE24C3E9CCE448D /* CDVAssetLibraryFilesystem.m */ = {isa = PBXFileReference; name = "CDVAssetLibraryFilesystem.m"; path = "cordova-plugin-file/CDVAssetLibraryFilesystem.m"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; explicitFileType = undefined; includeInIndex = 0; };
+		120D1583CE624A9192A14BC9 /* CDVFile.h */ = {isa = PBXFileReference; name = "CDVFile.h"; path = "cordova-plugin-file/CDVFile.h"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; explicitFileType = undefined; includeInIndex = 0; };
+		FEC92214BFA844C0ABEF7246 /* CDVLocalFilesystem.h */ = {isa = PBXFileReference; name = "CDVLocalFilesystem.h"; path = "cordova-plugin-file/CDVLocalFilesystem.h"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; explicitFileType = undefined; includeInIndex = 0; };
+		D8A453CA905049EC91305D9E /* CDVAssetLibraryFilesystem.h */ = {isa = PBXFileReference; name = "CDVAssetLibraryFilesystem.h"; path = "cordova-plugin-file/CDVAssetLibraryFilesystem.h"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; explicitFileType = undefined; includeInIndex = 0; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -238,6 +247,12 @@
 				6F467D4C84704BCF8BAAA0C6 /* BNHtmlPdfKit.m */,
 				109F97A98424414DB9924DFB /* BNHtmlPdfKit.h */,
 				8B80FF68F15F40AFA308F52B /* PDFGenerator.h */,
+				2BA508C2EE2E4C4FB711E8DE /* CDVFile.m */,
+				300DBDE79B6643A08EBC896B /* CDVLocalFilesystem.m */,
+				073C0EFA0CE24C3E9CCE448D /* CDVAssetLibraryFilesystem.m */,
+				120D1583CE624A9192A14BC9 /* CDVFile.h */,
+				FEC92214BFA844C0ABEF7246 /* CDVLocalFilesystem.h */,
+				D8A453CA905049EC91305D9E /* CDVAssetLibraryFilesystem.h */,
 			);
 			name = Plugins;
 			path = e4PtTool/Plugins;
@@ -384,6 +399,9 @@
 				B38AD2C52FF54E2DB04CE599 /* DocPickerViewController.m in Sources */,
 				EA684278A7C74071832800BB /* PDFGenerator.m in Sources */,
 				D74950605D5B42578415BED7 /* BNHtmlPdfKit.m in Sources */,
+				E02822E856E4435A81090064 /* CDVFile.m in Sources */,
+				4EAFAC365C2440FCAF8A946A /* CDVLocalFilesystem.m in Sources */,
+				B2E791A5CE924817ABCAD8BF /* CDVAssetLibraryFilesystem.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

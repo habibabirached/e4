@@ -30,6 +30,9 @@
     },
     "cordova-pdf-generator": {
       "PACKAGE_NAME": "com.ge.ent.e4PtTool"
+    },
+    "cordova-plugin-file": {
+      "PACKAGE_NAME": "com.ge.ent.e4PtTool"
     }
   },
   "dependent_plugins": {}

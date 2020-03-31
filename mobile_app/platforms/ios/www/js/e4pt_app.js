@@ -5,6 +5,8 @@ var clientID = 312;
 var e4pt = null;
 var MAX_STR_LEN = 64;
 var downloadFileName = "";
+var fsRoot = "";
+var appDir = "";
 
 var local_db = new PouchDB('e4ptdb');
 
@@ -242,7 +244,28 @@ $(document).ready(function(){
     if (communicationChannel == "WebSocket") {
         createWS();
     }
+    // Wait (0.5s) for the page load to complete, then get the file system.
+    setTimeout(function(){
+               window.requestFileSystem  = window.requestFileSystem || window.webkitRequestFileSystem;
+               window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, gotFS, fsFail);
+               }, 500);
+
+    
 });
+
+function gotFS(fileSystem) {
+    // save the file system for later access
+    appDir = cordova.file.applicationDirectory;
+    console.log("@gotFS: appDir = ", appDir);
+    window.rootFS = fileSystem.root;
+    fsRoot = window.rootFS.nativeURL;
+    fsRoot = fsRoot.replace("file://","");
+    console.log("@gotFS: fsRoot = ", fsRoot);
+}
+
+function fsFail(err) {
+    console.log("Failed to get file system: ", err);
+}
 
 function acquisitionTimePromptCallback(results) {
     console.log("@acquisitionTimePromptCallback");
@@ -294,6 +317,7 @@ function setupAccordian(){
 // When the menu the code looks for Plugins.  If present, it sets the
 // communication method and indicates that it is connected.
 function toggle_menu() {
+    console.log("fsRoot: ", fsRoot);
 	if (menu_open){
 		$('#LEFT_MENU').animate({"margin-left": '-=25vmin'});
 		menu_open = false;
@@ -548,12 +572,66 @@ function reset_data_collection() {
 function generate_customer_report() {
   // This call gets the entire HTML report in memory.
   var reportHTML = generateHTMLReport(E4PTdata, current_frame_data);
-  //console.log("reportHTML:\n",reportHTML);
-  var newWindow = window.open();
-  newWindow.document.write(reportHTML);
+    //console.log("reportHTML:\n",reportHTML);
+    if (false) {
+        // This method opens the report in a browser window.
+        var newWindow = window.open();
+        newWindow.document.write(reportHTML);
+    }
+    else {
+        // This method generates a PDF, then exports it.
+        baseURL = appDir + "www";
+        var options = {
+            documentSize: 'Letter',
+            type: 'base64',
+            fileName: 'customer_report.pdf',
+            baseUrl:baseURL
+        };
+        if (communicationChannel == "Plugin") {
+            // replace "./css/report.css" with "<%=css_file%>" for plugin
+            reportHTML = reportHTML.replace("./css/report.css","<%=css_file%>");
+            reportHTML = reportHTML.split("img/").join("www/img/"); // equivalent to replaceAll
+            console.log("reportHTML:\n",reportHTML);
+        }
+        var payload = _.template(reportHTML);
+        cssFile = "www/css/report.css";
+        pdf.fromData(payload({css_file:cssFile}), options)
+        .then(function(base64){
+              e4PtPrompt("Email or Upload File?", function(option) {
+                         exportReport(option, base64);
+                         }, "Get File", ["Email","Upload to Box","Cancel"]);
+        })
+        .catch(function(err) {
+            console.log("PDF Creation Error: ", err);
+               });
+        
+    }
   return;
 }
 
+// exportReport exports a base64 string as an email attachment or a
+// Box file upload.
+// The option is 1 (email), 2 (upload) or 3 (cancel).
+function exportReport(option, base64) {
+    console.log("@exportFile: ", option);
+    if (option == 1) {
+        console.log("Email");
+        // do something with downloadFileName
+        subject = "e-4Pt Tool Data";
+        // Add a prefix so the email plugin handles the attachment correctly
+        base64 = "base64:customer_report.pdf//" + base64;
+        sendEmailWithAttachment( subject ,base64);
+    }
+    else if (option == 2) {
+        console.log("Upload");
+        // do something with downloadFileName
+        uploadFileToBox(base64);
+    }
+    else {
+        console.log("Cancel");
+    }
+}
+              
 function setup_data_collection_page(dateStr, timeStr, update_position) {
     // Fill in the header
     var customer = document.getElementById("CUSTOMER").value;
@@ -957,8 +1035,10 @@ function exportFile(option) {
     if (option == 1) {
         console.log("Email");
         // do something with downloadFileName
-        subject = "e-4Pt Tool Data"
-        sendEmailWithAttachment( subject ,downloadFileName);
+        subject = "e-4Pt Tool Data";
+        attachmentFileName = downloadFileName;
+        attachmentFileName = "file://" + attachmentFileName;
+        sendEmailWithAttachment( subject , attachmentFileName);
     }
     else if (option == 2) {
         console.log("Upload");
@@ -971,7 +1051,6 @@ function exportFile(option) {
 }
 
 function sendEmailWithAttachment(subject, attachment) {    
-    attachment = "file://" + attachment;
     // Check if email is set up on this device.  If not, alert the user.
     // If so, try to send the email.
     window.plugin.email.isAvailable('mailto', function(available) {
@@ -1181,7 +1260,7 @@ function update_clearance(clearance) {
     for (var i=0; i<current_frame_data['position'][stage].length; i++) {
         var p = current_frame_data['position'][stage][i];
         var angle = position_angle[p];
-        var el_id = p + stage;
+        el_id = p + stage;
         el_id = el_id.replace(/\s+/g, '_');
         var c = document.getElementById(el_id).innerHTML;
         var c_f = parseFloat(c);

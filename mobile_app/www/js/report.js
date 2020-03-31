@@ -228,6 +228,14 @@ function get_tip_clearance(state, stage, position, data) {
       var stgStr1 = data.sets[i].stage.toString();
       if ( stgStr1 == stage ) {
         if (data.sets[i].position.toUpperCase() == position.toUpperCase()) {
+          if (typeof data.sets[i].clearance === 'string') {
+              if (data.sets[i].clearance.length == 0) {
+                  data.sets[i].clearance = 0;
+              }
+              else {
+                  data.sets[i].clearance = parseFloat(data.sets[i].clearance);
+              }
+          }
           return data.sets[i].clearance.toFixed(4);
         }
       }
@@ -242,6 +250,14 @@ function get_casing_thickness(state, stage, position, data) {
       var stgStr1 = data.sets[i].stage.toString();
       if ( stgStr1 == stage ) {
         if (data.sets[i].position.toUpperCase() == position.toUpperCase()) {
+          if (typeof data.sets[i].case_thickness === 'string') {
+              if (data.sets[i].case_thickness.length == 0) {
+                  data.sets[i].case_thickness = 0;
+              }
+              else {
+                  data.sets[i].case_thickness = parseFloat(data.sets[i].case_thickness);
+              }
+          }
           return data.sets[i].case_thickness.toFixed(4);
         }
       }
