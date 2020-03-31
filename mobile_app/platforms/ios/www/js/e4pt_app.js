@@ -4,6 +4,7 @@ var e4PtSocket = null;
 var clientID = 312;
 var e4pt = null;
 var MAX_STR_LEN = 64;
+var downloadFileName = "";
 
 var local_db = new PouchDB('e4ptdb');
 
@@ -815,6 +816,21 @@ function e4PtConfirm(msg, callback){
     }
 }
 
+
+//    prompt: function (message, resultCallback, title, buttonLabels, defaultText) {
+function e4PtPrompt(msg, callback, title, buttonLabels) {
+    try{
+        navigator.notification.confirm(
+        String(msg),
+        callback,
+        String(title),
+        buttonLabels
+        );
+    } catch (err){
+        console.log("e4PtPrompt Error: ", err);
+    }
+}
+
 function createWS(){
     if (navigator.onLine){
         if ("WebSocket" in window){
@@ -929,8 +945,52 @@ function pluginMessage(msg) {
             break;
         case "filename":
             console.log("Recieved Filename Message: ", msg.fname);
-            
+            downloadFileName = msg.fname;
+            e4PtPrompt("Email or Upload File?", getFile, "Get File", ["Email","Upload to Box","Cancel"]);
     }
+}
+
+// getFile is the callback from a prompt to email, upload or cancel.
+// The returned option is 1 (email), 2 (upload) or 3 (cancel).
+function getFile(option) {
+    console.log("@getFile: ", option);
+    if (option == 1) {
+        console.log("Email");
+        // do something with downloadFileName
+        subject = "e-4Pt Tool Data"
+        sendEmailWithAttachment( subject ,downloadFileName);
+    }
+    else if (option == 2) {
+        console.log("Upload");
+        // do something with downloadFileName
+
+    }
+    else {
+        console.log("Cancel");
+    }
+}
+
+function sendEmailWithAttachment(subject, attachment) {    
+    attachment = "file://" + attachment;
+    // Check if email is set up on this device.  If not, alert the user.
+    // If so, try to send the email.
+    window.plugin.email.isAvailable('mailto', function(available) {
+                                    if (!available) {
+                                    alert("Error: Email is not set up on this device.");
+                                    }
+                                    else {
+                                    window.plugin.email.open({
+                                                             to: [],
+                                                             cc: [],
+                                                             bcc: [],
+                                                             attachments: attachment,
+                                                             subject: subject,
+                                                             body: [],
+                                                             isHtml: false
+                                                             });
+                                    }
+                                    },
+                                    this);
 }
 
 function setIndicatorColor( color ) {

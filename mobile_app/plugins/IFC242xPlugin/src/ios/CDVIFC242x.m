@@ -855,20 +855,17 @@
         csvFileName = [NSString stringWithFormat:@"%@/%@",
                        dataDir,
                        [NSString stringWithFormat:@"data_%@.csv",dateStr]];
-        self.last_saved_file = [NSString stringWithFormat:@"data/data_%@.csv",dateStr];
     }
     else {
         NSString* fName = [NSString stringWithFormat:@"%@_%@_%@_%@.csv",
                            self.metaData.serial_number, self.metaData.stage,
                            self.metaData.position, dateStr];
         csvFileName = [NSString stringWithFormat:@"%@/%@", turbineDir, fName];
-        self.last_saved_file = [NSString stringWithFormat:@"%@/%@",self.metaData.serial_number,fName];
     }
     // Change the data-time string format in the filename.
     csvFileName = [csvFileName stringByReplacingOccurrencesOfString:@" " withString:@"_"];
     csvFileName = [csvFileName stringByReplacingOccurrencesOfString:@":" withString:@"-"];
-    self.last_saved_file = [self.last_saved_file stringByReplacingOccurrencesOfString:@" " withString:@"_"];
-    self.last_saved_file = [self.last_saved_file stringByReplacingOccurrencesOfString:@":" withString:@"-"];
+    self.last_saved_file = csvFileName;
     // Now write the file...
     // Open the output file.
     NSFileHandle *handle;
