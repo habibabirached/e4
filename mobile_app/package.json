@@ -12,6 +12,7 @@
     "dependencies": {
         "IFC242xPlugin": "git+ssh://git@github.build.ge.com:iacquire-grc/IFC242xPlugin.git",
         "cordova-ios": "^4.5.5",
+        "cordova-pdf-generator": "^2.0.8",
         "cordova-plugin-dialogs": "^2.0.2",
         "cordova-plugin-email-composer": "^0.8.3",
         "cordova-plugin-splashscreen": "^5.0.3",
@@ -28,7 +29,8 @@
             "cordova-plugin-dialogs": {},
             "IFC242xPlugin": {},
             "cordova-plugin-email-composer": {},
-            "doc_picker_plugin": {}
+            "doc_picker_plugin": {},
+            "cordova-pdf-generator": {}
         },
         "platforms": [
             "windows",

@@ -27,6 +27,9 @@
     },
     "doc_picker_plugin": {
       "PACKAGE_NAME": "com.ge.ent.e4PtTool"
+    },
+    "cordova-pdf-generator": {
+      "PACKAGE_NAME": "com.ge.ent.e4PtTool"
     }
   },
   "dependent_plugins": {}

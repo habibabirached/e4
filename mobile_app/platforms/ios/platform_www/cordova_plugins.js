@@ -48,6 +48,16 @@ module.exports = [
     "clobbers": [
       "window.plugins.doc_picker_plugin"
     ]
+  },
+  {
+    "id": "cordova-pdf-generator.pdf",
+    "file": "plugins/cordova-pdf-generator/www/pdf.js",
+    "pluginId": "cordova-pdf-generator",
+    "clobbers": [
+      "cordova.plugins.pdf",
+      "pugin.pdf",
+      "pdf"
+    ]
   }
 ];
 module.exports.metadata = 
@@ -59,7 +69,8 @@ module.exports.metadata =
   "cordova-plugin-dialogs": "2.0.2",
   "IFC242xPlugin": "0.1.0",
   "cordova-plugin-email-composer": "0.8.3",
-  "doc_picker_plugin": "0.2.0"
+  "doc_picker_plugin": "0.2.0",
+  "cordova-pdf-generator": "2.0.8"
 };
 // BOTTOM OF METADATA
 });

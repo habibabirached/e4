@@ -68,4 +68,7 @@
     <feature name="DocPickerViewController">
         <param name="ios-package" value="DocPickerViewController" />
     </feature>
+    <feature name="pdfService">
+        <param name="ios-package" value="PDFGenerator" />
+    </feature>
 </widget>
