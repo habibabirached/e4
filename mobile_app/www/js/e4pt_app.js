@@ -946,14 +946,14 @@ function pluginMessage(msg) {
         case "filename":
             console.log("Recieved Filename Message: ", msg.fname);
             downloadFileName = msg.fname;
-            e4PtPrompt("Email or Upload File?", getFile, "Get File", ["Email","Upload to Box","Cancel"]);
+            e4PtPrompt("Email or Upload File?", exportFile, "Get File", ["Email","Upload to Box","Cancel"]);
     }
 }
 
-// getFile is the callback from a prompt to email, upload or cancel.
+// exportFile is the callback from a prompt to email, upload or cancel.
 // The returned option is 1 (email), 2 (upload) or 3 (cancel).
-function getFile(option) {
-    console.log("@getFile: ", option);
+function exportFile(option) {
+    console.log("@exportFile: ", option);
     if (option == 1) {
         console.log("Email");
         // do something with downloadFileName
@@ -995,7 +995,9 @@ function sendEmailWithAttachment(subject, attachment) {
 
 function uploadFileToBox(fileFullPath) {
     console.log(' fileFullPath  : ' + fileFullPath);
-    window.plugins.BoxDocPicker.uploadFileToBox(fileFullPath);
+    // Uncomment the line below when we have a provisioning profile with iCloud entitlements from the COE.
+    // Until then this function does nothing.
+    //window.plugins.BoxDocPicker.uploadFileToBox(fileFullPath);
 }
 
 function setIndicatorColor( color ) {
