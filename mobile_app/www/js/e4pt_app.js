@@ -963,7 +963,7 @@ function getFile(option) {
     else if (option == 2) {
         console.log("Upload");
         // do something with downloadFileName
-
+        uploadFileToBox(downloadFileName);
     }
     else {
         console.log("Cancel");
@@ -991,6 +991,11 @@ function sendEmailWithAttachment(subject, attachment) {
                                     }
                                     },
                                     this);
+}
+
+function uploadFileToBox(fileFullPath) {
+    console.log(' fileFullPath  : ' + fileFullPath);
+    window.plugins.BoxDocPicker.uploadFileToBox(fileFullPath);
 }
 
 function setIndicatorColor( color ) {
