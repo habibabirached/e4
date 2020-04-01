@@ -1076,7 +1076,17 @@ function uploadFileToBox(fileFullPath) {
     console.log(' fileFullPath  : ' + fileFullPath);
     // Uncomment the line below when we have a provisioning profile with iCloud entitlements from the COE.
     // Until then this function does nothing.
-    //window.plugins.BoxDocPicker.uploadFileToBox(fileFullPath);
+    if (communicationChannel == "Plugin") {
+        window.plugins.doc_picker_plugin.uploadFileToBox(fileFullPath);
+    }
+    else if (communicationChannel == "WebSocket") {
+        e4PtAlert("Box upload isn't supported in a browser yet.\nPlease export the file and upload to Box manually.");
+    }
+}
+
+// boxUploadCallback is called when the file upload to box has completed.
+function boxUploadCallback() {
+    console.log("@boxUploadCallback");
 }
 
 function setIndicatorColor( color ) {
