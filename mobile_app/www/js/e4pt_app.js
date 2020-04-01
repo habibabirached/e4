@@ -625,7 +625,7 @@ function generate_customer_report() {
               var pdfBlob = b64toBlob(base64, "application/pdf");
               writeToFile(E4PTdata.serial_number, cust_rpt_fileName, pdfBlob, function() {
                                 e4PtPrompt("Email or Upload File?", function(option) {
-                                     exportReport(option, base64);
+                                     exportReport(option, base64, cust_rpt_fileName);
                                      }, "Get File", ["Email","Upload to Box","Cancel"]);
                             });
         })
@@ -670,8 +670,8 @@ function fileSaveCallback() {
 // exportReport exports a base64 string as an email attachment or a
 // Box file upload.
 // The option is 1 (email), 2 (upload) or 3 (cancel).
-function exportReport(option, base64) {
-    console.log("@exportFile: ", option);
+function exportReport(option, base64, fileName) {
+    console.log("@exportReport: ", option);
     if (option == 1) {
         console.log("Email");
         // do something with downloadFileName
@@ -682,8 +682,9 @@ function exportReport(option, base64) {
     }
     else if (option == 2) {
         console.log("Upload");
-        // do something with downloadFileName
-        uploadFileToBox(base64);
+        var fileFullPath = cordova.file.documentsDirectory + E4PTdata.serial_number + "/" + fileName;
+        fileFullPath = fileFullPath.replace("file://","");
+        uploadFileToBox(fileFullPath);
     }
     else {
         console.log("Cancel");
