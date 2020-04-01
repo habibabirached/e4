@@ -675,9 +675,10 @@ function exportReport(option, base64, fileName) {
     if (option == 1) {
         console.log("Email");
         // do something with downloadFileName
-        subject = "e-4Pt Tool Data";
+        subject = "e-4Pt Tool " + fileName;
         // Add a prefix so the email plugin handles the attachment correctly
-        base64 = "base64:customer_report.pdf//" + base64;
+        var prefix = "base64:" + fileName + "//";
+        base64 = prefix + base64;
         sendEmailWithAttachment( subject ,base64);
     }
     else if (option == 2) {
