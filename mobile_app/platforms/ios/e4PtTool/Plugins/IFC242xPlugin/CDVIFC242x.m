@@ -32,6 +32,11 @@
 @property (strong, nonatomic) NSString* casing_thickness;
 @property (strong, nonatomic) NSString* spacer_thickness;
 @property (strong, nonatomic) NSString* state;
+@property (strong, nonatomic) NSString* customer;
+@property (strong, nonatomic) NSString* site;
+@property (strong, nonatomic) NSString* operator;
+@property (strong, nonatomic) NSString* units;
+    
 
 -(instancetype)init;
 
@@ -46,6 +51,11 @@
 @synthesize casing_thickness = _casing_thickness;
 @synthesize spacer_thickness = _spacer_thickness;
 @synthesize state = _state;
+@synthesize customer = _customer;
+@synthesize site = _site;
+@synthesize operator = _operator;
+@synthesize units = _units;
+    
 
 -(instancetype)init {
     self = [super init];
@@ -446,31 +456,45 @@
     }
     if ([cmd containsString:@"send_data"]) {
         NSLog(@"Got send_data");
-        // Call from JavaScript:
-        // message = {"args":["send_data",acquisitionTime,"0.0"]};
-        NSString* acqTime = [msgArray objectAtIndex:1];
-        NSString* csThck = [msgArray objectAtIndex:2];
         // If there's less than 5 arguments, this call is a generic
-        // request for data so clear the meta-data.
+        // request for data so clear the meta-data. 5 or more args
+        // is a request for specific frame/stage/position data.
+        NSString* acqTime = @"";
         if (msgArray.count < 5) {
+            // Call from JavaScript:
+            // message = {"args":["send_data",acquisitionTime,"0.0"]};
+            acqTime = [msgArray objectAtIndex:1];
+            self.metaData.casing_thickness = [msgArray objectAtIndex:2];
             [self clearMetaData];
+        }
+        if (msgArray.count > 4) {
+            // Call from JavaScript:
+            // ["send_data",acquisitionTime, frame, sn, stage, position, casing_thickness, spacer_thickness];
+            acqTime = [msgArray objectAtIndex:1];
+            self.metaData.frame = [msgArray objectAtIndex:2];
+            self.metaData.serial_number = [msgArray objectAtIndex:3];
+            self.metaData.stage = [msgArray objectAtIndex:4];
+            self.metaData.position = [msgArray objectAtIndex:5];
+            self.metaData.casing_thickness = [msgArray objectAtIndex:6];
+            self.metaData.spacer_thickness = [msgArray objectAtIndex:7];
         }
         // 100 samples/frame, measurement rate is in kHz.
         float nSets = [self.measurement_rate floatValue] * 1000.0 * [acqTime floatValue] / 100.0;
         int num_sets = ceil(nSets); // Round up.
         // now call collect data with the acquisition time.
-        [self collectData:num_sets casingThickness:[csThck floatValue]];
+        [self collectData:num_sets casingThickness:[self.metaData.casing_thickness floatValue]];
     }
     if ([cmd containsString:@"scan_meta_data"]) {
         NSLog(@"Got scan_meta_data");
         // Call from JavaScript:
-        //var message = {"args":["send_data",acquisitionTime, frame, sn, stage, position, casing_thickness, spacer_thickness]};
-        self.metaData.frame = [msgArray objectAtIndex:2];
-        self.metaData.serial_number = [msgArray objectAtIndex:3];
-        self.metaData.stage = [msgArray objectAtIndex:4];
-        self.metaData.position = [msgArray objectAtIndex:5];
-        self.metaData.casing_thickness = [msgArray objectAtIndex:6];
-        self.metaData.spacer_thickness = [msgArray objectAtIndex:7];
+        //{"args":["scan_meta_data", E4PTdata.frame, E4PTdata.serial_number, E4PTdata.customer, E4PTdata.site_name, E4PTdata.operator, E4PTdata.units, E4PTdata.state]};
+        self.metaData.frame = [msgArray objectAtIndex:1];
+        self.metaData.serial_number = [msgArray objectAtIndex:2];
+        self.metaData.customer = [msgArray objectAtIndex:3];
+        self.metaData.site = [msgArray objectAtIndex:4];
+        self.metaData.operator = [msgArray objectAtIndex:5];
+        self.metaData.units = [msgArray objectAtIndex:6];
+        self.metaData.state = [msgArray objectAtIndex:7];
     }
     if ([cmd containsString:@"clear_meta_data"]) {
         NSLog(@"Got clear_meta_data");
@@ -505,6 +529,10 @@
     self.metaData.spacer_thickness = @"";
     self.metaData.casing_thickness = @"";
     self.metaData.state = @"";
+    self.metaData.customer = @"";
+    self.metaData.site = @"";
+    self.metaData.operator = @"";
+    self.metaData.units = @"";
 }
 
 // Should be self-explanitory.

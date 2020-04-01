@@ -569,6 +569,30 @@ function reset_data_collection() {
     }
 }
 
+function b64toBlob(b64Data, contentType, sliceSize) {
+    contentType = contentType || '';
+    sliceSize = sliceSize || 512;
+    
+    var byteCharacters = atob(b64Data);
+    var byteArrays = [];
+    
+    for (var offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+        var slice = byteCharacters.slice(offset, offset + sliceSize);
+        
+        var byteNumbers = new Array(slice.length);
+        for (var i = 0; i < slice.length; i++) {
+            byteNumbers[i] = slice.charCodeAt(i);
+        }
+        
+        var byteArray = new Uint8Array(byteNumbers);
+        
+        byteArrays.push(byteArray);
+    }
+    
+    var blob = new Blob(byteArrays, {type: contentType});
+    return blob;
+}
+
 function generate_customer_report() {
   // This call gets the entire HTML report in memory.
   var reportHTML = generateHTMLReport(E4PTdata, current_frame_data);
@@ -597,9 +621,13 @@ function generate_customer_report() {
         cssFile = "www/css/report.css";
         pdf.fromData(payload({css_file:cssFile}), options)
         .then(function(base64){
-              e4PtPrompt("Email or Upload File?", function(option) {
-                         exportReport(option, base64);
-                         }, "Get File", ["Email","Upload to Box","Cancel"]);
+              var cust_rpt_fileName = "customer_report.pdf";
+              var pdfBlob = b64toBlob(base64, "application/pdf");
+              writeToFile(E4PTdata.serial_number, cust_rpt_fileName, pdfBlob, function() {
+                                e4PtPrompt("Email or Upload File?", function(option) {
+                                     exportReport(option, base64);
+                                     }, "Get File", ["Email","Upload to Box","Cancel"]);
+                            });
         })
         .catch(function(err) {
             console.log("PDF Creation Error: ", err);
@@ -607,6 +635,36 @@ function generate_customer_report() {
         
     }
   return;
+}
+
+function writeToFile(folder, fileName, fileData, callback=null) {
+    console.log("@writeToFileAndEmail: fileName = ", fileName);
+    var targetFolder = cordova.file.documentsDirectory + folder + "/";
+    window.resolveLocalFileSystemURL(targetFolder, function(dir) {
+                                     dir.getFile(fileName, {create:true, exclusive: false}, function(file) {
+                                                 if(!file) {
+                                                    return;
+                                                 }
+                                                 var myFileUrl = file.toURL();
+                                                 file.createWriter(function(fileWriter) {
+                                                                     fileWriter.onwriteend = function (evt) {
+                                                                      console.log("@fileWriter.onwriteend");
+                                                                      callback();
+                                                                     }
+                                                                     fileWriter.write(fileData);
+                                                                   },
+                                                                   function(error) {
+                                                                     console.log(error);
+                                                                     if (callback!=null){
+                                                                        callback();
+                                                                     }
+                                                                   });
+                                                 });
+                                     });
+}
+
+function fileSaveCallback() {
+    console.log("@fileSaveCallback");
 }
 
 // exportReport exports a base64 string as an email attachment or a
