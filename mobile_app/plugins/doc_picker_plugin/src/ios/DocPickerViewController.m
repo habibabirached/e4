@@ -94,9 +94,10 @@
     // Make sure file exists first.
     if (![[NSFileManager defaultManager] fileExistsAtPath:boxFileUploadPath]) {
         // Oops. The file doesn't exist.
+        NSString* msg = [NSString stringWithFormat:@"File does not exist.\n%@",boxFileUploadPath];
         UIAlertController * alert=   [UIAlertController
                                       alertControllerWithTitle:@"Alert!"
-                                      message:@"Files can't be uploaded until they have been edited at least once."
+                                      message:msg 
                                       preferredStyle:UIAlertControllerStyleAlert];
         UIAlertAction* ok = [UIAlertAction
                              actionWithTitle:@"OK"
