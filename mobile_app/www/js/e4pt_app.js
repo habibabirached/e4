@@ -873,9 +873,6 @@ function do_mastering() {
     else if (communicationChannel == "Plugin") {
         window.plugins.IFC242x.messageToDevice(message, function(msg) {
                                                pluginMessage(msg);
-                                               if (msg.status == "connected") {
-                                                 done_mastering();
-                                               }
                                                }, null);
     }
     setMasterMessage("black","yellow","In Progress...");
@@ -1071,6 +1068,10 @@ function pluginMessage(msg) {
             }
             if (msg.status == "failed_mastering") {
                 failed_mastering();
+            }
+            if (msg.status.includes("Error:")) {
+                var alertMsg = msg.status;
+                e4PtAlert(alertMsg);
             }
             break;
         case "data":

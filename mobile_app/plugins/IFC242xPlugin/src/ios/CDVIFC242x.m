@@ -24,6 +24,16 @@
 #define DATA_PORT 1024
 #define TELNET_PORT 23
 
+enum pluginState {
+    ready = 0,
+    initializationInProgress,
+    masteringInProgress,
+    darkReferenceInProgress,
+    setMeasurementRateInProgress,
+    notReady
+};
+
+
 @interface ScanMetaData : NSObject
 @property (strong, nonatomic) NSString* frame;
 @property (strong, nonatomic) NSString* serial_number;
@@ -101,7 +111,8 @@
 @property (nonatomic,retain) NSOutputStream* outputDataStream;
 @property (nonatomic,retain) NSInputStream* inputTelnetStream;
 @property (nonatomic,retain) NSOutputStream* outputTelnetStream;
-@property (nonatomic) BOOL streamIsOpen;
+@property (nonatomic) BOOL dataStreamIsOpen;
+@property (nonatomic) BOOL telnetStreamIsOpen;
 @property (nonatomic) BOOL telnetIsReady;
 @property (strong, nonatomic) NSString* ipAddress;
 @property (nonatomic) uint8_t *totalBuffer;
@@ -111,8 +122,7 @@
 
 // Variables needed for data collection.
 @property (nonatomic) int tmpCounter;
-@property (nonatomic) BOOL darkCorrectionInProgress;
-@property (nonatomic) BOOL masteringInProgress;
+@property (nonatomic) enum pluginState pState;
 @property (strong, nonatomic) NSMutableArray* telnetCmds;
 @property (strong, nonatomic) NSString* mode; // "ethernet" or "serial"
 @property (strong, nonatomic) ScanMetaData* metaData;
@@ -152,7 +162,8 @@
 @synthesize last_saved_file = _last_saved_file;
 @synthesize measurement_rate = _measurement_rate;
 
-@synthesize streamIsOpen = _streamIsOpen;
+@synthesize dataStreamIsOpen = _dataStreamIsOpen;
+@synthesize telnetStreamIsOpen = _telnetStreamIsOpen;
 @synthesize ipAddress = _ipAddress;
 @synthesize dataPort = _dataPort;
 @synthesize telnetPort = _telnetPort;
@@ -160,8 +171,7 @@
 @synthesize totalBufferIndex = _totalBufferIndex;
 @synthesize tmpCounter = _tmpCounter;
 @synthesize telnetIsReady = _telnetIsReady;
-@synthesize darkCorrectionInProgress = _darkCorrectionInProgress;
-@synthesize masteringInProgress = _masteringInProgress;
+@synthesize pState = _pState;
 @synthesize telnetCmds = _telnetCmds;
 
 @synthesize num_pts_max = _num_pts_max;
@@ -221,7 +231,8 @@
     
     dispatch_async(dispatch_get_main_queue(), ^{
         NSLog(@"@connectDevice: %@:%d", ip_address, port);
-        self.streamIsOpen = false;
+        if (port == self.dataPort) self.dataStreamIsOpen = false;
+        if (port == self.telnetPort) self.telnetStreamIsOpen = false;
         
         if (port == DATA_PORT) {
             if (self.inputDataStream != nil) {
@@ -274,17 +285,16 @@
         if (port == DATA_PORT) {
             self.outputDataStream = outputStream;
             self.inputDataStream = inputStream;
+            self.timerDataStreamOpening = [ NSTimer scheduledTimerWithTimeInterval:0.75
+                                                                            target:self
+                                                                          selector:@selector(timeoutTimerDataStreamOpening:)
+                                                                          userInfo:@(port)
+                                                                           repeats:NO];
         }
         else if (port == TELNET_PORT) {
             self.outputTelnetStream = outputStream;
             self.inputTelnetStream = inputStream;
         }
-        
-        self.timerDataStreamOpening = [ NSTimer scheduledTimerWithTimeInterval:0.75
-                                                                        target:self
-                                                                      selector:@selector(timeoutTimerDataStreamOpening:)
-                                                                      userInfo:@(port)
-                                                                       repeats:NO];
     });
 }
 
@@ -294,7 +304,7 @@
 
     NSLog(@"    ipaddress = %@:%d",self.ipAddress,port);
     
-    if(self.streamIsOpen){
+    if(self.dataStreamIsOpen){
         NSLog(@"    OK - stream is open.");
     }
     else {
@@ -305,12 +315,14 @@
         // apple documentation also says to set delegate connection to nil (how?)
         
         if (port == DATA_PORT) {
+            NSLog(@"    closing data port streams.");
             [self.inputDataStream close];
             self.inputDataStream = nil;
             [self.outputDataStream close];
             self.outputDataStream = nil;
         }
         else if (port == TELNET_PORT) {
+            NSLog(@"    closing telnet port streams.");
             [self.inputTelnetStream close];
             self.inputTelnetStream = nil;
             [self.outputTelnetStream close];
@@ -324,6 +336,7 @@
     if (self.telnetCmds.count == 0) {
         dispatch_async(dispatch_get_main_queue(), ^{
             [self.timerSendTelnetCommand invalidate];
+            self.pState = ready;
         });
         return;
     }
@@ -345,6 +358,11 @@
     }
     else {
         NSLog(@"  telnet is not ready yet...");
+        if (self.outputTelnetStream != nil) {
+            NSString* command = @"\n";
+            NSData* cmdData = [[NSData alloc] initWithData:[command dataUsingEncoding:NSUTF8StringEncoding]];
+            [self.outputTelnetStream write:[cmdData bytes] maxLength:[cmdData length]];
+        }
     }
 }
 
@@ -352,6 +370,15 @@
 // queue of commands over telnet.  The timer will keep firing until the queue runs
 // out of command and the timer is invalidated in the callback.
 - (void)sendTelnetCommand {
+    // The controller will automatically disconnect the telnet port after a period
+    // of inactivity.  If this happens we have to reconnect the port before sending
+    // commands.
+    if (self.outputTelnetStream == nil) {
+        // attempt reconnect
+        NSLog(@"  Attempting to (re)connect to telnet port.");
+        [self connectDevice:self.ipAddress port:self.telnetPort];
+    }
+    
     NSLog(@"@sendTelnetCommand: number of queued commands: %lu", (unsigned long)self.telnetCmds.count);
     dispatch_async(dispatch_get_main_queue(), ^{
         self.timerSendTelnetCommand = [ NSTimer scheduledTimerWithTimeInterval:0.75
@@ -368,6 +395,7 @@
 
 - (void)initializeSensor {
     NSLog(@"@initializeSensor");
+    self.pState = initializationInProgress;
     self.ipAddress = @IFC_ADDR;
     self.dataPort = DATA_PORT;
     self.telnetPort = TELNET_PORT;
@@ -393,9 +421,11 @@
 
 - (void)masterDevice {
     NSLog(@"@masteringDevice");
+    if (![self checkReady]) return;
     if (self.inputTelnetStream == nil) {
         [self connectDevice:self.ipAddress port:self.telnetPort];
     }
+    self.pState = masteringInProgress;
     NSDictionary* jsonDict = @{@"type":@"status",@"status":@"acquiring"};
     CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];// You can send data, String, int, array, dictionary, etc.
     result.keepCallback = [NSNumber numberWithBool:YES]; // This is the magic option that lets you call a callback AGAIN!
@@ -404,11 +434,12 @@
     [self.telnetCmds addObject:[NSString stringWithFormat:@"MASTERSIGNAL 01DIST1 5.0\n"]];
     [self.telnetCmds addObject:[NSString stringWithFormat:@"MASTERSIGNAL 01DIST1 SET\n"]];
     [self sendTelnetCommand];
-    self.masteringInProgress = true;
 }
 
 - (void)doDarkReference {
     NSLog(@"@doDarkReference");
+    if (![self checkReady]) return;
+    self.pState = darkReferenceInProgress;
     NSDictionary* jsonDict = @{@"type":@"status",@"status":@"acquiring"};
     CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];// You can send data, String, int, array, dictionary, etc.
     result.keepCallback = [NSNumber numberWithBool:YES]; // This is the magic option that lets you call a callback AGAIN!
@@ -418,18 +449,36 @@
     }
     [self.telnetCmds addObject:[NSString stringWithFormat:@"DARKCORR\n"]];
     [self sendTelnetCommand];
-    self.darkCorrectionInProgress = true;
 }
 
 - (void)setMeasurementRate:(NSString*)rate {
+    if (![self checkReady]) return;
+    self.pState = setMeasurementRateInProgress;
     self.measurement_rate = rate;
     [self.telnetCmds addObject:[NSString stringWithFormat:@"MEASRATE %@\n", rate]];
     [self sendTelnetCommand];
 }
 
-// disconnectDevice actually just stops the data stream(s).
+- (bool)checkReady {
+    if (self.pState != ready) {
+        NSString* errMsg = @"Error: Device not ready. Please wait.";
+        NSDictionary* jsonDict = @{@"type":@"status",@"status":errMsg};
+        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];// You can send data, String, int, array, dictionary, etc.
+        result.keepCallback = [NSNumber numberWithBool:YES]; // This is the magic option that lets you call a callback AGAIN!
+        [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+        return false;
+    }
+    return true;
+}
+
+// disconnectDevice stops both data and telnet streams.
 - (void)disconnectDevice {
-    NSLog(@"@disconnectDevice.");
+    [self disconnectData];
+    [self disconnectTelnet];
+}
+
+- (void)disconnectData {
+    NSLog(@"@disconnectData.");
     if (self.inputDataStream != nil)
         [self.inputDataStream removeFromRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
     if (self.outputDataStream != nil)
@@ -443,7 +492,25 @@
         [self.outputDataStream close];
         self.outputDataStream = nil;
     }
-    self.streamIsOpen = false;
+    self.dataStreamIsOpen = false;
+}
+
+- (void)disconnectTelnet {
+    NSLog(@"@disconnectTelnet.");
+    if (self.inputTelnetStream != nil)
+        [self.inputTelnetStream removeFromRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
+    if (self.outputTelnetStream != nil)
+        [self.outputTelnetStream removeFromRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
+    // apple documentation also says to set delegate connection to nil (how?)
+    if (self.inputTelnetStream != nil) {
+        [self.inputTelnetStream close];
+        self.inputTelnetStream = nil;
+    }
+    if (self.outputTelnetStream != nil) {
+        [self.outputTelnetStream close];
+        self.outputTelnetStream = nil;
+    }
+    self.telnetStreamIsOpen = false;
 }
 
 - (void)messageHandler:(NSString*)msg {
@@ -517,6 +584,9 @@
     if ([cmd containsString:@"set_measuring_rate"]) {
         NSLog(@"Got set_measuring_rate");
         [self setMeasurementRate:[msgArray objectAtIndex:1]];
+    }
+    else {
+        NSLog(@"Got %@",msg);
     }
 }
 
@@ -615,10 +685,17 @@
             foundInputTelnetS = (self.inputTelnetStream == theStream);
             foundOutputTelnetS = (self.outputTelnetStream == theStream);
             telnetStreamFound = foundOutputTelnetS || foundInputTelnetS;
-            
         }
+        NSLog(@"dataStreamFound = %d; telnetStreamFound = %d",dataStreamFound,telnetStreamFound);
         
         if(dataStreamFound || telnetStreamFound){
+            // NSStreamEvents:
+            // NSStreamEventNone = 0
+            // NSStreamEventOpenCompleted = 1
+            // NSStreamEventHasBytesAvailable = 2
+            // NSStreamEventHasSpaceAvailable = 4
+            // NSStreamEventErrorOccurred = 8
+            // NSStreamEventEndEncountered = 16
             //NSLog(@"working with data stream, ip address = %@",self.ipAddress);
             
             switch (streamEvent) {
@@ -637,14 +714,17 @@
                     if(foundInputTelnetS) NSLog(@"  stream is an input telnet stream");
                     if(foundOutputTelnetS) NSLog(@"  stream is an output telnet stream");
                     
-                    if(dataStreamFound)  self.streamIsOpen = YES;
-                    if(telnetStreamFound) self.streamIsOpen = YES;
+                    if(dataStreamFound)  self.dataStreamIsOpen = YES;
+                    if(telnetStreamFound) self.telnetStreamIsOpen = YES;
                     
                     break;
                 }
                 case NSStreamEventHasBytesAvailable:
                 {
-                    if (self.streamIsOpen == NO) {
+                    if ((self.dataStreamIsOpen == NO) && ([port intValue] == self.dataPort)) {
+                        break;
+                    }
+                    if ((self.telnetStreamIsOpen == NO) && ([port intValue] == self.telnetPort)) {
                         break;
                     }
                     NSLog(@"NSStreamEventHasBytesAvailable");
@@ -752,7 +832,7 @@
                             //    NSLog(@"  no data");
                             //}
                         }
-                        [self disconnectDevice]; // Stop receiving data
+                        [self disconnectData]; // Stop receiving data
                         self.set_count = 0;
                         
 
@@ -795,18 +875,29 @@
                         NSLog(@"Got data on telnet stream");
                         len2 = [self.inputTelnetStream read:tmpBuf maxLength:1024];
                         NSString* tmpStr = [[NSString alloc] initWithBytes:tmpBuf length:len2 encoding:NSUTF8StringEncoding];
+                        if (len2 < 2) {
+                            // not enough of a string to do anything with.
+                            NSLog(@"  Short read: Only read %lu bytes", (unsigned long)tmpStr.length);
+                            return;
+                        }
                         NSString* prompt = [tmpStr substringFromIndex: [tmpStr length] - 2];
                         if ([prompt containsString:@"->"]) {
                             NSLog(@"Got telnet prompt");
                             self.telnetIsReady = true;
-                            if (self.darkCorrectionInProgress) {
-                                NSLog(@"Dark Correction Complete.");
-                                self.darkCorrectionInProgress = false;
-                                NSDictionary* jsonDict = @{@"type":@"status",@"status":@"connected"};
-                                CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];// You can send data, String, int, array, dictionary, etc.
-                                [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+                            if (self.pState == initializationInProgress) {
+                                if (self.telnetCmds.count == 0) {
+                                    [self processComplete:@"connected"];
+                                }
                             }
-                            if (self.masteringInProgress) {
+                            if (self.pState == setMeasurementRateInProgress) {
+                                NSLog(@"Set measurement rate complete");
+                                [self processComplete:@"connected"];
+                            }
+                            if (self.pState == darkReferenceInProgress) {
+                                NSLog(@"Dark Correction Complete.");
+                                [self processComplete:@"connected"];
+                            }
+                            if (self.pState == masteringInProgress) {
                                 // Check for mastering commands still in the queue.  If there are none, then
                                 // mastering is complete.  If there are still mastering commands in the queue
                                 // then mastering is not complete.
@@ -818,29 +909,50 @@
                                 }
                                 if (!foundMasterCommand) {
                                     NSLog(@"Mastering Complete.");
-                                    NSDictionary* jsonDict = @{@"type":@"status",@"status":@"connected"};
-                                    CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];// You can send data, String, int, array, dictionary, etc.
-                                    [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
-                                    self.masteringInProgress = false;
+                                    [self processComplete:@"done_mastering"];
                                 }
                             }
+                        }
+                        else {
+                            NSLog(@"TN: %@",tmpStr);
                         }
                     }
                     break;
                 }
                 case NSStreamEventErrorOccurred:
-                NSLog(@"NSStreamEventErrorOccurred.");
-                break;
+                {
+                    NSLog(@"NSStreamEventErrorOccurred.");
+                    NSError* error = [theStream streamError];
+                    NSString* errorMessage = [NSString stringWithFormat:@"%@ (Code = %ld)",
+                                              [error localizedDescription],
+                                              (long)[error code]];
+                    errorMessage = [NSString stringWithFormat:@"Error: %@",errorMessage];
+                    NSLog(@"  %@",errorMessage);
+                    if ([errorMessage containsString:@"Broken pipe"] && ([port intValue] ==  self.telnetPort)) {
+                        [self disconnectTelnet]; // clean things up.
+                        [self connectDevice:self.ipAddress port:self.telnetPort];
+                    }
+                    NSDictionary* jsonDict = @{@"type":@"status",@"status":errorMessage};
+                    CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];// You can send data, String, int, array, dictionary, etc.
+                    [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+                    break;
+                }
                 case NSStreamEventEndEncountered:
                 {
-                    NSLog(@"NSStreamEventEndEncountered.");
+                    NSLog(@"NSStreamEventEndEncountered for port = %@", port);
                     [theStream close];
                     [theStream removeFromRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
                     //          [theStream release];
                     theStream = nil;
-                    self.inputDataStream = nil;
-                    self.outputDataStream = nil;
                     
+                    if ([port intValue] == TELNET_PORT) {
+                        self.inputTelnetStream = nil;
+                        self.outputTelnetStream = nil;
+                    }
+                    else if ([port intValue] == DATA_PORT) {
+                        self.inputDataStream = nil;
+                        self.outputDataStream = nil;
+                    }
                     
                     break;
                 }
@@ -851,6 +963,13 @@
             } // switch
         } // if datastream found
     });
+}
+
+- (void)processComplete:(NSString*)statusMsg {
+    NSDictionary* jsonDict = @{@"type":@"status",@"status":statusMsg};
+    CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];// You can send data, String, int, array, dictionary, etc.
+    [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+    self.pState = ready;
 }
 
 - (void)saveCSVFile {
@@ -1074,11 +1193,6 @@
     [self.commandDelegate runInBackground:^{
         NSLog(@"@CDVIFC242x.m::messageHandler");
         NSString* msgStr = [command.arguments objectAtIndex:0];
-        if ([msgStr containsString:@"pluginConnected"]) {
-            NSDictionary* jsonDict = @{@"type":@"status",@"status":@"connected"};
-            CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];// You can send data, String, int, array, dictionary, etc.
-            [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
-        }
         [self.manager messageHandler:msgStr];
     }];
 }
