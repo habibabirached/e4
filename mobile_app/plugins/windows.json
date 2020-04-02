@@ -1,0 +1,21 @@
+{
+  "prepare_queue": {
+    "installed": [],
+    "uninstalled": []
+  },
+  "config_munge": {
+    "files": {}
+  },
+  "installed_plugins": {
+    "cordova-plugin-whitelist": {
+      "PACKAGE_NAME": "e4PtTool"
+    },
+    "cordova-sqlite-storage": {
+      "PACKAGE_NAME": "e4PtTool"
+    },
+    "cordova-plugin-splashscreen": {
+      "PACKAGE_NAME": "e4PtTool"
+    }
+  },
+  "dependent_plugins": {}
+}

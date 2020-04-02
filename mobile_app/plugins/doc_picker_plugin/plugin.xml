@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0" id="doc_picker_plugin" version="0.2.0">
+	<name>DocPickerViewController</name>
+	<author>GE</author>
+	<description>Cordova DocPickerViewController Plugin</description>
+	<keywords>Box Document Picker</keywords>
+	<engines>
+		<engine name="cordova" version=">=3.0.0" />
+	</engines>
+	<js-module src="www/boxdocpicker.js" name="DocPickerViewController">
+		<clobbers target="window.plugins.doc_picker_plugin" />
+	</js-module>
+	<platform name="ios">
+		<config-file target="config.xml" parent="/*">
+			<feature name="DocPickerViewController">
+				<param name="ios-package" value="DocPickerViewController" />
+			</feature>
+		</config-file>
+		<header-file src="src/ios/DocPickerViewController.h" />
+		<source-file src="src/ios/DocPickerViewController.m" />
+	</platform>
+</plugin>

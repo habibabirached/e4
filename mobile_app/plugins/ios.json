@@ -1,0 +1,39 @@
+{
+  "prepare_queue": {
+    "installed": [],
+    "uninstalled": []
+  },
+  "config_munge": {
+    "files": {}
+  },
+  "installed_plugins": {
+    "cordova-plugin-splashscreen": {
+      "PACKAGE_NAME": "com.ge.ent.e4PtTool"
+    },
+    "cordova-plugin-whitelist": {
+      "PACKAGE_NAME": "com.ge.ent.e4PtTool"
+    },
+    "cordova-sqlite-storage": {
+      "PACKAGE_NAME": "com.ge.ent.e4PtTool"
+    },
+    "cordova-plugin-dialogs": {
+      "PACKAGE_NAME": "com.ge.ent.e4PtTool"
+    },
+    "IFC242xPlugin": {
+      "PACKAGE_NAME": "com.ge.ent.e4PtTool"
+    },
+    "cordova-plugin-email-composer": {
+      "PACKAGE_NAME": "com.ge.ent.e4PtTool"
+    },
+    "doc_picker_plugin": {
+      "PACKAGE_NAME": "com.ge.ent.e4PtTool"
+    },
+    "cordova-pdf-generator": {
+      "PACKAGE_NAME": "com.ge.ent.e4PtTool"
+    },
+    "cordova-plugin-file": {
+      "PACKAGE_NAME": "com.ge.ent.e4PtTool"
+    }
+  },
+  "dependent_plugins": {}
+}

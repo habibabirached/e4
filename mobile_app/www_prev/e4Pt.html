@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="format-detection" content="telephone=no">
+        <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, width=device-width">
+        <title>e-4Pt Tool</title>
+        <script src="./js/lib/jQuery.js"></script>
+        <script type="application/javascript" src="./js/lib/fastclick_v2_min.js"></script>
+        <script type="text/javascript" src="./js/lib/jquery-1.12.3.min.js"></script>
+        <link rel="stylesheet" href="./css/fontAwesome.css"></link>
+        <link rel="stylesheet" href="./css/app_styles.css">
+        <allow-navigation href="*" />
+    </head>
+    <body>
+        <!-- --------------- TOP BAR ----------------------- -->
+        <div class="FIXED ROW COLOR_T_BLACK FONT_WHITE HROW Z5">
+
+            <div class="COL_EQUAL W6">
+                <div id="MAIN_MENU" class="COL_FL FONT4 MH3 MW4"><B>[MENU]</B></div>
+            </div>
+
+            <div class="COL_EQUAL W94">
+                <div id="TITLE_BAR" class="COL_FL FONT7 MW4 PH1">e-4Pt Tool</div>
+            </div>
+
+            <div class="COL_EQUAL W6">
+                <div id="outerContainer">
+                    <div id="container">
+                        <div id="indicator-solid" class="dot"></div>
+                        <div id="indicator-pulse" class="circle-pulse"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- --------------- PLOT --------------------- -->
+        <div class="FIXED H100 Z0" id="DATA_PLOT">
+            <p>Plot Div</p>
+            <div id="DATA_PLOT"></div>
+        </div>
+
+        <!-- --------------- LEFT MENU ---------------------  -->
+        <div id="LEFT_MENU" class="FIXED H100 LEFT0 COLOR_T_BLACK Z0" style="top:1vmin">
+            <BR/><BR/>
+            <div id="FRD_BUTTON" class="TRACC_BUTTON">FRD</div>
+            <div id="SETUP_BUTTON" class="TRACC_BUTTON">MEASURE TURBINE</div>
+            <div id="OPEN_BUTTON_DEVICE" class="TRACC_BUTTON">OPEN LOCAL</div>
+            <div id="GET_DATA_BUTTON" class="TRACC_BUTTON">GET DATA</div>
+            <div id="SENSOR_SETUP_BUTTON" class="TRACC_BUTTON">SENSOR SETUP</div>
+            <div id="SHUTDOWN_BUTTON" class="TRACC_BUTTON">SHUTDOWN</div>
+            <div id="DOWNLOAD_FILE_BUTTON" class="TRACC_BUTTON">DOWNLOAD DATA</div>
+            <!--
+             <div class="COL_EQUAL H100 W25 PW8 PB2">
+             <input id="OPEN_EXTERNAL_FILE_BUTTON" name="OPEN_EXTERNAL_FILE_BUTTON" type="file" class="INPUT_HIDE"/>
+             <label for="OPEN_EXTERNAL_FILE_BUTTON" class="OVERLAY_BUTTON BUTTON"  style="display: block; margin:auto;">BROWSE</label>
+             </div> -->
+
+            <div id="APP_VERSION">VERSION 0.0.2</div>
+        </div>
+
+        <!-- --------------- BOTTOM BAR ---------------------  -->
+        <div class="FIXED W100 BOTTOM0 Z1 COLOR_T_BLACK HROW">
+            <div id="RESULTS_BAR" class="H100 W100 HIDE">
+                <div class="COL_FR">&nbsp</div>
+                    <div id="BOT_BAR_Y" class="BLOCK COL_FR FONT8 FONT_WHITE PT1" >0.0345</div>
+                    <div class="BLOCK COL_FR FONT8 FONT_SILVER PT1">Y:</div>
+                    <div id="BOT_BAR_SET" class="BLOCK COL_FL FONT8 FONT_WHITE PT1">3</div>
+                    </div>
+
+                    <div id="STATUS_BAR" class="H100 W100">
+                    <div class="COL_FL">&nbsp</div>
+                    <div id="STATUS_DISPLAY" class="BLOCK COL_FL FONT7 FONT_WHITE PH4 PT1 H100">Connect to e-4Pt Tool to collect data</div>
+                    </div>
+
+                    <div id="REV_PROGRESS_BAR" class="HIDE">
+                    <div id="REV_PROGRESS">&nbsp 0%</div>
+                    </div>
+
+                    </div>
+
+                    <!-- --------------- FRD PAGE ---------------------  -->
+                    <div class="FIXED H100 Z0 FRD_PAGE">
+                    <div id="FRD_PAGE" class="HIDE">
+                    <h1>This page will eventually hold the FRD.</h1>
+                    </div>
+                    </div>
+
+                    <!-- --------------- FRAME SELECT PAGE ---------------------  -->
+                    <div class="FIXED H100 Z0 SETUP_PAGE">
+                    <div id="SETUP_PAGE" class="HIDE">
+                    <H2>Select Frame</H2>
+                    <select class="BORDER_BLACK_1 TXTFIELD" id="FRAME_SIZE">
+                    <!-- These values are overwritten by javascript -->
+                    <option value="6B">6B</option>
+                    <option value="6FA">6FA</option>
+                    <option value="7E">7E</option>
+                    <option value="7FA">7FA</option>
+                    <option value="7FA.05">7FA.05</option>
+                    <option value="9E">9E</option>
+                    <option value="LMS">LMS</option>
+                    </select>
+                    <br/><br/>
+                    <H2>Serial Number</H2><br/>
+                    <input class="BORDER_BLACK_1 TXTFIELD" type="text" id="SERIAL_NUMBER" value=""/>
+                    <br/><br/>
+                    <H2>Customer</H2><br/>
+                    <input class="BORDER_BLACK_1 TXTFIELD" type="text" id="CUSTOMER" value=""/>
+                    <br/><br/>
+                    <H2>Site</H2><br/>
+                    <input class="BORDER_BLACK_1 TXTFIELD" type="text" id="SITE" value=""/>
+                    <br/><br/>
+                    <H2>Operator (Name or SSO)</H2><br/>
+                    <input class="BORDER_BLACK_1 TXTFIELD" type="text" id="OPERATOR" value=""/>
+                    <br/><br/>
+                    <H2>Units</H2>
+                    <select class="BORDER_BLACK_1 TXTFIELD" id="UNITS">
+                    <option value="In">Inches</option>
+                    <option value="MM">MM</option>
+                    </select>
+                    <br/><br/>
+                    <input class="TRACC_BUTTON" type="submit" value="Next" id="SN_SUBMIT_BUTTON"/>
+                    </div>
+                    </div>
+                    <!-- --------------- SENSOR MASTERING BEFORE DATA COLLECTION PAGE --------------------- -->
+                    <div class="FIXED H100 Z0 INITIALIZE_SENSOR_PAGE">
+                    <div id="INITIALIZE_SENSOR_PAGE" class="HIDE">
+                    <H2><U>Probe Mastering</U></H2><br/>
+                    <p>Before collecting data be sure to master the sensor.</p>
+                    <br/>
+                    <p><U>Instructions:</U></p>
+                    <ol style="padding:40px">
+                    <li>Clean mating surfaces of the Probe and the Set Master.</li>
+                    <li>Insert Probe into the Set Master.</li>
+                    <li>Press Start.</li>
+                    <li>Wait until the screen changes.</li>
+                    </ol>
+                    <input class="TRACC_BUTTON" type="submit" value="Start" id="START_MASTER_BUTTON_2"/>
+                    <input id="master_message_2" type="text" name="master_message_2" style="text-align:center;color:white" value="Ready" disabled/>
+                    <br/>
+                    <input class="TRACC_BUTTON" type="submit" value="Collect Data" id="COLLECT_DATA_BUTTON"/>
+                    <br/>
+                </div>
+            </div>
+
+            <!-- --------------- TURBINE DATA COLLECTION PAGE --------------------- -->
+            <div class="FIXED H100 Z0 TURBINE_SETUP_PAGE">
+                <div id="TURBINE_SETUP_PAGE" class="HIDE">
+                    <H2 id="TURBINE_SETUP_HEADER">Turbine S/N:</H2>
+                    <!-- This table gets constructed by javascript -->
+                    <table id="SENSOR_DATA_TABLE" class="sensor_super_table">
+                        <tr>
+                            <td></td>
+                        </tr>
+                    </table>
+                    <br/>
+                    Position:  <select class="BORDER_BLACK_1 TXTFIELD" id="SENSOR_POSITION">
+                        <!-- These values are updated by javascript -->
+                        <option value="TOP">Top</option>
+                        <option value="BOTTOM">Bottom</option>
+                        <option value="LEFT">Left</option>
+                        <option value="RIGHT">Right</option>
+                    </select>
+                    <br/>
+                    <br/>
+                    Stage:  <select class="BORDER_BLACK_1 TXTFIELD" id="SENSOR_STAGE">
+                        <!-- These values are updated by javascript -->
+                        <option value="S1">Stage 1</option>
+                        <option value="S2">Stage 2</option>
+                    </select>
+                    <br/>
+                    <br/>
+                    <H2>Casing Thickness (inches):</H2><br/>
+                    <input class="BORDER_BLACK_1 TXTFIELD" type="text" id="CASING_THICKNESS" value=""/>
+                    <H2>Spacer Thickness (inches):</H2>
+                    <input class="BORDER_BLACK_1 TXTFIELD" type="text" id="SPACER_THICKNESS" value=""/>
+                    <p id="CLEARANCE_ERROR">foo</p>
+                    <br/>
+                    <br/>
+                    <input class="TRACC_BUTTON" type="submit" value="GO!" id="STAGE_COLLECT_BUTTON"/>
+                    <input class="TRACC_BUTTON" type="submit" value="Reset" id="COLLECTION_RESET_BUTTON"/>
+                    <br/>
+                    <div class="BLOCK H100 Z0" id="CLEARANCE_PLOT">
+                        <p></p>
+                        <div id="CLEARANCE_PLOT"></div>
+                    </div>
+                    <br/>
+                    <div class="BLOCK H100 Z0" id="DATA_PLOT2">
+                        <p></p>
+                        <div id="DATA_PLOT2"></div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- --------------- SENSOR MASTERING & DARK REFERENCING PAGE --------------------- -->
+            <div class="FIXED H100 Z0 SENSOR_SETUP_PAGE">
+                <div id="SENSOR_SETUP_PAGE" class="HIDE">
+                    <H2><U>Probe Mastering</U></H2><br/>
+                    <p><U>Instructions:</U></p>
+                    <ol style="padding:40px">
+                        <li>Clean mating surfaces of the Probe and the Set Master.</li>
+                        <li>Insert Probe into the Set Master.</li>
+                        <li>Press Start.</li>
+                        <li>Wait until the screen changes.</li>
+                    </ol>
+                    <input class="TRACC_BUTTON" type="submit" value="Start" id="START_MASTER_BUTTON"/>
+                    <input id="master_message" type="text" name="master_message" style="text-align:center;color:white" value="Ready" disabled/>
+                    <br/>
+                    <H2><U>Set Probe Dark Reference</U></H2><br/>
+                    <p>The system requires a warm-up time of approximately 30 minutes prior to setting the dark reference. Please ensure that the system has been powered on for 30 minutes to ensure it is warmed up.</p>
+                    <br/>
+                    <ol style="padding:40px">
+                        <li>Cover the sensor with the sensor cap to ensure that nothing is in the measurement range and no ambient light enters the sensor.</li>
+                        <li>Press the Start Dark Reference button to initiate the process.</li>
+                    </ol>
+                    <br/>
+                    <p>This page will disappear and the indicator light will flash yellow, then red. After &lt;30 seconds, you should see a flat line displayed indicating a successfull dark reference.</p>
+                    <input class="TRACC_BUTTON" type="submit" value="Start Dark Reference" id="START_DARK_REFERENCE_BUTTON"/>
+
+                </div>
+            </div>
+
+            <!-- --------------- IMPORTS ------------------------- -->
+            <script src="./js/lib/highcharts/highcharts6_0_4.js"></script>
+            <script src="./js/lib/highcharts/highcharts_more.js"></script>
+            <script src="./js/libs/reconnecting-ws.js"></script>
+            <script src="./js/e4pt_config.js"></script>
+            <script src="./js/e4pt_app.js"></script>
+            <script type="text/javascript" src="cordova.js"></script>
+    </body>
+
+</html>

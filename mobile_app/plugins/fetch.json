@@ -1,0 +1,74 @@
+{
+  "cordova-sqlite-storage": {
+    "source": {
+      "type": "registry",
+      "id": "cordova-sqlite-storage"
+    },
+    "is_top_level": true,
+    "variables": {}
+  },
+  "cordova-plugin-whitelist": {
+    "source": {
+      "type": "registry",
+      "id": "cordova-plugin-whitelist@1"
+    },
+    "is_top_level": true,
+    "variables": {}
+  },
+  "cordova-plugin-splashscreen": {
+    "source": {
+      "type": "registry",
+      "id": "cordova-plugin-splashscreen@5.0.3"
+    },
+    "is_top_level": true,
+    "variables": {}
+  },
+  "cordova-plugin-dialogs": {
+    "source": {
+      "type": "registry",
+      "id": "cordova-plugin-dialogs"
+    },
+    "is_top_level": true,
+    "variables": {}
+  },
+  "IFC242xPlugin": {
+    "source": {
+      "type": "registry",
+      "id": "git+ssh://git@github.build.ge.com:iacquire-grc/IFC242xPlugin.git"
+    },
+    "is_top_level": true,
+    "variables": {}
+  },
+  "cordova-plugin-email-composer": {
+    "source": {
+      "type": "registry",
+      "id": "cordova-plugin-email-composer@0.8.3"
+    },
+    "is_top_level": true,
+    "variables": {}
+  },
+  "doc_picker_plugin": {
+    "source": {
+      "type": "registry",
+      "id": "git+ssh://git@github.build.ge.com:iacquire-grc/doc_picker_plugin.git"
+    },
+    "is_top_level": true,
+    "variables": {}
+  },
+  "cordova-pdf-generator": {
+    "source": {
+      "type": "registry",
+      "id": "cordova-pdf-generator"
+    },
+    "is_top_level": true,
+    "variables": {}
+  },
+  "cordova-plugin-file": {
+    "source": {
+      "type": "registry",
+      "id": "cordova-plugin-file@6.0.2"
+    },
+    "is_top_level": true,
+    "variables": {}
+  }
+}
