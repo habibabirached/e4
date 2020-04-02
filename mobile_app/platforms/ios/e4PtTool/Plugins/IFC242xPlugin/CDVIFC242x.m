@@ -426,7 +426,7 @@ enum pluginState {
         [self connectDevice:self.ipAddress port:self.telnetPort];
     }
     self.pState = masteringInProgress;
-    NSDictionary* jsonDict = @{@"type":@"status",@"status":@"acquiring"};
+    NSDictionary* jsonDict = @{@"type":@"status",@"status":@"mastering_in_progress"};
     CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];// You can send data, String, int, array, dictionary, etc.
     result.keepCallback = [NSNumber numberWithBool:YES]; // This is the magic option that lets you call a callback AGAIN!
     [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
@@ -1078,7 +1078,7 @@ enum pluginState {
 
 - (IFCObjectiveCManager*)manager {
     IFCObjectiveCManager* tmpManager = [ IFCObjectiveCManager staticManager ];
-    tmpManager.webView = self.webView;  // for bidirectional communication
+    tmpManager.webView = (UIWebView*)self.webView;  // for bidirectional communication
     tmpManager.plugin = self;
     return tmpManager;
 }

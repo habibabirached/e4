@@ -875,6 +875,9 @@ function do_mastering() {
                                                pluginMessage(msg);
                                                }, null);
     }
+}
+
+function mastering_in_progress() {
     setMasterMessage("black","yellow","In Progress...");
     setMasterMessage2("black","yellow","In Progress...");
     setIndicatorColor("red");
@@ -1068,6 +1071,9 @@ function pluginMessage(msg) {
             }
             if (msg.status == "failed_mastering") {
                 failed_mastering();
+            }
+            if (msg.status == "mastering_in_progress") {
+                mastering_in_progress();
             }
             if (msg.status.includes("Error:")) {
                 var alertMsg = msg.status;
