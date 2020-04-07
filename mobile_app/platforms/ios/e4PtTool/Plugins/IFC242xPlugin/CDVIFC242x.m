@@ -44,7 +44,7 @@ enum pluginState {
 @property (strong, nonatomic) NSString* state;
 @property (strong, nonatomic) NSString* customer;
 @property (strong, nonatomic) NSString* site;
-@property (strong, nonatomic) NSString* operator;
+@property (strong, nonatomic) NSString* user;
 @property (strong, nonatomic) NSString* units;
     
 
@@ -63,7 +63,7 @@ enum pluginState {
 @synthesize state = _state;
 @synthesize customer = _customer;
 @synthesize site = _site;
-@synthesize operator = _operator;
+@synthesize user = _user;
 @synthesize units = _units;
     
 
@@ -132,6 +132,8 @@ enum pluginState {
 @property (strong, nonatomic) NSMutableArray* datasetIds;
 @property (strong, nonatomic) NSMutableArray* times;
 @property (strong, nonatomic) NSMutableArray* displacements;
+@property (strong, nonatomic) NSMutableArray* filtered;
+@property (strong, nonatomic) NSMutableArray* clearance;
 @property (strong, nonatomic) NSMutableArray* point_counts;
 @property (strong, nonatomic) NSMutableArray* intensities;
 
@@ -185,6 +187,8 @@ enum pluginState {
 @synthesize datasetIds = _datasetIds;
 @synthesize times = _times;
 @synthesize displacements = _displacements;
+@synthesize filtered = _filtered;
+@synthesize clearance = _clearance;
 @synthesize point_counts = _point_counts;
 @synthesize intensities = _intensities;
 
@@ -345,7 +349,7 @@ enum pluginState {
     if (self.telnetIsReady) {
         // send the command
         NSData* cmdData = [[NSData alloc] initWithData:[command dataUsingEncoding:NSUTF8StringEncoding]];
-        [self.outputTelnetStream write:[cmdData bytes] maxLength:[cmdData length]];
+        [self.outputTelnetStream write:(const unsigned char*)[cmdData bytes] maxLength:[cmdData length]];
         [self.telnetCmds removeObjectAtIndex:0];
         // disable the timer
         if ([self.telnetCmds count] == 0) {
@@ -361,7 +365,7 @@ enum pluginState {
         if (self.outputTelnetStream != nil) {
             NSString* command = @"\n";
             NSData* cmdData = [[NSData alloc] initWithData:[command dataUsingEncoding:NSUTF8StringEncoding]];
-            [self.outputTelnetStream write:[cmdData bytes] maxLength:[cmdData length]];
+            [self.outputTelnetStream write:(const unsigned char*)[cmdData bytes] maxLength:[cmdData length]];
         }
     }
 }
@@ -403,6 +407,8 @@ enum pluginState {
     self.datasetIds = [[NSMutableArray alloc] init];
     self.times = [[NSMutableArray alloc] init];
     self.displacements = [[NSMutableArray alloc] init];
+    self.filtered = [[NSMutableArray alloc] init];
+    self.clearance = [[NSMutableArray alloc] init];
     self.point_counts = [[NSMutableArray alloc] init];
     self.intensities = [[NSMutableArray alloc] init];
     self.measurement_rate = @"1.0";
@@ -559,7 +565,7 @@ enum pluginState {
         self.metaData.serial_number = [msgArray objectAtIndex:2];
         self.metaData.customer = [msgArray objectAtIndex:3];
         self.metaData.site = [msgArray objectAtIndex:4];
-        self.metaData.operator = [msgArray objectAtIndex:5];
+        self.metaData.user = [msgArray objectAtIndex:5];
         self.metaData.units = [msgArray objectAtIndex:6];
         self.metaData.state = [msgArray objectAtIndex:7];
     }
@@ -601,7 +607,7 @@ enum pluginState {
     self.metaData.state = @"";
     self.metaData.customer = @"";
     self.metaData.site = @"";
-    self.metaData.operator = @"";
+    self.metaData.user = @"";
     self.metaData.units = @"";
 }
 
@@ -610,6 +616,8 @@ enum pluginState {
     [self.datasetIds removeAllObjects];
     [self.times removeAllObjects];
     [self.displacements removeAllObjects];
+    [self.filtered removeAllObjects];
+    [self.clearance removeAllObjects];
     [self.point_counts removeAllObjects];
     [self.intensities removeAllObjects];
 }
@@ -634,11 +642,7 @@ enum pluginState {
 
     // Clear data arrays.
     if (self.displacements.count > 0) {
-        [self.datasetIds removeAllObjects];
-        [self.times removeAllObjects];
-        [self.displacements removeAllObjects];
-        [self.point_counts removeAllObjects];
-        [self.intensities removeAllObjects];
+        [self clearData];
     }
 
     // Connect the device to collect the data.
@@ -835,6 +839,10 @@ enum pluginState {
                         [self disconnectData]; // Stop receiving data
                         self.set_count = 0;
                         
+                        // Load dummy data for testing without a rotor.
+                        if (TRUE) {
+                            [self loadCSVFile];
+                        }
 
                         // At this point we should have all the data that was requested.
                         // We need to do any required processing/filtering, save to file,
@@ -869,7 +877,6 @@ enum pluginState {
                         [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
                         [self saveCSVFile];
                         [self clearData];
-                        
                     } // end of if ([self.inputDataStream hasBytesAvailable])
                     if ([self.inputTelnetStream hasBytesAvailable]) {
                         NSLog(@"Got data on telnet stream");
@@ -970,6 +977,134 @@ enum pluginState {
     CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];// You can send data, String, int, array, dictionary, etc.
     [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
     self.pState = ready;
+}
+
+- (void)computeClearance {
+    // Displacement values will be between 0-15.
+    // We create a coarse histogram to see how many peaks we find.
+    int nbins = 15;
+    int* hBins = (int*) malloc(nbins);
+    float* data = (float*)malloc(self.displacements.count);
+    for (int i=0; i<nbins; i++) hBins[i] = 0;
+    // Populate the histogram by converting displacements to histogram indices.
+    // Round each displacement to get the bin index.
+    NSLog(@"Populating histogram...");
+    int idx = 0;
+    for (NSNumber* n in self.displacements) {
+        float d = [n floatValue];
+        data[idx++] = d; // poplulate a temporary data array.
+        int bIdx = (int)floor(d); // Using floor makes bin edges integers. E.g. [0-1][+1-2][+2-3]...
+        hBins[bIdx]++; // Increment the histogram bin
+    }
+    // Find the top 3 peaks. One should be at 15. There should be one or two
+    // others.  Two if measuring squealer tips; One if not.
+    NSLog(@"Finding peaks...");
+    int max1, max2, max3, i, peak1, peak2, peak3;
+    max1 = max2 = max3 = i = peak1 = peak2 = peak3 = 0;
+    for (i=0; i<nbins; i++) {
+        if (hBins[i] > max1) {
+            max1 = hBins[i];
+            peak1 = i;
+        }
+    }
+    for (i=0; i<nbins; i++) {
+        if ((hBins[i] > max2) && (hBins[i] < max1)) {
+            max2 = hBins[i];
+            peak2 = i;
+        }
+    }
+    for (i=0; i<nbins; i++) {
+        if ((hBins[i] > max3) && (hBins[i] < max2)) {
+            max3 = hBins[i];
+            peak3 = i;
+        }
+    }
+    // Look at the difference between peaks to see if we're dealing with squealers or not.
+    NSLog(@"Finding threshold...");
+    float peakDiff = 1.0; // peak separation of 1mm
+    float d12 = (float)peak2 - (float)peak1;
+    float d23 = (float)peak3 - (float)peak2;
+    float threshold = 0.0;
+    if ((d12 >= peakDiff) && (d23 >= peakDiff)) {
+        // Looks like squealer tips.
+        threshold = ((float)peak1 + (float)peak2)/2.0;
+    }
+    else {
+        // Looks like this is not a squealer tip.
+        threshold = ((float)peak1 + (float)peak3)/2.0;
+    }
+    NSLog(@"Thresholding data...");
+    int win_width = 10;
+    bool t1, t2;
+    t1 = t2 = false;
+    float* lo;
+    float* hi;  // pointer to the window bounds
+    lo = hi = data;
+    for (int i=0; i<self.displacements.count; i++) {
+        if (data[i] > threshold) data[i] = threshold;
+
+        // move the pointers
+        if (i>win_width-1) {
+            lo++;
+        }
+        hi++;
+    }
+
+    free(hBins);
+    free(data);
+}
+
+// loadCSVFile should never be used in the field, but is here to allow
+// for debugging when a rotor is not available.  It reads a CSV file
+// and populates the data structures as though the data had come from
+// the sensor.
+- (void)loadCSVFile {
+    [self clearData]; // Clear everything out to re-write it from CSV file.
+    NSString* fName = @"R6_33RPM"; // R6_33RPM or R6_115RPM
+    NSString* csvPath = [[NSBundle mainBundle] pathForResource:fName ofType:@"csv"];
+    NSFileManager* fm = [NSFileManager defaultManager];
+    if ([fm fileExistsAtPath:csvPath]) {
+        NSLog(@"Found CSV file.");
+    }
+    else {
+        NSLog(@"CSV file not found.");
+        return;
+    }
+    NSString* fullFile = [NSString stringWithContentsOfFile:csvPath encoding:NSUTF8StringEncoding error:nil];
+    NSArray* rows = [fullFile componentsSeparatedByString:@"\n"]; // this breaks up the file into rows
+    int r = 0;
+    //index,pt_count,dataset_id,timestamp,displacement,filtered,intensity,casing_thickness
+    for (NSString* row in rows) {
+        if (r ==0 ) {
+            r++;
+            continue; // skip the header row in the file
+        }
+
+        NSArray* lineArray = [row componentsSeparatedByString:@","]; // Split up the line
+        if (lineArray.count < 8) {
+            NSLog(@"Skipping line %d",r);
+            r++;
+            continue;
+        }
+        if (r == 1) {
+            self.metaData.casing_thickness = [lineArray objectAtIndex:7]; // Get casing thickness once.
+        }
+        NSString* tmp = [lineArray objectAtIndex:4];
+        [self.displacements addObject:[NSNumber numberWithFloat:[tmp floatValue]]];
+        tmp = [lineArray objectAtIndex:5];
+        [self.filtered addObject:[NSNumber numberWithFloat:[tmp floatValue]]];
+        tmp = [lineArray objectAtIndex:2];
+        [self.datasetIds addObject:[NSNumber numberWithInteger:[tmp intValue]]];
+        tmp = [lineArray objectAtIndex:3];
+        unsigned int t = (unsigned int)[tmp intValue];
+        [self.times addObject:[NSNumber numberWithUnsignedInteger:t]];
+        tmp = [lineArray objectAtIndex:1];
+        [self.point_counts addObject:[NSNumber numberWithInteger:[tmp intValue]]];
+        tmp = [lineArray objectAtIndex:6];
+        [self.intensities addObject:[NSNumber numberWithFloat:[tmp floatValue]]];
+        r++;
+    }
+    NSLog(@"Completed parsing CSV file.");
 }
 
 - (void)saveCSVFile {
