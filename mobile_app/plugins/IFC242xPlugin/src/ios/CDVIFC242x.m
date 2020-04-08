@@ -11,6 +11,9 @@
 
 #import "CDVIFC242x.h"
 #import <AVFoundation/AVFoundation.h>
+#include "math.h"
+#include <Accelerate/Accelerate.h>
+
 
 // Take out the printf lines in release mode
 #ifndef DEBUG
@@ -23,6 +26,15 @@
 #define IFC_ADDR "192.168.168.150"
 #define DATA_PORT 1024
 #define TELNET_PORT 23
+
+// Some defines for the signal processing
+#define KERNEL_SIZE 13
+#define KERNEL_SIGMA 2.8
+#define OUT_OF_RANGE 15.0
+#define FILTER_EDGE_SIZE 1
+
+// For using simulated data
+#define SIMULATED_DATA 1
 
 enum pluginState {
     ready = 0,
@@ -119,6 +131,7 @@ enum pluginState {
 @property (nonatomic) long int totalBufferIndex;
 @property (nonatomic,retain) NSTimer * timerDataStreamOpening;
 @property (nonatomic, retain) NSTimer* timerSendTelnetCommand;
+@property (strong, nonatomic) NSMutableArray* kernel;
 
 // Variables needed for data collection.
 @property (nonatomic) int tmpCounter;
@@ -191,6 +204,8 @@ enum pluginState {
 @synthesize clearance = _clearance;
 @synthesize point_counts = _point_counts;
 @synthesize intensities = _intensities;
+    
+@synthesize kernel = _kernel;
 
 - (int)interfaceHandle {
     static int handle = 0;
@@ -414,6 +429,7 @@ enum pluginState {
     self.measurement_rate = @"1.0";
     self.telnetCmds = [[NSMutableArray alloc] init];
     self.metaData = [[ScanMetaData alloc] init];
+    [self computeKernel:KERNEL_SIGMA kernel_size:KERNEL_SIZE]; // Compute the LoG filter kernel.
     if (self.inputTelnetStream == nil) {
         [self connectDevice:self.ipAddress port:self.telnetPort];
     }
@@ -807,7 +823,7 @@ enum pluginState {
                                         if (dVal == 214743400) {
                                             error_msg = [error_msg stringByAppendingString:@"Measurement is outside representable area"];
                                         }
-                                        
+                                        displacement = OUT_OF_RANGE;
                                     }
                                     else {
                                         displacement = ((float)dVal) * 1e-6;
@@ -840,9 +856,10 @@ enum pluginState {
                         self.set_count = 0;
                         
                         // Load dummy data for testing without a rotor.
-                        if (TRUE) {
+                        if (SIMULATED_DATA == 1) {
                             [self loadCSVFile];
                         }
+                        [self computeClearance];
 
                         // At this point we should have all the data that was requested.
                         // We need to do any required processing/filtering, save to file,
@@ -853,7 +870,8 @@ enum pluginState {
                         [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
                         
                         NSError* error;
-                        NSData* jsonData = [NSJSONSerialization dataWithJSONObject:self.displacements options:NSJSONWritingSortedKeys error:&error];
+                        //NSData* jsonData = [NSJSONSerialization dataWithJSONObject:self.displacements options:NSJSONWritingSortedKeys error:&error];
+                        NSData* jsonData = [NSJSONSerialization dataWithJSONObject:self.filtered options:NSJSONWritingSortedKeys error:&error];
                         NSString *dispJSONString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
                         jsonData = [NSJSONSerialization dataWithJSONObject:self.intensities options:NSJSONWritingSortedKeys error:&error];
                         NSString *intensJSONString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
@@ -982,9 +1000,9 @@ enum pluginState {
 - (void)computeClearance {
     // Displacement values will be between 0-15.
     // We create a coarse histogram to see how many peaks we find.
-    int nbins = 15;
-    int* hBins = (int*) malloc(nbins);
-    float* data = (float*)malloc(self.displacements.count);
+    int nbins = OUT_OF_RANGE + 1;
+    int hBins[nbins];
+    float data[self.displacements.count];
     for (int i=0; i<nbins; i++) hBins[i] = 0;
     // Populate the histogram by converting displacements to histogram indices.
     // Round each displacement to get the bin index.
@@ -994,7 +1012,13 @@ enum pluginState {
         float d = [n floatValue];
         data[idx++] = d; // poplulate a temporary data array.
         int bIdx = (int)floor(d); // Using floor makes bin edges integers. E.g. [0-1][+1-2][+2-3]...
+        if (bIdx > nbins-1) bIdx = nbins - 1; // Don't overflow
+        if (bIdx < 0) bIdx = 0; // Don't underflow
         hBins[bIdx]++; // Increment the histogram bin
+    }
+    NSLog(@"Histogram:\n");
+    for (int i=0; i<nbins; i++) {
+        NSLog(@" hBin[%d]: %d",i, hBins[i]);
     }
     // Find the top 3 peaks. One should be at 15. There should be one or two
     // others.  Two if measuring squealer tips; One if not.
@@ -1019,39 +1043,253 @@ enum pluginState {
             peak3 = i;
         }
     }
+    NSLog(@"Peaks: %d, %d, %d", peak1, peak2, peak3);
     // Look at the difference between peaks to see if we're dealing with squealers or not.
     NSLog(@"Finding threshold...");
     float peakDiff = 1.0; // peak separation of 1mm
-    float d12 = (float)peak2 - (float)peak1;
-    float d23 = (float)peak3 - (float)peak2;
+    float d12 = fabs((float)peak2 - (float)peak1);
+    float d23 = fabs((float)peak3 - (float)peak2);
     float threshold = 0.0;
     if ((d12 >= peakDiff) && (d23 >= peakDiff)) {
         // Looks like squealer tips.
-        threshold = ((float)peak1 + (float)peak2)/2.0;
+        NSLog(@"Looks like squealer tips.");
+        threshold = ((float)peak2 + (float)peak3)/2.0;
     }
     else {
         // Looks like this is not a squealer tip.
+        NSLog(@"Looks like not squealer tips.");
         threshold = ((float)peak1 + (float)peak3)/2.0;
     }
-    NSLog(@"Thresholding data...");
-    int win_width = 10;
-    bool t1, t2;
-    t1 = t2 = false;
-    float* lo;
-    float* hi;  // pointer to the window bounds
-    lo = hi = data;
-    for (int i=0; i<self.displacements.count; i++) {
-        if (data[i] > threshold) data[i] = threshold;
-
-        // move the pointers
-        if (i>win_width-1) {
-            lo++;
+    NSLog(@"Found Threshold: %f\nThresholding data...",threshold);
+    
+    // Perform edge detection with an LoG filter
+    // (Kernel computation was handled during initialization.)
+    NSLog(@"Filtering...");
+    [self fir_filter:self.kernel threshold:threshold];
+    NSLog(@"Done.");
+    
+    //return; // Stop so we can just see the results of filtering
+    
+    // Fill sig_sign buffer with just 1 or -1 indicating the sign
+    // of the filtered signal.
+    int sig_sign[self.filtered.count];
+    i=0;
+    for (NSNumber* n in self.filtered) {
+        if ([n floatValue] >= 0) {
+            sig_sign[i] = 1;
         }
-        hi++;
+        else {
+            sig_sign[i] = -1;
+        }
+        i++;
     }
+    
+    // Fill these buffers with indications for positive or
+    // negative zero crossings.  These are the blade boundaries.
+    // Blades tip go from a negative zc to a positiv zc.
+    bool pos_crossing[self.filtered.count];
+    bool neg_crossing[self.filtered.count];
+    for (i=0; i<self.filtered.count; i++) {
+        if (i==0) {
+            // Skip first value
+            pos_crossing[i] = false;
+            neg_crossing[i] = false;
+            continue;
+        }
+        if ( (sig_sign[i] - sig_sign[i-1]) < 0 ) {
+            // Negative zero-crossing
+            pos_crossing[i] = false;
+            neg_crossing[i] = true;
+        }
+        else if ( (sig_sign[i] - sig_sign[i-1]) > 0 ) {
+            // Positive zero-crossing
+            pos_crossing[i] = true;
+            neg_crossing[i] = false;
+        }
+        else {
+            pos_crossing[i] = false;
+            neg_crossing[i] = false;
+        }
+    }
+    
+#if 0
+    [self.filtered removeAllObjects];
+    float f = 1.0;
+    for (i=0; i<self.displacements.count; i++) {
+        if (neg_crossing[i]) f = 0.0;
+        if (pos_crossing[i]) f = 1.0;
+        [self.filtered addObject:[NSNumber numberWithFloat:f]];
+    }
+    return;
+#endif
+    
+    // Traverse the data averaging the displacements between the neg.
+    // and pos. zero-crossings IFF the intensity is greater than zero.
+    // These averages are the per-blade clearances
+    [self.filtered removeAllObjects];
+    NSLog(@"Displacements count: %lu",(unsigned long)self.displacements.count);
+    for (i=0; i<self.displacements.count; i++) {
+        if (neg_crossing[i]) {
+            // We've encountered a negative zero-crossing
+            // so sum displacements to the next positive zero-crossing.
+            int start = i;
+            int stop = start;
+            for (; stop < self.displacements.count; stop++) {
+                if (pos_crossing[stop]) {
+                    //NSLog(@"Start: %d; Stop: %d", start, stop);
+                    break;
+                }
+                else if (stop == self.displacements.count -1) {
+                    //NSLog(@"No stop found for start: %d", start);
+                    // end of the data is encountered without a matching
+                    // positive zero crossing.
+                    for (int j=start; j<self.displacements.count; j++) {
+                        [self.filtered addObject:[NSNumber numberWithFloat:OUT_OF_RANGE]];
+                    }
+                    stop = start;
+                    break;
+                }
+            }
+            //NSLog(@"Blade: %d - %d", start, stop);
+            float clearance = 0;
+            int count = 0;
+            if (stop > start) {
+                for (int j=start + FILTER_EDGE_SIZE; j<=stop - FILTER_EDGE_SIZE; j++) {
+                    NSNumber* intnst = [self.intensities objectAtIndex:j];
+                    if ([intnst floatValue] > 0) {
+                        NSNumber* d = [self.displacements objectAtIndex:j];
+                        //NSLog(@"Averaging: %f",[d floatValue]);
+                        clearance += [d floatValue];
+                        count++;
+                    }
+                }
+                //NSLog(@"Sum: %f; count: %d", clearance, count);
+                clearance = clearance / count; // Average clearance for this blade.
+                NSLog(@"Clearance: %f", clearance);
+                for (int j=start; j<=stop; j++) {
+                    [self.filtered addObject:[NSNumber numberWithFloat:clearance]];
+                }
+            }
+            i = stop; // Move the start point ahead to where we stopped.
+        }
+        else {
+            [self.filtered addObject:[NSNumber numberWithFloat:OUT_OF_RANGE]];
+        }
+    }
+    NSLog(@"Done.");
+}
 
-    free(hBins);
-    free(data);
+// computeKernel computes a normalized Laplacian-of-Gaussian kernel for
+// edge detection.
+// kernel_size should be an odd number.  This is a quick & dirty
+// implementation and there is no check for this.
+- (void)computeKernel:(float)sigma kernel_size:(int)kernel_size {
+    if (self.kernel == nil) self.kernel = [[NSMutableArray alloc] init];
+    double f1 = -(1.0 / (M_PI * pow(sigma, 4)));
+    double hi = floor(kernel_size/2.0);
+    double lo = -hi;
+    double k_sum = 0;
+    for (int x=lo; x<hi+1; x++) {
+        double f2 = 1.0 - (pow(x,2)/(2.0*pow(sigma,2)));
+        double f3 = exp(-(pow(x,2)/(2.0*pow(sigma,2))));
+        double k = f1 * f2 * f3;
+        k_sum += k;
+        [self.kernel addObject:[NSNumber numberWithDouble:k]];
+    }
+    // Now normalize the kernel
+    for (int idx=0; idx<self.kernel.count; idx++) {
+        NSNumber* num = [self.kernel objectAtIndex:idx];
+        float k_val = (float)[num doubleValue] / k_sum;
+        [self.kernel replaceObjectAtIndex:idx withObject:[NSNumber numberWithFloat:k_val]];
+    }
+}
+
+//
+// fir_filter is taken (almost) lock, stock and barrel from:
+// http://hamiltonkibbe.com/finite-impulse-response-filters-using-apples-accelerate-framework-part-ii/
+//
+- (void)fir_filter:(NSMutableArray*)kernel threshold:(float)threshold {
+
+    // Get the kernal into a float array
+    int h_length = (int)kernel.count;
+    float h[h_length];
+    int idx = 0;
+    for (NSNumber* f in kernel) {
+        h[idx] = [f floatValue];
+        idx++;
+    }
+    
+    // Get the data into a float array, thresholding as we go.
+    unsigned x_length = (unsigned)self.displacements.count;
+    float x[x_length];
+    idx = 0;
+    for (NSNumber* f in self.displacements) {
+        x[idx] = [f floatValue] < threshold ? [f floatValue] : threshold;
+        idx++;
+    }
+    
+    // Create buffer to store overflow across calls
+    //static float overflow[KERNEL_SIZE - 1] = {0.0};
+    
+    // The length of the result from linear convolution is one less than the
+    // sum of the lengths of the two inputs.
+    unsigned result_length = x_length + h_length - 1;
+    //unsigned overlap_length = result_length - x_length;
+    
+    // Create a temporary buffer to store the entire convolution result
+    float temp_buffer[result_length];
+    
+    // Pointer to end of filter for use with vDSP_conv
+    float    *h_end = h + (h_length - 1);
+    
+    // Length of signal passed to vDSP_conv
+    unsigned signal_length = (h_length + result_length);
+    
+    // Create an array to store the signal passed to vDSP_conv, padded with zeros
+    float padded[signal_length];
+    
+    // fill padded buffer with zeros
+    float zero = 0.0;
+    vDSP_vfill(&zero, padded, 1, signal_length);
+    
+    // Copy input into padded buffer
+    cblas_scopy(x_length, x, 1, padded, 1);
+    
+    // use the Accelerate convolution function
+    vDSP_conv(padded, 1, h_end, -1, temp_buffer, 1, result_length, h_length);
+    
+    //
+    // In the GE Case we don't need to worry about adding results from
+    // previous runs.  However, I'm leaving this code here in case I
+    // ever want to refer to it for re-use.
+    //
+    // Add the overlap from the previous run
+    // use vDSP_vadd instead of loop
+    // vDSP_vadd(temp_buffer, overflow, buffer, overlap_length);
+    //
+    // Copy overlap into overlap buffer
+    // use BLAS copy instead of loop
+    // cblas_scopy(overlap_length, temp_buffer + x_length, 1, overflow, 1);
+    //
+    
+    //
+    // In the GE Case we want everything in a different array, so we just
+    // put it there rather than doing the cblas copy to the output and
+    // then having to copy it all again.  This saves time and memory.
+    //s
+    // write the final result to the output. use BLAS copy instead of loop
+    // cblas_scopy(x_length, temp_buffer, 1, output, 1);
+    
+    // Filtered data here is offset by 1/2 of the kernel
+    // length, so we offset the data when we write it back out.
+    int offset = (int)round((float)kernel.count / 2.0);
+    if (SIMULATED_DATA == 1) [self.filtered removeAllObjects];
+    for (int i=0; i<offset; i++) [self.filtered addObject:[NSNumber numberWithFloat:0]]; // offset
+    for (int i=0; i<x_length; i++) {
+        float tmpf = temp_buffer[i] - threshold;
+        [self.filtered addObject:[NSNumber numberWithFloat:tmpf]];
+    }
+    
 }
 
 // loadCSVFile should never be used in the field, but is here to allow
@@ -1060,7 +1298,7 @@ enum pluginState {
 // the sensor.
 - (void)loadCSVFile {
     [self clearData]; // Clear everything out to re-write it from CSV file.
-    NSString* fName = @"R6_33RPM"; // R6_33RPM or R6_115RPM
+    NSString* fName = @"test_data"; // test data file
     NSString* csvPath = [[NSBundle mainBundle] pathForResource:fName ofType:@"csv"];
     NSFileManager* fm = [NSFileManager defaultManager];
     if ([fm fileExistsAtPath:csvPath]) {
