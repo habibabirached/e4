@@ -11,6 +11,9 @@
 
 #import "CDVIFC242x.h"
 #import <AVFoundation/AVFoundation.h>
+#include "math.h"
+#include <Accelerate/Accelerate.h>
+
 
 // Take out the printf lines in release mode
 #ifndef DEBUG
@@ -23,6 +26,21 @@
 #define IFC_ADDR "192.168.168.150"
 #define DATA_PORT 1024
 #define TELNET_PORT 23
+
+// Some defines for the signal processing
+#define KERNEL_SIZE 13
+#define KERNEL_SIGMA 2.8
+#define OUT_OF_RANGE 15.0
+#define FILTER_EDGE_SIZE_START 1
+#define FILTER_EDGE_SIZE_STOP 1
+
+// This option, when defined causes the program to output
+// the minimum clearance for each blade rather than the
+// average across the tip.
+//#define OUTPUT_MINIMUM
+
+// For using simulated data
+#define SIMULATED_DATA 0
 
 enum pluginState {
     ready = 0,
@@ -44,8 +62,9 @@ enum pluginState {
 @property (strong, nonatomic) NSString* state;
 @property (strong, nonatomic) NSString* customer;
 @property (strong, nonatomic) NSString* site;
-@property (strong, nonatomic) NSString* operator;
+@property (strong, nonatomic) NSString* user;
 @property (strong, nonatomic) NSString* units;
+@property (strong, nonatomic) NSString* num_blades;
     
 
 -(instancetype)init;
@@ -63,8 +82,9 @@ enum pluginState {
 @synthesize state = _state;
 @synthesize customer = _customer;
 @synthesize site = _site;
-@synthesize operator = _operator;
+@synthesize user = _user;
 @synthesize units = _units;
+@synthesize num_blades = _num_blades;
     
 
 -(instancetype)init {
@@ -119,6 +139,7 @@ enum pluginState {
 @property (nonatomic) long int totalBufferIndex;
 @property (nonatomic,retain) NSTimer * timerDataStreamOpening;
 @property (nonatomic, retain) NSTimer* timerSendTelnetCommand;
+@property (strong, nonatomic) NSMutableArray* kernel;
 
 // Variables needed for data collection.
 @property (nonatomic) int tmpCounter;
@@ -132,8 +153,12 @@ enum pluginState {
 @property (strong, nonatomic) NSMutableArray* datasetIds;
 @property (strong, nonatomic) NSMutableArray* times;
 @property (strong, nonatomic) NSMutableArray* displacements;
+@property (strong, nonatomic) NSMutableArray* filtered;
+@property (strong, nonatomic) NSMutableArray* blade_clearances;
 @property (strong, nonatomic) NSMutableArray* point_counts;
 @property (strong, nonatomic) NSMutableArray* intensities;
+@property (strong, nonatomic) NSMutableArray* min_locs;
+@property (nonatomic) float stage_clearance;
 
 @property (nonatomic) int num_pts_max;
 @property (nonatomic) int current_data_set_id;
@@ -185,8 +210,14 @@ enum pluginState {
 @synthesize datasetIds = _datasetIds;
 @synthesize times = _times;
 @synthesize displacements = _displacements;
+@synthesize filtered = _filtered;
+@synthesize blade_clearances = _blade_clearances;
+@synthesize stage_clearance = _stage_clearance;
 @synthesize point_counts = _point_counts;
 @synthesize intensities = _intensities;
+@synthesize min_locs = _min_locs;
+    
+@synthesize kernel = _kernel;
 
 - (int)interfaceHandle {
     static int handle = 0;
@@ -345,7 +376,7 @@ enum pluginState {
     if (self.telnetIsReady) {
         // send the command
         NSData* cmdData = [[NSData alloc] initWithData:[command dataUsingEncoding:NSUTF8StringEncoding]];
-        [self.outputTelnetStream write:[cmdData bytes] maxLength:[cmdData length]];
+        [self.outputTelnetStream write:(const unsigned char*)[cmdData bytes] maxLength:[cmdData length]];
         [self.telnetCmds removeObjectAtIndex:0];
         // disable the timer
         if ([self.telnetCmds count] == 0) {
@@ -361,7 +392,7 @@ enum pluginState {
         if (self.outputTelnetStream != nil) {
             NSString* command = @"\n";
             NSData* cmdData = [[NSData alloc] initWithData:[command dataUsingEncoding:NSUTF8StringEncoding]];
-            [self.outputTelnetStream write:[cmdData bytes] maxLength:[cmdData length]];
+            [self.outputTelnetStream write:(const unsigned char*)[cmdData bytes] maxLength:[cmdData length]];
         }
     }
 }
@@ -403,11 +434,16 @@ enum pluginState {
     self.datasetIds = [[NSMutableArray alloc] init];
     self.times = [[NSMutableArray alloc] init];
     self.displacements = [[NSMutableArray alloc] init];
+    self.filtered = [[NSMutableArray alloc] init];
+    self.blade_clearances = [[NSMutableArray alloc] init];
     self.point_counts = [[NSMutableArray alloc] init];
     self.intensities = [[NSMutableArray alloc] init];
+    self.min_locs = [[NSMutableArray alloc] init];
     self.measurement_rate = @"1.0";
     self.telnetCmds = [[NSMutableArray alloc] init];
     self.metaData = [[ScanMetaData alloc] init];
+    [self computeKernel:KERNEL_SIGMA kernel_size:KERNEL_SIZE]; // Compute the LoG filter kernel.
+    self.stage_clearance = 0;
     if (self.inputTelnetStream == nil) {
         [self connectDevice:self.ipAddress port:self.telnetPort];
     }
@@ -544,6 +580,7 @@ enum pluginState {
             self.metaData.position = [msgArray objectAtIndex:5];
             self.metaData.casing_thickness = [msgArray objectAtIndex:6];
             self.metaData.spacer_thickness = [msgArray objectAtIndex:7];
+            self.metaData.num_blades = [msgArray objectAtIndex:8];
         }
         // 100 samples/frame, measurement rate is in kHz.
         float nSets = [self.measurement_rate floatValue] * 1000.0 * [acqTime floatValue] / 100.0;
@@ -559,7 +596,7 @@ enum pluginState {
         self.metaData.serial_number = [msgArray objectAtIndex:2];
         self.metaData.customer = [msgArray objectAtIndex:3];
         self.metaData.site = [msgArray objectAtIndex:4];
-        self.metaData.operator = [msgArray objectAtIndex:5];
+        self.metaData.user = [msgArray objectAtIndex:5];
         self.metaData.units = [msgArray objectAtIndex:6];
         self.metaData.state = [msgArray objectAtIndex:7];
     }
@@ -601,8 +638,9 @@ enum pluginState {
     self.metaData.state = @"";
     self.metaData.customer = @"";
     self.metaData.site = @"";
-    self.metaData.operator = @"";
+    self.metaData.user = @"";
     self.metaData.units = @"";
+    self.metaData.num_blades = @"";
 }
 
 // Should be self-explanitory.
@@ -610,8 +648,11 @@ enum pluginState {
     [self.datasetIds removeAllObjects];
     [self.times removeAllObjects];
     [self.displacements removeAllObjects];
+    [self.filtered removeAllObjects];
+    [self.blade_clearances removeAllObjects];
     [self.point_counts removeAllObjects];
     [self.intensities removeAllObjects];
+    [self.min_locs removeAllObjects];
 }
 
 // The collectData function is patterned after the e4PtTool python function
@@ -634,11 +675,7 @@ enum pluginState {
 
     // Clear data arrays.
     if (self.displacements.count > 0) {
-        [self.datasetIds removeAllObjects];
-        [self.times removeAllObjects];
-        [self.displacements removeAllObjects];
-        [self.point_counts removeAllObjects];
-        [self.intensities removeAllObjects];
+        [self clearData];
     }
 
     // Connect the device to collect the data.
@@ -803,7 +840,7 @@ enum pluginState {
                                         if (dVal == 214743400) {
                                             error_msg = [error_msg stringByAppendingString:@"Measurement is outside representable area"];
                                         }
-                                        
+                                        displacement = OUT_OF_RANGE;
                                     }
                                     else {
                                         displacement = ((float)dVal) * 1e-6;
@@ -835,6 +872,11 @@ enum pluginState {
                         [self disconnectData]; // Stop receiving data
                         self.set_count = 0;
                         
+                        // Load dummy data for testing without a rotor.
+                        if (SIMULATED_DATA == 1) {
+                            [self loadCSVFile];
+                        }
+                        [self computeClearance];
 
                         // At this point we should have all the data that was requested.
                         // We need to do any required processing/filtering, save to file,
@@ -846,20 +888,26 @@ enum pluginState {
                         
                         NSError* error;
                         NSData* jsonData = [NSJSONSerialization dataWithJSONObject:self.displacements options:NSJSONWritingSortedKeys error:&error];
+                        //NSData* jsonData = [NSJSONSerialization dataWithJSONObject:self.filtered options:NSJSONWritingSortedKeys error:&error];
                         NSString *dispJSONString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
                         jsonData = [NSJSONSerialization dataWithJSONObject:self.intensities options:NSJSONWritingSortedKeys error:&error];
                         NSString *intensJSONString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+                        jsonData = [NSJSONSerialization dataWithJSONObject:self.min_locs options:NSJSONWritingSortedKeys error:&error];
+                        NSString *minLocsJSONString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+                        jsonData = [NSJSONSerialization dataWithJSONObject:self.blade_clearances options:NSJSONWritingSortedKeys error:&error];
+                        NSString *bladeClrsJSONString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
 
                         NSDateFormatter *dateFormatter=[[NSDateFormatter alloc] init];
                         [dateFormatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
                         NSString* dateStr = [dateFormatter stringFromDate:[NSDate date]];
+                        NSString* clearance = [NSString stringWithFormat:@"%f",self.stage_clearance];
                         
                         NSDictionary* jsonDataDict = @{@"type":@"data",
                                                        @"data":dispJSONString,
                                                        @"intensity":intensJSONString,
-                                                       @"locs":@"",
-                                                       @"gaps":@"",
-                                                       @"clearance":@"",
+                                                       @"locs":minLocsJSONString,
+                                                       @"gaps":bladeClrsJSONString,
+                                                       @"clearance":clearance,
                                                        @"casing_thickness":self.metaData.casing_thickness,
                                                        @"spacer_thickness":self.metaData.spacer_thickness,
                                                        @"date":dateStr
@@ -869,7 +917,6 @@ enum pluginState {
                         [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
                         [self saveCSVFile];
                         [self clearData];
-                        
                     } // end of if ([self.inputDataStream hasBytesAvailable])
                     if ([self.inputTelnetStream hasBytesAvailable]) {
                         NSLog(@"Got data on telnet stream");
@@ -970,6 +1017,387 @@ enum pluginState {
     CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];// You can send data, String, int, array, dictionary, etc.
     [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
     self.pState = ready;
+}
+
+- (void)computeClearance {
+    // Displacement values will be between 0-15.
+    // We create a coarse histogram to see how many peaks we find.
+    int nbins = OUT_OF_RANGE + 1;
+    int hBins[nbins];
+    float data[self.displacements.count];
+    for (int i=0; i<nbins; i++) hBins[i] = 0;
+    // Populate the histogram by converting displacements to histogram indices.
+    // Round each displacement to get the bin index.
+    NSLog(@"Populating histogram...");
+    int idx = 0;
+    for (NSNumber* n in self.displacements) {
+        float d = [n floatValue];
+        data[idx++] = d; // poplulate a temporary data array.
+        int bIdx = (int)floor(d); // Using floor makes bin edges integers. E.g. [0-1][+1-2][+2-3]...
+        if (bIdx > nbins-1) bIdx = nbins - 1; // Don't overflow
+        if (bIdx < 0) bIdx = 0; // Don't underflow
+        hBins[bIdx]++; // Increment the histogram bin
+    }
+    NSLog(@"Histogram:\n");
+    for (int i=0; i<nbins; i++) {
+        NSLog(@" hBin[%d]: %d",i, hBins[i]);
+    }
+    // Find the top 3 peaks. One should be at 15. There should be one or two
+    // others.  Two if measuring squealer tips; One if not.
+    NSLog(@"Finding peaks...");
+    int max1, max2, max3, i, peak1, peak2, peak3;
+    max1 = max2 = max3 = i = peak1 = peak2 = peak3 = 0;
+    for (i=0; i<nbins; i++) {
+        if (hBins[i] > max1) {
+            max1 = hBins[i];
+            peak1 = i;
+        }
+    }
+    for (i=0; i<nbins; i++) {
+        if ((hBins[i] > max2) && (hBins[i] < max1)) {
+            max2 = hBins[i];
+            peak2 = i;
+        }
+    }
+    for (i=0; i<nbins; i++) {
+        if ((hBins[i] > max3) && (hBins[i] < max2)) {
+            max3 = hBins[i];
+            peak3 = i;
+        }
+    }
+    NSLog(@"Peaks: %d, %d, %d", peak1, peak2, peak3);
+    // Look at the difference between peaks to see if we're dealing with squealers or not.
+    NSLog(@"Finding threshold...");
+    float peakDiff = 1.0; // peak separation of 1mm
+    float d12 = fabs((float)peak2 - (float)peak1);
+    float d23 = fabs((float)peak3 - (float)peak2);
+    float threshold = 0.0;
+    if ((d12 >= peakDiff) && (d23 >= peakDiff)) {
+        // Looks like squealer tips.
+        NSLog(@"Looks like squealer tips.");
+        threshold = ((float)peak2 + (float)peak3)/2.0;
+    }
+    else {
+        // Looks like this is not a squealer tip.
+        NSLog(@"Looks like not squealer tips.");
+        threshold = ((float)peak1 + (float)peak3)/2.0;
+    }
+    NSLog(@"Found Threshold: %f\nThresholding data...",threshold);
+    
+    // Perform edge detection with an LoG filter
+    // (Kernel computation was handled during initialization.)
+    NSLog(@"Filtering...");
+    [self fir_filter:self.kernel threshold:threshold];
+    NSLog(@"Done.");
+    
+    //return; // Stop so we can just see the results of filtering
+    
+    // Fill sig_sign buffer with just 1 or -1 indicating the sign
+    // of the filtered signal.
+    int sig_sign[self.filtered.count];
+    i=0;
+    for (NSNumber* n in self.filtered) {
+        if ([n floatValue] >= 0) {
+            sig_sign[i] = 1;
+        }
+        else {
+            sig_sign[i] = -1;
+        }
+        i++;
+    }
+    
+    // Fill these buffers with indications for positive or
+    // negative zero crossings.  These are the blade boundaries.
+    // Blades tip go from a negative zc to a positiv zc.
+    bool pos_crossing[self.filtered.count];
+    bool neg_crossing[self.filtered.count];
+    for (i=0; i<self.filtered.count; i++) {
+        if (i==0) {
+            // Skip first value
+            pos_crossing[i] = false;
+            neg_crossing[i] = false;
+            continue;
+        }
+        if ( (sig_sign[i] - sig_sign[i-1]) < 0 ) {
+            // Negative zero-crossing
+            pos_crossing[i] = false;
+            neg_crossing[i] = true;
+        }
+        else if ( (sig_sign[i] - sig_sign[i-1]) > 0 ) {
+            // Positive zero-crossing
+            pos_crossing[i] = true;
+            neg_crossing[i] = false;
+        }
+        else {
+            pos_crossing[i] = false;
+            neg_crossing[i] = false;
+        }
+    }
+    
+#if 0
+    [self.filtered removeAllObjects];
+    float f = 1.0;
+    for (i=0; i<self.displacements.count; i++) {
+        if (neg_crossing[i]) f = 0.0;
+        if (pos_crossing[i]) f = 1.0;
+        [self.filtered addObject:[NSNumber numberWithFloat:f]];
+    }
+    return;
+#endif
+    
+    // Traverse the data averaging the displacements between the neg.
+    // and pos. zero-crossings IFF the intensity is greater than zero.
+    // These averages are the per-blade clearances
+    [self.filtered removeAllObjects];
+    [self.blade_clearances removeAllObjects];
+    for (i=0; i<self.displacements.count; i++) {
+        if (neg_crossing[i]) {
+            // We've encountered a negative zero-crossing
+            // so sum displacements to the next positive zero-crossing.
+            int start = i;
+            int stop = start;
+            // This next loop determines the corresponding stoping point
+            // point for this blade, if any.
+            for (; stop < self.displacements.count; stop++) {
+                if (pos_crossing[stop]) {
+                    //NSLog(@"Start: %d; Stop: %d", start, stop);
+                    break;
+                }
+                else if (stop == self.displacements.count -1) {
+                    //NSLog(@"No stop found for start: %d", start);
+                    // end of the data is encountered without a matching
+                    // positive zero crossing.
+                    for (int j=start; j<self.displacements.count; j++) {
+                        [self.filtered addObject:[NSNumber numberWithFloat:OUT_OF_RANGE]];
+                    }
+                    stop = start;
+                    break;
+                }
+            }
+            //NSLog(@"Blade: %d - %d", start, stop);
+            float clearance = 0;
+            float min_clearance = OUT_OF_RANGE;
+            float min_loc = 0;
+            int count = 0;
+// This debug stanza puts a dot on the start and stop points.
+#if 0
+            [self.min_locs addObject:[NSNumber numberWithInt:start]];
+            [self.blade_clearances addObject:[self.displacements objectAtIndex:start]];
+            [self.min_locs addObject:[NSNumber numberWithInt:stop]];
+            [self.blade_clearances addObject:[self.displacements objectAtIndex:stop]];
+#endif
+            if (stop > start) {
+                // FILTER_EDGE_SIZE_* allows us to shave down the number of points used
+                for (int j=start + FILTER_EDGE_SIZE_START; j<=stop - FILTER_EDGE_SIZE_STOP; j++) {
+                    NSNumber* intnst = [self.intensities objectAtIndex:j];
+                    NSNumber* d = [self.displacements objectAtIndex:j];
+                    if ( ([intnst floatValue] > 0) && ([d floatValue] < threshold) ) {
+                        //NSLog(@"Averaging: %f",[d floatValue]);
+                        if ([d floatValue] < min_clearance) {
+                            min_clearance = [d floatValue];
+                            min_loc = j;
+                        }
+                        clearance += [d floatValue];
+                        count++;
+                    }
+                }
+                //NSLog(@"Sum: %f; count: %d", clearance, count);
+                clearance = clearance / count; // Average clearance for this blade.
+#ifdef OUTPUT_MINIMUM
+                [self.blade_clearances addObject:[NSNumber numberWithFloat:min_clearance]];
+#else
+                [self.blade_clearances addObject:[NSNumber numberWithFloat:clearance]];
+                min_loc = ((float)start + (float)stop) / 2.0;
+#endif
+                [self.min_locs addObject:[NSNumber numberWithFloat:min_loc]];
+                NSLog(@"Clearance: %f", clearance);
+                for (int j=start; j<=stop; j++) {
+                    [self.filtered addObject:[NSNumber numberWithFloat:clearance]];
+                }
+            }
+            i = stop; // Move the start point ahead to where we stopped.
+        }
+        else {
+            [self.filtered addObject:[NSNumber numberWithFloat:OUT_OF_RANGE]];
+        }
+    }
+    self.stage_clearance = 0.0;
+    int stage_num_blades = (int)[self.metaData.num_blades integerValue];
+    if (stage_num_blades > 0) {
+        for (i=0; i<stage_num_blades; i++) {
+            NSNumber* c = [self.blade_clearances objectAtIndex:i];
+            self.stage_clearance += [c floatValue];
+        }
+        self.stage_clearance /= (float)stage_num_blades;
+    }
+    
+    NSLog(@"Done.");
+}
+
+// computeKernel computes a normalized Laplacian-of-Gaussian kernel for
+// edge detection.
+// kernel_size should be an odd number.  This is a quick & dirty
+// implementation and there is no check for this.
+- (void)computeKernel:(float)sigma kernel_size:(int)kernel_size {
+    if (self.kernel == nil) self.kernel = [[NSMutableArray alloc] init];
+    double f1 = -(1.0 / (M_PI * pow(sigma, 4)));
+    double hi = floor(kernel_size/2.0);
+    double lo = -hi;
+    double k_sum = 0;
+    for (int x=lo; x<hi+1; x++) {
+        double f2 = 1.0 - (pow(x,2)/(2.0*pow(sigma,2)));
+        double f3 = exp(-(pow(x,2)/(2.0*pow(sigma,2))));
+        double k = f1 * f2 * f3;
+        k_sum += k;
+        [self.kernel addObject:[NSNumber numberWithDouble:k]];
+    }
+    // Now normalize the kernel
+    for (int idx=0; idx<self.kernel.count; idx++) {
+        NSNumber* num = [self.kernel objectAtIndex:idx];
+        float k_val = (float)[num doubleValue] / k_sum;
+        [self.kernel replaceObjectAtIndex:idx withObject:[NSNumber numberWithFloat:k_val]];
+    }
+}
+
+//
+// fir_filter is taken (almost) lock, stock and barrel from:
+// http://hamiltonkibbe.com/finite-impulse-response-filters-using-apples-accelerate-framework-part-ii/
+//
+- (void)fir_filter:(NSMutableArray*)kernel threshold:(float)threshold {
+
+    // Get the kernal into a float array
+    int h_length = (int)kernel.count;
+    float h[h_length];
+    int idx = 0;
+    for (NSNumber* f in kernel) {
+        h[idx] = [f floatValue];
+        idx++;
+    }
+    
+    // Get the data into a float array, thresholding as we go.
+    unsigned x_length = (unsigned)self.displacements.count;
+    float x[x_length];
+    idx = 0;
+    for (NSNumber* f in self.displacements) {
+        x[idx] = [f floatValue] < threshold ? [f floatValue] : threshold;
+        idx++;
+    }
+    
+    // Create buffer to store overflow across calls
+    //static float overflow[KERNEL_SIZE - 1] = {0.0};
+    
+    // The length of the result from linear convolution is one less than the
+    // sum of the lengths of the two inputs.
+    unsigned result_length = x_length + h_length - 1;
+    //unsigned overlap_length = result_length - x_length;
+    
+    // Create a temporary buffer to store the entire convolution result
+    float temp_buffer[result_length];
+    
+    // Pointer to end of filter for use with vDSP_conv
+    float    *h_end = h + (h_length - 1);
+    
+    // Length of signal passed to vDSP_conv
+    unsigned signal_length = (h_length + result_length);
+    
+    // Create an array to store the signal passed to vDSP_conv, padded with zeros
+    float padded[signal_length];
+    
+    // fill padded buffer with zeros
+    float zero = 0.0;
+    vDSP_vfill(&zero, padded, 1, signal_length);
+    
+    // Copy input into padded buffer
+    cblas_scopy(x_length, x, 1, padded, 1);
+    
+    // use the Accelerate convolution function
+    vDSP_conv(padded, 1, h_end, -1, temp_buffer, 1, result_length, h_length);
+    
+    //
+    // In the GE Case we don't need to worry about adding results from
+    // previous runs.  However, I'm leaving this code here in case I
+    // ever want to refer to it for re-use.
+    //
+    // Add the overlap from the previous run
+    // use vDSP_vadd instead of loop
+    // vDSP_vadd(temp_buffer, overflow, buffer, overlap_length);
+    //
+    // Copy overlap into overlap buffer
+    // use BLAS copy instead of loop
+    // cblas_scopy(overlap_length, temp_buffer + x_length, 1, overflow, 1);
+    //
+    
+    //
+    // In the GE Case we want everything in a different array, so we just
+    // put it there rather than doing the cblas copy to the output and
+    // then having to copy it all again.  This saves time and memory.
+    //s
+    // write the final result to the output. use BLAS copy instead of loop
+    // cblas_scopy(x_length, temp_buffer, 1, output, 1);
+    
+    // Filtered data here is offset by 1/2 of the kernel
+    // length, so we offset the data when we write it back out.
+    int offset = (int)round((float)kernel.count / 2.0);
+    [self.filtered removeAllObjects];
+    for (int i=0; i<offset; i++) [self.filtered addObject:[NSNumber numberWithFloat:0]]; // offset
+    for (int i=0; i<x_length; i++) {
+        float tmpf = temp_buffer[i] - threshold;
+        [self.filtered addObject:[NSNumber numberWithFloat:tmpf]];
+    }
+    
+}
+
+// loadCSVFile should never be used in the field, but is here to allow
+// for debugging when a rotor is not available.  It reads a CSV file
+// and populates the data structures as though the data had come from
+// the sensor.
+- (void)loadCSVFile {
+    [self clearData]; // Clear everything out to re-write it from CSV file.
+    NSString* fName = @"test_data"; // test data file
+    NSString* csvPath = [[NSBundle mainBundle] pathForResource:fName ofType:@"csv"];
+    NSFileManager* fm = [NSFileManager defaultManager];
+    if ([fm fileExistsAtPath:csvPath]) {
+        NSLog(@"Found CSV file.");
+    }
+    else {
+        NSLog(@"CSV file not found.");
+        return;
+    }
+    NSString* fullFile = [NSString stringWithContentsOfFile:csvPath encoding:NSUTF8StringEncoding error:nil];
+    NSArray* rows = [fullFile componentsSeparatedByString:@"\n"]; // this breaks up the file into rows
+    int r = 0;
+    //index,pt_count,dataset_id,timestamp,displacement,filtered,intensity,casing_thickness
+    for (NSString* row in rows) {
+        if (r ==0 ) {
+            r++;
+            continue; // skip the header row in the file
+        }
+
+        NSArray* lineArray = [row componentsSeparatedByString:@","]; // Split up the line
+        if (lineArray.count < 8) {
+            NSLog(@"Skipping line %d",r);
+            r++;
+            continue;
+        }
+        if (r == 1) {
+            self.metaData.casing_thickness = [lineArray objectAtIndex:7]; // Get casing thickness once.
+        }
+        NSString* tmp = [lineArray objectAtIndex:4];
+        [self.displacements addObject:[NSNumber numberWithFloat:[tmp floatValue]]];
+        tmp = [lineArray objectAtIndex:5];
+        [self.filtered addObject:[NSNumber numberWithFloat:[tmp floatValue]]];
+        tmp = [lineArray objectAtIndex:2];
+        [self.datasetIds addObject:[NSNumber numberWithInteger:[tmp intValue]]];
+        tmp = [lineArray objectAtIndex:3];
+        unsigned int t = (unsigned int)[tmp intValue];
+        [self.times addObject:[NSNumber numberWithUnsignedInteger:t]];
+        tmp = [lineArray objectAtIndex:1];
+        [self.point_counts addObject:[NSNumber numberWithInteger:[tmp intValue]]];
+        tmp = [lineArray objectAtIndex:6];
+        [self.intensities addObject:[NSNumber numberWithFloat:[tmp floatValue]]];
+        r++;
+    }
+    NSLog(@"Completed parsing CSV file.");
 }
 
 - (void)saveCSVFile {

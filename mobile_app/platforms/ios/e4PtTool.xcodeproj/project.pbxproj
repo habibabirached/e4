@@ -18,6 +18,7 @@
 		325F01D33B3C44F8B5BC6CB7 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 27C8AE50A7134DBBB4D8437E /* AudioToolbox.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
 		4EAFAC365C2440FCAF8A946A /* CDVLocalFilesystem.m in Sources */ = {isa = PBXBuildFile; fileRef = 300DBDE79B6643A08EBC896B /* CDVLocalFilesystem.m */; };
 		56BD91B924323B69008117BD /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 56BD91B824323B69008117BD /* Settings.bundle */; };
+		56EFBB46243E527A007A00D7 /* test_data.csv in Resources */ = {isa = PBXBuildFile; fileRef = 56EFBB45243E527A007A00D7 /* test_data.csv */; };
 		6AFF5BF91D6E424B00AB3073 /* CDVLaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6AFF5BF81D6E424B00AB3073 /* CDVLaunchScreen.storyboard */; };
 		7FFB267431384ABE884D40FB /* APPEmailComposerImpl.m in Sources */ = {isa = PBXBuildFile; fileRef = FAF50F29E03C46D0A3AC2F21 /* APPEmailComposerImpl.m */; };
 		9286ADDB9FA64996962262F2 /* SQLitePlugin.m in Sources */ = {isa = PBXBuildFile; fileRef = 14207BB34A914457ADA4DA86 /* SQLitePlugin.m */; };
@@ -87,6 +88,7 @@
 		3DD394F9D31A439ABD46EB3D /* CDVIFC242x.h */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.c.h; name = CDVIFC242x.h; path = IFC242xPlugin/CDVIFC242x.h; sourceTree = "<group>"; };
 		56BD91B824323B69008117BD /* Settings.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = Settings.bundle; sourceTree = "<group>"; };
 		56C8BA499AC34BA1A23C72AD /* CDVIFC242x.m */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.c.objc; name = CDVIFC242x.m; path = IFC242xPlugin/CDVIFC242x.m; sourceTree = "<group>"; };
+		56EFBB45243E527A007A00D7 /* test_data.csv */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = test_data.csv; path = ../../data/test_data.csv; sourceTree = "<group>"; };
 		6AFF5BF81D6E424B00AB3073 /* CDVLaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = CDVLaunchScreen.storyboard; path = e4PtTool/CDVLaunchScreen.storyboard; sourceTree = SOURCE_ROOT; };
 		6F467D4C84704BCF8BAAA0C6 /* BNHtmlPdfKit.m */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.c.objc; name = BNHtmlPdfKit.m; path = "cordova-pdf-generator/BNHtmlPdfKit.m"; sourceTree = "<group>"; };
 		774053A272D0425AA6358D92 /* sqlite3.c */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = sqlite3.c; path = "cordova-sqlite-storage/sqlite3.c"; sourceTree = "<group>"; };
@@ -154,6 +156,7 @@
 		29B97314FDCFA39411CA2CEA /* CustomTemplate */ = {
 			isa = PBXGroup;
 			children = (
+				56EFBB45243E527A007A00D7 /* test_data.csv */,
 				56BD91B824323B69008117BD /* Settings.bundle */,
 				EB87FDF41871DAF40020F90C /* config.xml */,
 				EB87FDF31871DA8E0020F90C /* www */,
@@ -360,6 +363,7 @@
 				0207DA581B56EA530066E2B4 /* Images.xcassets in Resources */,
 				56BD91B924323B69008117BD /* Settings.bundle in Resources */,
 				6AFF5BF91D6E424B00AB3073 /* CDVLaunchScreen.storyboard in Resources */,
+				56EFBB46243E527A007A00D7 /* test_data.csv in Resources */,
 				F06FAF3AEB4B4AE49CF978C8 /* CDVNotification.bundle in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
