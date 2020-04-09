@@ -1086,6 +1086,8 @@ function pluginMessage(msg) {
             document.getElementById("CASING_THICKNESS").value = "";
             msg.data = JSON.parse(msg.data);
             msg.intensity = JSON.parse(msg.intensity);
+            msg.locs = JSON.parse(msg.locs);
+            msg.gaps = JSON.parse(msg.gaps);
             processE4PtData(msg);
             break;
         case "filename":
@@ -1236,7 +1238,13 @@ function requestE4PtDataWithMetaData(acquisitionTime, frame, sn, stage, position
     position = position.replace(/\s+/g, '_');
     casing_thickness = casing_thickness.replace(/\s+/g, '_');
     spacer_thickness = spacer_thickness.replace(/\s+/g, '_');
-    var message = {"args":["send_data",acquisitionTime, frame, sn, stage, position, casing_thickness, spacer_thickness]};    
+    var num_blades = 0;
+    if (typeof current_frame_data.stage_info !== 'undefined') {
+        if (typeof current_frame_data.stage_info[current_stage] !== 'undefined') {
+            num_blades = current_frame_data.stage_info[current_stage].blade_count
+        }
+    }
+    var message = {"args":["send_data",acquisitionTime, frame, sn, stage, position, casing_thickness, spacer_thickness, num_blades]};    
     if (communicationChannel == "WebSocket") {
         message = JSON.stringify(message);
         sendWSMessage(message);
@@ -1315,7 +1323,13 @@ function update_clearance(clearance) {
     if (clearance.length == 0) {
         clearance = 0.0;
     }
-    var clearance_f = parseFloat(clearance.toFixed(4));
+    var clearance_f = 0.0
+    if ((typeof clearance) != "string") {
+        clearance_f = clearance;
+    }
+    else {
+        clearance_f = parseFloat(clearance);
+    }
     var err_id = document.getElementById("CLEARANCE_ERROR");
     if (clearance_f == -9.997) {
         err_id.innerHTML = "Error: No gaps detected in data.";
@@ -1428,13 +1442,13 @@ function plot_data() {
     series: [
       {
         type: 'line',
-        name: 'Confocal Sensor',
+        name: 'Sensor Data',
         data: E4PTdata.data
         //data: E4PTdata.sets[E4PTdata.sets.length-1].pts
       },
       {
         type: 'scatter',
-        name: 'Gap Minima',
+        name: 'Clearance Minima',
         data: E4PTdata.minima
       }
     ],
@@ -1520,13 +1534,13 @@ function plot_data_2() {
     series: [
       {
         type: 'line',
-        name: 'Confocal Sensor',
+        name: 'Sensor Data',
         data: E4PTdata.data
         //data: E4PTdata.sets[E4PTdata.sets.length-1].pts
       },
       {
         type: 'scatter',
-        name: 'Gap Minima',
+        name: 'Clearance Minima',
         data: E4PTdata.minima
       }
     ],
