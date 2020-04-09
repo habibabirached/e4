@@ -31,10 +31,16 @@
 #define KERNEL_SIZE 13
 #define KERNEL_SIGMA 2.8
 #define OUT_OF_RANGE 15.0
-#define FILTER_EDGE_SIZE 1
+#define FILTER_EDGE_SIZE_START 1
+#define FILTER_EDGE_SIZE_STOP 1
+
+// This option, when defined causes the program to output
+// the minimum clearance for each blade rather than the
+// average across the tip.
+//#define OUTPUT_MINIMUM
 
 // For using simulated data
-#define SIMULATED_DATA 1
+#define SIMULATED_DATA 0
 
 enum pluginState {
     ready = 0,
@@ -58,6 +64,7 @@ enum pluginState {
 @property (strong, nonatomic) NSString* site;
 @property (strong, nonatomic) NSString* user;
 @property (strong, nonatomic) NSString* units;
+@property (strong, nonatomic) NSString* num_blades;
     
 
 -(instancetype)init;
@@ -77,6 +84,7 @@ enum pluginState {
 @synthesize site = _site;
 @synthesize user = _user;
 @synthesize units = _units;
+@synthesize num_blades = _num_blades;
     
 
 -(instancetype)init {
@@ -146,9 +154,11 @@ enum pluginState {
 @property (strong, nonatomic) NSMutableArray* times;
 @property (strong, nonatomic) NSMutableArray* displacements;
 @property (strong, nonatomic) NSMutableArray* filtered;
-@property (strong, nonatomic) NSMutableArray* clearance;
+@property (strong, nonatomic) NSMutableArray* blade_clearances;
 @property (strong, nonatomic) NSMutableArray* point_counts;
 @property (strong, nonatomic) NSMutableArray* intensities;
+@property (strong, nonatomic) NSMutableArray* min_locs;
+@property (nonatomic) float stage_clearance;
 
 @property (nonatomic) int num_pts_max;
 @property (nonatomic) int current_data_set_id;
@@ -201,9 +211,11 @@ enum pluginState {
 @synthesize times = _times;
 @synthesize displacements = _displacements;
 @synthesize filtered = _filtered;
-@synthesize clearance = _clearance;
+@synthesize blade_clearances = _blade_clearances;
+@synthesize stage_clearance = _stage_clearance;
 @synthesize point_counts = _point_counts;
 @synthesize intensities = _intensities;
+@synthesize min_locs = _min_locs;
     
 @synthesize kernel = _kernel;
 
@@ -423,13 +435,15 @@ enum pluginState {
     self.times = [[NSMutableArray alloc] init];
     self.displacements = [[NSMutableArray alloc] init];
     self.filtered = [[NSMutableArray alloc] init];
-    self.clearance = [[NSMutableArray alloc] init];
+    self.blade_clearances = [[NSMutableArray alloc] init];
     self.point_counts = [[NSMutableArray alloc] init];
     self.intensities = [[NSMutableArray alloc] init];
+    self.min_locs = [[NSMutableArray alloc] init];
     self.measurement_rate = @"1.0";
     self.telnetCmds = [[NSMutableArray alloc] init];
     self.metaData = [[ScanMetaData alloc] init];
     [self computeKernel:KERNEL_SIGMA kernel_size:KERNEL_SIZE]; // Compute the LoG filter kernel.
+    self.stage_clearance = 0;
     if (self.inputTelnetStream == nil) {
         [self connectDevice:self.ipAddress port:self.telnetPort];
     }
@@ -566,6 +580,7 @@ enum pluginState {
             self.metaData.position = [msgArray objectAtIndex:5];
             self.metaData.casing_thickness = [msgArray objectAtIndex:6];
             self.metaData.spacer_thickness = [msgArray objectAtIndex:7];
+            self.metaData.num_blades = [msgArray objectAtIndex:8];
         }
         // 100 samples/frame, measurement rate is in kHz.
         float nSets = [self.measurement_rate floatValue] * 1000.0 * [acqTime floatValue] / 100.0;
@@ -625,6 +640,7 @@ enum pluginState {
     self.metaData.site = @"";
     self.metaData.user = @"";
     self.metaData.units = @"";
+    self.metaData.num_blades = @"";
 }
 
 // Should be self-explanitory.
@@ -633,9 +649,10 @@ enum pluginState {
     [self.times removeAllObjects];
     [self.displacements removeAllObjects];
     [self.filtered removeAllObjects];
-    [self.clearance removeAllObjects];
+    [self.blade_clearances removeAllObjects];
     [self.point_counts removeAllObjects];
     [self.intensities removeAllObjects];
+    [self.min_locs removeAllObjects];
 }
 
 // The collectData function is patterned after the e4PtTool python function
@@ -870,22 +887,27 @@ enum pluginState {
                         [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
                         
                         NSError* error;
-                        //NSData* jsonData = [NSJSONSerialization dataWithJSONObject:self.displacements options:NSJSONWritingSortedKeys error:&error];
-                        NSData* jsonData = [NSJSONSerialization dataWithJSONObject:self.filtered options:NSJSONWritingSortedKeys error:&error];
+                        NSData* jsonData = [NSJSONSerialization dataWithJSONObject:self.displacements options:NSJSONWritingSortedKeys error:&error];
+                        //NSData* jsonData = [NSJSONSerialization dataWithJSONObject:self.filtered options:NSJSONWritingSortedKeys error:&error];
                         NSString *dispJSONString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
                         jsonData = [NSJSONSerialization dataWithJSONObject:self.intensities options:NSJSONWritingSortedKeys error:&error];
                         NSString *intensJSONString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+                        jsonData = [NSJSONSerialization dataWithJSONObject:self.min_locs options:NSJSONWritingSortedKeys error:&error];
+                        NSString *minLocsJSONString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+                        jsonData = [NSJSONSerialization dataWithJSONObject:self.blade_clearances options:NSJSONWritingSortedKeys error:&error];
+                        NSString *bladeClrsJSONString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
 
                         NSDateFormatter *dateFormatter=[[NSDateFormatter alloc] init];
                         [dateFormatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
                         NSString* dateStr = [dateFormatter stringFromDate:[NSDate date]];
+                        NSString* clearance = [NSString stringWithFormat:@"%f",self.stage_clearance];
                         
                         NSDictionary* jsonDataDict = @{@"type":@"data",
                                                        @"data":dispJSONString,
                                                        @"intensity":intensJSONString,
-                                                       @"locs":@"",
-                                                       @"gaps":@"",
-                                                       @"clearance":@"",
+                                                       @"locs":minLocsJSONString,
+                                                       @"gaps":bladeClrsJSONString,
+                                                       @"clearance":clearance,
                                                        @"casing_thickness":self.metaData.casing_thickness,
                                                        @"spacer_thickness":self.metaData.spacer_thickness,
                                                        @"date":dateStr
@@ -1127,13 +1149,15 @@ enum pluginState {
     // and pos. zero-crossings IFF the intensity is greater than zero.
     // These averages are the per-blade clearances
     [self.filtered removeAllObjects];
-    NSLog(@"Displacements count: %lu",(unsigned long)self.displacements.count);
+    [self.blade_clearances removeAllObjects];
     for (i=0; i<self.displacements.count; i++) {
         if (neg_crossing[i]) {
             // We've encountered a negative zero-crossing
             // so sum displacements to the next positive zero-crossing.
             int start = i;
             int stop = start;
+            // This next loop determines the corresponding stoping point
+            // point for this blade, if any.
             for (; stop < self.displacements.count; stop++) {
                 if (pos_crossing[stop]) {
                     //NSLog(@"Start: %d; Stop: %d", start, stop);
@@ -1152,19 +1176,40 @@ enum pluginState {
             }
             //NSLog(@"Blade: %d - %d", start, stop);
             float clearance = 0;
+            float min_clearance = OUT_OF_RANGE;
+            float min_loc = 0;
             int count = 0;
+// This debug stanza puts a dot on the start and stop points.
+#if 0
+            [self.min_locs addObject:[NSNumber numberWithInt:start]];
+            [self.blade_clearances addObject:[self.displacements objectAtIndex:start]];
+            [self.min_locs addObject:[NSNumber numberWithInt:stop]];
+            [self.blade_clearances addObject:[self.displacements objectAtIndex:stop]];
+#endif
             if (stop > start) {
-                for (int j=start + FILTER_EDGE_SIZE; j<=stop - FILTER_EDGE_SIZE; j++) {
+                // FILTER_EDGE_SIZE_* allows us to shave down the number of points used
+                for (int j=start + FILTER_EDGE_SIZE_START; j<=stop - FILTER_EDGE_SIZE_STOP; j++) {
                     NSNumber* intnst = [self.intensities objectAtIndex:j];
-                    if ([intnst floatValue] > 0) {
-                        NSNumber* d = [self.displacements objectAtIndex:j];
+                    NSNumber* d = [self.displacements objectAtIndex:j];
+                    if ( ([intnst floatValue] > 0) && ([d floatValue] < threshold) ) {
                         //NSLog(@"Averaging: %f",[d floatValue]);
+                        if ([d floatValue] < min_clearance) {
+                            min_clearance = [d floatValue];
+                            min_loc = j;
+                        }
                         clearance += [d floatValue];
                         count++;
                     }
                 }
                 //NSLog(@"Sum: %f; count: %d", clearance, count);
                 clearance = clearance / count; // Average clearance for this blade.
+#ifdef OUTPUT_MINIMUM
+                [self.blade_clearances addObject:[NSNumber numberWithFloat:min_clearance]];
+#else
+                [self.blade_clearances addObject:[NSNumber numberWithFloat:clearance]];
+                min_loc = ((float)start + (float)stop) / 2.0;
+#endif
+                [self.min_locs addObject:[NSNumber numberWithFloat:min_loc]];
                 NSLog(@"Clearance: %f", clearance);
                 for (int j=start; j<=stop; j++) {
                     [self.filtered addObject:[NSNumber numberWithFloat:clearance]];
@@ -1176,6 +1221,16 @@ enum pluginState {
             [self.filtered addObject:[NSNumber numberWithFloat:OUT_OF_RANGE]];
         }
     }
+    self.stage_clearance = 0.0;
+    int stage_num_blades = (int)[self.metaData.num_blades integerValue];
+    if (stage_num_blades > 0) {
+        for (i=0; i<stage_num_blades; i++) {
+            NSNumber* c = [self.blade_clearances objectAtIndex:i];
+            self.stage_clearance += [c floatValue];
+        }
+        self.stage_clearance /= (float)stage_num_blades;
+    }
+    
     NSLog(@"Done.");
 }
 
@@ -1283,7 +1338,7 @@ enum pluginState {
     // Filtered data here is offset by 1/2 of the kernel
     // length, so we offset the data when we write it back out.
     int offset = (int)round((float)kernel.count / 2.0);
-    if (SIMULATED_DATA == 1) [self.filtered removeAllObjects];
+    [self.filtered removeAllObjects];
     for (int i=0; i<offset; i++) [self.filtered addObject:[NSNumber numberWithFloat:0]]; // offset
     for (int i=0; i<x_length; i++) {
         float tmpf = temp_buffer[i] - threshold;
