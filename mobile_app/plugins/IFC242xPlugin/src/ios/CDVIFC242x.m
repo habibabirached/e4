@@ -992,7 +992,8 @@ enum pluginState {
                         [self disconnectData]; // Stop receiving data
                         self.set_count = 0;
                         
-                        // Load dummy data for testing without a rotor.
+                        // Load dummy data for testing without a rotor,
+                        // but connected to a real sensor.
                         if (SIMULATED_DATA == 1) {
                             [self loadCSVFile];
                         }
@@ -1377,6 +1378,7 @@ enum pluginState {
 // implementation and there is no check for this.
 - (void)computeKernel:(float)sigma kernel_size:(int)kernel_size {
     if (self.kernel == nil) self.kernel = [[NSMutableArray alloc] init];
+    [self.kernel removeAllObjects];
     double f1 = -(1.0 / (M_PI * pow(sigma, 4)));
     double hi = floor(kernel_size/2.0);
     double lo = -hi;
