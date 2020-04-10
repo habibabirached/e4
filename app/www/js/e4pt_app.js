@@ -239,6 +239,28 @@ $(document).ready(function(){
     document.getElementById("CASING_THICKNESS").addEventListener('change', function(){
         update_spacer_value();
     }, {passive: true});
+    document.getElementById("MODE_BUTTON_PROD").addEventListener('click', function(){
+        document.getElementById('MODE_BUTTON_PROD').style.display = 'none'; //hide
+        document.getElementById('MODE_BUTTON_DEMO').style.display = 'block';
+        $("#MODE_INDICATOR").css("color", "red");
+        $("#MODE_NAME").text('DEMO');
+        $("#CUR_MODE").text('Current Mode: DEMO');
+        document.getElementById('MODE_NAME').style.fontSize = "2vmin";
+        document.getElementById('MODE_NAME').style.display = 'block';
+        document.getElementById('MODE_INDICATOR').style.display = 'block';
+    }, {passive: true});
+    document.getElementById("MODE_BUTTON_DEMO").addEventListener('click', function(){
+        document.getElementById('MODE_BUTTON_DEMO').style.display = 'none'; //hide
+        document.getElementById('MODE_BUTTON_PROD').style.display = 'block';
+        $("#MODE_INDICATOR").css("color", "limeGreen");
+        $("#MODE_NAME").text('PROD');
+        $("#CUR_MODE").text('Current Mode: PRODUCTION');
+        document.getElementById('MODE_NAME').style.display = 'none';
+        document.getElementById('MODE_INDICATOR').style.display = 'none';
+    }, {passive: true});
+    document.getElementById("SETUP_CLOSE_BUTTON").addEventListener('click', function(){
+        $("#FRD_PAGE").fadeOut();
+    }, {passive: true});
 
     setupAccordian();
     if (communicationChannel == "WebSocket") {

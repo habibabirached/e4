@@ -22,6 +22,10 @@
 
             <div class="COL_EQUAL W94">
                 <div id="TITLE_BAR" class="COL_FL FONT7 MW4 PH1">e-4Pt Tool</div>
+                <div class="COL_FR PW2">
+                    <p class="COL_FR FONT7 PH1" id="MODE_NAME" style="display: none; text-align:center;"> PROD</p>
+                    <i class="COL_FR PW1 FONT4 fa fa-circle FONT_GREEN PT1" id="MODE_INDICATOR" style="display: none;"></i>
+                </div>
             </div>
 
             <div class="COL_EQUAL W6">
@@ -81,12 +85,44 @@
                     </div>
 
                     <!-- --------------- FRD PAGE ---------------------  -->
+                    <div id="FRD_PAGE" class="OVERLAY_FULL SCROLL_Y" style="top:5.9vmin">
+                        <div class="RELATIVE TOP0 W100 COLOR_T_BLACK" style="height:5vmin; position:sticky">
+                            <div class="COL_FL FONT_WHITE FONT8 PW2">SETUP</div>
+                            <div id="SETUP_CLOSE_BUTTON" class="COL_FR BUTTON PW1">
+                                <i class="fa fa-window-close FONT10 FONT_WHITE"></i>
+                            </div>
+                        </div>
+                        <button class="ACCORDION">GAS TURBINE PREPARATION</button>
+                        <div class="PANEL">
+                            <br/>
+                            <h3>Elements of the FRD will go here.</h3>
+                            <br/>
+                        </div>
+                        <button class="ACCORDION">SWITCH MODE</button>
+                        <div class="PANEL">
+                            <br/>
+                            <h4> <p id="CUR_MODE"> Current Mode: PRODUCTION</p> </h4>
+                            <br/>
+                            <a id="MODE_BUTTON_PROD" class="OVERLAY_BUTTON BUTTON" href="#" style="display: block; margin:auto;">Switch to DEMO mode</a>
+                            <a id="MODE_BUTTON_DEMO" class="OVERLAY_BUTTON BUTTON" href="#" style="display: none; margin:auto;">Switch to PRODUCTION mode</a>
+                            <br/>
+                            <div>
+                                <UL>
+                                    <LI> Select “Switch to DEMO mode” to use pre-recorded data.</LI>
+                                    <LI> Select “Switch to PRODUCTION mode” for use with an active sensor.</LI>
+                                </UL>
+                            </div>
+                            <br/><br/>
+                        </div>
+                
+                    </div>
+                    <!--
                     <div class="FIXED H100 Z0 FRD_PAGE">
                     <div id="FRD_PAGE" class="HIDE">
                     <h1>This page will eventually hold the FRD.</h1>
                     </div>
                     </div>
-
+                    -->
                     <!-- --------------- FRAME SELECT PAGE ---------------------  -->
                     <div class="FIXED H100 Z0 SETUP_PAGE">
                     <div id="SETUP_PAGE" class="HIDE">
