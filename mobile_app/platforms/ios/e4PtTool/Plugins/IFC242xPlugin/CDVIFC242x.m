@@ -139,6 +139,7 @@ enum pluginState {
 @property (nonatomic) long int totalBufferIndex;
 @property (nonatomic,retain) NSTimer * timerDataStreamOpening;
 @property (nonatomic, retain) NSTimer* timerSendTelnetCommand;
+@property (nonatomic, retain) NSTimer* timerDemoFunctions;
 @property (strong, nonatomic) NSMutableArray* kernel;
 
 // Variables needed for data collection.
@@ -166,6 +167,8 @@ enum pluginState {
 @property (nonatomic) int set_count;
 @property (nonatomic) int data_index;
 @property (nonatomic) int num_sets;
+
+@property (nonatomic) bool demoMode;
 
 @property (strong, nonatomic) CDVIFC242x* plugin;
 
@@ -216,6 +219,7 @@ enum pluginState {
 @synthesize point_counts = _point_counts;
 @synthesize intensities = _intensities;
 @synthesize min_locs = _min_locs;
+@synthesize demoMode = _demoMode;
     
 @synthesize kernel = _kernel;
 
@@ -362,8 +366,36 @@ enum pluginState {
     }
 }
 
+- (void)timeoutTimerDemoMode:(NSTimer*)timer {
+    NSString* arg = timer.userInfo;
+    if ([arg containsString:@"dark_reference"]) {
+        [self processComplete:@"connected"];
+    }
+    if ([arg containsString:@"mastering"]) {
+        [self processComplete:@"done_mastering"];
+    }
+    if ([arg containsString:@"measurement_rate"]) {
+        [self processComplete:@"connected"];
+    }
+    if ([arg containsString:@"collect_data"]) {
+        [self loadCSVFile];
+        NSDictionary* jsonDict = @{@"type":@"status",@"status":@"processing"};
+        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];// You can send data, String, int, array, dictionary, etc.
+        result.keepCallback = [NSNumber numberWithBool:YES];
+        [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+        [self computeClearance];
+        [self returnData];
+        [self processComplete:@"connected"];
+    }
+}
+
 - (void)timeoutTelnetSendCommand:(NSTimer*)timer {
-    NSLog(@"@timeoutTelnetSendCommand: Timer expired");
+    NSLog(@"@timeoutTelnetSendCommand: Timer expired. # commands = %lu", (unsigned long)self.telnetCmds.count);
+    if (self.demoMode) {
+        [self.timerSendTelnetCommand invalidate]; // Cancel the timer in demo mode.
+        [self disconnectDevice];
+        [self processComplete:@"connected"];
+    }
     if (self.telnetCmds.count == 0) {
         dispatch_async(dispatch_get_main_queue(), ^{
             [self.timerSendTelnetCommand invalidate];
@@ -389,11 +421,11 @@ enum pluginState {
     }
     else {
         NSLog(@"  telnet is not ready yet...");
-        //if (self.outputTelnetStream != nil) {
-        //    NSString* command = @"\n";
-        //    NSData* cmdData = [[NSData alloc] initWithData:[command dataUsingEncoding:NSUTF8StringEncoding]];
-        //    [self.outputTelnetStream write:(const unsigned char*)[cmdData bytes] maxLength:[cmdData length]];
-        //}
+        if (self.outputTelnetStream != nil) {
+            NSString* command = @"\n";
+            NSData* cmdData = [[NSData alloc] initWithData:[command dataUsingEncoding:NSUTF8StringEncoding]];
+            [self.outputTelnetStream write:(const unsigned char*)[cmdData bytes] maxLength:[cmdData length]];
+        }
     }
 }
 
@@ -431,27 +463,32 @@ enum pluginState {
     self.dataPort = DATA_PORT;
     self.telnetPort = TELNET_PORT;
     self.telnetIsReady = false;
-    self.datasetIds = [[NSMutableArray alloc] init];
-    self.times = [[NSMutableArray alloc] init];
-    self.displacements = [[NSMutableArray alloc] init];
-    self.filtered = [[NSMutableArray alloc] init];
-    self.blade_clearances = [[NSMutableArray alloc] init];
-    self.point_counts = [[NSMutableArray alloc] init];
-    self.intensities = [[NSMutableArray alloc] init];
-    self.min_locs = [[NSMutableArray alloc] init];
+    if (self.datasetIds == nil) self.datasetIds = [[NSMutableArray alloc] init];
+    if (self.times == nil) self.times = [[NSMutableArray alloc] init];
+    if (self.displacements == nil) self.displacements = [[NSMutableArray alloc] init];
+    if (self.filtered == nil) self.filtered = [[NSMutableArray alloc] init];
+    if (self.blade_clearances == nil) self.blade_clearances = [[NSMutableArray alloc] init];
+    if (self.point_counts == nil) self.point_counts = [[NSMutableArray alloc] init];
+    if (self.intensities == nil) self.intensities = [[NSMutableArray alloc] init];
+    if (self.min_locs == nil) self.min_locs = [[NSMutableArray alloc] init];
     self.measurement_rate = @"1.0";
-    self.telnetCmds = [[NSMutableArray alloc] init];
-    self.metaData = [[ScanMetaData alloc] init];
+    if (self.telnetCmds == nil) self.telnetCmds = [[NSMutableArray alloc] init];
+    if (self.metaData == nil) self.metaData = [[ScanMetaData alloc] init];
+    [self clearMetaData];
     [self computeKernel:KERNEL_SIGMA kernel_size:KERNEL_SIZE]; // Compute the LoG filter kernel.
     self.stage_clearance = 0;
+    self.demoMode = (SIMULATED_DATA == 0) ? false : true;
     if (self.inputTelnetStream == nil) {
+        NSLog(@"connectingDevice from initializeSensor");
         [self connectDevice:self.ipAddress port:self.telnetPort];
     }
+    [self.telnetCmds removeAllObjects];
     [self.telnetCmds addObject:[NSString stringWithFormat:@"ETHERMODE ETHERNET\n"]];
     [self.telnetCmds addObject:[NSString stringWithFormat:@"OUTPUT ETHERNET\n"]];
     [self.telnetCmds addObject:[NSString stringWithFormat:@"MEASTRANSFER SERVER/TCP 1024\n"]];
     [self.telnetCmds addObject:[NSString stringWithFormat:@"OUT_ETH 01INTENSITY 01DIST1 TIMESTAMP\n"]];
     [self.telnetCmds addObject:[NSString stringWithFormat:@"MEASRATE 1.0\n"]];
+    NSLog(@"Calling sendTelnetCommand from initializeSensor");
     [self sendTelnetCommand];
 }
 
@@ -547,6 +584,7 @@ enum pluginState {
         self.outputTelnetStream = nil;
     }
     self.telnetStreamIsOpen = false;
+    [self.telnetCmds removeAllObjects];
 }
 
 - (void)messageHandler:(NSString*)msg {
@@ -585,8 +623,25 @@ enum pluginState {
         // 100 samples/frame, measurement rate is in kHz.
         float nSets = [self.measurement_rate floatValue] * 1000.0 * [acqTime floatValue] / 100.0;
         int num_sets = ceil(nSets); // Round up.
-        // now call collect data with the acquisition time.
-        [self collectData:num_sets casingThickness:[self.metaData.casing_thickness floatValue]];
+        
+        if (!self.demoMode) {
+            // now call collect data with the acquisition time.
+            [self collectData:num_sets casingThickness:[self.metaData.casing_thickness floatValue]];
+        }
+        else {
+            NSDictionary* jsonDict = @{@"type":@"status",@"status":@"acquiring"};
+            CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];// You can send data, String, int, array, dictionary, etc.
+            result.keepCallback = [NSNumber numberWithBool:YES];
+            [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+            NSString* demoMsg = @"collect_data";
+            dispatch_async(dispatch_get_main_queue(), ^{
+                self.timerDemoFunctions = [ NSTimer scheduledTimerWithTimeInterval:3.0
+                                                                            target:self
+                                                                          selector:@selector(timeoutTimerDemoMode:)
+                                                                          userInfo:demoMsg
+                                                                           repeats:NO];
+            });
+        }
     }
     if ([cmd containsString:@"scan_meta_data"]) {
         NSLog(@"Got scan_meta_data");
@@ -612,15 +667,79 @@ enum pluginState {
     }
     if ([cmd containsString:@"do_dark_reference"]) {
         NSLog(@"Got do_dark_reference");
-        [self doDarkReference];
+        if (!self.demoMode) {
+            [self doDarkReference];
+        }
+        else {
+            NSDictionary* jsonDict = @{@"type":@"status",@"status":@"acquiring"};
+            CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];// You can send data, String, int, array, dictionary, etc.
+            result.keepCallback = [NSNumber numberWithBool:YES]; // This is the magic option that lets you call a callback AGAIN!
+            [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+            NSString* demoMsg = @"dark_reference";
+            dispatch_async(dispatch_get_main_queue(), ^{
+                self.timerDemoFunctions = [ NSTimer scheduledTimerWithTimeInterval:3.0
+                                                                            target:self
+                                                                          selector:@selector(timeoutTimerDemoMode:)
+                                                                          userInfo:demoMsg
+                                                                           repeats:NO];
+            });
+        }
     }
     if ([cmd containsString:@"do_mastering"]) {
         NSLog(@"Got do_mastering");
-        [self masterDevice];
+        if (!self.demoMode) {
+            [self masterDevice];
+        }
+        else {
+            NSDictionary* jsonDict = @{@"type":@"status",@"status":@"mastering_in_progress"};
+            CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];
+            result.keepCallback = [NSNumber numberWithBool:YES]; // This is the magic option that lets you call a callback AGAIN!
+            [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+            NSString* demoMsg = @"mastering";
+            dispatch_async(dispatch_get_main_queue(), ^{
+                self.timerDemoFunctions = [ NSTimer scheduledTimerWithTimeInterval:3.0
+                                                                            target:self
+                                                                          selector:@selector(timeoutTimerDemoMode:)
+                                                                          userInfo:demoMsg
+                                                                           repeats:NO];
+            });
+        }
     }
     if ([cmd containsString:@"set_measuring_rate"]) {
         NSLog(@"Got set_measuring_rate");
-        [self setMeasurementRate:[msgArray objectAtIndex:1]];
+        if (!self.demoMode) {
+            [self setMeasurementRate:[msgArray objectAtIndex:1]];
+        }
+        else {
+            NSString* demoMsg = @"measurement_rate";
+            dispatch_async(dispatch_get_main_queue(), ^{
+                self.timerDemoFunctions = [ NSTimer scheduledTimerWithTimeInterval:3.0
+                                                                            target:self
+                                                                          selector:@selector(timeoutTimerDemoMode:)
+                                                                          userInfo:demoMsg
+                                                                           repeats:NO];
+            });
+        }
+    }
+    if ([cmd containsString:@"set_demo_mode"]) {
+        NSLog(@"Got set_demo_mode");
+        NSString* mode = [msgArray objectAtIndex:1];
+        NSString* msgStr;
+        if ([mode containsString:@"true"]) {
+            self.demoMode = true;
+            msgStr = @"App is now in demo mode.";
+        }
+        else {
+            self.demoMode = false;
+            msgStr = @"App is now in production mode.";
+        }
+        NSDictionary* jsonDict = @{@"type":@"alert",@"message":msgStr};
+        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];
+        result.keepCallback = [NSNumber numberWithBool:YES];
+        [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+        if (!self.demoMode) {
+            [self initializeSensor];
+        }
     }
     else {
         NSLog(@"Got %@",msg);
@@ -687,6 +806,7 @@ enum pluginState {
 
 - (void)stream:(NSStream *)inStream handleEvent:(NSStreamEvent)streamEvent {
     
+    if (self.demoMode) return;  // Do nothing in demo mode.
     __block NSStream* theStream = inStream;
     dispatch_async(dispatch_get_main_queue(), ^{
         NSLog(@"Processing stream, stream event %lu", (unsigned long)streamEvent);
@@ -876,7 +996,6 @@ enum pluginState {
                         if (SIMULATED_DATA == 1) {
                             [self loadCSVFile];
                         }
-                        [self computeClearance];
 
                         // At this point we should have all the data that was requested.
                         // We need to do any required processing/filtering, save to file,
@@ -886,37 +1005,10 @@ enum pluginState {
                         result.keepCallback = [NSNumber numberWithBool:YES];
                         [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
                         
-                        NSError* error;
-                        NSData* jsonData = [NSJSONSerialization dataWithJSONObject:self.displacements options:NSJSONWritingSortedKeys error:&error];
-                        //NSData* jsonData = [NSJSONSerialization dataWithJSONObject:self.filtered options:NSJSONWritingSortedKeys error:&error];
-                        NSString *dispJSONString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
-                        jsonData = [NSJSONSerialization dataWithJSONObject:self.intensities options:NSJSONWritingSortedKeys error:&error];
-                        NSString *intensJSONString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
-                        jsonData = [NSJSONSerialization dataWithJSONObject:self.min_locs options:NSJSONWritingSortedKeys error:&error];
-                        NSString *minLocsJSONString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
-                        jsonData = [NSJSONSerialization dataWithJSONObject:self.blade_clearances options:NSJSONWritingSortedKeys error:&error];
-                        NSString *bladeClrsJSONString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
-
-                        NSDateFormatter *dateFormatter=[[NSDateFormatter alloc] init];
-                        [dateFormatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
-                        NSString* dateStr = [dateFormatter stringFromDate:[NSDate date]];
-                        NSString* clearance = [NSString stringWithFormat:@"%f",self.stage_clearance];
+                        [self computeClearance];
                         
-                        NSDictionary* jsonDataDict = @{@"type":@"data",
-                                                       @"data":dispJSONString,
-                                                       @"intensity":intensJSONString,
-                                                       @"locs":minLocsJSONString,
-                                                       @"gaps":bladeClrsJSONString,
-                                                       @"clearance":clearance,
-                                                       @"casing_thickness":self.metaData.casing_thickness,
-                                                       @"spacer_thickness":self.metaData.spacer_thickness,
-                                                       @"date":dateStr
-                                                       };
-                        result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDataDict];// You can send data, String, int, array, dictionary, etc.
-                        result.keepCallback = [NSNumber numberWithBool:NO];
-                        [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
-                        [self saveCSVFile];
-                        [self clearData];
+                        [self returnData];
+                        
                     } // end of if ([self.inputDataStream hasBytesAvailable])
                     if ([self.inputTelnetStream hasBytesAvailable]) {
                         NSLog(@"Got data on telnet stream");
@@ -1010,6 +1102,40 @@ enum pluginState {
             } // switch
         } // if datastream found
     });
+}
+
+- (void)returnData {
+    NSError* error;
+    NSData* jsonData = [NSJSONSerialization dataWithJSONObject:self.displacements options:NSJSONWritingSortedKeys error:&error];
+    //NSData* jsonData = [NSJSONSerialization dataWithJSONObject:self.filtered options:NSJSONWritingSortedKeys error:&error];
+    NSString *dispJSONString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+    jsonData = [NSJSONSerialization dataWithJSONObject:self.intensities options:NSJSONWritingSortedKeys error:&error];
+    NSString *intensJSONString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+    jsonData = [NSJSONSerialization dataWithJSONObject:self.min_locs options:NSJSONWritingSortedKeys error:&error];
+    NSString *minLocsJSONString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+    jsonData = [NSJSONSerialization dataWithJSONObject:self.blade_clearances options:NSJSONWritingSortedKeys error:&error];
+    NSString *bladeClrsJSONString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+    
+    NSDateFormatter *dateFormatter=[[NSDateFormatter alloc] init];
+    [dateFormatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
+    NSString* dateStr = [dateFormatter stringFromDate:[NSDate date]];
+    NSString* clearance = [NSString stringWithFormat:@"%f",self.stage_clearance];
+    
+    NSDictionary* jsonDataDict = @{@"type":@"data",
+                                   @"data":dispJSONString,
+                                   @"intensity":intensJSONString,
+                                   @"locs":minLocsJSONString,
+                                   @"gaps":bladeClrsJSONString,
+                                   @"clearance":clearance,
+                                   @"casing_thickness":self.metaData.casing_thickness,
+                                   @"spacer_thickness":self.metaData.spacer_thickness,
+                                   @"date":dateStr
+                                   };
+    CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDataDict];// You can send data, String, int, array, dictionary, etc.
+    result.keepCallback = [NSNumber numberWithBool:NO];
+    [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+    [self saveCSVFile];
+    [self clearData];
 }
 
 - (void)processComplete:(NSString*)statusMsg {
@@ -1202,14 +1328,25 @@ enum pluginState {
                     }
                 }
                 //NSLog(@"Sum: %f; count: %d", clearance, count);
-                clearance = clearance / count; // Average clearance for this blade.
+                // Protect against divide-by-zero...
+                if (count == 0) {
+                    clearance = -999.999;
+                }
+                else {
+                    clearance = clearance / count; // Average clearance for this blade.
+                }
+                if (isnan(clearance)) {
+                    clearance = 999.999;  // nan has happened before.
+                }
+                if (count > 0) {
 #ifdef OUTPUT_MINIMUM
-                [self.blade_clearances addObject:[NSNumber numberWithFloat:min_clearance]];
+                    [self.blade_clearances addObject:[NSNumber numberWithFloat:min_clearance]];
 #else
-                [self.blade_clearances addObject:[NSNumber numberWithFloat:clearance]];
-                min_loc = ((float)start + (float)stop) / 2.0;
+                    [self.blade_clearances addObject:[NSNumber numberWithFloat:clearance]];
+                    min_loc = ((float)start + (float)stop) / 2.0;
 #endif
-                [self.min_locs addObject:[NSNumber numberWithFloat:min_loc]];
+                    [self.min_locs addObject:[NSNumber numberWithFloat:min_loc]];
+                }
                 NSLog(@"Clearance: %f", clearance);
                 for (int j=start; j<=stop; j++) {
                     [self.filtered addObject:[NSNumber numberWithFloat:clearance]];

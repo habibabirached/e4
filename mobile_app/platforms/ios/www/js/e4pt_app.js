@@ -248,6 +248,7 @@ $(document).ready(function(){
         document.getElementById('MODE_NAME').style.fontSize = "2vmin";
         document.getElementById('MODE_NAME').style.display = 'block';
         document.getElementById('MODE_INDICATOR').style.display = 'block';
+        set_demo_mode("true");
     }, {passive: true});
     document.getElementById("MODE_BUTTON_DEMO").addEventListener('click', function(){
         document.getElementById('MODE_BUTTON_DEMO').style.display = 'none'; //hide
@@ -257,6 +258,7 @@ $(document).ready(function(){
         $("#CUR_MODE").text('Current Mode: PRODUCTION');
         document.getElementById('MODE_NAME').style.display = 'none';
         document.getElementById('MODE_INDICATOR').style.display = 'none';
+        set_demo_mode("false");
     }, {passive: true});
     document.getElementById("SETUP_CLOSE_BUTTON").addEventListener('click', function(){
         $("#FRD_PAGE").fadeOut();
@@ -360,6 +362,19 @@ function toggle_menu() {
 		$('#LEFT_MENU').animate({"margin-left": '+=25vmin'});
 		menu_open = true;
 	}
+}
+
+function set_demo_mode(tf) {
+    var message = {"args":["set_demo_mode",tf]};
+    if (communicationChannel == "WebSocket") {
+        message = JSON.stringify(message);
+        sendWSMessage(message);
+    }
+    else if (communicationChannel == "Plugin") {
+        window.plugins.IFC242x.messageToDevice(message, function(msg) {
+                                               pluginMessage(msg);
+                                               }, null);
+    }
 }
 
 function sensor_setup() {
@@ -1116,6 +1131,10 @@ function pluginMessage(msg) {
             console.log("Recieved Filename Message: ", msg.fname);
             downloadFileName = msg.fname;
             e4PtPrompt("Email or Upload File?", exportFile, "Get File", ["Email","Upload to Box","Cancel"]);
+            break;
+        case "alert":
+            console.log("Received an alert message: ", msg.message);
+            e4PtAlert(msg.message);
     }
 }
 
