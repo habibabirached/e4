@@ -389,11 +389,11 @@ enum pluginState {
     }
     else {
         NSLog(@"  telnet is not ready yet...");
-        if (self.outputTelnetStream != nil) {
-            NSString* command = @"\n";
-            NSData* cmdData = [[NSData alloc] initWithData:[command dataUsingEncoding:NSUTF8StringEncoding]];
-            [self.outputTelnetStream write:(const unsigned char*)[cmdData bytes] maxLength:[cmdData length]];
-        }
+        //if (self.outputTelnetStream != nil) {
+        //    NSString* command = @"\n";
+        //    NSData* cmdData = [[NSData alloc] initWithData:[command dataUsingEncoding:NSUTF8StringEncoding]];
+        //    [self.outputTelnetStream write:(const unsigned char*)[cmdData bytes] maxLength:[cmdData length]];
+        //}
     }
 }
 
