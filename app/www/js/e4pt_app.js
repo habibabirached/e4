@@ -156,6 +156,7 @@ $(document).ready(function(){
     document.getElementById("OPEN_LOCAL_DATA").addEventListener('click', function(){
        $("#DATA_PLOT").fadeOut();
         try {
+            set_frame_information();
             listInternalFiles();
             SELECTED_FILE = "";
             toggle_menu();
@@ -293,6 +294,7 @@ function fsFail(err) {
 
 function acquisitionTimePromptCallback(results) {
     console.log("@acquisitionTimePromptCallback");
+    if (results.buttonIndex > 1) return;
     current_frame_data = [];
     acquisitionTime = parseFloat(results.input1);
     if (acquisitionTime != null) {
@@ -306,6 +308,7 @@ function acquisitionTimePromptCallback(results) {
 
 function acquisitionTimePromptWithMetaDataCallback(results) {
     console.log("@acquisitionTimePromptWithMetaDataCallback");
+    if (results.buttonIndex > 1) return;
     acquisitionTime = parseFloat(results.input1);
     if (acquisitionTime != null) {
         if (Number.isFinite(acquisitionTime)) {
@@ -1381,11 +1384,42 @@ function update_clearance(clearance) {
     if (clearance_f == -9.999) {
         err_id.innerHTML = "Error: Clearance computed to NaN value.";
     }
+    if (clearance_f == -9.996) {
+        err_id.innerHTML = "Error: Problem finding blade tips (1).";
+    }
+    if (clearance_f == -9.995) {
+        err_id.innerHTML = "Error: Problem finding blade tips (2).";
+    }
+    if (clearance_f == -9.994) {
+        err_id.innerHTML = "Error: Problem finding blade tips (3).";
+    }
+    if (clearance_f < -9.0) {
+        document.getElementById(el_id).innerHTML = "Err";
+        return;
+    }
     if (isNaN(clearance_f)) {
         document.getElementById(el_id).innerHTML = "";
+        return;
+    }
+    
+    // Now account for SMR, SL, & Spacer
+    // Sensor measurements come in mm, so we may have to account for units as well.
+    // First do all calculations in mm.
+    var units = E4PTdata.units.toUpperCase();
+    var scaleFactor = 1.0;
+    if (units.includes("IN")) {
+        scaleFactor = 25.4;
+    }
+
+    // clearance = displacement + SMR + SL - (Shim thickness + Spacer thickness) - Casing thickness
+    clearance_f = (clearance_f/scaleFactor) + (sensor_data.smr + sensor_data.sensor_length)/scaleFactor - E4PTdata.spacer_thickness - E4PTdata.casing_thickness;
+    E4PTdata.clearance = clearance_f;
+    
+    if (isNaN(clearance_f)) {
+        document.getElementById(el_id).innerHTML = "NaN";
     }
     else {
-        document.getElementById(el_id).innerHTML = clearance_f;
+        document.getElementById(el_id).innerHTML = clearance_f.toFixed(3);
     }
 
     clearances = [];
@@ -2117,7 +2151,13 @@ function loadLocalData(id) {
       var pos = doc.sets[i].position;
       var stg = doc.sets[i].stage;
       var clr = doc.sets[i].clearance;
-      var clr_f = parseFloat(clr.toFixed(4));
+      var clr_f = 0;
+      if ((typeof clr) == "string") {
+        clr_f = parseFloat(clr)
+      }
+      else {
+        clr_f = clr;
+      }
       var positions = current_frame_data.position[stg];
       var stages = current_frame_data.stage;
       var position_index = 0;
@@ -2134,7 +2174,7 @@ function loadLocalData(id) {
       }
       var el_id = positions[position_index] + stages[stage_index];
       el_id = el_id.replace(/\s+/g, '_');
-      document.getElementById(el_id).innerHTML = clr_f;
+      document.getElementById(el_id).innerHTML = clr_f.toFixed(3);
     }
 
     turbine_setup(false);

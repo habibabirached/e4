@@ -1,3 +1,8 @@
+// Sensor parameters (in mm).
+sensor_data = {
+    'smr':0.433,
+    'sensor_length':8.922
+};
 frame_data = [
     {'frame':'6B',
      'stage':['8','13','17'],
