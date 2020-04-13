@@ -1363,10 +1363,13 @@ enum pluginState {
     int stage_num_blades = (int)[self.metaData.num_blades integerValue];
     if (stage_num_blades > 0) {
         for (i=0; i<stage_num_blades; i++) {
-            NSNumber* c = [self.blade_clearances objectAtIndex:i];
-            self.stage_clearance += [c floatValue];
+            if (self.blade_clearances.count > i ) {
+                NSNumber* c = [self.blade_clearances objectAtIndex:i];
+                self.stage_clearance += [c floatValue];
+            }
         }
-        self.stage_clearance /= (float)stage_num_blades;
+        int divisor = (self.blade_clearances.count < stage_num_blades) ? (int)self.blade_clearances.count : stage_num_blades;
+        self.stage_clearance /= (float)divisor;
     }
     
     NSLog(@"Done.");
