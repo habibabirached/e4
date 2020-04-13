@@ -1331,13 +1331,13 @@ enum pluginState {
                 //NSLog(@"Sum: %f; count: %d", clearance, count);
                 // Protect against divide-by-zero...
                 if (count == 0) {
-                    clearance = -999.999;
+                    clearance = -9.996;
                 }
                 else {
                     clearance = clearance / count; // Average clearance for this blade.
                 }
                 if (isnan(clearance)) {
-                    clearance = 999.999;  // nan has happened before.
+                    clearance = -9.995;  // nan has happened before.
                 }
                 if (count > 0) {
 #ifdef OUTPUT_MINIMUM
@@ -1369,7 +1369,12 @@ enum pluginState {
             }
         }
         int divisor = (self.blade_clearances.count < stage_num_blades) ? (int)self.blade_clearances.count : stage_num_blades;
-        self.stage_clearance /= (float)divisor;
+        if (divisor != 0) {
+            self.stage_clearance /= (float)divisor;
+        }
+        else {
+            self.stage_clearance = -9.994; // divide-by-zero protection.
+        }
     }
     
     NSLog(@"Done.");
