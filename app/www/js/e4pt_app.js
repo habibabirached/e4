@@ -211,10 +211,13 @@ $(document).ready(function(){
 	do_dark_reference();
     }, {passive: true});
     document.getElementById("SET_MEASUREMENT_RATE_BUTTON").addEventListener('click', function(){
-  set_measurement_rate("1");
+    set_measurement_rate("1");
     }, {passive: true});
     document.getElementById("SET_MEASUREMENT_RATE_BUTTON_2").addEventListener('click', function(){
-  set_measurement_rate("2");
+    set_measurement_rate("2");
+    }, {passive: true});
+    document.getElementById("SET_THRESHOLD_BUTTON").addEventListener('click', function(){
+    set_threshold();
     }, {passive: true});
     document.getElementById("DOWNLOAD_FILE_BUTTON_01").addEventListener('click', function(){
 	doFileDownload();
@@ -541,6 +544,32 @@ function set_measurement_rate(idx) {
   else if (communicationChannel == "Plugin") {
       window.plugins.IFC242x.messageToDevice(message, null, null);
   }
+}
+
+function set_threshold() {
+    threshold_text = document.getElementById("THRESHOLD_1").value;
+    var threshold_f = parseFloat(threshold_text);
+    // Make sure the text is a number
+    if ( (isNaN(threshold_f)) || (typeof(threshold_f) != "number")) {
+        e4PtAlert("Threshold is not a number.");
+        return;
+    }
+    if (threshold_f < 0.0) {
+        threshold_f = 0.0;
+        document.getElementById(el_id).value = 0.0;
+    }
+    if (threshold_f > 100.0) {
+        threshold_f = 100.0;
+        document.getElementById(el_id).value = 100.0;
+    }
+    message = {"args":["set_threshold",threshold_f]};
+    if (communicationChannel == "WebSocket") {
+        message = JSON.stringify(message);
+        sendWSMessage(message);
+    }
+    else if (communicationChannel == "Plugin") {
+        window.plugins.IFC242x.messageToDevice(message, null, null);
+    }
 }
 
 function collect_stage_data() {
@@ -1442,6 +1471,7 @@ function update_clearance(clearance) {
 
 function plot_data() {
   console.log("@e4pt_app::plot_data()");
+    var subtitle = E4PTdata.date + "; Avg. Tip Dist: " + E4PTdata.clearance;
   Highcharts.chart('DATA_PLOT', {
     chart: {
       renderTo: 'DATA_PLOT',
@@ -1474,7 +1504,7 @@ function plot_data() {
       fontFamily: 'Veranda'
     },
     subtitle: {
-      text: E4PTdata.date
+      text: subtitle
     },
     yAxis: {
       title: {

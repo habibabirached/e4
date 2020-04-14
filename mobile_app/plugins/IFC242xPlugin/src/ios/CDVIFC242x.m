@@ -48,6 +48,7 @@ enum pluginState {
     masteringInProgress,
     darkReferenceInProgress,
     setMeasurementRateInProgress,
+    setThresholdInProgress,
     notReady
 };
 
@@ -113,6 +114,7 @@ enum pluginState {
 - (void)doDarkReference;
 - (void)masterDevice;
 - (void)setMeasurementRate:(NSString*)rate;
+- (void)setThreshold:(NSString*)threshold;
 - (void)collectData:(int)num_sets casingThickness:(float)casing_thicknesss;
 
 // IP Connection Commands
@@ -150,6 +152,7 @@ enum pluginState {
 @property (strong, nonatomic) ScanMetaData* metaData;
 @property (strong, nonatomic) NSString* last_saved_file;
 @property (strong, nonatomic) NSString* measurement_rate;
+@property (strong, nonatomic) NSString* intensityThreshold;
 
 @property (strong, nonatomic) NSMutableArray* datasetIds;
 @property (strong, nonatomic) NSMutableArray* times;
@@ -169,6 +172,7 @@ enum pluginState {
 @property (nonatomic) int num_sets;
 
 @property (nonatomic) bool demoMode;
+@property (strong, nonatomic) NSString* controllerType;
 
 @property (strong, nonatomic) CDVIFC242x* plugin;
 
@@ -189,6 +193,7 @@ enum pluginState {
 @synthesize metaData = _metaData;
 @synthesize last_saved_file = _last_saved_file;
 @synthesize measurement_rate = _measurement_rate;
+@synthesize intensityThreshold = _intensityThreshold;
 
 @synthesize dataStreamIsOpen = _dataStreamIsOpen;
 @synthesize telnetStreamIsOpen = _telnetStreamIsOpen;
@@ -377,6 +382,9 @@ enum pluginState {
     if ([arg containsString:@"measurement_rate"]) {
         [self processComplete:@"connected"];
     }
+    if ([arg containsString:@"threshold"]) {
+        [self processComplete:@"connected"];
+    }
     if ([arg containsString:@"collect_data"]) {
         [self loadCSVFile];
         NSDictionary* jsonDict = @{@"type":@"status",@"status":@"processing"};
@@ -478,6 +486,7 @@ enum pluginState {
     [self computeKernel:KERNEL_SIGMA kernel_size:KERNEL_SIZE]; // Compute the LoG filter kernel.
     self.stage_clearance = 0;
     self.demoMode = (SIMULATED_DATA == 0) ? false : true;
+    self.controllerType = @"";
     if (self.inputTelnetStream == nil) {
         NSLog(@"connectingDevice from initializeSensor");
         [self connectDevice:self.ipAddress port:self.telnetPort];
@@ -488,6 +497,7 @@ enum pluginState {
     [self.telnetCmds addObject:[NSString stringWithFormat:@"MEASTRANSFER SERVER/TCP 1024\n"]];
     [self.telnetCmds addObject:[NSString stringWithFormat:@"OUT_ETH 01INTENSITY 01DIST1 TIMESTAMP\n"]];
     [self.telnetCmds addObject:[NSString stringWithFormat:@"MEASRATE 1.0\n"]];
+    [self.telnetCmds addObject:[NSString stringWithFormat:@"GETINFO\n"]];
     NSLog(@"Calling sendTelnetCommand from initializeSensor");
     [self sendTelnetCommand];
 }
@@ -530,6 +540,24 @@ enum pluginState {
     self.measurement_rate = rate;
     [self.telnetCmds addObject:[NSString stringWithFormat:@"MEASRATE %@\n", rate]];
     [self sendTelnetCommand];
+}
+
+- (void)setThreshold:(NSString*)threshold {
+    if (![self checkReady]) return;
+    self.pState = setThresholdInProgress;
+    self.intensityThreshold = threshold;
+    if ([self.controllerType containsString:@"IFC2422"]) {
+        [self.telnetCmds addObject:[NSString stringWithFormat:@"MIN_THRESHOLD_CH01 %@\n", threshold]];
+        [self.telnetCmds addObject:[NSString stringWithFormat:@"MIN_THRESHOLD_CH02 %@\n", threshold]];
+    }
+    else if ([self.controllerType containsString:@"IFC2421"]) {
+        [self.telnetCmds addObject:[NSString stringWithFormat:@"MIN_THRESHOLD %@\n", threshold]];
+    }
+    else {
+        return; // Shouldn't get here.
+    }
+    [self sendTelnetCommand];
+
 }
 
 - (bool)checkReady {
@@ -712,6 +740,22 @@ enum pluginState {
         }
         else {
             NSString* demoMsg = @"measurement_rate";
+            dispatch_async(dispatch_get_main_queue(), ^{
+                self.timerDemoFunctions = [ NSTimer scheduledTimerWithTimeInterval:3.0
+                                                                            target:self
+                                                                          selector:@selector(timeoutTimerDemoMode:)
+                                                                          userInfo:demoMsg
+                                                                           repeats:NO];
+            });
+        }
+    }
+    if ([cmd containsString:@"set_threshold"]) {
+        NSLog(@"Got set_threshold");
+        if (!self.demoMode) {
+            [self setThreshold:[msgArray objectAtIndex:1]];
+        }
+        else {
+            NSString* demoMsg = @"threshold";
             dispatch_async(dispatch_get_main_queue(), ^{
                 self.timerDemoFunctions = [ NSTimer scheduledTimerWithTimeInterval:3.0
                                                                             target:self
@@ -1021,6 +1065,14 @@ enum pluginState {
                             return;
                         }
                         NSString* prompt = [tmpStr substringFromIndex: [tmpStr length] - 2];
+                        if ([tmpStr containsString:@"IFC2422"]) {
+                            NSLog(@"Controller is IFC2422");
+                            self.controllerType = @"IFC2422";
+                        }
+                        if ([tmpStr containsString:@"IFC2421"]) {
+                            NSLog(@"Controller is IFC2421");
+                            self.controllerType = @"IFC2421";
+                        }
                         if ([prompt containsString:@"->"]) {
                             NSLog(@"Got telnet prompt");
                             self.telnetIsReady = true;
@@ -1031,6 +1083,10 @@ enum pluginState {
                             }
                             if (self.pState == setMeasurementRateInProgress) {
                                 NSLog(@"Set measurement rate complete");
+                                [self processComplete:@"connected"];
+                            }
+                            if (self.pState == setThresholdInProgress) {
+                                NSLog(@"Set threshold complete");
                                 [self processComplete:@"connected"];
                             }
                             if (self.pState == darkReferenceInProgress) {
@@ -1362,6 +1418,7 @@ enum pluginState {
     self.stage_clearance = 0.0;
     int stage_num_blades = (int)[self.metaData.num_blades integerValue];
     if (stage_num_blades > 0) {
+        // This clause is used when the number of blades has been specified.
         for (i=0; i<stage_num_blades; i++) {
             if (self.blade_clearances.count > i ) {
                 NSNumber* c = [self.blade_clearances objectAtIndex:i];
@@ -1374,6 +1431,22 @@ enum pluginState {
         }
         else {
             self.stage_clearance = -9.994; // divide-by-zero protection.
+        }
+    }
+    else {
+        // This clause is used when no number of blades has been specified.
+        if (self.blade_clearances.count > 0 ) {
+            for (i=0; i<self.blade_clearances.count; i++) {
+                NSNumber* c = [self.blade_clearances objectAtIndex:i];
+                self.stage_clearance += [c floatValue];
+            }
+            int divisor = (int)self.blade_clearances.count;
+            if (divisor != 0) {
+                self.stage_clearance /= (float)divisor;
+            }
+            else {
+                self.stage_clearance = -9.994; // divide-by-zero protection.
+            }
         }
     }
     
