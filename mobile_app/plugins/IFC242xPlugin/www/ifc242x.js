@@ -1,4 +1,3 @@
-cordova.define("IFC242xPlugin.IFC242x", function(require, exports, module) {
 function IFC242x() {
 }
 
@@ -66,4 +65,3 @@ IFC242x.install = function () {
 
 cordova.addConstructor(IFC242x.install);
 
-});

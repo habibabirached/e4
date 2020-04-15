@@ -18,5 +18,8 @@
 		</config-file>
 		<header-file src="src/ios/CDVIFC242x.h" />
 		<source-file src="src/ios/CDVIFC242x.m" />
+		<header-file src="src/ios/redpark/inc/redparkSerial.h" />
+		<header-file src="src/ios/redpark/inc/RscMgr.h" />
+		<source-file src="src/ios/redpark/lib/libRscMgrUniv.a" framework="true" />
 	</platform>
 </plugin>

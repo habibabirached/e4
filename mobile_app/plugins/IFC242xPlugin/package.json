@@ -17,7 +17,7 @@
     "#USER",
     "/"
   ],
-  "_resolved": "git+ssh://git@github.build.ge.com:iacquire-grc/IFC242xPlugin.git#4dab1214afb20675fa0638adacc6521d32a6d1bd",
+  "_resolved": "git+ssh://git@github.build.ge.com:iacquire-grc/IFC242xPlugin.git#da96e8270f9c37aed22d7fbcf4cbd4be3c159efe",
   "_spec": "git+ssh://git@github.build.ge.com:iacquire-grc/IFC242xPlugin.git",
   "_where": "/Users/200005229/geGitHub/e4PtTool/mobile_app",
   "author": {

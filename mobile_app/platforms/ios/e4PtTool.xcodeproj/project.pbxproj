@@ -5,7 +5,6 @@
 	};
 	objectVersion = 46;
 	objects = {
-
 /* Begin PBXBuildFile section */
 		0207DA581B56EA530066E2B4 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0207DA571B56EA530066E2B4 /* Images.xcassets */; };
 		12344B51C8B2431DB9B76BAD /* CDVIFC242x.m in Sources */ = {isa = PBXBuildFile; fileRef = 56C8BA499AC34BA1A23C72AD /* CDVIFC242x.m */; };
@@ -34,6 +33,7 @@
 		E6B8C8A339B442718FBBA478 /* PSPDFThreadSafeMutableDictionary.m in Sources */ = {isa = PBXBuildFile; fileRef = 8413A95B5A0C405489F3C753 /* PSPDFThreadSafeMutableDictionary.m */; settings = {COMPILER_FLAGS = "-w"; }; };
 		EA684278A7C74071832800BB /* PDFGenerator.m in Sources */ = {isa = PBXBuildFile; fileRef = E4617DF62F9A4FABAAF83BF9 /* PDFGenerator.m */; };
 		F06FAF3AEB4B4AE49CF978C8 /* CDVNotification.bundle in Resources */ = {isa = PBXBuildFile; fileRef = C2DD6451BE364BA9B9E7EC11 /* CDVNotification.bundle */; };
+		F3215A72FB4B44FCA25E00BD /* libRscMgrUniv.a in Frameworks */ = {isa = PBXBuildFile; fileRef = DAB96CE0A28F450D8FEB9FAD /* libRscMgrUniv.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -116,6 +116,9 @@
 		F840E1F0165FE0F500CFE078 /* config.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; name = config.xml; path = e4PtTool/config.xml; sourceTree = "<group>"; };
 		FAF50F29E03C46D0A3AC2F21 /* APPEmailComposerImpl.m */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.c.objc; name = APPEmailComposerImpl.m; path = "cordova-plugin-email-composer/APPEmailComposerImpl.m"; sourceTree = "<group>"; };
 		FEC92214BFA844C0ABEF7246 /* CDVLocalFilesystem.h */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.c.h; name = CDVLocalFilesystem.h; path = "cordova-plugin-file/CDVLocalFilesystem.h"; sourceTree = "<group>"; };
+		DAB96CE0A28F450D8FEB9FAD /* libRscMgrUniv.a */ = {isa = PBXFileReference; name = "libRscMgrUniv.a"; path = "e4PtTool/Plugins/IFC242xPlugin/libRscMgrUniv.a"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = archive.ar; explicitFileType = undefined; includeInIndex = 0; };
+		C3A3CC3F5FD148E1BDE8A96A /* redparkSerial.h */ = {isa = PBXFileReference; name = "redparkSerial.h"; path = "IFC242xPlugin/redparkSerial.h"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; explicitFileType = undefined; includeInIndex = 0; };
+		5E211B522F4E4062B414D04E /* RscMgr.h */ = {isa = PBXFileReference; name = "RscMgr.h"; path = "IFC242xPlugin/RscMgr.h"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; explicitFileType = undefined; includeInIndex = 0; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -126,6 +129,7 @@
 				301BF552109A68D80062928A /* libCordova.a in Frameworks */,
 				325F01D33B3C44F8B5BC6CB7 /* AudioToolbox.framework in Frameworks */,
 				253E32C8092341E0AEB6649C /* MessageUI.framework in Frameworks */,
+				F3215A72FB4B44FCA25E00BD /* libRscMgrUniv.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -201,6 +205,7 @@
 			children = (
 				27C8AE50A7134DBBB4D8437E /* AudioToolbox.framework */,
 				CCE63CF7E6EF4582BDB40A42 /* MessageUI.framework */,
+				DAB96CE0A28F450D8FEB9FAD /* libRscMgrUniv.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -257,6 +262,8 @@
 				120D1583CE624A9192A14BC9 /* CDVFile.h */,
 				FEC92214BFA844C0ABEF7246 /* CDVLocalFilesystem.h */,
 				D8A453CA905049EC91305D9E /* CDVAssetLibraryFilesystem.h */,
+				C3A3CC3F5FD148E1BDE8A96A /* redparkSerial.h */,
+				5E211B522F4E4062B414D04E /* RscMgr.h */,
 			);
 			name = Plugins;
 			path = e4PtTool/Plugins;
@@ -450,6 +457,10 @@
 				PRODUCT_NAME = e4PtTool;
 				PROVISIONING_PROFILE_SPECIFIER = "XCBOT e4PtTool ENT Dist Profile";
 				TARGETED_DEVICE_FAMILY = "1,2";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"$(SRCROOT)/e4PtTool/Plugins/IFC242xPlugin\"",
+				);
 			};
 			name = Debug;
 		};
@@ -475,6 +486,10 @@
 				PRODUCT_NAME = e4PtTool;
 				PROVISIONING_PROFILE_SPECIFIER = "XCBOT e4PtTool ENT Dist Profile";
 				TARGETED_DEVICE_FAMILY = "1,2";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"$(SRCROOT)/e4PtTool/Plugins/IFC242xPlugin\"",
+				);
 			};
 			name = Release;
 		};

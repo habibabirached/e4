@@ -31,14 +31,6 @@
     "is_top_level": true,
     "variables": {}
   },
-  "IFC242xPlugin": {
-    "source": {
-      "type": "registry",
-      "id": "git+ssh://git@github.build.ge.com:iacquire-grc/IFC242xPlugin.git"
-    },
-    "is_top_level": true,
-    "variables": {}
-  },
   "cordova-plugin-email-composer": {
     "source": {
       "type": "registry",
@@ -67,6 +59,14 @@
     "source": {
       "type": "registry",
       "id": "cordova-plugin-file@6.0.2"
+    },
+    "is_top_level": true,
+    "variables": {}
+  },
+  "IFC242xPlugin": {
+    "source": {
+      "type": "registry",
+      "id": "git+ssh://git@github.build.ge.com:iacquire-grc/IFC242xPlugin.git"
     },
     "is_top_level": true,
     "variables": {}

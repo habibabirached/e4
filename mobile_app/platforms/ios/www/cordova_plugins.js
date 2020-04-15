@@ -25,14 +25,6 @@ module.exports = [
     ]
   },
   {
-    "id": "IFC242xPlugin.IFC242x",
-    "file": "plugins/IFC242xPlugin/www/ifc242x.js",
-    "pluginId": "IFC242xPlugin",
-    "clobbers": [
-      "window.plugins.IFC242xPlugin"
-    ]
-  },
-  {
     "id": "cordova-plugin-email-composer.EmailComposer",
     "file": "plugins/cordova-plugin-email-composer/www/email_composer.js",
     "pluginId": "cordova-plugin-email-composer",
@@ -231,6 +223,14 @@ module.exports = [
       "cordova"
     ],
     "runs": true
+  },
+  {
+    "id": "IFC242xPlugin.IFC242x",
+    "file": "plugins/IFC242xPlugin/www/ifc242x.js",
+    "pluginId": "IFC242xPlugin",
+    "clobbers": [
+      "window.plugins.IFC242xPlugin"
+    ]
   }
 ];
 module.exports.metadata = 
@@ -240,11 +240,11 @@ module.exports.metadata =
   "cordova-plugin-whitelist": "1.3.4",
   "cordova-sqlite-storage": "3.4.0",
   "cordova-plugin-dialogs": "2.0.2",
-  "IFC242xPlugin": "0.1.0",
   "cordova-plugin-email-composer": "0.8.3",
   "doc_picker_plugin": "0.2.0",
   "cordova-pdf-generator": "2.0.8",
-  "cordova-plugin-file": "6.0.2"
+  "cordova-plugin-file": "6.0.2",
+  "IFC242xPlugin": "0.1.0"
 };
 // BOTTOM OF METADATA
 });

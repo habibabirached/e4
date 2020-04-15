@@ -30,11 +30,18 @@ IFC242x.prototype.masterDevice = function(deviceID, success, failure) {
  * This method is called from CDVIFC242x.m via function callBackWithCommandString
  */
 IFC242x.prototype.messageFromDevice = function(message) {
-
+    console.log("@messageFromDevice: message: ", message);
+    pluginMessage(message);
 };
 
-IFC242x.prototype.messageToDevice = function(message) {
-    console.log("@ifc242x.js::messageToDevice");
+IFC242x.prototype.messageToDevice = function(message, success, failure) {
+    // concatentate message['args'] into a single ";" separated string
+    var concatenatedMessage = "";
+    for (var i=0; i<message["args"].length; i++) {
+        concatenatedMessage = concatenatedMessage + message["args"][i] + ";";
+    }
+    console.log("@ifc242x.js::messageToDevice: ", concatenatedMessage);
+    cordova.exec(success, failure, "IFC242x", "messageHandler", [concatenatedMessage]);
 };
                
 /**
@@ -45,7 +52,7 @@ IFC242x.prototype.messageToDevice = function(message) {
  */
 
 IFC242x.prototype.OnError = function (methodName, message) {
-    deviceStatusOut('** Error in method [' + methodName + ' ] message[ ' + message + ' ]');
+    console.log("** Error in method [" + methodName + " ] message[ " + message + " ]");
 };
 
 IFC242x.install = function () {
@@ -58,7 +65,6 @@ IFC242x.install = function () {
 };
 
 cordova.addConstructor(IFC242x.install);
-
 
 
 });

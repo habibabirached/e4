@@ -66,4 +66,5 @@ IFC242x.install = function () {
 
 cordova.addConstructor(IFC242x.install);
 
+
 });

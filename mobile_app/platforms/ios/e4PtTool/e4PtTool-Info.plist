@@ -45,6 +45,14 @@
 	<true/>
 	<key>UIRequiresFullScreen</key>
 	<true/>
+	<key>UISupportedExternalAccessoryProtocols</key>
+	<array>
+		<string>com.redpark.hobdb9v</string>
+		<string>com.redpark.ser45v</string>
+		<string>com.redpark.ser45</string>
+		<string>com.redpark.hobdb9</string>
+		<string>com.amanenterprises.hobbtser</string>
+	</array>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
