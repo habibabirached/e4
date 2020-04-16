@@ -13,6 +13,8 @@
 #import <AVFoundation/AVFoundation.h>
 #include "math.h"
 #include <Accelerate/Accelerate.h>
+#import "redparkSerial.h"
+#import "RscMgr.h"
 
 
 // Take out the printf lines in release mode
@@ -26,6 +28,13 @@
 #define IFC_ADDR "192.168.168.150"
 #define DATA_PORT 1024
 #define TELNET_PORT 23
+
+#define SENSOR_MEASUREMENT_RANGE "10.0"
+
+// Hard coded values for RS232 serial cable
+// 186 = 62 * 3.  Data seems to come in 62 byte packets and data from
+// the IFC242x comes in 3-byte values.
+#define BYTE_BUFFER_SIZE 186
 
 // Some defines for the signal processing
 #define KERNEL_SIZE 13
@@ -52,6 +61,12 @@ enum pluginState {
     notReady
 };
 
+enum ifc242xValue {
+    IFCIntensity = 0,
+    IFCDisplacement,
+    IFCTimestamp
+};
+
 
 @interface ScanMetaData : NSObject
 @property (strong, nonatomic) NSString* frame;
@@ -66,6 +81,7 @@ enum pluginState {
 @property (strong, nonatomic) NSString* user;
 @property (strong, nonatomic) NSString* units;
 @property (strong, nonatomic) NSString* num_blades;
+@property (strong, nonatomic) NSString* sensor_measurement_range;
     
 
 -(instancetype)init;
@@ -86,6 +102,7 @@ enum pluginState {
 @synthesize user = _user;
 @synthesize units = _units;
 @synthesize num_blades = _num_blades;
+@synthesize sensor_measurement_range = _sensor_measurement_range;
     
 
 -(instancetype)init {
@@ -176,10 +193,30 @@ enum pluginState {
 
 @property (strong, nonatomic) CDVIFC242x* plugin;
 
+@property (strong, nonatomic) NSString* connectionMode;
+
+//
 // RS232 connection variables
 //
-// TBD
-//
+@property (strong, nonatomic) NSThread *commThread;   // thread for communications tasks
+@property (strong, nonatomic) RscMgr *rscMgr;         // Redpark serial communications
+@property BOOL cableConnected;
+@property DataSizeType dataSizeType;
+@property ParityType parityType;
+@property StopBitsType stopBitsType;
+@property int baudRate;
+@property int dataBits;
+@property int parity;
+@property int stopBits;
+@property int rts;        // rx flow control
+@property int cts;        // tx flow control
+@property (nonatomic) uint8_t* byteBuffer;
+@property (nonatomic) uint8_t* writePtr;
+@property (nonatomic) uint8_t* readPtr;
+@property (nonatomic) uint32_t* val1Ptr;
+@property (nonatomic) int nextIFCValue;
+@property (nonatomic) BOOL nSync; // Is the data stream synchronized? I couldn't resist this name.
+@property (nonatomic) int leftoverBytes;
 
 
 - (void)callBackErrorWithMethodName:(NSString*)methodName andWithError:(NSString*)errorMessage;
@@ -228,6 +265,27 @@ enum pluginState {
     
 @synthesize kernel = _kernel;
 
+@synthesize commThread = _commThread;
+@synthesize rscMgr = _rscMgr;
+@synthesize cableConnected = _cableConnected;
+@synthesize dataSizeType = _dataSizeType;
+@synthesize parityType = _parityType;
+@synthesize stopBitsType = _stopBitsType;
+@synthesize baudRate = _baudRate;
+@synthesize dataBits = _dataBits;
+@synthesize parity = _parity;
+@synthesize stopBits = _stopBits;
+@synthesize rts = _rts;
+@synthesize cts = _cts;
+@synthesize byteBuffer = _byteBuffer;
+@synthesize readPtr = _readPtr;
+@synthesize writePtr = _writePtr;
+@synthesize val1Ptr = _val1Ptr;
+@synthesize nextIFCValue = _nextIFCValue;
+@synthesize leftoverBytes = _leftoverBytes;
+
+@synthesize connectionMode = _connectionMode;
+
 - (int)interfaceHandle {
     static int handle = 0;
     
@@ -244,6 +302,7 @@ enum pluginState {
     
     if (_manager==nil) {
         _manager = [[IFCObjectiveCManager alloc] init];
+        _manager.connectionMode = @"serial"; // default connection mode.
         _manager.measurement_rate = @"1.0";
         _manager.last_saved_file = @"";
         [_manager initializeSensor];
@@ -487,10 +546,10 @@ enum pluginState {
     self.stage_clearance = 0;
     self.demoMode = (SIMULATED_DATA == 0) ? false : true;
     self.controllerType = @"";
-    if (self.inputTelnetStream == nil) {
-        NSLog(@"connectingDevice from initializeSensor");
-        [self connectDevice:self.ipAddress port:self.telnetPort];
-    }
+    self.nextIFCValue = IFCIntensity;
+    self.nSync = false;
+    self.leftoverBytes = 0;
+    
     [self.telnetCmds removeAllObjects];
     [self.telnetCmds addObject:[NSString stringWithFormat:@"ETHERMODE ETHERNET\n"]];
     [self.telnetCmds addObject:[NSString stringWithFormat:@"OUTPUT ETHERNET\n"]];
@@ -498,8 +557,20 @@ enum pluginState {
     [self.telnetCmds addObject:[NSString stringWithFormat:@"OUT_ETH 01INTENSITY 01DIST1 TIMESTAMP\n"]];
     [self.telnetCmds addObject:[NSString stringWithFormat:@"MEASRATE 1.0\n"]];
     [self.telnetCmds addObject:[NSString stringWithFormat:@"GETINFO\n"]];
-    NSLog(@"Calling sendTelnetCommand from initializeSensor");
-    [self sendTelnetCommand];
+    
+    if ([self.connectionMode containsString:@"ethernet"]) {
+        if (self.inputTelnetStream == nil) {
+            NSLog(@"connectingDevice from initializeSensor");
+            [self connectDevice:self.ipAddress port:self.telnetPort];
+        }
+
+        NSLog(@"Calling sendTelnetCommand from initializeSensor");
+        [self sendTelnetCommand];
+    }
+    else if ([self.connectionMode containsString:@"serial"]) {
+        [self setupSerialCable];
+    }
+
 }
 
 - (void)masterDevice {
@@ -785,6 +856,24 @@ enum pluginState {
             [self initializeSensor];
         }
     }
+    if ([cmd containsString:@"set_connection_mode"]) {
+        NSString* mode = [msgArray objectAtIndex:1];
+        NSLog(@"Recieved set_connection_mode:%@",mode);
+        NSString* msgStr;
+        if ([mode containsString:@"serial"]) {
+            self.connectionMode = @"serial";
+            msgStr = @"App is now using serial connection.";
+        }
+        else {
+            self.connectionMode = @"ethernet";
+            msgStr = @"App is now using ethernet connection.";
+        }
+        [self initializeSensor];
+        NSDictionary* jsonDict = @{@"type":@"alert",@"message":msgStr};
+        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];
+        result.keepCallback = [NSNumber numberWithBool:YES];
+        [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+    }
     else {
         NSLog(@"Got %@",msg);
     }
@@ -804,6 +893,7 @@ enum pluginState {
     self.metaData.user = @"";
     self.metaData.units = @"";
     self.metaData.num_blades = @"";
+    self.metaData.sensor_measurement_range = @SENSOR_MEASUREMENT_RANGE;
 }
 
 // Should be self-explanitory.
@@ -1708,6 +1798,284 @@ enum pluginState {
 
     [handle closeFile];
 }
+
+//
+// RS232 Serial Cable additions
+//
+
+// For IFC242x controller user 8N1 configuration.
+- (void)setupSerialCable {
+    NSLog(@"@setupSerialCable");
+    
+    if (self.byteBuffer == nil) {
+        self.byteBuffer = (uint8_t *) malloc(BYTE_BUFFER_SIZE);
+        self.readPtr = self.byteBuffer;
+        self.writePtr = self.byteBuffer;
+        self.val1Ptr = (uint32_t*)self.readPtr;
+    }
+    
+    [self.rscMgr enableExternalLogging:false];
+    [self.rscMgr enableTxRxExternalLogging:false];
+    
+    self.dataSizeType = SERIAL_DATABITS_8;
+    self.parityType =     SERIAL_PARITY_NONE;
+    self.stopBitsType = STOPBITS_1;
+    self.rts = RXFLOW_NONE;
+    self.cts = RXFLOW_NONE;
+    self.baudRate = 115200;
+
+    // set baud rate, data bits, parity, and stop bits
+    [self.rscMgr setBaud:self.baudRate];
+    [self.rscMgr setDataSize:self.dataSizeType];
+    [self.rscMgr setParity:self.parityType];
+    [self.rscMgr setStopBits:self.stopBitsType];
+
+    serialPortConfig portCfg;
+    [self.rscMgr getPortConfig:&portCfg];
+    portCfg.txAckSetting = 1;
+    portCfg.rxFlowControl = self.rts;    // set flow control
+    portCfg.txFlowControl = self.cts;
+    [self.rscMgr setPortConfig:&portCfg requestStatus: NO];
+    
+    // Create and start the comm thread.  We'll use this thread to manage the rscMgr so
+    // we don't tie up the UI thread.
+    if (self.commThread == nil) {
+        self.commThread = [[NSThread alloc] initWithTarget:self
+                                             selector:@selector(startCommThread:)
+                                               object:nil];
+        [self.commThread start];  // Actually create the thread
+    }
+}
+
+// start the communication thread
+- (void) startCommThread:(id)object {
+    NSLog(@"@startCommThread");
+
+    // initialize RscMgr on this thread
+    // so it schedules delegate callbacks for this thread
+    self.rscMgr = [[RscMgr alloc] init];
+    
+    [self.rscMgr setDelegate:self];
+    
+    // run the run loop
+    [[NSRunLoop currentRunLoop] run];
+}
+
+- (void)sendSerialData:(NSString*)cmd {
+    NSLog(@"@sendSerialData: %@",cmd);
+    [self.rscMgr writeString:cmd];
+}
+
+// bytes are available to be read (user calls read:)
+- (void) readBytesAvailable:(UInt32)length {
+    //NSString *str = [rscMgr getStringFromBytesAvailable];
+    NSData* rxBytes = [self.rscMgr getDataFromBytesAvailable];
+    //NSString* str = [[NSString alloc] initWithData:rxBytes encoding:NSASCIIStringEncoding];
+    NSString* str = @"";
+    
+    if ([str length] != 0) {       // avoid outputting empty strings
+        //str = [str stringByAppendingString:@"  - Rx"];
+        NSLog(@"Got string: %@",str);
+    }
+    if (rxBytes.length != 0) {
+        NSLog(@"Got %lu bytes.", (unsigned long)rxBytes.length);
+        [self parseSerialData:rxBytes];
+    }
+}
+
+- (void)parseSerialData:(NSData*)data {
+    NSLog(@"@parseSerialData");
+    // Copy the data to the buffer in a circular fashion.
+    const uint8_t* dPtr = [data bytes];
+    uint32_t mask = 0xC0C0C000; // mask of the upper 3 bytes with the expected pattern.
+    uint8_t* endPtr = &self.byteBuffer[BYTE_BUFFER_SIZE-1];
+    uint32_t v1;
+    self.val1Ptr = &v1;
+    for (int i=0; i<data.length; i++) {
+        *self.writePtr = *dPtr++;
+        //advance the write pointer 1 byte forward, wrapping as needed.
+        (self.writePtr == endPtr) ? (self.writePtr = self.byteBuffer) : self.writePtr++;
+    }
+
+    // We shouldn't have to scan through more than 9 bytes to find the data.
+    // "AND" the data with the mask and compare to the expected value to find the
+    // pattern.  This is for initial synchronization only.
+    
+    // If we were in sync, check to see if we still are.  It has been known to get out of sync.
+    // copy next 4 bytes into v1 to check them.
+    uint8_t* fromPtr = self.readPtr;
+    uint8_t* toPtr = (uint8_t*)self.val1Ptr;
+    for (int i=0; i< 4; i++) {
+        *toPtr = *fromPtr;
+        (fromPtr == endPtr) ? (fromPtr = self.byteBuffer) : fromPtr++;
+        toPtr++;
+    }
+    int offset = 0;
+    if (self.nSync) {
+        v1 = v1 & mask;
+        bool syncFail = false;
+        if (self.nextIFCValue == IFCIntensity) {
+            if (v1 != (uint32_t)0x00804000) {
+                syncFail = true;
+            }
+        }
+        else if (self.nextIFCValue == IFCDisplacement) {
+            if (v1 != (uint32_t)0x00C04000) {
+                syncFail = true;
+            }
+        }
+        else if (self.nextIFCValue == IFCTimestamp) {
+            if (v1 != (uint32_t)0x00C04000) {
+                syncFail = true;
+            }
+        }
+        if (syncFail) {
+            self.nSync = false;
+            self.val1Ptr = (uint32_t*)self.readPtr;
+        }
+    }
+    if (!self.nSync) {
+        for (offset=0; offset<9; offset++) {
+            v1 = v1 & mask;
+            if (v1 == (uint32_t)0x00804000) {
+                NSLog(@"Found the pattern at offset %d!",offset);
+                // we found the pattern.
+                self.nSync = true;
+                break;
+            }
+            else {
+                //advance the read pointer 1 byte forward, wrapping as needed.
+                (self.readPtr == endPtr) ? (self.readPtr = self.byteBuffer) : self.readPtr++;
+                // copy next 4 bytes into v1 to check them.
+                fromPtr = self.readPtr;
+                toPtr = (uint8_t*)self.val1Ptr;
+                for (int i=0; i< 4; i++) {
+                    *toPtr = *fromPtr;
+                    (fromPtr == endPtr) ? (fromPtr = self.byteBuffer) : fromPtr++;
+                    toPtr++;
+                }
+            }
+        }
+    }
+    // readPtr should now be at the start of the data.
+    /* Byte printing for debugging
+    uint8_t* tmpPtr = self.readPtr;
+    printf("Before: Next 8 bytes: ");
+    for (int k=0; k<8; k++) {
+        printf("%02X ", (0xff & *tmpPtr));
+        (tmpPtr == endPtr) ? (tmpPtr = self.byteBuffer) : tmpPtr++;
+    }
+    printf("\n");
+    */
+    
+    // Subtract the number of bytes we had to skip to get synced.  Add any leftover from previous frames.
+    int numBytesLeft = (int)[data length] - offset + self.leftoverBytes;
+    int numValues = (int)floor(numBytesLeft/3.0); // 3 bytes per value
+    self.leftoverBytes = numBytesLeft - (numValues * 3);
+    uint32_t ival = 0;
+    uint32_t dval = 0;
+    float displacement = 0;
+    uint32_t tval = 0;
+    NSString* logStr = @"";
+    for (int j=0; j<numValues; j++) {
+        if (self.nextIFCValue == IFCIntensity) {
+            ival = 0;
+            ival = (uint32_t)(*self.readPtr & 0x3F);
+            (self.readPtr == endPtr) ? (self.readPtr = self.byteBuffer) : self.readPtr++; // wrap pointer if needed.
+            ival = ival | ((*self.readPtr & 0x3F) << 6);
+            (self.readPtr == endPtr) ? (self.readPtr = self.byteBuffer) : self.readPtr++;
+            ival = ival | ((*self.readPtr & 0x3F) << 12);
+            (self.readPtr == endPtr) ? (self.readPtr = self.byteBuffer) : self.readPtr++;
+            NSString* log = [NSString stringWithFormat:@"I:%d: ",ival];
+            logStr = [logStr stringByAppendingString:log];
+            self.nextIFCValue = IFCDisplacement;
+        }
+        else if (self.nextIFCValue == IFCDisplacement) {
+            dval = 0;
+            dval = (uint32_t)(*self.readPtr & 0x3F);
+            (self.readPtr == endPtr) ? (self.readPtr = self.byteBuffer) : self.readPtr++; // wrap pointer if needed.
+            dval = dval | ((*self.readPtr & 0x3F) << 6);
+            (self.readPtr == endPtr) ? (self.readPtr = self.byteBuffer) : self.readPtr++;
+            dval = dval | ((*self.readPtr & 0x3F) << 12);
+            (self.readPtr == endPtr) ? (self.readPtr = self.byteBuffer) : self.readPtr++;
+            displacement = ((float)dval - 98232.0) * [self.metaData.sensor_measurement_range floatValue] / 65536.0;
+            NSString* log = [NSString stringWithFormat:@"D:%f: ", displacement];
+            logStr = [logStr stringByAppendingString:log];
+            self.nextIFCValue = IFCTimestamp;
+        }
+        else if (self.nextIFCValue == IFCTimestamp) {
+            tval = 0;
+            tval = (uint32_t)(*self.readPtr & 0x3F);
+            (self.readPtr == endPtr) ? (self.readPtr = self.byteBuffer) : self.readPtr++; // wrap pointer if needed.
+            tval = tval | ((*self.readPtr & 0x3F) << 6);
+            (self.readPtr == endPtr) ? (self.readPtr = self.byteBuffer) : self.readPtr++;
+            tval = tval | ((*self.readPtr & 0x3F) << 12);
+            (self.readPtr == endPtr) ? (self.readPtr = self.byteBuffer) : self.readPtr++;
+            NSString* log = [NSString stringWithFormat:@"T:%d: ",tval];
+            logStr = [logStr stringByAppendingString:log];
+            self.nextIFCValue = IFCIntensity;
+        }
+    }
+    NSLog(@"%@",logStr);
+    
+    /* Byte printing for debugging
+    tmpPtr = self.readPtr;
+    (tmpPtr == self.byteBuffer) ? (tmpPtr = endPtr) : tmpPtr--; // back up pointer with wrap
+    (tmpPtr == self.byteBuffer) ? (tmpPtr = endPtr) : tmpPtr--; // back up pointer with wrap
+    (tmpPtr == self.byteBuffer) ? (tmpPtr = endPtr) : tmpPtr--; // back up pointer with wrap
+    printf("After: Last 3 and Next 8 bytes: ");
+    for (int k=0; k<11; k++) {
+        printf("%02X ", (0xff & *tmpPtr));
+        (tmpPtr == endPtr) ? (tmpPtr = self.byteBuffer) : tmpPtr++;
+    }
+    printf("\n");
+    */
+}
+
+
+// serial port status has changed
+// user can call getModemStatus or getPortStatus to get current state
+- (void) portStatusChanged {
+    NSLog(@"@portStatusChanged");
+
+    int modemStatus = [self.rscMgr getModemStatus];
+    static serialPortStatus portStat;
+    
+    NSLog(@"PortStatus: msr:%02x", modemStatus);
+    
+    [self.rscMgr getPortStatus:&portStat];
+
+}
+
+
+// Redpark Serial Cable has been connected and/or application moved to foreground.
+// protocol is the string which matched from the protocol list passed to initWithProtocol:
+- (void) cableConnected:(NSString *)protocol {
+    NSLog(@"@cableConnected");
+
+    self.cableConnected = YES;
+    
+    // set baud rate, data bits, parity, and stop bits
+    [self.rscMgr setBaud:self.baudRate];
+    [self.rscMgr setDataSize:self.dataSizeType];
+    [self.rscMgr setParity:self.parityType];
+    [self.rscMgr setStopBits:self.stopBitsType];
+    
+    serialPortConfig portCfg;
+    [self.rscMgr getPortConfig:&portCfg];
+    portCfg.txAckSetting = 1;
+    portCfg.rxFlowControl = self.rts;     // set flow control options
+    portCfg.txFlowControl = self.cts;
+    [self.rscMgr setPortConfig:&portCfg requestStatus: NO];
+    
+}
+
+// Redpark Serial Cable was disconnected and/or application moved to background
+- (void) cableDisconnected {
+    NSLog(@"@cableDisconnected");
+    self.cableConnected = NO;
+}
+
 
 @end
 

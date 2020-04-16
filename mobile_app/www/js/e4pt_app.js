@@ -264,6 +264,24 @@ $(document).ready(function(){
         document.getElementById('MODE_INDICATOR').style.display = 'none';
         set_demo_mode("false");
     }, {passive: true});
+    document.getElementById("CONN_BUTTON_ETHERNET").addEventListener('click', function(){
+        document.getElementById('CONN_BUTTON_ETHERNET').style.display = 'none'; //hide
+        document.getElementById('CONN_BUTTON_SERIAL').style.display = 'block';
+        $("#CONNECTION_NAME").text('ETHERNET');
+        $("#CUR_CONN").text('Current Connection: ETHERNET');
+        document.getElementById('CONNECTION_NAME').style.fontSize = "2vmin";
+        document.getElementById('CONNECTION_NAME').style.display = 'block';
+        set_connection_mode("ethernet");
+    }, {passive: true});
+    document.getElementById("CONN_BUTTON_SERIAL").addEventListener('click', function(){
+        document.getElementById('CONN_BUTTON_SERIAL').style.display = 'none'; //hide
+        document.getElementById('CONN_BUTTON_ETHERNET').style.display = 'block';
+        $("#CONNECTION_NAME").text('SERIAL');
+        $("#CUR_CONN").text('Current Connection: SERIAL');
+        document.getElementById('CONNECTION_NAME').style.fontSize = "2vmin";
+        document.getElementById('CONNECTION_NAME').style.display = 'block';
+        set_connection_mode("serial");
+    }, {passive: true});
     document.getElementById("SETUP_CLOSE_BUTTON").addEventListener('click', function(){
         $("#FRD_PAGE").fadeOut();
     }, {passive: true});
@@ -372,6 +390,20 @@ function toggle_menu() {
 
 function set_demo_mode(tf) {
     var message = {"args":["set_demo_mode",tf]};
+    if (communicationChannel == "WebSocket") {
+        message = JSON.stringify(message);
+        sendWSMessage(message);
+    }
+    else if (communicationChannel == "Plugin") {
+        window.plugins.IFC242x.messageToDevice(message, function(msg) {
+                                               pluginMessage(msg);
+                                               }, null);
+    }
+}
+
+function set_connection_mode(mode) {
+    console.log("@set_connection_mode");
+    var message = {"args":["set_connection_mode",mode]};
     if (communicationChannel == "WebSocket") {
         message = JSON.stringify(message);
         sendWSMessage(message);
