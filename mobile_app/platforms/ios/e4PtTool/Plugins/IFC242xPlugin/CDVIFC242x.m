@@ -58,6 +58,7 @@ enum pluginState {
     darkReferenceInProgress,
     setMeasurementRateInProgress,
     setThresholdInProgress,
+    collectingDataInProgress,
     notReady
 };
 
@@ -163,7 +164,8 @@ enum ifc242xValue {
 
 // Variables needed for data collection.
 @property (nonatomic) int tmpCounter;
-@property (nonatomic) enum pluginState pState;
+//@property (nonatomic) enum pluginState pState;
+@property (nonatomic) int pState;
 @property (strong, nonatomic) NSMutableArray* telnetCmds;
 @property (strong, nonatomic) NSString* mode; // "ethernet" or "serial"
 @property (strong, nonatomic) ScanMetaData* metaData;
@@ -474,12 +476,19 @@ enum ifc242xValue {
     NSLog (@"  command: %@", command);
     if (self.telnetIsReady) {
         // send the command
-        NSData* cmdData = [[NSData alloc] initWithData:[command dataUsingEncoding:NSUTF8StringEncoding]];
-        [self.outputTelnetStream write:(const unsigned char*)[cmdData bytes] maxLength:[cmdData length]];
+        if ([self.connectionMode containsString:@"ethernet"]) {
+            NSData* cmdData = [[NSData alloc] initWithData:[command dataUsingEncoding:NSUTF8StringEncoding]];
+            [self.outputTelnetStream write:(const unsigned char*)[cmdData bytes] maxLength:[cmdData length]];
+        }
+        if ([self.connectionMode containsString:@"serial"]) {
+            [self sendSerialData:command];
+        }
+        
+        // Remove the command that was just sent
         [self.telnetCmds removeObjectAtIndex:0];
-        // disable the timer
+        
+        // Disable the timer if we've run out of commands to send.
         if ([self.telnetCmds count] == 0) {
-            // Turn off the timer if there are no more commands to send.
             dispatch_async(dispatch_get_main_queue(), ^{
                 [timer invalidate];
             });
@@ -488,10 +497,16 @@ enum ifc242xValue {
     }
     else {
         NSLog(@"  telnet is not ready yet...");
-        if (self.outputTelnetStream != nil) {
-            NSString* command = @"\n";
-            NSData* cmdData = [[NSData alloc] initWithData:[command dataUsingEncoding:NSUTF8StringEncoding]];
-            [self.outputTelnetStream write:(const unsigned char*)[cmdData bytes] maxLength:[cmdData length]];
+        if ([self.connectionMode containsString:@"ethernet"]){
+            if (self.outputTelnetStream != nil) {
+                NSString* command = @"\n";
+                NSData* cmdData = [[NSData alloc] initWithData:[command dataUsingEncoding:NSUTF8StringEncoding]];
+                [self.outputTelnetStream write:(const unsigned char*)[cmdData bytes] maxLength:[cmdData length]];
+            }
+        }
+        if ([self.connectionMode containsString:@"serial"]){
+            NSLog(@"   coaxing it...");
+            [self sendSerialData:@"OUTPUT NONE\n"];
         }
     }
 }
@@ -503,10 +518,12 @@ enum ifc242xValue {
     // The controller will automatically disconnect the telnet port after a period
     // of inactivity.  If this happens we have to reconnect the port before sending
     // commands.
-    if (self.outputTelnetStream == nil) {
-        // attempt reconnect
-        NSLog(@"  Attempting to (re)connect to telnet port.");
-        [self connectDevice:self.ipAddress port:self.telnetPort];
+    if ([self.connectionMode containsString:@"ethernet"]) {
+        if (self.outputTelnetStream == nil) {
+            // attempt reconnect
+            NSLog(@"  Attempting to (re)connect to telnet port.");
+            [self connectDevice:self.ipAddress port:self.telnetPort];
+        }
     }
     
     NSLog(@"@sendTelnetCommand: number of queued commands: %lu", (unsigned long)self.telnetCmds.count);
@@ -555,7 +572,9 @@ enum ifc242xValue {
     [self.telnetCmds addObject:[NSString stringWithFormat:@"OUTPUT ETHERNET\n"]];
     [self.telnetCmds addObject:[NSString stringWithFormat:@"MEASTRANSFER SERVER/TCP 1024\n"]];
     [self.telnetCmds addObject:[NSString stringWithFormat:@"OUT_ETH 01INTENSITY 01DIST1 TIMESTAMP\n"]];
+    [self.telnetCmds addObject:[NSString stringWithFormat:@"OUT_RS422 01INTENSITY 01DIST1 TIMESTAMP\n"]];
     [self.telnetCmds addObject:[NSString stringWithFormat:@"MEASRATE 1.0\n"]];
+    [self.telnetCmds addObject:[NSString stringWithFormat:@"OUTPUT NONE\n"]]; // turns off output.
     [self.telnetCmds addObject:[NSString stringWithFormat:@"GETINFO\n"]];
     
     if ([self.connectionMode containsString:@"ethernet"]) {
@@ -569,6 +588,7 @@ enum ifc242xValue {
     }
     else if ([self.connectionMode containsString:@"serial"]) {
         [self setupSerialCable];
+        [self sendTelnetCommand];
     }
 
 }
@@ -587,6 +607,7 @@ enum ifc242xValue {
     [self.telnetCmds addObject:[NSString stringWithFormat:@"MASTERSIGNAL 01DIST1 NONE\n"]];
     [self.telnetCmds addObject:[NSString stringWithFormat:@"MASTERSIGNAL 01DIST1 5.0\n"]];
     [self.telnetCmds addObject:[NSString stringWithFormat:@"MASTER 01DIST1 SET\n"]];
+    [self.telnetCmds addObject:[NSString stringWithFormat:@"MASTER 01DIST1 ACTIVE\n"]];
     [self sendTelnetCommand];
 }
 
@@ -651,20 +672,27 @@ enum ifc242xValue {
 
 - (void)disconnectData {
     NSLog(@"@disconnectData.");
-    if (self.inputDataStream != nil)
-        [self.inputDataStream removeFromRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
-    if (self.outputDataStream != nil)
-        [self.outputDataStream removeFromRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
-    // apple documentation also says to set delegate connection to nil (how?)
-    if (self.inputDataStream != nil) {
-        [self.inputDataStream close];
-        self.inputDataStream = nil;
+    
+    if ([self.connectionMode containsString:@"ethernet"]) {
+        if (self.inputDataStream != nil)
+            [self.inputDataStream removeFromRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
+        if (self.outputDataStream != nil)
+            [self.outputDataStream removeFromRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
+        // apple documentation also says to set delegate connection to nil (how?)
+        if (self.inputDataStream != nil) {
+            [self.inputDataStream close];
+            self.inputDataStream = nil;
+        }
+        if (self.outputDataStream != nil) {
+            [self.outputDataStream close];
+            self.outputDataStream = nil;
+        }
+        self.dataStreamIsOpen = false;
     }
-    if (self.outputDataStream != nil) {
-        [self.outputDataStream close];
-        self.outputDataStream = nil;
+    if ([self.connectionMode containsString:@"serial"]) {
+         // Can't send this the telnet way because data is blasting through.
+        [self sendSerialData:@"OUTPUT NONE\n"];
     }
-    self.dataStreamIsOpen = false;
 }
 
 - (void)disconnectTelnet {
@@ -719,10 +747,20 @@ enum ifc242xValue {
             self.metaData.spacer_thickness = [msgArray objectAtIndex:7];
             self.metaData.num_blades = [msgArray objectAtIndex:8];
         }
-        // 100 samples/frame, measurement rate is in kHz.
-        float nSets = [self.measurement_rate floatValue] * 1000.0 * [acqTime floatValue] / 100.0;
-        int num_sets = ceil(nSets); // Round up.
         
+        int num_sets = 0;
+        float nSets = 0.0;
+        float meas_rate = [self.measurement_rate floatValue] * 1000; // measurement_rate is in kHz.
+        if ([self.connectionMode containsString:@"ethernet"]) {
+            // 100 samples/frame, measurement rate is in kHz.
+            nSets = [self.measurement_rate floatValue] * meas_rate * [acqTime floatValue] / 100.0;
+        }
+        if ([self.connectionMode containsString:@"serial"]) {
+            float dataSetsPerFrame = 62.0/9.0; // 62 bytes/Rx frame; 9 bytes per dataSet (3 each, Inten., Disp., & Time)
+            nSets = [self.measurement_rate floatValue] * meas_rate * [acqTime floatValue] / dataSetsPerFrame;
+        }
+        num_sets = ceil(nSets); // Round up.
+
         if (!self.demoMode) {
             // now call collect data with the acquisition time.
             [self collectData:num_sets casingThickness:[self.metaData.casing_thickness floatValue]];
@@ -931,8 +969,17 @@ enum ifc242xValue {
         [self clearData];
     }
 
-    // Connect the device to collect the data.
-    [self connectDevice:self.ipAddress port:self.dataPort];
+    if ([self.connectionMode containsString:@"ethernet"]) {
+        // Connect the device to collect the data.
+        [self.telnetCmds addObject:@"OUTPUT ETHERNET\n"];
+        [self sendTelnetCommand];
+        [self connectDevice:self.ipAddress port:self.dataPort];
+    }
+    if ([self.connectionMode containsString:@"serial"]) {
+        [self.telnetCmds addObject:@"OUTPUT RS422\n"];
+        [self sendTelnetCommand];
+        //[self setupSerialCable];
+    }
     
 }
 
@@ -1143,6 +1190,8 @@ enum ifc242xValue {
                         [self computeClearance];
                         
                         [self returnData];
+                        [self.telnetCmds addObject:@"OUTPUT NONE\n"];
+                        [self sendTelnetCommand];
                         
                     } // end of if ([self.inputDataStream hasBytesAvailable])
                     if ([self.inputTelnetStream hasBytesAvailable]) {
@@ -1154,54 +1203,8 @@ enum ifc242xValue {
                             NSLog(@"  Short read: Only read %lu bytes", (unsigned long)tmpStr.length);
                             return;
                         }
-                        NSString* prompt = [tmpStr substringFromIndex: [tmpStr length] - 2];
-                        if ([tmpStr containsString:@"IFC2422"]) {
-                            NSLog(@"Controller is IFC2422");
-                            self.controllerType = @"IFC2422";
-                        }
-                        if ([tmpStr containsString:@"IFC2421"]) {
-                            NSLog(@"Controller is IFC2421");
-                            self.controllerType = @"IFC2421";
-                        }
-                        if ([prompt containsString:@"->"]) {
-                            NSLog(@"Got telnet prompt");
-                            self.telnetIsReady = true;
-                            if (self.pState == initializationInProgress) {
-                                if (self.telnetCmds.count == 0) {
-                                    [self processComplete:@"connected"];
-                                }
-                            }
-                            if (self.pState == setMeasurementRateInProgress) {
-                                NSLog(@"Set measurement rate complete");
-                                [self processComplete:@"connected"];
-                            }
-                            if (self.pState == setThresholdInProgress) {
-                                NSLog(@"Set threshold complete");
-                                [self processComplete:@"connected"];
-                            }
-                            if (self.pState == darkReferenceInProgress) {
-                                NSLog(@"Dark Correction Complete.");
-                                [self processComplete:@"connected"];
-                            }
-                            if (self.pState == masteringInProgress) {
-                                // Check for mastering commands still in the queue.  If there are none, then
-                                // mastering is complete.  If there are still mastering commands in the queue
-                                // then mastering is not complete.
-                                bool foundMasterCommand = false;
-                                for (NSString* cmd in self.telnetCmds) {
-                                    if ([cmd containsString:@"MASTER"]) {
-                                        foundMasterCommand = true;
-                                    }
-                                }
-                                if (!foundMasterCommand) {
-                                    NSLog(@"Mastering Complete.");
-                                    [self processComplete:@"done_mastering"];
-                                }
-                            }
-                        }
-                        else {
-                            NSLog(@"TN: %@",tmpStr);
-                        }
+                        [self processResponse:tmpStr];
+                        
                     }
                     break;
                 }
@@ -1249,6 +1252,64 @@ enum ifc242xValue {
             } // switch
         } // if datastream found
     });
+}
+
+- (void)processResponse:(NSString*)rxData {
+    NSLog(@"@processResponse");
+    NSString* prompt = @"";
+    if (rxData.length > 1) {
+        prompt = [rxData substringFromIndex: [rxData length] - 2];
+        NSLog(@"prompt: %@",prompt);
+    }
+    else {
+        return;
+    }
+        
+    if ([rxData containsString:@"IFC2422"]) {
+        NSLog(@"Controller is IFC2422");
+        self.controllerType = @"IFC2422";
+    }
+    if ([rxData containsString:@"IFC2421"]) {
+        NSLog(@"Controller is IFC2421");
+        self.controllerType = @"IFC2421";
+    }
+    if ([prompt containsString:@"->"]) {
+        NSLog(@"Got telnet prompt");
+        self.telnetIsReady = true;
+        if (self.pState == initializationInProgress) {
+            if (self.telnetCmds.count == 0) {
+                [self processComplete:@"connected"];
+            }
+        }
+        if (self.pState == setMeasurementRateInProgress) {
+            NSLog(@"Set measurement rate complete");
+            [self processComplete:@"connected"];
+        }
+        if (self.pState == setThresholdInProgress) {
+            NSLog(@"Set threshold complete");
+            [self processComplete:@"connected"];
+        }
+        if (self.pState == darkReferenceInProgress) {
+            NSLog(@"Dark Correction Complete.");
+            [self processComplete:@"connected"];
+        }
+        if (self.pState == masteringInProgress) {
+            // Check for mastering commands still in the queue.  If there are none, then
+            // mastering is complete.  If there are still mastering commands in the queue
+            // then mastering is not complete.
+            bool foundMasterCommand = false;
+            for (NSString* cmd in self.telnetCmds) {
+                if ([cmd containsString:@"MASTER"]) {
+                    foundMasterCommand = true;
+                }
+            }
+            if (!foundMasterCommand) {
+                NSLog(@"Mastering Complete.");
+                [self processComplete:@"done_mastering"];
+            }
+        }
+    }
+    NSLog(@"Returning from processResponse");
 }
 
 - (void)returnData {
@@ -1885,151 +1946,199 @@ enum ifc242xValue {
 
 - (void)parseSerialData:(NSData*)data {
     NSLog(@"@parseSerialData");
-    // Copy the data to the buffer in a circular fashion.
-    const uint8_t* dPtr = [data bytes];
-    uint32_t mask = 0xC0C0C000; // mask of the upper 3 bytes with the expected pattern.
-    uint8_t* endPtr = &self.byteBuffer[BYTE_BUFFER_SIZE-1];
-    uint32_t v1;
-    self.val1Ptr = &v1;
-    for (int i=0; i<data.length; i++) {
-        *self.writePtr = *dPtr++;
-        //advance the write pointer 1 byte forward, wrapping as needed.
-        (self.writePtr == endPtr) ? (self.writePtr = self.byteBuffer) : self.writePtr++;
-    }
-
-    // We shouldn't have to scan through more than 9 bytes to find the data.
-    // "AND" the data with the mask and compare to the expected value to find the
-    // pattern.  This is for initial synchronization only.
     
-    // If we were in sync, check to see if we still are.  It has been known to get out of sync.
-    // copy next 4 bytes into v1 to check them.
-    uint8_t* fromPtr = self.readPtr;
-    uint8_t* toPtr = (uint8_t*)self.val1Ptr;
-    for (int i=0; i< 4; i++) {
-        *toPtr = *fromPtr;
-        (fromPtr == endPtr) ? (fromPtr = self.byteBuffer) : fromPtr++;
-        toPtr++;
+    if ((self.pState == masteringInProgress) ||
+        (self.pState == darkReferenceInProgress) ||
+        (self.pState == initializationInProgress) ||
+        (self.pState == setMeasurementRateInProgress) ||
+        (self.pState == setThresholdInProgress)) {
+        NSString* response = [[NSString alloc] initWithData:data encoding:NSASCIIStringEncoding];
+        NSLog(@"parseSerial: Got: %@",response);
+        [self processResponse:response];
+        return;
     }
-    int offset = 0;
-    if (self.nSync) {
-        v1 = v1 & mask;
-        bool syncFail = false;
-        if (self.nextIFCValue == IFCIntensity) {
-            if (v1 != (uint32_t)0x00804000) {
-                syncFail = true;
-            }
-        }
-        else if (self.nextIFCValue == IFCDisplacement) {
-            if (v1 != (uint32_t)0x00C04000) {
-                syncFail = true;
-            }
-        }
-        else if (self.nextIFCValue == IFCTimestamp) {
-            if (v1 != (uint32_t)0x00C04000) {
-                syncFail = true;
-            }
-        }
-        if (syncFail) {
-            self.nSync = false;
-            self.val1Ptr = (uint32_t*)self.readPtr;
-        }
-    }
-    if (!self.nSync) {
-        for (offset=0; offset<9; offset++) {
-            v1 = v1 & mask;
-            if (v1 == (uint32_t)0x00804000) {
-                NSLog(@"Found the pattern at offset %d!",offset);
-                // we found the pattern.
-                self.nSync = true;
-                break;
-            }
-            else {
-                //advance the read pointer 1 byte forward, wrapping as needed.
-                (self.readPtr == endPtr) ? (self.readPtr = self.byteBuffer) : self.readPtr++;
-                // copy next 4 bytes into v1 to check them.
-                fromPtr = self.readPtr;
-                toPtr = (uint8_t*)self.val1Ptr;
-                for (int i=0; i< 4; i++) {
-                    *toPtr = *fromPtr;
-                    (fromPtr == endPtr) ? (fromPtr = self.byteBuffer) : fromPtr++;
-                    toPtr++;
+    else {
+        if (data.length >= 4) {
+            NSString* response = [[NSString alloc] initWithData:data encoding:NSASCIIStringEncoding];
+            if (response != nil) {
+                if ([response containsString:@"->"]) {
+                    [self processResponse:response];
+                    return;
                 }
             }
         }
     }
-    // readPtr should now be at the start of the data.
-    /* Byte printing for debugging
-    uint8_t* tmpPtr = self.readPtr;
-    printf("Before: Next 8 bytes: ");
-    for (int k=0; k<8; k++) {
-        printf("%02X ", (0xff & *tmpPtr));
-        (tmpPtr == endPtr) ? (tmpPtr = self.byteBuffer) : tmpPtr++;
-    }
-    printf("\n");
-    */
     
-    // Subtract the number of bytes we had to skip to get synced.  Add any leftover from previous frames.
-    int numBytesLeft = (int)[data length] - offset + self.leftoverBytes;
-    int numValues = (int)floor(numBytesLeft/3.0); // 3 bytes per value
-    self.leftoverBytes = numBytesLeft - (numValues * 3);
-    uint32_t ival = 0;
-    uint32_t dval = 0;
-    float displacement = 0;
-    uint32_t tval = 0;
-    NSString* logStr = @"";
-    for (int j=0; j<numValues; j++) {
-        if (self.nextIFCValue == IFCIntensity) {
-            ival = 0;
-            ival = (uint32_t)(*self.readPtr & 0x3F);
-            (self.readPtr == endPtr) ? (self.readPtr = self.byteBuffer) : self.readPtr++; // wrap pointer if needed.
-            ival = ival | ((*self.readPtr & 0x3F) << 6);
-            (self.readPtr == endPtr) ? (self.readPtr = self.byteBuffer) : self.readPtr++;
-            ival = ival | ((*self.readPtr & 0x3F) << 12);
-            (self.readPtr == endPtr) ? (self.readPtr = self.byteBuffer) : self.readPtr++;
-            NSString* log = [NSString stringWithFormat:@"I:%d: ",ival];
-            logStr = [logStr stringByAppendingString:log];
-            self.nextIFCValue = IFCDisplacement;
+    // For receiving serial measurement data...
+    int pt_count = (int)floor((float)(data.length)/9.0); // 9 bytes per data point.
+    if (self.set_count < self.num_sets) {
+        
+        // Copy the data to the buffer in a circular fashion.
+        const uint8_t* dPtr = [data bytes];
+        uint32_t mask = 0xC0C0C000; // mask of the upper 3 bytes with the expected pattern.
+        uint8_t* endPtr = &self.byteBuffer[BYTE_BUFFER_SIZE-1];
+        uint32_t v1;
+        self.val1Ptr = &v1;
+        for (int i=0; i<data.length; i++) {
+            *self.writePtr = *dPtr++;
+            //advance the write pointer 1 byte forward, wrapping as needed.
+            (self.writePtr == endPtr) ? (self.writePtr = self.byteBuffer) : self.writePtr++;
         }
-        else if (self.nextIFCValue == IFCDisplacement) {
-            dval = 0;
-            dval = (uint32_t)(*self.readPtr & 0x3F);
-            (self.readPtr == endPtr) ? (self.readPtr = self.byteBuffer) : self.readPtr++; // wrap pointer if needed.
-            dval = dval | ((*self.readPtr & 0x3F) << 6);
-            (self.readPtr == endPtr) ? (self.readPtr = self.byteBuffer) : self.readPtr++;
-            dval = dval | ((*self.readPtr & 0x3F) << 12);
-            (self.readPtr == endPtr) ? (self.readPtr = self.byteBuffer) : self.readPtr++;
-            displacement = ((float)dval - 98232.0) * [self.metaData.sensor_measurement_range floatValue] / 65536.0;
-            NSString* log = [NSString stringWithFormat:@"D:%f: ", displacement];
-            logStr = [logStr stringByAppendingString:log];
-            self.nextIFCValue = IFCTimestamp;
+        
+        // We shouldn't have to scan through more than 9 bytes to find the data.
+        // "AND" the data with the mask and compare to the expected value to find the
+        // pattern.  This is for initial synchronization only.
+        
+        // If we were in sync, check to see if we still are.  It has been known to get out of sync.
+        // copy next 4 bytes into v1 to check them.
+        uint8_t* fromPtr = self.readPtr;
+        uint8_t* toPtr = (uint8_t*)self.val1Ptr;
+        for (int i=0; i< 4; i++) {
+            *toPtr = *fromPtr;
+            (fromPtr == endPtr) ? (fromPtr = self.byteBuffer) : fromPtr++;
+            toPtr++;
         }
-        else if (self.nextIFCValue == IFCTimestamp) {
-            tval = 0;
-            tval = (uint32_t)(*self.readPtr & 0x3F);
-            (self.readPtr == endPtr) ? (self.readPtr = self.byteBuffer) : self.readPtr++; // wrap pointer if needed.
-            tval = tval | ((*self.readPtr & 0x3F) << 6);
-            (self.readPtr == endPtr) ? (self.readPtr = self.byteBuffer) : self.readPtr++;
-            tval = tval | ((*self.readPtr & 0x3F) << 12);
-            (self.readPtr == endPtr) ? (self.readPtr = self.byteBuffer) : self.readPtr++;
-            NSString* log = [NSString stringWithFormat:@"T:%d: ",tval];
-            logStr = [logStr stringByAppendingString:log];
-            self.nextIFCValue = IFCIntensity;
+        int offset = 0;
+        if (self.nSync) {
+            v1 = v1 & mask;
+            bool syncFail = false;
+            if (self.nextIFCValue == IFCIntensity) {
+                if (v1 != (uint32_t)0x00804000) {
+                    syncFail = true;
+                }
+            }
+            else if (self.nextIFCValue == IFCDisplacement) {
+                if (v1 != (uint32_t)0x00C04000) {
+                    syncFail = true;
+                }
+            }
+            else if (self.nextIFCValue == IFCTimestamp) {
+                if (v1 != (uint32_t)0x00C04000) {
+                    syncFail = true;
+                }
+            }
+            if (syncFail) {
+                self.nSync = false;
+                self.val1Ptr = (uint32_t*)self.readPtr;
+            }
         }
+        if (!self.nSync) {
+            for (offset=0; offset<9; offset++) {
+                v1 = v1 & mask;
+                if (v1 == (uint32_t)0x00804000) {
+                    NSLog(@"Found the pattern at offset %d!",offset);
+                    // we found the pattern.
+                    self.nSync = true;
+                    break;
+                }
+                else {
+                    //advance the read pointer 1 byte forward, wrapping as needed.
+                    (self.readPtr == endPtr) ? (self.readPtr = self.byteBuffer) : self.readPtr++;
+                    // copy next 4 bytes into v1 to check them.
+                    fromPtr = self.readPtr;
+                    toPtr = (uint8_t*)self.val1Ptr;
+                    for (int i=0; i< 4; i++) {
+                        *toPtr = *fromPtr;
+                        (fromPtr == endPtr) ? (fromPtr = self.byteBuffer) : fromPtr++;
+                        toPtr++;
+                    }
+                }
+            }
+        }
+        // readPtr should now be at the start of the data.
+        /* Byte printing for debugging
+         uint8_t* tmpPtr = self.readPtr;
+         printf("Before: Next 8 bytes: ");
+         for (int k=0; k<8; k++) {
+         printf("%02X ", (0xff & *tmpPtr));
+         (tmpPtr == endPtr) ? (tmpPtr = self.byteBuffer) : tmpPtr++;
+         }
+         printf("\n");
+         */
+        
+        // Subtract the number of bytes we had to skip to get synced.  Add any leftover from previous frames.
+        int numBytesLeft = (int)[data length] - offset + self.leftoverBytes;
+        int numValues = (int)floor(numBytesLeft/3.0); // 3 bytes per value
+        self.leftoverBytes = numBytesLeft - (numValues * 3);
+        uint32_t ival = 0;
+        uint32_t dval = 0;
+        float displacement = 0;
+        uint32_t tval = 0;
+        NSString* logStr = @"";
+        for (int j=0; j<numValues; j++) {
+            if (self.nextIFCValue == IFCIntensity) {
+                ival = 0;
+                ival = (uint32_t)(*self.readPtr & 0x3F);
+                (self.readPtr == endPtr) ? (self.readPtr = self.byteBuffer) : self.readPtr++; // wrap pointer if needed.
+                ival = ival | ((*self.readPtr & 0x3F) << 6);
+                (self.readPtr == endPtr) ? (self.readPtr = self.byteBuffer) : self.readPtr++;
+                ival = ival | ((*self.readPtr & 0x3F) << 12);
+                (self.readPtr == endPtr) ? (self.readPtr = self.byteBuffer) : self.readPtr++;
+                NSString* log = [NSString stringWithFormat:@"I:%d: ",ival];
+                logStr = [logStr stringByAppendingString:log];
+                [self.intensities addObject:[NSNumber numberWithFloat:(float)ival]];
+                self.nextIFCValue = IFCDisplacement;
+            }
+            else if (self.nextIFCValue == IFCDisplacement) {
+                dval = 0;
+                dval = (uint32_t)(*self.readPtr & 0x3F);
+                (self.readPtr == endPtr) ? (self.readPtr = self.byteBuffer) : self.readPtr++; // wrap pointer if needed.
+                dval = dval | ((*self.readPtr & 0x3F) << 6);
+                (self.readPtr == endPtr) ? (self.readPtr = self.byteBuffer) : self.readPtr++;
+                dval = dval | ((*self.readPtr & 0x3F) << 12);
+                (self.readPtr == endPtr) ? (self.readPtr = self.byteBuffer) : self.readPtr++;
+                displacement = ((float)dval - 98232.0) * [self.metaData.sensor_measurement_range floatValue] / 65536.0;
+                NSString* log = [NSString stringWithFormat:@"D:%f: ", displacement];
+                logStr = [logStr stringByAppendingString:log];
+                [self.displacements addObject:[NSNumber numberWithFloat:displacement]];
+                self.nextIFCValue = IFCTimestamp;
+            }
+            else if (self.nextIFCValue == IFCTimestamp) {
+                tval = 0;
+                tval = (uint32_t)(*self.readPtr & 0x3F);
+                (self.readPtr == endPtr) ? (self.readPtr = self.byteBuffer) : self.readPtr++; // wrap pointer if needed.
+                tval = tval | ((*self.readPtr & 0x3F) << 6);
+                (self.readPtr == endPtr) ? (self.readPtr = self.byteBuffer) : self.readPtr++;
+                tval = tval | ((*self.readPtr & 0x3F) << 12);
+                (self.readPtr == endPtr) ? (self.readPtr = self.byteBuffer) : self.readPtr++;
+                NSString* log = [NSString stringWithFormat:@"T:%d: ",tval];
+                logStr = [logStr stringByAppendingString:log];
+                [self.times addObject:[NSNumber numberWithInt:(int)tval]];
+                [self.point_counts addObject:[NSNumber numberWithInt:pt_count]];
+                [self.datasetIds addObject:[NSNumber numberWithInt:self.set_count]];
+                self.nextIFCValue = IFCIntensity;
+            }
+        }
+        NSLog(@"%@",logStr);
+        
+        /* Byte printing for debugging
+         tmpPtr = self.readPtr;
+         (tmpPtr == self.byteBuffer) ? (tmpPtr = endPtr) : tmpPtr--; // back up pointer with wrap
+         (tmpPtr == self.byteBuffer) ? (tmpPtr = endPtr) : tmpPtr--; // back up pointer with wrap
+         (tmpPtr == self.byteBuffer) ? (tmpPtr = endPtr) : tmpPtr--; // back up pointer with wrap
+         printf("After: Last 3 and Next 8 bytes: ");
+         for (int k=0; k<11; k++) {
+         printf("%02X ", (0xff & *tmpPtr));
+         (tmpPtr == endPtr) ? (tmpPtr = self.byteBuffer) : tmpPtr++;
+         }
+         printf("\n");
+         */
+        
+        self.set_count += 1;
     }
-    NSLog(@"%@",logStr);
-    
-    /* Byte printing for debugging
-    tmpPtr = self.readPtr;
-    (tmpPtr == self.byteBuffer) ? (tmpPtr = endPtr) : tmpPtr--; // back up pointer with wrap
-    (tmpPtr == self.byteBuffer) ? (tmpPtr = endPtr) : tmpPtr--; // back up pointer with wrap
-    (tmpPtr == self.byteBuffer) ? (tmpPtr = endPtr) : tmpPtr--; // back up pointer with wrap
-    printf("After: Last 3 and Next 8 bytes: ");
-    for (int k=0; k<11; k++) {
-        printf("%02X ", (0xff & *tmpPtr));
-        (tmpPtr == endPtr) ? (tmpPtr = self.byteBuffer) : tmpPtr++;
+    if (self.set_count == self.num_sets) {
+       [self disconnectData]; // This shuts off the flow of data with "OUTPUT NONE".
+        
+        // At this point we should have all the data that was requested.
+        // We need to do any required processing/filtering, save to file,
+        // then bundle it up and send it back through to the javascript.
+        NSDictionary* jsonDict = @{@"type":@"status",@"status":@"processing"};
+        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];// You can send data, String, int, array, dictionary, etc.
+        result.keepCallback = [NSNumber numberWithBool:YES];
+        [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+        [self computeClearance];
+        [self returnData];
     }
-    printf("\n");
-    */
 }
 
 
