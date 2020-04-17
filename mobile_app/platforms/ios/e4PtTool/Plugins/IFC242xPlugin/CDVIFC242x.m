@@ -944,11 +944,15 @@ enum ifc242xValue {
     [self.point_counts removeAllObjects];
     [self.intensities removeAllObjects];
     [self.min_locs removeAllObjects];
+    if (self.byteBuffer != nil) {
+        for (int i=0; i<BYTE_BUFFER_SIZE; i++) self.byteBuffer[i] = 0;
+    }
 }
 
 // The collectData function is patterned after the e4PtTool python function
 // named collect_data and tries to accomplish the same thing.
 - (void)collectData:(int)num_sets casingThickness:(float)casing_thicknesss {
+    NSLog(@"@collectData");
     // Update the status in the HTML page.
     NSDictionary* jsonDict = @{@"type":@"status",@"status":@"acquiring"};
     CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];// You can send data, String, int, array, dictionary, etc.
@@ -2109,7 +2113,7 @@ enum ifc242xValue {
                 self.nextIFCValue = IFCIntensity;
             }
         }
-        NSLog(@"%@",logStr);
+        NSLog(@"FrameData: %@",logStr);
         
         /* Byte printing for debugging
          tmpPtr = self.readPtr;
@@ -2127,7 +2131,18 @@ enum ifc242xValue {
         self.set_count += 1;
     }
     if (self.set_count == self.num_sets) {
-       [self disconnectData]; // This shuts off the flow of data with "OUTPUT NONE".
+        [self disconnectData]; // This shuts off the flow of data with "OUTPUT NONE".
+
+        // Because data sets (Inten.,Disp.,Time) can be split across transmissions, we can end up
+        // with different sized arrays here.  We need to trim the larger ones to the size of the
+        // smallest.
+        unsigned long minArrLen = LONG_MAX;
+        if (self.displacements.count < minArrLen) minArrLen = self.displacements.count;
+        if (self.intensities.count < minArrLen) minArrLen = self.intensities.count;
+        if (self.times.count < minArrLen) minArrLen = self.times.count;
+        while (self.displacements.count > minArrLen) [self.displacements removeLastObject];
+        while (self.intensities.count > minArrLen) [self.intensities removeLastObject];
+        while (self.times.count > minArrLen) [self.times removeLastObject];
         
         // At this point we should have all the data that was requested.
         // We need to do any required processing/filtering, save to file,
@@ -2136,9 +2151,32 @@ enum ifc242xValue {
         CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];// You can send data, String, int, array, dictionary, etc.
         result.keepCallback = [NSNumber numberWithBool:YES];
         [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+        if (SIMULATED_DATA == 1) {
+            [self loadCSVFile];
+        }
         [self computeClearance];
         [self returnData];
+        [self resetSerialParams];
     }
+}
+
+- (void)resetSerialParams {
+    // Reset all the parameters needed to start serial acquisition from scratch.
+    self.nSync = false;
+    self.nextIFCValue = IFCIntensity;
+    self.readPtr = self.byteBuffer;
+    self.writePtr = self.byteBuffer;
+    self.set_count = 0;
+    self.num_sets = 0;
+    self.leftoverBytes = 0;
+    if (self.byteBuffer != nil) {
+        for (int i=0; i<BYTE_BUFFER_SIZE; i++) self.byteBuffer[i] = 0;
+    }
+    // Flush the cable Rx buffer to prepare for next acquisition.
+    serialPortControl portCtl;
+    portCtl.rxFlush = 1;
+    portCtl.txFlush = 1;
+    [self.rscMgr setPortControl:&portCtl requestStatus:false];
 }
 
 
