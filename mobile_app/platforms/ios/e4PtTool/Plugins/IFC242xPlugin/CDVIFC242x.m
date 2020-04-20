@@ -982,7 +982,6 @@ enum ifc242xValue {
     if ([self.connectionMode containsString:@"serial"]) {
         [self.telnetCmds addObject:@"OUTPUT RS422\n"];
         [self sendTelnetCommand];
-        //[self setupSerialCable];
     }
     
 }
@@ -1776,6 +1775,8 @@ enum ifc242xValue {
 }
 
 - (void)saveCSVFile {
+    // If called with no displacements, don't write a file, just return;
+    if (self.displacements.count == 0) return;
     // Get the date & time for the filename.
     NSDateFormatter *dateFormatter=[[NSDateFormatter alloc] init];
     [dateFormatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
