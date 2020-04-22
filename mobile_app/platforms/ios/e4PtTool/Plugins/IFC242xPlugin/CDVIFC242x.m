@@ -32,9 +32,9 @@
 #define SENSOR_MEASUREMENT_RANGE "10.0"
 
 // Hard coded values for RS232 serial cable
-// 186 = 62 * 3.  Data seems to come in 62 byte packets and data from
+// 192 = 64 * 3.  Data seems to come in 64 byte packets and data from
 // the IFC242x comes in 3-byte values.
-#define BYTE_BUFFER_SIZE 186
+#define BYTE_BUFFER_SIZE 192
 
 // Some defines for the signal processing
 #define KERNEL_SIZE 13
@@ -42,6 +42,14 @@
 #define OUT_OF_RANGE 15.0
 #define FILTER_EDGE_SIZE_START 1
 #define FILTER_EDGE_SIZE_STOP 1
+
+// Define SERIAL_SEND_TIMESTAMP if you want to have the timestamp
+// sent over the serial cable.  This takes more bits over the
+// limited serial cable bandwidth.
+// Define SEND_DISPLACEMENT_ONLY if you want to send just the
+// displacement value to maximize bandwidth.
+//#define SERIAL_SEND_TIMESTAMP
+#define SEND_DISPLACEMENT_ONLY
 
 // This option, when defined causes the program to output
 // the minimum clearance for each blade rather than the
@@ -183,6 +191,10 @@ enum ifc242xValue {
 @property (strong, nonatomic) NSMutableArray* min_locs;
 @property (nonatomic) float stage_clearance;
 
+@property (nonatomic) NSTimeInterval startTime;
+@property (nonatomic) NSTimeInterval testTime;
+
+
 @property (nonatomic) int num_pts_max;
 @property (nonatomic) int current_data_set_id;
 @property (nonatomic) int previous_data_set_id;
@@ -264,6 +276,8 @@ enum ifc242xValue {
 @synthesize intensities = _intensities;
 @synthesize min_locs = _min_locs;
 @synthesize demoMode = _demoMode;
+@synthesize startTime = _startTime;
+@synthesize testTime = _testTime;
     
 @synthesize kernel = _kernel;
 
@@ -467,7 +481,7 @@ enum ifc242xValue {
     }
     if (self.telnetCmds.count == 0) {
         dispatch_async(dispatch_get_main_queue(), ^{
-            [self.timerSendTelnetCommand invalidate];
+            [timer invalidate];
             self.pState = ready;
         });
         return;
@@ -563,16 +577,33 @@ enum ifc242xValue {
     self.stage_clearance = 0;
     self.demoMode = (SIMULATED_DATA == 0) ? false : true;
     self.controllerType = @"";
+#ifdef SEND_DISPLACEMENT_ONLY
+    self.nextIFCValue = IFCDisplacement;
+#else
     self.nextIFCValue = IFCIntensity;
+#endif
     self.nSync = false;
     self.leftoverBytes = 0;
+    self.startTime = [[NSDate date] timeIntervalSince1970]; // start time timestamp in whole seconds.
+
     
     [self.telnetCmds removeAllObjects];
     [self.telnetCmds addObject:[NSString stringWithFormat:@"ETHERMODE ETHERNET\n"]];
     [self.telnetCmds addObject:[NSString stringWithFormat:@"OUTPUT ETHERNET\n"]];
     [self.telnetCmds addObject:[NSString stringWithFormat:@"MEASTRANSFER SERVER/TCP 1024\n"]];
     [self.telnetCmds addObject:[NSString stringWithFormat:@"OUT_ETH 01INTENSITY 01DIST1 TIMESTAMP\n"]];
-    [self.telnetCmds addObject:[NSString stringWithFormat:@"OUT_RS422 01INTENSITY 01DIST1 TIMESTAMP\n"]];
+
+// ifdefs below are structured the way they are because elseif didn't seem to work.
+#ifdef SERIAL_SEND_TIMESTAMP
+    // Output TIMESTAMP when using serial connection. This requires more bandwidth.
+    //[self.telnetCmds addObject:[NSString stringWithFormat:@"OUT_RS422 01INTENSITY 01DIST1 TIMESTAMP\n"]];
+    [self.telnetCmds addObject:[NSString stringWithFormat:@"OUT_RS422 01INTENSITY 01DIST1 COUNTER\n"]];
+#elif defined(SEND_DISPLACEMENT_ONLY)
+    [self.telnetCmds addObject:[NSString stringWithFormat:@"OUT_RS422 01DIST1\n"]];
+#else
+    // Don't output TIMESTAMP when using serial connection. This should allow us to increase throughput.
+    [self.telnetCmds addObject:[NSString stringWithFormat:@"OUT_RS422 01INTENSITY 01DIST1\n"]];
+#endif
     [self.telnetCmds addObject:[NSString stringWithFormat:@"MEASRATE 1.0\n"]];
     [self.telnetCmds addObject:[NSString stringWithFormat:@"OUTPUT NONE\n"]]; // turns off output.
     [self.telnetCmds addObject:[NSString stringWithFormat:@"GETINFO\n"]];
@@ -752,12 +783,20 @@ enum ifc242xValue {
         float nSets = 0.0;
         float meas_rate = [self.measurement_rate floatValue] * 1000; // measurement_rate is in kHz.
         if ([self.connectionMode containsString:@"ethernet"]) {
-            // 100 samples/frame, measurement rate is in kHz.
-            nSets = [self.measurement_rate floatValue] * meas_rate * [acqTime floatValue] / 100.0;
+            // 100 samples/frame, "* 1000" converts the measurement rate from kHz to Hz.
+            nSets = meas_rate * [acqTime floatValue] / 100.0;
         }
         if ([self.connectionMode containsString:@"serial"]) {
-            float dataSetsPerFrame = 62.0/9.0; // 62 bytes/Rx frame; 9 bytes per dataSet (3 each, Inten., Disp., & Time)
-            nSets = [self.measurement_rate floatValue] * meas_rate * [acqTime floatValue] / dataSetsPerFrame;
+            // "* 1000" converts the measurement rate from kHz to Hz.
+#ifdef SERIAL_SEND_TIMESTAMP
+            float bytesPerDataSet = 9.0;  // (3 bytes each, Inten., Disp., & Timestamp)
+#elif defined(SEND_DISPLACEMENT_ONLY)
+            float bytesPerDataSet = 3.0;  // (3 bytes for displacement)
+#else
+            float bytesPerDataSet = 6.0;  // (3 bytes each, Inten., Disp.)
+#endif
+            float dataSetsPerFrame = 62.0/bytesPerDataSet; // 62 bytes/Rx frame
+            nSets = meas_rate * [acqTime floatValue] / dataSetsPerFrame;
         }
         num_sets = ceil(nSets); // Round up.
 
@@ -1350,9 +1389,24 @@ enum ifc242xValue {
 }
 
 - (void)processComplete:(NSString*)statusMsg {
-    NSDictionary* jsonDict = @{@"type":@"status",@"status":statusMsg};
-    CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];// You can send data, String, int, array, dictionary, etc.
-    [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+    
+    if (self.pState == setMeasurementRateInProgress) {
+        NSString* msgStr = [NSString stringWithFormat:@"Measurement rate set to %@ kHz.", self.measurement_rate];
+        NSDictionary* jsonDict = @{@"type":@"alert",@"message":msgStr};
+        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];
+        [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+    }
+    else if (self.pState == setThresholdInProgress) {
+        NSString* msgStr = [NSString stringWithFormat:@"Threshold is set to %@%.", self.intensityThreshold];
+        NSDictionary* jsonDict = @{@"type":@"alert",@"message":msgStr};
+        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];
+        [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+    }
+    else {
+        NSDictionary* jsonDict = @{@"type":@"status",@"status":statusMsg};
+        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];// You can send data, String, int, array, dictionary, etc.
+        [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+    }
     self.pState = ready;
 }
 
@@ -1526,9 +1580,13 @@ enum ifc242xValue {
             if (stop > start) {
                 // FILTER_EDGE_SIZE_* allows us to shave down the number of points used
                 for (int j=start + FILTER_EDGE_SIZE_START; j<=stop - FILTER_EDGE_SIZE_STOP; j++) {
-                    NSNumber* intnst = [self.intensities objectAtIndex:j];
                     NSNumber* d = [self.displacements objectAtIndex:j];
+#ifdef SEND_DISPLACEMENT_ONLY
+                    if ( [d floatValue] < threshold ) {
+#else
+                    NSNumber* intnst = [self.intensities objectAtIndex:j];
                     if ( ([intnst floatValue] > 0) && ([d floatValue] < threshold) ) {
+#endif
                         //NSLog(@"Averaging: %f",[d floatValue]);
                         if ([d floatValue] < min_clearance) {
                             min_clearance = [d floatValue];
@@ -1880,8 +1938,8 @@ enum ifc242xValue {
         self.val1Ptr = (uint32_t*)self.readPtr;
     }
     
-    [self.rscMgr enableExternalLogging:false];
-    [self.rscMgr enableTxRxExternalLogging:false];
+    //[self.rscMgr enableExternalLogging:true];
+    //[self.rscMgr enableTxRxExternalLogging:true];
     
     self.dataSizeType = SERIAL_DATABITS_8;
     self.parityType =     SERIAL_PARITY_NONE;
@@ -1901,8 +1959,10 @@ enum ifc242xValue {
     portCfg.txAckSetting = 1;
     portCfg.rxFlowControl = self.rts;    // set flow control
     portCfg.txFlowControl = self.cts;
+    portCfg.rxForwardCount = 252; // default = 16;
+    portCfg.rxForwardingTimeout = 50; // default = 100;
     [self.rscMgr setPortConfig:&portCfg requestStatus: NO];
-    
+        
     // Create and start the comm thread.  We'll use this thread to manage the rscMgr so
     // we don't tie up the UI thread.
     if (self.commThread == nil) {
@@ -1975,6 +2035,11 @@ enum ifc242xValue {
     }
     
     // For receiving serial measurement data...
+    if (self.pState != collectingDataInProgress) {
+        self.pState = collectingDataInProgress;
+        self.testTime = ([[NSDate date] timeIntervalSince1970]) * 1000000;
+        NSLog(@"Data collection start time: %f",self.testTime);
+    }
     int pt_count = (int)floor((float)(data.length)/9.0); // 9 bytes per data point.
     if (self.set_count < self.num_sets) {
         
@@ -2007,6 +2072,13 @@ enum ifc242xValue {
         if (self.nSync) {
             v1 = v1 & mask;
             bool syncFail = false;
+#ifdef SEND_DISPLACEMENT_ONLY
+            if (self.nextIFCValue == IFCDisplacement) {
+                if (v1 != (uint32_t)0x00804000) {
+                    syncFail = true;
+                }
+            }
+#else
             if (self.nextIFCValue == IFCIntensity) {
                 if (v1 != (uint32_t)0x00804000) {
                     syncFail = true;
@@ -2022,6 +2094,7 @@ enum ifc242xValue {
                     syncFail = true;
                 }
             }
+#endif
             if (syncFail) {
                 self.nSync = false;
                 self.val1Ptr = (uint32_t*)self.readPtr;
@@ -2069,6 +2142,7 @@ enum ifc242xValue {
         uint32_t dval = 0;
         float displacement = 0;
         uint32_t tval = 0;
+        NSTimeInterval unixTStamp;
         NSString* logStr = @"";
         for (int j=0; j<numValues; j++) {
             if (self.nextIFCValue == IFCIntensity) {
@@ -2096,7 +2170,26 @@ enum ifc242xValue {
                 NSString* log = [NSString stringWithFormat:@"D:%f: ", displacement];
                 logStr = [logStr stringByAppendingString:log];
                 [self.displacements addObject:[NSNumber numberWithFloat:displacement]];
-                self.nextIFCValue = IFCTimestamp;
+#ifdef SERIAL_SEND_TIMESTAMP
+                self.nextIFCValue = IFCTimestamp; // Next element is the timestamp.
+#elif defined(SEND_DISPLACEMENT_ONLY)
+                self.nextIFCValue = IFCDisplacement; // Only do displacement.
+                // Create a timestamp and record it.
+                unixTStamp = ([[NSDate date] timeIntervalSince1970] - self.startTime) * 1000000; // microseconds since start.
+                tval = (uint32_t)floor(unixTStamp);
+                [self.times addObject:[NSNumber numberWithInt:(int)tval]];
+                [self.intensities addObject:[NSNumber numberWithFloat:1.0]];
+                [self.point_counts addObject:[NSNumber numberWithInt:pt_count]];
+                [self.datasetIds addObject:[NSNumber numberWithInt:self.set_count]];
+#else
+                self.nextIFCValue = IFCIntensity; // Skip timestamp to increase throughput.
+                // Create a timestamp and record it.
+                unixTStamp = ([[NSDate date] timeIntervalSince1970] - self.startTime) * 1000000; // microseconds since start.
+                tval = (uint32_t)floor(unixTStamp);
+                [self.times addObject:[NSNumber numberWithInt:(int)tval]];
+                [self.point_counts addObject:[NSNumber numberWithInt:pt_count]];
+                [self.datasetIds addObject:[NSNumber numberWithInt:self.set_count]];
+#endif
             }
             else if (self.nextIFCValue == IFCTimestamp) {
                 tval = 0;
@@ -2132,6 +2225,12 @@ enum ifc242xValue {
         self.set_count += 1;
     }
     if (self.set_count == self.num_sets) {
+        if (self.pState == collectingDataInProgress) {
+            self.pState = ready;
+            NSTimeInterval stop = ([[NSDate date] timeIntervalSince1970]) * 1000000;
+            NSLog(@"Data collection stop time: %f",stop);
+            NSLog(@"Elapsed Time: %f", (stop - self.testTime));
+        }
         [self disconnectData]; // This shuts off the flow of data with "OUTPUT NONE".
 
         // Because data sets (Inten.,Disp.,Time) can be split across transmissions, we can end up
