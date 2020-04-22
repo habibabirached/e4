@@ -1397,7 +1397,7 @@ enum ifc242xValue {
         [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
     }
     else if (self.pState == setThresholdInProgress) {
-        NSString* msgStr = [NSString stringWithFormat:@"Threshold is set to %@%.", self.intensityThreshold];
+        NSString* msgStr = [NSString stringWithFormat:@"Threshold is set to %@.", self.intensityThreshold];
         NSDictionary* jsonDict = @{@"type":@"alert",@"message":msgStr};
         CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];
         [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
