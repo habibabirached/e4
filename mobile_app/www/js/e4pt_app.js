@@ -574,7 +574,9 @@ function set_measurement_rate(idx) {
       sendWSMessage(message);
   }
   else if (communicationChannel == "Plugin") {
-      window.plugins.IFC242x.messageToDevice(message, null, null);
+      window.plugins.IFC242x.messageToDevice(message, function(msg) {
+                                             pluginMessage(msg);
+                                             }, null);
   }
 }
 
@@ -600,7 +602,9 @@ function set_threshold() {
         sendWSMessage(message);
     }
     else if (communicationChannel == "Plugin") {
-        window.plugins.IFC242x.messageToDevice(message, null, null);
+        window.plugins.IFC242x.messageToDevice(message, function(msg) {
+                                               pluginMessage(msg);
+                                               }, null);
     }
 }
 
