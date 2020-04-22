@@ -8,6 +8,7 @@ var downloadFileName = "";
 var fsRoot = "";
 var appDir = "";
 var serialConnected = false;
+var doDBSave = false;
 
 var local_db = new PouchDB('e4ptdb');
 
@@ -180,6 +181,7 @@ $(document).ready(function(){
         toggle_menu();
         $("#DATA_PLOT").fadeIn();
         var acquisitionTime = null;
+        doDBSave = false;
         console.log("@GET_DATA_BUTTON: Prompting.");
         var nav = navigator.notification;
         if (nav != null) {
@@ -648,6 +650,7 @@ function collect_stage_data() {
     current_stage = current_frame_data['stage'][current_stage_index];
     current_position_index =  document.getElementById("SENSOR_POSITION").selectedIndex;
     current_position = current_frame_data['position'][current_stage][current_position_index];
+    doDBSave = true;
 
     // Collect data from the sensor.
     var nav = navigator.notification;
@@ -1447,7 +1450,9 @@ function parse_data() {
     //set.pts = E4PTdata.data;
     //set.quality = E4PTdata.intensity;
     E4PTdata.sets.push(set);
-    addDBEntry(E4PTdata); // save the data autmatically after acquisition
+    if (doDBSave) {
+      addDBEntry(E4PTdata); // save the data autmatically after acquisition
+    }
 }
 
 function update_clearance(clearance) {
