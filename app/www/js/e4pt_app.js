@@ -7,6 +7,7 @@ var MAX_STR_LEN = 64;
 var downloadFileName = "";
 var fsRoot = "";
 var appDir = "";
+var serialConnected = false;
 
 var local_db = new PouchDB('e4ptdb');
 
@@ -373,6 +374,9 @@ function toggle_menu() {
 	else{
         var plugins = window.plugins;
         if (plugins != null) {
+            if (!serialConnected) {
+                e4PtAlert("Connecting...\nPlease wait for indicator to turn green before proceeding.");
+            }
             communicationChannel = "Plugin";
             var message = {"args":["pluginConnected"]};
             window.plugins.IFC242x.messageToDevice(message, function(msg) {
@@ -560,22 +564,48 @@ function set_measurement_rate(idx) {
     e4PtAlert("Measurement rate is not a number.");
     return;
   }
-  if (meas_rate_f < 0.1) {
-    meas_rate_f = 0.1;
-    document.getElementById(el_id).value = 0.1;
-  }
-  if (meas_rate_f > 6.5) {
-    meas_rate_f = 6.5;
-    document.getElementById(el_id).value = 6.5;
-  }
-  message = {"args":["set_measuring_rate",meas_rate_f]};
-  if (communicationChannel == "WebSocket") {
-      message = JSON.stringify(message);
-      sendWSMessage(message);
-  }
-  else if (communicationChannel == "Plugin") {
-      window.plugins.IFC242x.messageToDevice(message, null, null);
-  }
+  
+    if (meas_rate_f > 3.5) {
+      e4PtConfirm("Measurement rates over 3.5kHz may be unreliable without specialized hardware.\nProceed?",
+        function(buttonIndex) {
+            if (buttonIndex==1){//OK
+                // Proceed
+                if (meas_rate_f > 6.5) {
+                meas_rate_f = 6.5;
+                document.getElementById(el_id).value = 6.5;
+                }
+                message = {"args":["set_measuring_rate",meas_rate_f]};
+                if (communicationChannel == "WebSocket") {
+                message = JSON.stringify(message);
+                sendWSMessage(message);
+                }
+                else if (communicationChannel == "Plugin") {
+                window.plugins.IFC242x.messageToDevice(message, function(msg) {
+                                                       pluginMessage(msg);
+                                                       }, null);
+                }
+            } else if (buttonIndex==2){//Cancel
+                document.getElementById(el_id).value = "";
+                return;
+            }
+        })
+    }
+    else {
+        if (meas_rate_f < 0.1) {
+            meas_rate_f = 0.1;
+            document.getElementById(el_id).value = 0.1;
+        }
+        message = {"args":["set_measuring_rate",meas_rate_f]};
+        if (communicationChannel == "WebSocket") {
+            message = JSON.stringify(message);
+            sendWSMessage(message);
+        }
+        else if (communicationChannel == "Plugin") {
+            window.plugins.IFC242x.messageToDevice(message, function(msg) {
+                                                   pluginMessage(msg);
+                                                   }, null);
+        }
+    }
 }
 
 function set_threshold() {
@@ -600,7 +630,9 @@ function set_threshold() {
         sendWSMessage(message);
     }
     else if (communicationChannel == "Plugin") {
-        window.plugins.IFC242x.messageToDevice(message, null, null);
+        window.plugins.IFC242x.messageToDevice(message, function(msg) {
+                                               pluginMessage(msg);
+                                               }, null);
     }
 }
 
@@ -1160,6 +1192,7 @@ function pluginMessage(msg) {
             console.log(msg);
             if (msg.status == "connected") {
                 setIndicatorColor("green");
+                serialConnected = true;
             }
             if (msg.status == "acquiring") {
                 setIndicatorColor("red");
