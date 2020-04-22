@@ -1040,7 +1040,20 @@ function systemShutdown() {
         sendWSMessage(message);
     }
     else if (communicationChannel == "Plugin") {
-        e4PtAlert("This system does not support shutdown.",null);
+        e4PtConfirm("Are you sure you want to exit?",
+            function(idx) {
+                if (idx == 1) {
+                    console.log("Exit");
+                    window.plugins.IFC242x.messageToDevice(message, function(msg) {
+                                                           pluginMessage(msg);
+                                                           }, null);
+                }
+                else {
+                    console.log("Exit was cancelled.");
+                    return;
+                }
+            }
+        );
     }
 }
 
@@ -1247,12 +1260,21 @@ function exportFile(option) {
         // do something with downloadFileName
         subject = "e-4Pt Tool Data";
         attachmentFileName = downloadFileName;
-        attachmentFileName = "file://" + attachmentFileName;
+        if (attachmentFileName.length > 0) {
+            attachmentFileName = "file://" + attachmentFileName;
+        }
+        else {
+            attachmentFileName = [];
+        }
         sendEmailWithAttachment( subject , attachmentFileName);
     }
     else if (option == 2) {
         console.log("Upload");
         // do something with downloadFileName
+        if (downloadFileName.length == 0) {
+            e4PtAlert("There is no recent file to upload.");
+            return;
+        }
         uploadFileToBox(downloadFileName);
     }
     else {
