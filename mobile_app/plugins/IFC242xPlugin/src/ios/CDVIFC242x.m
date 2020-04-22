@@ -952,6 +952,9 @@ enum ifc242xValue {
         result.keepCallback = [NSNumber numberWithBool:YES];
         [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
     }
+    if ([cmd containsString:@"shutdown"]) {
+        exit(0);
+    }
     else {
         NSLog(@"Got %@",msg);
     }
