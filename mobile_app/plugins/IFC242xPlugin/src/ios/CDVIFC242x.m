@@ -322,6 +322,7 @@ enum ifc242xValue {
         _manager.measurement_rate = @"1.0";
         _manager.last_saved_file = @"";
         [_manager initializeSensor];
+
     }
     
     return _manager;
@@ -795,7 +796,7 @@ enum ifc242xValue {
 #else
             float bytesPerDataSet = 6.0;  // (3 bytes each, Inten., Disp.)
 #endif
-            float dataSetsPerFrame = 62.0/bytesPerDataSet; // 62 bytes/Rx frame
+            float dataSetsPerFrame = 64.0/bytesPerDataSet; // 64 bytes/Rx frame
             nSets = meas_rate * [acqTime floatValue] / dataSetsPerFrame;
         }
         num_sets = ceil(nSets); // Round up.
