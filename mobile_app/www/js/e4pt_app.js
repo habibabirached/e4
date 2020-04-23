@@ -1210,6 +1210,7 @@ function pluginMessage(msg) {
             console.log(msg);
             if (msg.status == "connected") {
                 setIndicatorColor("green");
+                document.getElementById("STATUS_DISPLAY").innerHTML = "Connected"
                 serialConnected = true;
             }
             if (msg.status == "acquiring") {
