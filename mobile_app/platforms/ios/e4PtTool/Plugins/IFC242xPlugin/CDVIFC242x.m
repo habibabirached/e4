@@ -955,6 +955,12 @@ enum ifc242xValue {
     if ([cmd containsString:@"shutdown"]) {
         exit(0);
     }
+    if ([cmd containsString:@"get_version"]) {
+        NSString* appVersion = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleShortVersionString"];
+        NSDictionary* jsonDict = @{@"type":@"version",@"version":appVersion};
+        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];
+        [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+    }
     else {
         NSLog(@"Got %@",msg);
     }

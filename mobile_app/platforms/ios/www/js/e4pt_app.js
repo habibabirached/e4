@@ -384,6 +384,10 @@ function toggle_menu() {
             window.plugins.IFC242x.messageToDevice(message, function(msg) {
                                                    pluginMessage(msg);
                                                    }, null);
+            var message = {"args":["get_version"]};
+            window.plugins.IFC242x.messageToDevice(message, function(msg) {
+                                                   pluginMessage(msg);
+                                                   }, null);
         }
         else {
             communicationChannel = "WebSocket";
@@ -1244,6 +1248,10 @@ function pluginMessage(msg) {
             console.log("Recieved Filename Message: ", msg.fname);
             downloadFileName = msg.fname;
             e4PtPrompt("Email or Upload File?", exportFile, "Get File", ["Email","Upload to Box","Cancel"]);
+            break;
+        case "version":
+            console.log("Received version message: ", msg.version);
+            document.getElementById("APP_VERSION").innerHTML = "VERSION " + msg.version;
             break;
         case "alert":
             console.log("Received an alert message: ", msg.message);
