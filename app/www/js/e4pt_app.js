@@ -377,13 +377,11 @@ function toggle_menu() {
         var plugins = window.plugins;
         if (plugins != null) {
             if (!serialConnected) {
-                e4PtAlert("Connecting...\nPlease wait for indicator to turn green before proceeding.");
+                e4PtAlert("Connecting...\nPlease wait for indicator to turn green before proceeding.\n(~10s)");
             }
             communicationChannel = "Plugin";
-            var message = {"args":["pluginConnected"]};
-            window.plugins.IFC242x.messageToDevice(message, function(msg) {
-                                                   pluginMessage(msg);
-                                                   }, null);
+            // Requesting the version here kicks off the initialization process and
+            // eventually results in the indicator turning green.
             var message = {"args":["get_version"]};
             window.plugins.IFC242x.messageToDevice(message, function(msg) {
                                                    pluginMessage(msg);

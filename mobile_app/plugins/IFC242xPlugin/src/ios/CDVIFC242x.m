@@ -959,6 +959,7 @@ enum ifc242xValue {
         NSString* appVersion = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleShortVersionString"];
         NSDictionary* jsonDict = @{@"type":@"version",@"version":appVersion};
         CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];
+        result.keepCallback = [NSNumber numberWithBool:YES];
         [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
     }
     else {
