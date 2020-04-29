@@ -1710,7 +1710,7 @@ enum ifc242xValue {
 
     // Get the kernal into a float array
     int h_length = (int)kernel.count;
-    float h[h_length];
+    float* h = (float*)malloc(h_length * sizeof(float));
     int idx = 0;
     for (NSNumber* f in kernel) {
         h[idx] = [f floatValue];
@@ -1719,7 +1719,7 @@ enum ifc242xValue {
     
     // Get the data into a float array, thresholding as we go.
     unsigned x_length = (unsigned)self.displacements.count;
-    float x[x_length];
+    float* x = (float*)malloc(x_length * sizeof(float));
     idx = 0;
     for (NSNumber* f in self.displacements) {
         x[idx] = [f floatValue] < threshold ? [f floatValue] : threshold;
@@ -1735,7 +1735,7 @@ enum ifc242xValue {
     //unsigned overlap_length = result_length - x_length;
     
     // Create a temporary buffer to store the entire convolution result
-    float temp_buffer[result_length];
+    float* temp_buffer = (float*)malloc(result_length * sizeof(float));
     
     // Pointer to end of filter for use with vDSP_conv
     float    *h_end = h + (h_length - 1);
@@ -1744,7 +1744,7 @@ enum ifc242xValue {
     unsigned signal_length = (h_length + result_length);
     
     // Create an array to store the signal passed to vDSP_conv, padded with zeros
-    float padded[signal_length];
+    float* padded = (float*)malloc(signal_length * sizeof(float));
     
     // fill padded buffer with zeros
     float zero = 0.0;
@@ -1788,6 +1788,10 @@ enum ifc242xValue {
         [self.filtered addObject:[NSNumber numberWithFloat:tmpf]];
     }
     
+    free(padded);
+    free(temp_buffer);
+    free(x);
+    free(h);
 }
 
 // loadCSVFile should never be used in the field, but is here to allow
