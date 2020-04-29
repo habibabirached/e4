@@ -1425,8 +1425,8 @@ enum ifc242xValue {
     // Displacement values will be between 0-15.
     // We create a coarse histogram to see how many peaks we find.
     int nbins = OUT_OF_RANGE + 1;
-    int hBins[nbins];
-    float data[self.displacements.count];
+    int* hBins = (int*)malloc(nbins * sizeof(int));
+    float* data = (float*)malloc(self.displacements.count * sizeof(float));
     for (int i=0; i<nbins; i++) hBins[i] = 0;
     // Populate the histogram by converting displacements to histogram indices.
     // Round each displacement to get the bin index.
@@ -1496,7 +1496,7 @@ enum ifc242xValue {
     
     // Fill sig_sign buffer with just 1 or -1 indicating the sign
     // of the filtered signal.
-    int sig_sign[self.filtered.count];
+    int* sig_sign = (int*)malloc(self.filtered.count * sizeof(int));
     i=0;
     for (NSNumber* n in self.filtered) {
         if ([n floatValue] >= 0) {
@@ -1511,8 +1511,8 @@ enum ifc242xValue {
     // Fill these buffers with indications for positive or
     // negative zero crossings.  These are the blade boundaries.
     // Blades tip go from a negative zc to a positiv zc.
-    bool pos_crossing[self.filtered.count];
-    bool neg_crossing[self.filtered.count];
+    bool* pos_crossing = (bool*)malloc(self.filtered.count * sizeof(bool));
+    bool* neg_crossing = (bool*)malloc(self.filtered.count * sizeof(bool));
     for (i=0; i<self.filtered.count; i++) {
         if (i==0) {
             // Skip first value
@@ -1672,6 +1672,12 @@ enum ifc242xValue {
             }
         }
     }
+
+    free(neg_crossing);
+    free(pos_crossing);
+    free(sig_sign);
+    free(data);
+    free(hBins);
     
     NSLog(@"Done.");
 }
