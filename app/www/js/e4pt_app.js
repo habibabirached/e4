@@ -1212,9 +1212,18 @@ function pluginMessage(msg) {
                 setIndicatorColor("green");
                 document.getElementById("STATUS_DISPLAY").innerHTML = "Connected"
                 serialConnected = true;
+                
+                
+                $("#REV_PROGRESS_BAR").show();
+                $("#REV_PROGRESS").html('&nbsp' + 50 + '%');
+                $("#REV_PROGRESS").css('width', '50%');
+                
             }
             if (msg.status == "acquiring") {
                 setIndicatorColor("red");
+                $("#REV_PROGRESS").html('&nbsp' + '0%');
+                $("#REV_PROGRESS").css('width', '0%');
+                $("#REV_PROGRESS_BAR").show();
             }
             if (msg.status == "processing") {
                 setIndicatorColor("blue");
@@ -1228,6 +1237,9 @@ function pluginMessage(msg) {
             if (msg.status == "mastering_in_progress") {
                 mastering_in_progress();
             }
+            if (msg.status == "waiting") {
+                setIndicatorColor("yellow");
+            }
             if (msg.status.includes("Error:")) {
                 var alertMsg = msg.status;
                 e4PtAlert(alertMsg);
@@ -1236,6 +1248,7 @@ function pluginMessage(msg) {
         case "data":
             console.log("Received Data Message");
             setIndicatorColor("green");
+            $("#REV_PROGRESS_BAR").hide();
             document.getElementById("CASING_THICKNESS").value = "";
             msg.data = JSON.parse(msg.data);
             msg.intensity = JSON.parse(msg.intensity);
@@ -1255,6 +1268,10 @@ function pluginMessage(msg) {
         case "alert":
             console.log("Received an alert message: ", msg.message);
             e4PtAlert(msg.message);
+        case "progress":
+            console.log("Progress: ", msg.progress);
+            $("#REV_PROGRESS").html('&nbsp' + msg.progress + '%');
+            $("#REV_PROGRESS").css('width', msg.progress + '%');
     }
 }
 
@@ -1409,12 +1426,16 @@ function requestE4PtDataWithMetaData(acquisitionTime, frame, sn, stage, position
     casing_thickness = casing_thickness.replace(/\s+/g, '_');
     spacer_thickness = spacer_thickness.replace(/\s+/g, '_');
     var num_blades = 0;
+    var blade_width = 0;
+    var tip_diameter = 0;
     if (typeof current_frame_data.stage_info !== 'undefined') {
         if (typeof current_frame_data.stage_info[current_stage] !== 'undefined') {
-            num_blades = current_frame_data.stage_info[current_stage].blade_count
+            num_blades = current_frame_data.stage_info[current_stage].blade_count;
+            blade_width = current_frame_data.stage_info[current_stage].blade_width;
+            tip_diameter = current_frame_data.stage_info[current_stage].tip_diameter;
         }
     }
-    var message = {"args":["send_data",acquisitionTime, frame, sn, stage, position, casing_thickness, spacer_thickness, num_blades]};    
+    var message = {"args":["send_data",acquisitionTime, frame, sn, stage, position, casing_thickness, spacer_thickness, num_blades, tip_diameter, blade_width]};
     if (communicationChannel == "WebSocket") {
         message = JSON.stringify(message);
         sendWSMessage(message);

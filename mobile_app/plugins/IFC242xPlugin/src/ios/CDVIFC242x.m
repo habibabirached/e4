@@ -35,6 +35,7 @@
 // 192 = 64 * 3.  Data seems to come in 64 byte packets and data from
 // the IFC242x comes in 3-byte values.
 #define BYTE_BUFFER_SIZE 192
+#define RX_FORWARD_COUNT 64
 
 // Some defines for the signal processing
 #define KERNEL_SIZE 13
@@ -50,6 +51,9 @@
 // displacement value to maximize bandwidth.
 //#define SERIAL_SEND_TIMESTAMP
 #define SEND_DISPLACEMENT_ONLY
+
+// Number of desired points measured per blade.
+#define DESIRED_POINTS_PER_BLADE 5.0
 
 // This option, when defined causes the program to output
 // the minimum clearance for each blade rather than the
@@ -67,7 +71,8 @@ enum pluginState {
     setMeasurementRateInProgress,
     setThresholdInProgress,
     collectingDataInProgress,
-    notReady
+    notReady,
+    timeOut
 };
 
 enum ifc242xValue {
@@ -91,6 +96,8 @@ enum ifc242xValue {
 @property (strong, nonatomic) NSString* units;
 @property (strong, nonatomic) NSString* num_blades;
 @property (strong, nonatomic) NSString* sensor_measurement_range;
+@property (strong, nonatomic) NSString* blade_width;
+@property (strong, nonatomic) NSString* tip_diameter;
     
 
 -(instancetype)init;
@@ -112,6 +119,8 @@ enum ifc242xValue {
 @synthesize units = _units;
 @synthesize num_blades = _num_blades;
 @synthesize sensor_measurement_range = _sensor_measurement_range;
+@synthesize blade_width = _blade_width;
+@synthesize tip_diameter = _tip_diameter;
     
 
 -(instancetype)init {
@@ -142,6 +151,7 @@ enum ifc242xValue {
 - (void)setMeasurementRate:(NSString*)rate;
 - (void)setThreshold:(NSString*)threshold;
 - (void)collectData:(int)num_sets casingThickness:(float)casing_thicknesss;
+- (void)doDataCollection:(NSString*)acqTime;
 
 // IP Connection Commands
 - (void)sendTelnetCommand;
@@ -168,6 +178,8 @@ enum ifc242xValue {
 @property (nonatomic,retain) NSTimer * timerDataStreamOpening;
 @property (nonatomic, retain) NSTimer* timerSendTelnetCommand;
 @property (nonatomic, retain) NSTimer* timerDemoFunctions;
+@property (nonatomic, retain) NSTimer* timerProgress;
+@property (nonatomic, retain) NSTimer* timerWaiting;
 @property (strong, nonatomic) NSMutableArray* kernel;
 
 // Variables needed for data collection.
@@ -201,6 +213,7 @@ enum ifc242xValue {
 @property (nonatomic) int set_count;
 @property (nonatomic) int data_index;
 @property (nonatomic) int num_sets;
+@property (nonatomic) float progress;
 
 @property (nonatomic) bool demoMode;
 @property (strong, nonatomic) NSString* controllerType;
@@ -264,6 +277,7 @@ enum ifc242xValue {
 @synthesize set_count = _set_count;
 @synthesize data_index = _data_index;
 @synthesize num_sets = _num_sets;
+@synthesize progress = _progress;
 @synthesize plugin = _plugin;
 
 @synthesize datasetIds = _datasetIds;
@@ -447,6 +461,58 @@ enum ifc242xValue {
     }
 }
 
+- (void)timeoutProgressTimer:(NSTimer*)timer {
+    NSString* progress = [NSString stringWithFormat:@"%f",self.progress*100.0];
+    NSDictionary* jsonDict = @{@"type":@"progress",@"progress":progress};
+    CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];
+    result.keepCallback = [NSNumber numberWithBool:YES];
+    [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+    if (self.progress == 1.0) {
+        [timer invalidate];
+    }
+}
+
+- (void)timeoutWaitTimer:(NSTimer*)timer {
+    NSDictionary* info = [timer userInfo];
+    NSNumber* timeout = [info valueForKey:@"timeout"];
+    NSString* nextProc = [info valueForKey:@"nextProcess"];
+    NSTimeInterval dT = [[NSDate date] timeIntervalSince1970] - self.startTime;
+    if (dT < [timeout doubleValue]) {
+        if (self.pState == ready) {
+            [timer invalidate];  // Everything is good. Turn off the timer and do the next thing.
+            if ([nextProc containsString:@"doDataCollection"]) {
+                NSLog(@"No timeout. Do data collection");
+                NSString* acqTime = [info valueForKey:@"acqTime"];
+                [self doDataCollection:acqTime];
+            }
+        }
+        else {
+            // otherwise, keep waiting...
+            NSDictionary* jsonDict = @{@"type":@"status",@"status":@"waiting"};
+            CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];
+            result.keepCallback = [NSNumber numberWithBool:YES];
+            [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+        }
+    }
+    else {
+        if (self.pState != ready) {
+            // This is the error condition. Something didn't happen
+            // in the alotted time.
+            NSString* msg = @"";
+            if (self.pState == setMeasurementRateInProgress) {
+                msg = @"Error setting measurement rate. Timeout.";
+            }
+            NSLog(@"%@",msg);
+            NSDictionary* jsonDict = @{@"type":@"alert",@"message":msg};
+            CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];
+            result.keepCallback = [NSNumber numberWithBool:NO];
+            [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+            self.pState = ready;
+        }
+        [timer invalidate];
+    }
+}
+
 - (void)timeoutTimerDemoMode:(NSTimer*)timer {
     NSString* arg = timer.userInfo;
     if ([arg containsString:@"dark_reference"]) {
@@ -586,6 +652,7 @@ enum ifc242xValue {
     self.nSync = false;
     self.leftoverBytes = 0;
     self.startTime = [[NSDate date] timeIntervalSince1970]; // start time timestamp in whole seconds.
+    self.progress = 0.0;
 
     
     [self.telnetCmds removeAllObjects];
@@ -778,46 +845,50 @@ enum ifc242xValue {
             self.metaData.casing_thickness = [msgArray objectAtIndex:6];
             self.metaData.spacer_thickness = [msgArray objectAtIndex:7];
             self.metaData.num_blades = [msgArray objectAtIndex:8];
+            self.metaData.tip_diameter = [msgArray objectAtIndex:9];
+            self.metaData.blade_width = [msgArray objectAtIndex:10];
         }
         
-        int num_sets = 0;
-        float nSets = 0.0;
-        float meas_rate = [self.measurement_rate floatValue] * 1000; // measurement_rate is in kHz.
-        if ([self.connectionMode containsString:@"ethernet"]) {
-            // 100 samples/frame, "* 1000" converts the measurement rate from kHz to Hz.
-            nSets = meas_rate * [acqTime floatValue] / 100.0;
-        }
-        if ([self.connectionMode containsString:@"serial"]) {
-            // "* 1000" converts the measurement rate from kHz to Hz.
-#ifdef SERIAL_SEND_TIMESTAMP
-            float bytesPerDataSet = 9.0;  // (3 bytes each, Inten., Disp., & Timestamp)
-#elif defined(SEND_DISPLACEMENT_ONLY)
-            float bytesPerDataSet = 3.0;  // (3 bytes for displacement)
-#else
-            float bytesPerDataSet = 6.0;  // (3 bytes each, Inten., Disp.)
-#endif
-            float dataSetsPerFrame = 64.0/bytesPerDataSet; // 64 bytes/Rx frame
-            nSets = meas_rate * [acqTime floatValue] / dataSetsPerFrame;
-        }
-        num_sets = ceil(nSets); // Round up.
-
-        if (!self.demoMode) {
-            // now call collect data with the acquisition time.
-            [self collectData:num_sets casingThickness:[self.metaData.casing_thickness floatValue]];
+        // Check if the value is specified in rpm.  If so, extract the rpm value.
+        bool isRPM = false;
+        float rpm = 0.0;
+        if ([acqTime containsString:@"rpm"]) {
+            isRPM = true;
+            acqTime = [acqTime substringToIndex:acqTime.length-3]; // crop off the "rpm"
+            rpm = [acqTime floatValue];
+            NSArray* timeAndRate = [self acquisitionTimeAndRate:rpm];
+            // timeAndRate: (0) acquisitionTime; (1) measurementRate; (2) Errors.
+            NSString* err = [timeAndRate objectAtIndex:2];
+            if (err.length != 0) {
+                // Report errors.
+                NSDictionary* jsonDict = @{@"type":@"alert",@"message":err};
+                CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];// You can send data, String, int, array, dictionary, etc.
+                result.keepCallback = [NSNumber numberWithBool:YES];
+                [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+                return;
+            }
+            else {
+                acqTime = [NSString stringWithFormat:@"%@",[timeAndRate objectAtIndex:0]];
+                // Set new measurement rate
+                self.startTime = [[NSDate date] timeIntervalSince1970]; // start timeout timer
+                [self setMeasurementRate:[timeAndRate objectAtIndex:1]];
+                // The timeoutWaitTimer callback will start data acquisition after the measurement
+                // rate is set.  If the timeout expires, the user just gets an error message.
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    NSDictionary* info = [[NSDictionary alloc] init];
+                    [info setValue:[NSNumber numberWithFloat:5.0] forKey:@"timeout"]; // The timeout duration.
+                    [info setValue:@"doDataCollection" forKey:@"nextProcess"];
+                    [info setValue:acqTime forKey:@"acqTime"];
+                    self.timerWaiting = [ NSTimer scheduledTimerWithTimeInterval:1.0
+                                                                          target:self
+                                                                        selector:@selector(timeoutWaitTimer:)
+                                                                        userInfo:info
+                                                                         repeats:YES];
+                });
+            }
         }
         else {
-            NSDictionary* jsonDict = @{@"type":@"status",@"status":@"acquiring"};
-            CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];// You can send data, String, int, array, dictionary, etc.
-            result.keepCallback = [NSNumber numberWithBool:YES];
-            [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
-            NSString* demoMsg = @"collect_data";
-            dispatch_async(dispatch_get_main_queue(), ^{
-                self.timerDemoFunctions = [ NSTimer scheduledTimerWithTimeInterval:3.0
-                                                                            target:self
-                                                                          selector:@selector(timeoutTimerDemoMode:)
-                                                                          userInfo:demoMsg
-                                                                           repeats:NO];
-            });
+            [self doDataCollection:acqTime];
         }
     }
     if ([cmd containsString:@"scan_meta_data"]) {
@@ -886,6 +957,16 @@ enum ifc242xValue {
         NSLog(@"Got set_measuring_rate");
         if (!self.demoMode) {
             [self setMeasurementRate:[msgArray objectAtIndex:1]];
+            dispatch_async(dispatch_get_main_queue(), ^{
+                NSDictionary* info = [[NSDictionary alloc] init];
+                [info setValue:[NSNumber numberWithFloat:5.0] forKey:@"timeout"]; // The timeout duration.
+                [info setValue:@"nothing" forKey:@"nextProcess"];
+                self.timerWaiting = [ NSTimer scheduledTimerWithTimeInterval:1.0
+                                                                      target:self
+                                                                    selector:@selector(timeoutWaitTimer:)
+                                                                    userInfo:info
+                                                                     repeats:YES];
+            });
         }
         else {
             NSString* demoMsg = @"measurement_rate";
@@ -964,6 +1045,104 @@ enum ifc242xValue {
     }
     else {
         NSLog(@"Got %@",msg);
+    }
+}
+
+// acquisitionTimeAndRate calculates the needed acquisition time and measurement rate
+// to get 1.05 rotations with ~5 pts/blade tip.  This function returns an array with
+// 3 elements. (1) acquisition time; (2) measurement rate; (3) error messages, if any.
+- (NSArray*)acquisitionTimeAndRate:(float)RPM {
+    float measRate = [self.measurement_rate floatValue];
+    float bladeWidth = [self.metaData.blade_width floatValue];
+    float inchesPerSecond = 1.05 * [self.metaData.tip_diameter floatValue] * RPM / 60.0;
+    float acquisitionTime =  [self.metaData.tip_diameter floatValue] / inchesPerSecond;
+    float samplesPerInch = measRate / inchesPerSecond;
+    float ptsPerBlade = samplesPerInch * bladeWidth;
+    if (ptsPerBlade < DESIRED_POINTS_PER_BLADE) {
+        while (ptsPerBlade < DESIRED_POINTS_PER_BLADE) {
+            measRate += 100; // Decrement the rate by 100Hz until the goal is met.
+            samplesPerInch = measRate / inchesPerSecond;
+            ptsPerBlade = samplesPerInch * bladeWidth;
+        }
+    }
+    else if (ptsPerBlade > DESIRED_POINTS_PER_BLADE) {
+        while (ptsPerBlade > DESIRED_POINTS_PER_BLADE) {
+            measRate -= 100; // Decrement the rate by 100Hz until the goal is met.
+            samplesPerInch = measRate / inchesPerSecond;
+            ptsPerBlade = samplesPerInch * bladeWidth;
+        }
+    }
+    NSString* errorMessage = @"";
+    if (measRate > 6000.0) {
+        measRate = 6000.0;
+        errorMessage = [errorMessage stringByAppendingString:@"ErrorRateHigh "];
+    }
+    if (measRate <= 0) {
+        measRate = 0.1;
+        errorMessage = [errorMessage stringByAppendingString:@"ErrorRateLow "];
+    }
+    if (acquisitionTime <= 0) {
+        errorMessage = [errorMessage stringByAppendingString:@"ErrorTimeHigh "];
+    }
+    if (acquisitionTime > 1800) {
+        errorMessage = [errorMessage stringByAppendingString:@"ErrorTimeLow "];
+    }
+    samplesPerInch = measRate / inchesPerSecond;
+    ptsPerBlade = samplesPerInch * bladeWidth;
+    return [NSArray arrayWithObjects:
+            [NSNumber numberWithFloat:acquisitionTime],
+            [NSNumber numberWithFloat:measRate],
+            errorMessage, nil];
+}
+
+- (void)doDataCollection:(NSString*)acqTime {
+    self.startTime = [[NSDate date] timeIntervalSince1970]; // start time timestamp in whole seconds.
+    int num_sets = 0;
+    float nSets = 0.0;
+    float meas_rate = [self.measurement_rate floatValue] * 1000; // measurement_rate is in kHz.
+    if ([self.connectionMode containsString:@"ethernet"]) {
+        // 100 samples/frame, "* 1000" converts the measurement rate from kHz to Hz.
+        nSets = meas_rate * [acqTime floatValue] / 100.0;
+    }
+    if ([self.connectionMode containsString:@"serial"]) {
+        // "* 1000" converts the measurement rate from kHz to Hz.
+#ifdef SERIAL_SEND_TIMESTAMP
+        float bytesPerDataSet = 9.0;  // (3 bytes each, Inten., Disp., & Timestamp)
+#elif defined(SEND_DISPLACEMENT_ONLY)
+        float bytesPerDataSet = 3.0;  // (3 bytes for displacement)
+#else
+        float bytesPerDataSet = 6.0;  // (3 bytes each, Inten., Disp.)
+#endif
+        float dataSetsPerFrame = (float)RX_FORWARD_COUNT/bytesPerDataSet; // 64 bytes/Rx frame
+        nSets = meas_rate * [acqTime floatValue] / dataSetsPerFrame;
+    }
+    num_sets = ceil(nSets); // Round up.
+    self.progress = 0.0;
+    
+    if (!self.demoMode) {
+        // now call collect data with the acquisition time.
+        [self collectData:num_sets casingThickness:[self.metaData.casing_thickness floatValue]];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            self.timerProgress = [ NSTimer scheduledTimerWithTimeInterval:1.0
+                                                                   target:self
+                                                                 selector:@selector(timeoutProgressTimer:)
+                                                                 userInfo:nil
+                                                                  repeats:YES];
+        });
+    }
+    else {
+        NSDictionary* jsonDict = @{@"type":@"status",@"status":@"acquiring"};
+        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];// You can send data, String, int, array, dictionary, etc.
+        result.keepCallback = [NSNumber numberWithBool:YES];
+        [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+        NSString* demoMsg = @"collect_data";
+        dispatch_async(dispatch_get_main_queue(), ^{
+            self.timerDemoFunctions = [ NSTimer scheduledTimerWithTimeInterval:3.0
+                                                                        target:self
+                                                                      selector:@selector(timeoutTimerDemoMode:)
+                                                                      userInfo:demoMsg
+                                                                       repeats:NO];
+        });
     }
 }
 
@@ -1217,6 +1396,7 @@ enum ifc242xValue {
                                 }
                                 
                                 self.set_count += 1;
+                                self.progress = (float)self.set_count / (float)self.num_sets;
                                 
                             }
                             //else {
@@ -1980,7 +2160,7 @@ enum ifc242xValue {
     portCfg.txAckSetting = 1;
     portCfg.rxFlowControl = self.rts;    // set flow control
     portCfg.txFlowControl = self.cts;
-    portCfg.rxForwardCount = 252; // default = 16;
+    portCfg.rxForwardCount = RX_FORWARD_COUNT;
     portCfg.rxForwardingTimeout = 50; // default = 100;
     [self.rscMgr setPortConfig:&portCfg requestStatus: NO];
         
@@ -2244,6 +2424,8 @@ enum ifc242xValue {
          */
         
         self.set_count += 1;
+        self.progress = (float)self.set_count / (float)self.num_sets;
+
     }
     if (self.set_count == self.num_sets) {
         if (self.pState == collectingDataInProgress) {
