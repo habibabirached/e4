@@ -320,7 +320,14 @@ function acquisitionTimePromptCallback(results) {
     console.log("@acquisitionTimePromptCallback");
     if (results.buttonIndex > 1) return;
     current_frame_data = [];
-    acquisitionTime = parseFloat(results.input1);
+    acquisitionTime = null;
+    if (results.input1.includes("rpm") || results.input1.includes("RPM")) {
+        // RPM was specified
+        acquisitionTime = results.input1;
+    }
+    else {
+        acquisitionTime = parseFloat(results.input1);
+    }
     if (acquisitionTime != null) {
         if (Number.isFinite(acquisitionTime)) {
             if (acquisitionTime > 0) {
@@ -333,10 +340,22 @@ function acquisitionTimePromptCallback(results) {
 function acquisitionTimePromptWithMetaDataCallback(results) {
     console.log("@acquisitionTimePromptWithMetaDataCallback");
     if (results.buttonIndex > 1) return;
-    acquisitionTime = parseFloat(results.input1);
+    console.log("input1: ", results.input1);
+    acquisitionTime = null;
+    if (results.input1.includes("rpm") || results.input1.includes("RPM")) {
+        // RPM was specified
+        acquisitionTime = results.input1;
+        console.log("w/RPM: ", acquisitionTime);
+    }
+    else {
+        acquisitionTime = parseFloat(results.input1);
+        // Append rpm if its not there already.
+        acquisitionTime = acquisitionTime.toString() + "rpm";
+        console.log("w/o RPM: ", acquisitionTime);
+    }
     if (acquisitionTime != null) {
-        if (Number.isFinite(acquisitionTime)) {
-            if (acquisitionTime > 0) {
+        //if (Number.isFinite(acquisitionTime)) {
+        //    if (acquisitionTime > 0) {
                 var sn = document.getElementById("SERIAL_NUMBER").value;
                 var frame = document.getElementById("FRAME_SIZE").value;
                 var casing_thickness = document.getElementById("CASING_THICKNESS").value;
@@ -344,8 +363,8 @@ function acquisitionTimePromptWithMetaDataCallback(results) {
                 var spacer_thickness = document.getElementById("SPACER_THICKNESS").value;
                 if (spacer_thickness.length > MAX_STR_LEN) spacer_thickness = spacer_thickness.substr(0,MAX_STR_LEN);
                 requestE4PtDataWithMetaData(acquisitionTime, frame, sn, current_stage, current_position, casing_thickness, spacer_thickness);
-            }
-        }
+        //    }
+        //}
     }
 }
 
@@ -658,15 +677,15 @@ function collect_stage_data() {
     var nav = navigator.notification;
     if (nav != null) {
         // We have plugins so we're in Cordova.  Use the Cordova notification.
-        navigator.notification.prompt('Please enter the acquisition time in seconds.',
+        navigator.notification.prompt('Please enter the rotor RPM.',
                                       acquisitionTimePromptWithMetaDataCallback,
-                                      'Acquisition Time',
+                                      'Enter RPM',
                                       ['Ok','Cancel'],
-                                      '3');
+                                      '1');
     }
     else {
         // No plugins, so we must not be in Cordova. Use a standard prompt.
-        acquisitionTime = window.prompt("Please enter the acquisition time in seconds.", "3");
+        acquisitionTime = window.prompt("Please enter the rotor RPM.", "1");
         acquisitionTimePromptWithMetaDataCallback({"input1":acquisitionTime});
     }
 }

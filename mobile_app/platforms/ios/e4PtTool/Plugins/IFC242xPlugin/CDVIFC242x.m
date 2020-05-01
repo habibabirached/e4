@@ -71,7 +71,9 @@ enum pluginState {
     setMeasurementRateInProgress,
     setThresholdInProgress,
     collectingDataInProgress,
+    clearanceComputationInProgress,
     notReady,
+    halted,
     timeOut
 };
 
@@ -148,7 +150,7 @@ enum ifc242xValue {
 - (void)disconnectDevice;
 - (void)doDarkReference;
 - (void)masterDevice;
-- (void)setMeasurementRate:(NSString*)rate;
+- (void)setMeasurementRate:(NSString*)rate withAlert:(bool)tf;
 - (void)setThreshold:(NSString*)threshold;
 - (void)collectData:(int)num_sets casingThickness:(float)casing_thicknesss;
 - (void)doDataCollection:(NSString*)acqTime;
@@ -210,10 +212,11 @@ enum ifc242xValue {
 @property (nonatomic) int num_pts_max;
 @property (nonatomic) int current_data_set_id;
 @property (nonatomic) int previous_data_set_id;
-@property (nonatomic) int set_count;
+@property (nonatomic) float set_count;
 @property (nonatomic) int data_index;
 @property (nonatomic) int num_sets;
 @property (nonatomic) float progress;
+@property (nonatomic) bool delayResponse;
 
 @property (nonatomic) bool demoMode;
 @property (strong, nonatomic) NSString* controllerType;
@@ -292,6 +295,7 @@ enum ifc242xValue {
 @synthesize demoMode = _demoMode;
 @synthesize startTime = _startTime;
 @synthesize testTime = _testTime;
+@synthesize delayResponse = _delayResponse;
     
 @synthesize kernel = _kernel;
 
@@ -496,17 +500,18 @@ enum ifc242xValue {
     }
     else {
         if (self.pState != ready) {
-            // This is the error condition. Something didn't happen
-            // in the alotted time.
+            // This is the timeout condition. The timeout has expired.
+            // This could mean an error occured.
             NSString* msg = @"";
             if (self.pState == setMeasurementRateInProgress) {
-                msg = @"Error setting measurement rate. Timeout.";
+                msg = @"Error setting measurement rate.\nTimeout.";
+                
+                NSLog(@"%@",msg);
+                NSDictionary* jsonDict = @{@"type":@"alert",@"message":msg};
+                CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];
+                result.keepCallback = [NSNumber numberWithBool:NO];
+                [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
             }
-            NSLog(@"%@",msg);
-            NSDictionary* jsonDict = @{@"type":@"alert",@"message":msg};
-            CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];
-            result.keepCallback = [NSNumber numberWithBool:NO];
-            [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
             self.pState = ready;
         }
         [timer invalidate];
@@ -653,6 +658,7 @@ enum ifc242xValue {
     self.leftoverBytes = 0;
     self.startTime = [[NSDate date] timeIntervalSince1970]; // start time timestamp in whole seconds.
     self.progress = 0.0;
+    self.delayResponse = false;
 
     
     [self.telnetCmds removeAllObjects];
@@ -725,7 +731,7 @@ enum ifc242xValue {
     [self sendTelnetCommand];
 }
 
-- (void)setMeasurementRate:(NSString*)rate {
+- (void)setMeasurementRate:(NSString*)rate withAlert:(bool)tf {
     if (![self checkReady]) return;
     self.pState = setMeasurementRateInProgress;
     self.measurement_rate = rate;
@@ -815,9 +821,10 @@ enum ifc242xValue {
 
 - (void)messageHandler:(NSString*)msg {
     
+    NSLog(@"@messageHandler: pState = %d", self.pState);
     NSArray* msgArray = [msg componentsSeparatedByString:@";"]; // This results in an extra empty string.
     NSString* cmd = [msgArray objectAtIndex:0];
-
+    
     if ([cmd containsString:@"ping"]) {
         NSLog(@"Got ping");
     }
@@ -852,7 +859,7 @@ enum ifc242xValue {
         // Check if the value is specified in rpm.  If so, extract the rpm value.
         bool isRPM = false;
         float rpm = 0.0;
-        if ([acqTime containsString:@"rpm"]) {
+        if ([acqTime containsString:@"rpm"] || [acqTime containsString:@"RPM"]) {
             isRPM = true;
             acqTime = [acqTime substringToIndex:acqTime.length-3]; // crop off the "rpm"
             rpm = [acqTime floatValue];
@@ -871,14 +878,14 @@ enum ifc242xValue {
                 acqTime = [NSString stringWithFormat:@"%@",[timeAndRate objectAtIndex:0]];
                 // Set new measurement rate
                 self.startTime = [[NSDate date] timeIntervalSince1970]; // start timeout timer
-                [self setMeasurementRate:[timeAndRate objectAtIndex:1]];
+                [self setMeasurementRate:[timeAndRate objectAtIndex:1] withAlert:false];
                 // The timeoutWaitTimer callback will start data acquisition after the measurement
                 // rate is set.  If the timeout expires, the user just gets an error message.
                 dispatch_async(dispatch_get_main_queue(), ^{
-                    NSDictionary* info = [[NSDictionary alloc] init];
-                    [info setValue:[NSNumber numberWithFloat:5.0] forKey:@"timeout"]; // The timeout duration.
-                    [info setValue:@"doDataCollection" forKey:@"nextProcess"];
-                    [info setValue:acqTime forKey:@"acqTime"];
+                    NSDictionary* info = [[NSDictionary alloc] initWithObjectsAndKeys:
+                                         [NSNumber numberWithFloat:5.0], @"timeout",
+                                         @"doDataCollection", @"nextProcess",
+                                         acqTime, @"acqTime", nil];
                     self.timerWaiting = [ NSTimer scheduledTimerWithTimeInterval:1.0
                                                                           target:self
                                                                         selector:@selector(timeoutWaitTimer:)
@@ -956,7 +963,7 @@ enum ifc242xValue {
     if ([cmd containsString:@"set_measuring_rate"]) {
         NSLog(@"Got set_measuring_rate");
         if (!self.demoMode) {
-            [self setMeasurementRate:[msgArray objectAtIndex:1]];
+            [self setMeasurementRate:[msgArray objectAtIndex:1] withAlert:true];
             dispatch_async(dispatch_get_main_queue(), ^{
                 NSDictionary* info = [[NSDictionary alloc] init];
                 [info setValue:[NSNumber numberWithFloat:5.0] forKey:@"timeout"]; // The timeout duration.
@@ -1052,26 +1059,16 @@ enum ifc242xValue {
 // to get 1.05 rotations with ~5 pts/blade tip.  This function returns an array with
 // 3 elements. (1) acquisition time; (2) measurement rate; (3) error messages, if any.
 - (NSArray*)acquisitionTimeAndRate:(float)RPM {
-    float measRate = [self.measurement_rate floatValue];
     float bladeWidth = [self.metaData.blade_width floatValue];
-    float inchesPerSecond = 1.05 * [self.metaData.tip_diameter floatValue] * RPM / 60.0;
-    float acquisitionTime =  [self.metaData.tip_diameter floatValue] / inchesPerSecond;
-    float samplesPerInch = measRate / inchesPerSecond;
-    float ptsPerBlade = samplesPerInch * bladeWidth;
-    if (ptsPerBlade < DESIRED_POINTS_PER_BLADE) {
-        while (ptsPerBlade < DESIRED_POINTS_PER_BLADE) {
-            measRate += 100; // Decrement the rate by 100Hz until the goal is met.
-            samplesPerInch = measRate / inchesPerSecond;
-            ptsPerBlade = samplesPerInch * bladeWidth;
-        }
-    }
-    else if (ptsPerBlade > DESIRED_POINTS_PER_BLADE) {
-        while (ptsPerBlade > DESIRED_POINTS_PER_BLADE) {
-            measRate -= 100; // Decrement the rate by 100Hz until the goal is met.
-            samplesPerInch = measRate / inchesPerSecond;
-            ptsPerBlade = samplesPerInch * bladeWidth;
-        }
-    }
+    float inchesPerSecond = [self.metaData.tip_diameter floatValue] * RPM / 60.0;
+    float acquisitionTime =  1.05 * [self.metaData.tip_diameter floatValue] / inchesPerSecond;
+    float samplesPerInch = DESIRED_POINTS_PER_BLADE / bladeWidth;
+    float measRate = inchesPerSecond * samplesPerInch; // measRate in Hz.
+    // Round measurement rate to the next highest 100 Hz.
+    measRate /= 100.0;
+    measRate = ceilf(measRate);
+    measRate *= 100.0;
+    
     NSString* errorMessage = @"";
     if (measRate > 6000.0) {
         measRate = 6000.0;
@@ -1087,8 +1084,8 @@ enum ifc242xValue {
     if (acquisitionTime > 1800) {
         errorMessage = [errorMessage stringByAppendingString:@"ErrorTimeLow "];
     }
-    samplesPerInch = measRate / inchesPerSecond;
-    ptsPerBlade = samplesPerInch * bladeWidth;
+    // Convert measurement rate to kHz. for output
+    measRate /= 1000.0;
     return [NSArray arrayWithObjects:
             [NSNumber numberWithFloat:acquisitionTime],
             [NSNumber numberWithFloat:measRate],
@@ -1212,7 +1209,8 @@ enum ifc242xValue {
         [self.telnetCmds addObject:@"OUTPUT RS422\n"];
         [self sendTelnetCommand];
     }
-    
+    self.pState = collectingDataInProgress;
+    self.testTime = 0.0;
 }
 
 #pragma mark - TCPSocketDelegate
@@ -1305,7 +1303,6 @@ enum ifc242xValue {
                     NSLog(@"  TCP process data");
                     
                     long int len2;
-                    //__block int set_count = 0;
                     uint32_t order_number;
                     uint32_t serial_number;
                     uint32_t video_length;
@@ -1320,7 +1317,7 @@ enum ifc242xValue {
                         while (self.set_count < self.num_sets) {
                             len2 = [self.inputDataStream read:tmpBuf maxLength:4];
                             if ( strncmp((const char*)tmpBuf, "DATA", 4) == 0 ) {
-                                NSLog(@"FOUND DATA! - %d", self.set_count);
+                                NSLog(@"FOUND DATA! - %f", self.set_count);
                                 
                                 //for (int i=0; i<5; i++) self.totalBuffer[i] =0;
                                 len2 = [self.inputDataStream read:tmpBuf maxLength:4];
@@ -1341,7 +1338,7 @@ enum ifc242xValue {
                                 len2 = [self.inputDataStream read:tmpBuf maxLength:4];
                                 counter = tmpBuf[0] | (uint32_t)tmpBuf[1] << 8
                                 | (uint32_t)tmpBuf[2] << 16 | (uint32_t)tmpBuf[3] << 24;
-                                NSLog(@"%d: %d, %d, %d, %d, %d, %d", self.set_count, order_number, serial_number, video_length, len_meas_dat, num_frames, counter);
+                                NSLog(@"%f: %d, %d, %d, %d, %d, %d", self.set_count, order_number, serial_number, video_length, len_meas_dat, num_frames, counter);
                                 
                                 for (int i=0; i<num_frames; i++) {
                                     // Read data from which to extract intensity.
@@ -1387,7 +1384,7 @@ enum ifc242xValue {
                                     [self.displacements addObject:[NSNumber numberWithFloat:displacement]];
                                     [self.times addObject:[NSNumber numberWithUnsignedInteger:timestamp]];
                                     [self.intensities addObject:[NSNumber numberWithFloat:intensity]];
-                                    [self.datasetIds addObject:[NSNumber numberWithInt:self.set_count]];
+                                    [self.datasetIds addObject:[NSNumber numberWithInt:(int)self.set_count]];
                                     [self.point_counts addObject:[NSNumber numberWithInteger:num_frames]];
                                     
                                     NSLog(@"%@",[NSString stringWithFormat:@"\n%d: %u, %f, %f", i, timestamp, intensity, displacement]);
@@ -1396,7 +1393,7 @@ enum ifc242xValue {
                                 }
                                 
                                 self.set_count += 1;
-                                self.progress = (float)self.set_count / (float)self.num_sets;
+                                self.progress = self.set_count / (float)self.num_sets;
                                 
                             }
                             //else {
@@ -1404,6 +1401,7 @@ enum ifc242xValue {
                             //}
                         }
                         [self disconnectData]; // Stop receiving data
+                        self.progress = 1.0;
                         self.set_count = 0;
                         
                         // Load dummy data for testing without a rotor,
@@ -1420,9 +1418,10 @@ enum ifc242xValue {
                         result.keepCallback = [NSNumber numberWithBool:YES];
                         [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
                         
-                        [self computeClearance];
-                        
-                        [self returnData];
+                        if (self.pState != clearanceComputationInProgress) {
+                            [self computeClearance];
+                            [self returnData];
+                        }
                         [self.telnetCmds addObject:@"OUTPUT NONE\n"];
                         [self sendTelnetCommand];
                         
@@ -1526,6 +1525,10 @@ enum ifc242xValue {
             NSLog(@"Dark Correction Complete.");
             [self processComplete:@"connected"];
         }
+        if (self.pState == clearanceComputationInProgress) {
+            NSLog(@"Clearance computation complete.");
+            [self processComplete:@"connected"];
+        }
         if (self.pState == masteringInProgress) {
             // Check for mastering commands still in the queue.  If there are none, then
             // mastering is complete.  If there are still mastering commands in the queue
@@ -1585,6 +1588,7 @@ enum ifc242xValue {
         NSString* msgStr = [NSString stringWithFormat:@"Measurement rate set to %@ kHz.", self.measurement_rate];
         NSDictionary* jsonDict = @{@"type":@"alert",@"message":msgStr};
         CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];
+        result.keepCallback = [NSNumber numberWithBool:YES];
         [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
     }
     else if (self.pState == setThresholdInProgress) {
@@ -1598,10 +1602,12 @@ enum ifc242xValue {
         CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];// You can send data, String, int, array, dictionary, etc.
         [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
     }
+    
     self.pState = ready;
 }
 
 - (void)computeClearance {
+    self.pState = clearanceComputationInProgress;
     // Displacement values will be between 0-15.
     // We create a coarse histogram to see how many peaks we find.
     int nbins = OUT_OF_RANGE + 1;
@@ -1858,8 +1864,8 @@ enum ifc242xValue {
     free(sig_sign);
     free(data);
     free(hBins);
-    
-    NSLog(@"Done.");
+
+    NSLog(@"computeClearance Done.");
 }
 
 // computeKernel computes a normalized Laplacian-of-Gaussian kernel for
@@ -2211,7 +2217,7 @@ enum ifc242xValue {
 }
 
 - (void)parseSerialData:(NSData*)data {
-    NSLog(@"@parseSerialData");
+    NSLog(@"@parseSerialData: pState = %d", self.pState);
     
     if ((self.pState == masteringInProgress) ||
         (self.pState == darkReferenceInProgress) ||
@@ -2224,20 +2230,34 @@ enum ifc242xValue {
         return;
     }
     else {
-        if (data.length >= 4) {
-            NSString* response = [[NSString alloc] initWithData:data encoding:NSASCIIStringEncoding];
-            if (response != nil) {
-                if ([response containsString:@"->"]) {
-                    [self processResponse:response];
-                    return;
+        if (self.pState != collectingDataInProgress) {
+            if (data.length >= 4) {
+                NSString* response = [[NSString alloc] initWithData:data encoding:NSASCIIStringEncoding];
+                if (response != nil) {
+                    if ([response containsString:@"->"]) {
+                        if ((self.pState == halted) || (self.pState == clearanceComputationInProgress)) {
+                            self.delayResponse = true;
+                        }
+                        else {
+                            [self processResponse:response];
+                        }
+                        return;
+                    }
                 }
             }
+            return;  // if we're not collecting data, return.
         }
     }
+
+    //
+    // It has been seen that the number of bytes per read on the serial interface
+    // is not consistent.  So we have to count data sets (nominally 64 bytes)
+    // in fractional increments.
+    //
+    float set_inc = data.length/(float)RX_FORWARD_COUNT;
     
     // For receiving serial measurement data...
-    if (self.pState != collectingDataInProgress) {
-        self.pState = collectingDataInProgress;
+    if (self.testTime == 0.0) {
         self.testTime = ([[NSDate date] timeIntervalSince1970]) * 1000000;
         NSLog(@"Data collection start time: %f",self.testTime);
     }
@@ -2356,7 +2376,9 @@ enum ifc242xValue {
                 (self.readPtr == endPtr) ? (self.readPtr = self.byteBuffer) : self.readPtr++;
                 NSString* log = [NSString stringWithFormat:@"I:%d: ",ival];
                 logStr = [logStr stringByAppendingString:log];
-                [self.intensities addObject:[NSNumber numberWithFloat:(float)ival]];
+                if (self.pState == collectingDataInProgress) {
+                    [self.intensities addObject:[NSNumber numberWithFloat:(float)ival]];
+                }
                 self.nextIFCValue = IFCDisplacement;
             }
             else if (self.nextIFCValue == IFCDisplacement) {
@@ -2370,27 +2392,29 @@ enum ifc242xValue {
                 displacement = ((float)dval - 98232.0) * [self.metaData.sensor_measurement_range floatValue] / 65536.0;
                 NSString* log = [NSString stringWithFormat:@"D:%f: ", displacement];
                 logStr = [logStr stringByAppendingString:log];
-                [self.displacements addObject:[NSNumber numberWithFloat:displacement]];
+                if (self.pState == collectingDataInProgress) {
+                    [self.displacements addObject:[NSNumber numberWithFloat:displacement]];
 #ifdef SERIAL_SEND_TIMESTAMP
-                self.nextIFCValue = IFCTimestamp; // Next element is the timestamp.
+                    self.nextIFCValue = IFCTimestamp; // Next element is the timestamp.
 #elif defined(SEND_DISPLACEMENT_ONLY)
-                self.nextIFCValue = IFCDisplacement; // Only do displacement.
-                // Create a timestamp and record it.
-                unixTStamp = ([[NSDate date] timeIntervalSince1970] - self.startTime) * 1000000; // microseconds since start.
-                tval = (uint32_t)floor(unixTStamp);
-                [self.times addObject:[NSNumber numberWithInt:(int)tval]];
-                [self.intensities addObject:[NSNumber numberWithFloat:1.0]];
-                [self.point_counts addObject:[NSNumber numberWithInt:pt_count]];
-                [self.datasetIds addObject:[NSNumber numberWithInt:self.set_count]];
+                    self.nextIFCValue = IFCDisplacement; // Only do displacement.
+                    // Create a timestamp and record it.
+                    unixTStamp = ([[NSDate date] timeIntervalSince1970] - self.startTime) * 1000000; // microseconds since start.
+                    tval = (uint32_t)floor(unixTStamp);
+                    [self.times addObject:[NSNumber numberWithInt:(int)tval]];
+                    [self.intensities addObject:[NSNumber numberWithFloat:1.0]];
+                    [self.point_counts addObject:[NSNumber numberWithInt:pt_count]];
+                    [self.datasetIds addObject:[NSNumber numberWithInt:(int)self.set_count]];
 #else
-                self.nextIFCValue = IFCIntensity; // Skip timestamp to increase throughput.
-                // Create a timestamp and record it.
-                unixTStamp = ([[NSDate date] timeIntervalSince1970] - self.startTime) * 1000000; // microseconds since start.
-                tval = (uint32_t)floor(unixTStamp);
-                [self.times addObject:[NSNumber numberWithInt:(int)tval]];
-                [self.point_counts addObject:[NSNumber numberWithInt:pt_count]];
-                [self.datasetIds addObject:[NSNumber numberWithInt:self.set_count]];
+                    self.nextIFCValue = IFCIntensity; // Skip timestamp to increase throughput.
+                    // Create a timestamp and record it.
+                    unixTStamp = ([[NSDate date] timeIntervalSince1970] - self.startTime) * 1000000; // microseconds since start.
+                    tval = (uint32_t)floor(unixTStamp);
+                    [self.times addObject:[NSNumber numberWithInt:(int)tval]];
+                    [self.point_counts addObject:[NSNumber numberWithInt:pt_count]];
+                    [self.datasetIds addObject:[NSNumber numberWithInt:(int)self.set_count]];
 #endif
+                }
             }
             else if (self.nextIFCValue == IFCTimestamp) {
                 tval = 0;
@@ -2402,9 +2426,11 @@ enum ifc242xValue {
                 (self.readPtr == endPtr) ? (self.readPtr = self.byteBuffer) : self.readPtr++;
                 NSString* log = [NSString stringWithFormat:@"T:%d: ",tval];
                 logStr = [logStr stringByAppendingString:log];
-                [self.times addObject:[NSNumber numberWithInt:(int)tval]];
-                [self.point_counts addObject:[NSNumber numberWithInt:pt_count]];
-                [self.datasetIds addObject:[NSNumber numberWithInt:self.set_count]];
+                if (self.pState == collectingDataInProgress) {
+                    [self.times addObject:[NSNumber numberWithInt:(int)tval]];
+                    [self.point_counts addObject:[NSNumber numberWithInt:pt_count]];
+                    [self.datasetIds addObject:[NSNumber numberWithInt:(int)self.set_count]];
+                }
                 self.nextIFCValue = IFCIntensity;
             }
         }
@@ -2423,18 +2449,30 @@ enum ifc242xValue {
          printf("\n");
          */
         
-        self.set_count += 1;
+        self.set_count += set_inc;
         self.progress = (float)self.set_count / (float)self.num_sets;
 
     }
-    if (self.set_count == self.num_sets) {
-        if (self.pState == collectingDataInProgress) {
-            self.pState = ready;
-            NSTimeInterval stop = ([[NSDate date] timeIntervalSince1970]) * 1000000;
-            NSLog(@"Data collection stop time: %f",stop);
-            NSLog(@"Elapsed Time: %f", (stop - self.testTime));
-        }
-        [self disconnectData]; // This shuts off the flow of data with "OUTPUT NONE".
+    if (self.set_count >= self.num_sets) {
+        if ((self.pState == halted) || (self.pState == clearanceComputationInProgress)) return;
+        self.pState = halted;
+        self.set_count = 0;
+        self.progress = 1.0;
+        //
+        // disconnectData shuts off the flow of data by sending "OUTPUT NONE"
+        // to the RS422 port.  However, this triggers an asynchronous response
+        // of "->" from the controller.  This is caught above.  Normally this
+        // would call processResponse (setting telnetIsReady=true), which in
+        // turn would call processComplete (setting pState=ready).
+        // We want to delay all of this until after clearance calculation is
+        // complete.
+        //
+        [self disconnectData];
+        [self resetSerialParams];
+        NSLog(@"set_count >= num_sets: pState = %d", self.pState);
+        NSTimeInterval stop = ([[NSDate date] timeIntervalSince1970]) * 1000000;
+        NSLog(@"Data collection stop time: %f",stop);
+        NSLog(@"Elapsed Time: %f seconds.", (stop - self.testTime)/1000000.0);
 
         // Because data sets (Inten.,Disp.,Time) can be split across transmissions, we can end up
         // with different sized arrays here.  We need to trim the larger ones to the size of the
@@ -2457,13 +2495,26 @@ enum ifc242xValue {
         if (SIMULATED_DATA == 1) {
             [self loadCSVFile];
         }
-        [self computeClearance];
+        NSLog(@"Calling compute clearance...");
+        [self computeClearance]; // computeClearance changes pState to clearanceComputationInProgress
+        NSLog(@"Calling returnData");
         [self returnData];
-        [self resetSerialParams];
+        NSLog(@"Checking delayResponse");
+        self.pState = ready;
+        if (self.delayResponse) {
+            NSLog(@"Calling delayed processResponse ->");
+            [self processResponse:@"->"];
+            self.delayResponse = false;
+        }
     }
 }
 
 - (void)resetSerialParams {
+    // Flush the cable Rx buffer to prepare for next acquisition.
+    serialPortControl portCtl;
+    portCtl.rxFlush = 1;
+    portCtl.txFlush = 1;
+    [self.rscMgr setPortControl:&portCtl requestStatus:false];
     // Reset all the parameters needed to start serial acquisition from scratch.
     self.nSync = false;
     self.nextIFCValue = IFCIntensity;
@@ -2475,11 +2526,6 @@ enum ifc242xValue {
     if (self.byteBuffer != nil) {
         for (int i=0; i<BYTE_BUFFER_SIZE; i++) self.byteBuffer[i] = 0;
     }
-    // Flush the cable Rx buffer to prepare for next acquisition.
-    serialPortControl portCtl;
-    portCtl.rxFlush = 1;
-    portCtl.txFlush = 1;
-    [self.rscMgr setPortControl:&portCtl requestStatus:false];
 }
 
 
@@ -2649,7 +2695,7 @@ enum ifc242xValue {
     [self.commandDelegate runInBackground:^{
         NSLog(@"@CDVIFC242x.m::setMeasureRate");
         NSString* rateStr = [command.arguments objectAtIndex:0];
-        [self.manager setMeasurementRate:rateStr];
+        [self.manager setMeasurementRate:rateStr withAlert:true];
     }];
 }
 
