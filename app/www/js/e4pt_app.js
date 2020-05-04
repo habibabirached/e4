@@ -588,8 +588,8 @@ function set_measurement_rate(idx) {
     return;
   }
   
-    if (meas_rate_f > 3.5) {
-      e4PtConfirm("Measurement rates over 3.5kHz may be unreliable without specialized hardware.\nProceed?",
+    if (meas_rate_f > 6.5) {
+      e4PtConfirm("Measurement rates over 6.5kHz are not supported. Rate will be set to 6.5kHz.",
         function(buttonIndex) {
             if (buttonIndex==1){//OK
                 // Proceed
