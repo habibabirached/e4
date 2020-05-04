@@ -50,7 +50,7 @@
 // Define SEND_DISPLACEMENT_ONLY if you want to send just the
 // displacement value to maximize bandwidth.
 //#define SERIAL_SEND_TIMESTAMP
-#define SEND_DISPLACEMENT_ONLY
+//#define SEND_DISPLACEMENT_ONLY
 
 // Number of desired points measured per blade.
 #define DESIRED_POINTS_PER_BLADE 5.0
@@ -965,9 +965,9 @@ enum ifc242xValue {
         if (!self.demoMode) {
             [self setMeasurementRate:[msgArray objectAtIndex:1] withAlert:true];
             dispatch_async(dispatch_get_main_queue(), ^{
-                NSDictionary* info = [[NSDictionary alloc] init];
-                [info setValue:[NSNumber numberWithFloat:5.0] forKey:@"timeout"]; // The timeout duration.
-                [info setValue:@"nothing" forKey:@"nextProcess"];
+                NSDictionary* info = [[NSDictionary alloc] initWithObjectsAndKeys:
+                                      [NSNumber numberWithFloat:5.0], @"timeout",
+                                      @"nothing", @"nextProcess",nil];
                 self.timerWaiting = [ NSTimer scheduledTimerWithTimeInterval:1.0
                                                                       target:self
                                                                     selector:@selector(timeoutWaitTimer:)
@@ -1072,7 +1072,9 @@ enum ifc242xValue {
     NSString* errorMessage = @"";
     if (measRate > 6000.0) {
         measRate = 6000.0;
-        errorMessage = [errorMessage stringByAppendingString:@"ErrorRateHigh "];
+        samplesPerInch = measRate / inchesPerSecond;
+        float ptsPerBlade = samplesPerInch * bladeWidth;
+        errorMessage = [errorMessage stringByAppendingString:@"ErrorRateHigh\n%f pts/blade. "];
     }
     if (measRate <= 0) {
         measRate = 0.1;
@@ -2153,7 +2155,8 @@ enum ifc242xValue {
     self.stopBitsType = STOPBITS_1;
     self.rts = RXFLOW_NONE;
     self.cts = RXFLOW_NONE;
-    self.baudRate = 115200;
+
+    self.baudRate = 460800; // Slower cables only do 115200
 
     // set baud rate, data bits, parity, and stop bits
     [self.rscMgr setBaud:self.baudRate];
