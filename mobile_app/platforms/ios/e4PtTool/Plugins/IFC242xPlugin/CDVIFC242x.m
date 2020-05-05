@@ -466,14 +466,17 @@ enum ifc242xValue {
 }
 
 - (void)timeoutProgressTimer:(NSTimer*)timer {
-    NSString* progress = [NSString stringWithFormat:@"%f",self.progress*100.0];
+    if (self.progress >= 1.0) {
+        [timer invalidate];
+        self.progress = 1.0;
+    }
+    int intProgress = (int)roundf(self.progress*100); // Convert progress to a rounded whole %.
+    NSString* progress = [NSString stringWithFormat:@"%d",intProgress];
+    //NSLog(@"Progress Timer: %@",progress);
     NSDictionary* jsonDict = @{@"type":@"progress",@"progress":progress};
     CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];
     result.keepCallback = [NSNumber numberWithBool:YES];
     [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
-    if (self.progress == 1.0) {
-        [timer invalidate];
-    }
 }
 
 - (void)timeoutWaitTimer:(NSTimer*)timer {
@@ -614,7 +617,7 @@ enum ifc242xValue {
     
     NSLog(@"@sendTelnetCommand: number of queued commands: %lu", (unsigned long)self.telnetCmds.count);
     dispatch_async(dispatch_get_main_queue(), ^{
-        self.timerSendTelnetCommand = [ NSTimer scheduledTimerWithTimeInterval:0.75
+        self.timerSendTelnetCommand = [ NSTimer scheduledTimerWithTimeInterval:0.1
                                                                         target:self
                                                                       selector:@selector(timeoutTelnetSendCommand:)
                                                                       userInfo:nil
@@ -1120,14 +1123,15 @@ enum ifc242xValue {
     
     if (!self.demoMode) {
         // now call collect data with the acquisition time.
-        [self collectData:num_sets casingThickness:[self.metaData.casing_thickness floatValue]];
         dispatch_async(dispatch_get_main_queue(), ^{
+            NSLog(@"Setting up progress timer. Main Thread = %d", [NSThread isMainThread]);
             self.timerProgress = [ NSTimer scheduledTimerWithTimeInterval:1.0
                                                                    target:self
                                                                  selector:@selector(timeoutProgressTimer:)
                                                                  userInfo:nil
                                                                   repeats:YES];
         });
+        [self collectData:num_sets casingThickness:[self.metaData.casing_thickness floatValue]];
     }
     else {
         NSDictionary* jsonDict = @{@"type":@"status",@"status":@"acquiring"};
@@ -1395,8 +1399,8 @@ enum ifc242xValue {
                                 }
                                 
                                 self.set_count += 1;
-                                self.progress = self.set_count / (float)self.num_sets;
-                                
+                                self.progress = (float)self.set_count / (float)self.num_sets;
+                                //NSLog(@"updating progress: %f", self.progress);
                             }
                             //else {
                             //    NSLog(@"  no data");

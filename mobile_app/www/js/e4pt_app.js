@@ -396,7 +396,7 @@ function toggle_menu() {
         var plugins = window.plugins;
         if (plugins != null) {
             if (!serialConnected) {
-                e4PtAlert("Connecting...\nPlease wait for indicator to turn green before proceeding.\n(~10s)");
+                e4PtAlert("Connecting...\nPlease wait for indicator to turn green before proceeding.\n(~2s)");
             }
             communicationChannel = "Plugin";
             // Requesting the version here kicks off the initialization process and
@@ -1231,18 +1231,13 @@ function pluginMessage(msg) {
                 setIndicatorColor("green");
                 document.getElementById("STATUS_DISPLAY").innerHTML = "Connected"
                 serialConnected = true;
-                
-                
-                $("#REV_PROGRESS_BAR").show();
-                $("#REV_PROGRESS").html('&nbsp' + 50 + '%');
-                $("#REV_PROGRESS").css('width', '50%');
-                
             }
             if (msg.status == "acquiring") {
                 setIndicatorColor("red");
                 $("#REV_PROGRESS").html('&nbsp' + '0%');
                 $("#REV_PROGRESS").css('width', '0%');
                 $("#REV_PROGRESS_BAR").show();
+                $("#STATUS_BAR").hide();
             }
             if (msg.status == "processing") {
                 setIndicatorColor("blue");
@@ -1268,6 +1263,7 @@ function pluginMessage(msg) {
             console.log("Received Data Message");
             setIndicatorColor("green");
             $("#REV_PROGRESS_BAR").hide();
+            $("#STATUS_BAR").show();
             document.getElementById("CASING_THICKNESS").value = "";
             msg.data = JSON.parse(msg.data);
             msg.intensity = JSON.parse(msg.intensity);
@@ -1288,7 +1284,7 @@ function pluginMessage(msg) {
             console.log("Received an alert message: ", msg.message);
             e4PtAlert(msg.message);
         case "progress":
-            console.log("Progress: ", msg.progress);
+            //console.log("Progress: ", msg.progress);
             $("#REV_PROGRESS").html('&nbsp' + msg.progress + '%');
             $("#REV_PROGRESS").css('width', msg.progress + '%');
     }
@@ -1421,6 +1417,10 @@ function requestE4PtData(acquisitionTime) {
         chart2.series[0].remove(true);
     }
   }
+    
+    $("#STATUS_BAR").hide();
+    $("#REV_PROGRESS_BAR").show();
+
     // send_data needs args: acquisition time and casing thickness
     // Casing thickness can be zero here.
     message = {"args":["send_data",acquisitionTime,"0.0"]};
