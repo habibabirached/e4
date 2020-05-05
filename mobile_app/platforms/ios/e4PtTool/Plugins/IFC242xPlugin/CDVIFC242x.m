@@ -1077,11 +1077,11 @@ enum ifc242xValue {
         measRate = 6000.0;
         samplesPerInch = measRate / inchesPerSecond;
         float ptsPerBlade = samplesPerInch * bladeWidth;
-        errorMessage = [errorMessage stringByAppendingString:@"ErrorRateHigh\n%f pts/blade. "];
+        errorMessage = [NSString stringWithFormat:@"ErrorRateHigh\n%f pts/blade. ",ptsPerBlade];
     }
-    if (measRate <= 0) {
-        measRate = 0.1;
-        errorMessage = [errorMessage stringByAppendingString:@"ErrorRateLow "];
+    if (measRate <= 1000.0) {
+        measRate = 1000.0; // Limit measurement rate on the low end to 1kHz.
+        //errorMessage = [errorMessage stringByAppendingString:@"ErrorRateLow "];
     }
     if (acquisitionTime <= 0) {
         errorMessage = [errorMessage stringByAppendingString:@"ErrorTimeHigh "];
