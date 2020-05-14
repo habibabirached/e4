@@ -742,6 +742,25 @@ enum ifc242xValue {
     [self sendTelnetCommand];
 }
 
+- (void)setMeasurementRateAndIntensityThreshold:(NSString*)rate threshold:(NSString*)threshold {
+    if (![self checkReady]) return;
+    self.pState = setMeasurementRateInProgress;
+    self.measurement_rate = rate;
+    [self.telnetCmds addObject:[NSString stringWithFormat:@"MEASRATE %@\n", rate]];
+    self.intensityThreshold = threshold;
+    if ([self.controllerType containsString:@"IFC2422"]) {
+        [self.telnetCmds addObject:[NSString stringWithFormat:@"MIN_THRESHOLD_CH01 %@\n", threshold]];
+        [self.telnetCmds addObject:[NSString stringWithFormat:@"MIN_THRESHOLD_CH02 %@\n", threshold]];
+    }
+    else if ([self.controllerType containsString:@"IFC2421"]) {
+        [self.telnetCmds addObject:[NSString stringWithFormat:@"MIN_THRESHOLD %@\n", threshold]];
+    }
+    else {
+        return; // Shouldn't get here.
+    }
+    [self sendTelnetCommand];
+}
+
 - (void)setThreshold:(NSString*)threshold {
     if (![self checkReady]) return;
     self.pState = setThresholdInProgress;
@@ -867,8 +886,8 @@ enum ifc242xValue {
             acqTime = [acqTime substringToIndex:acqTime.length-3]; // crop off the "rpm"
             rpm = [acqTime floatValue];
             NSArray* timeAndRate = [self acquisitionTimeAndRate:rpm];
-            // timeAndRate: (0) acquisitionTime; (1) measurementRate; (2) Errors.
-            NSString* err = [timeAndRate objectAtIndex:2];
+            // timeAndRate: (0) acquisitionTime; (1) measurementRate; (2) intensityThreshold; (3) Errors.
+            NSString* err = [timeAndRate objectAtIndex:3];
             if (err.length != 0) {
                 // Report errors.
                 NSDictionary* jsonDict = @{@"type":@"alert",@"message":err};
@@ -881,15 +900,20 @@ enum ifc242xValue {
                 acqTime = [NSString stringWithFormat:@"%@",[timeAndRate objectAtIndex:0]];
                 // Set new measurement rate
                 self.startTime = [[NSDate date] timeIntervalSince1970]; // start timeout timer
-                [self setMeasurementRate:[timeAndRate objectAtIndex:1] withAlert:false];
+                NSNumber* tmpNum = [timeAndRate objectAtIndex:1];
+                NSString* mRate = [NSString stringWithFormat:@"%.3f", [tmpNum floatValue]];
+                tmpNum = [timeAndRate objectAtIndex:2];
+                NSString* intThresh = [NSString stringWithFormat:@"%.3f", [tmpNum floatValue]];
+                NSLog(@"Found measurement rate: %@; intensity threshold: %@", mRate, intThresh);
+                [self setMeasurementRateAndIntensityThreshold:mRate threshold:intThresh];
                 // The timeoutWaitTimer callback will start data acquisition after the measurement
                 // rate is set.  If the timeout expires, the user just gets an error message.
                 dispatch_async(dispatch_get_main_queue(), ^{
                     NSDictionary* info = [[NSDictionary alloc] initWithObjectsAndKeys:
-                                         [NSNumber numberWithFloat:5.0], @"timeout",
+                                         [NSNumber numberWithFloat:7.0], @"timeout",
                                          @"doDataCollection", @"nextProcess",
                                          acqTime, @"acqTime", nil];
-                    self.timerWaiting = [ NSTimer scheduledTimerWithTimeInterval:1.0
+                    self.timerWaiting = [ NSTimer scheduledTimerWithTimeInterval:3.0
                                                                           target:self
                                                                         selector:@selector(timeoutWaitTimer:)
                                                                         userInfo:info
@@ -1079,8 +1103,8 @@ enum ifc242xValue {
         float ptsPerBlade = samplesPerInch * bladeWidth;
         errorMessage = [NSString stringWithFormat:@"ErrorRateHigh\n%f pts/blade. ",ptsPerBlade];
     }
-    if (measRate <= 1000.0) {
-        measRate = 1000.0; // Limit measurement rate on the low end to 1kHz.
+    if (measRate <= 0.1) {
+        measRate = 0.1; // Limit measurement rate on the low end.
         //errorMessage = [errorMessage stringByAppendingString:@"ErrorRateLow "];
     }
     if (acquisitionTime <= 0) {
@@ -1091,9 +1115,19 @@ enum ifc242xValue {
     }
     // Convert measurement rate to kHz. for output
     measRate /= 1000.0;
+    
+    // Get Intensity threshold for this sampling rate.
+    // This formula was calculated from empirical tests run by Carlos Alfonso-Diaz.
+    float intensityThreshold = 0;
+    if (measRate <= 0.4) intensityThreshold = 3.2;
+    if ((measRate > 0.4) && (measRate < 1.9)) intensityThreshold = 0.0498 * expf(-1.141 * measRate);
+    if (measRate >= 1.9) intensityThreshold = 0.5;
+    intensityThreshold *= 100.0;
+    
     return [NSArray arrayWithObjects:
             [NSNumber numberWithFloat:acquisitionTime],
             [NSNumber numberWithFloat:measRate],
+            [NSNumber numberWithFloat:intensityThreshold],
             errorMessage, nil];
 }
 
@@ -1521,7 +1555,9 @@ enum ifc242xValue {
         }
         if (self.pState == setMeasurementRateInProgress) {
             NSLog(@"Set measurement rate complete");
-            [self processComplete:@"connected"];
+            if (self.telnetCmds.count == 0) {
+                [self processComplete:@"connected"];
+            }
         }
         if (self.pState == setThresholdInProgress) {
             NSLog(@"Set threshold complete");
