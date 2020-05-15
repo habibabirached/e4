@@ -493,6 +493,10 @@ enum ifc242xValue {
                 [self doDataCollection:acqTime];
             }
         }
+        else if (self.pState == darkReferenceInProgress) {
+            // update the progress bar.
+            self.progress = dT / [timeout doubleValue];
+        }
         else {
             // otherwise, keep waiting...
             NSDictionary* jsonDict = @{@"type":@"status",@"status":@"waiting"};
@@ -514,9 +518,24 @@ enum ifc242xValue {
                 CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];
                 result.keepCallback = [NSNumber numberWithBool:NO];
                 [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+                self.pState = ready;
             }
-            self.pState = ready;
+            else if (self.pState == darkReferenceInProgress) {
+                // update then hide the progress bar.
+                self.progress = 1.0;
+                msg = @"Dark referencing complete.";
+                NSDictionary* jsonDict = @{@"type":@"alert",@"message":msg};
+                CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];
+                result.keepCallback = [NSNumber numberWithBool:YES];
+                [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+                if ([nextProc containsString:@"doDataCollection"]) {
+                    NSString* acqTime = [info valueForKey:@"acqTime"];
+                    NSLog(@"Dark reference complete. Do data collection. %@s",acqTime);
+                    [self doDataCollection:acqTime];
+                }
+            }
         }
+
         [timer invalidate];
     }
 }
@@ -666,21 +685,25 @@ enum ifc242xValue {
     
     [self.telnetCmds removeAllObjects];
     [self.telnetCmds addObject:[NSString stringWithFormat:@"ETHERMODE ETHERNET\n"]];
-    [self.telnetCmds addObject:[NSString stringWithFormat:@"OUTPUT ETHERNET\n"]];
-    [self.telnetCmds addObject:[NSString stringWithFormat:@"MEASTRANSFER SERVER/TCP 1024\n"]];
-    [self.telnetCmds addObject:[NSString stringWithFormat:@"OUT_ETH 01INTENSITY 01DIST1 TIMESTAMP\n"]];
+    if ([self.connectionMode containsString:@"ethernet"]) {
+        [self.telnetCmds addObject:[NSString stringWithFormat:@"OUTPUT ETHERNET\n"]];
+        [self.telnetCmds addObject:[NSString stringWithFormat:@"MEASTRANSFER SERVER/TCP 1024\n"]];
+        [self.telnetCmds addObject:[NSString stringWithFormat:@"OUT_ETH 01INTENSITY 01DIST1 TIMESTAMP\n"]];
+    }
 
-// ifdefs below are structured the way they are because elseif didn't seem to work.
+    if ([self.connectionMode containsString:@"serial"]) {
+        // ifdefs below are structured the way they are because elseif didn't seem to work.
 #ifdef SERIAL_SEND_TIMESTAMP
-    // Output TIMESTAMP when using serial connection. This requires more bandwidth.
-    //[self.telnetCmds addObject:[NSString stringWithFormat:@"OUT_RS422 01INTENSITY 01DIST1 TIMESTAMP\n"]];
-    [self.telnetCmds addObject:[NSString stringWithFormat:@"OUT_RS422 01INTENSITY 01DIST1 COUNTER\n"]];
+        // Output TIMESTAMP when using serial connection. This requires more bandwidth.
+        //[self.telnetCmds addObject:[NSString stringWithFormat:@"OUT_RS422 01INTENSITY 01DIST1 TIMESTAMP\n"]];
+        [self.telnetCmds addObject:[NSString stringWithFormat:@"OUT_RS422 01INTENSITY 01DIST1 COUNTER\n"]];
 #elif defined(SEND_DISPLACEMENT_ONLY)
-    [self.telnetCmds addObject:[NSString stringWithFormat:@"OUT_RS422 01DIST1\n"]];
+        [self.telnetCmds addObject:[NSString stringWithFormat:@"OUT_RS422 01DIST1\n"]];
 #else
-    // Don't output TIMESTAMP when using serial connection. This should allow us to increase throughput.
-    [self.telnetCmds addObject:[NSString stringWithFormat:@"OUT_RS422 01INTENSITY 01DIST1\n"]];
+        // Don't output TIMESTAMP when using serial connection. This should allow us to increase throughput.
+        [self.telnetCmds addObject:[NSString stringWithFormat:@"OUT_RS422 01INTENSITY 01DIST1\n"]];
 #endif
+    }
     [self.telnetCmds addObject:[NSString stringWithFormat:@"MEASRATE 1.0\n"]];
     [self.telnetCmds addObject:[NSString stringWithFormat:@"OUTPUT NONE\n"]]; // turns off output.
     [self.telnetCmds addObject:[NSString stringWithFormat:@"GETINFO\n"]];
@@ -727,10 +750,47 @@ enum ifc242xValue {
     CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];// You can send data, String, int, array, dictionary, etc.
     result.keepCallback = [NSNumber numberWithBool:YES]; // This is the magic option that lets you call a callback AGAIN!
     [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
-    if (self.inputTelnetStream == nil) {
-        [self connectDevice:self.ipAddress port:self.telnetPort];
+    if ([self.connectionMode containsString:@"ethernet"]) {
+        if (self.inputTelnetStream == nil) {
+            [self connectDevice:self.ipAddress port:self.telnetPort];
+        }
     }
-    [self.telnetCmds addObject:[NSString stringWithFormat:@"DARKCORR\n"]];
+    float processTime = 24.0; // Dark correction takes ~22s per channel on the IFC2422.
+    if ([self.controllerType containsString:@"IFC2422"]) {
+        [self.telnetCmds addObject:[NSString stringWithFormat:@"DARKCORR_CH01\n"]];
+        [self.telnetCmds addObject:[NSString stringWithFormat:@"DARKCORR_CH02\n"]];
+        processTime *= 2.0; // 2 channels = twice the time.
+    }
+    else if ([self.controllerType containsString:@"IFC2421"]) {
+        [self.telnetCmds addObject:[NSString stringWithFormat:@"DARKCORR\n"]];
+    }
+    else {
+        return; // Shouldn't get here.
+    }
+    // This timer just updates progress information every second assuming each channel takes ~22s.
+    // After the dark correction, it collects 3 seconds of data.
+    self.progress = 0.0;
+    self.startTime = [[NSDate date] timeIntervalSince1970]; // start time timestamp in whole seconds.
+    dispatch_async(dispatch_get_main_queue(), ^{
+        NSDictionary* info = [[NSDictionary alloc] initWithObjectsAndKeys:
+                              [NSNumber numberWithFloat:processTime], @"timeout",
+                              @"doDataCollection", @"nextProcess",
+                              @"3.0", @"acqTime",
+                              nil];
+        self.timerWaiting = [ NSTimer scheduledTimerWithTimeInterval:1.0
+                                                              target:self
+                                                            selector:@selector(timeoutWaitTimer:)
+                                                            userInfo:info
+                                                             repeats:YES];
+    });
+    // This timer updates the progress bar.
+    dispatch_async(dispatch_get_main_queue(), ^{
+        self.timerProgress = [ NSTimer scheduledTimerWithTimeInterval:1.0
+                                                               target:self
+                                                             selector:@selector(timeoutProgressTimer:)
+                                                             userInfo:nil
+                                                              repeats:YES];
+    });
     [self sendTelnetCommand];
 }
 
@@ -1218,7 +1278,7 @@ enum ifc242xValue {
 // The collectData function is patterned after the e4PtTool python function
 // named collect_data and tries to accomplish the same thing.
 - (void)collectData:(int)num_sets casingThickness:(float)casing_thicknesss {
-    NSLog(@"@collectData");
+    NSLog(@"@collectData: num_sets = %d", num_sets);
     // Update the status in the HTML page.
     NSDictionary* jsonDict = @{@"type":@"status",@"status":@"acquiring"};
     CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];// You can send data, String, int, array, dictionary, etc.
@@ -1565,7 +1625,9 @@ enum ifc242xValue {
         }
         if (self.pState == darkReferenceInProgress) {
             NSLog(@"Dark Correction Complete.");
-            [self processComplete:@"connected"];
+            if (self.telnetCmds.count == 0) {
+                [self processComplete:@"connected"];
+            }
         }
         if (self.pState == clearanceComputationInProgress) {
             NSLog(@"Clearance computation complete.");
@@ -1638,6 +1700,9 @@ enum ifc242xValue {
         NSDictionary* jsonDict = @{@"type":@"alert",@"message":msgStr};
         CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];
         [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+    }
+    else if (self.pState == darkReferenceInProgress) {
+        return; // Dark referencing is followed by data collection
     }
     else {
         NSDictionary* jsonDict = @{@"type":@"status",@"status":statusMsg};

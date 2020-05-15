@@ -1018,6 +1018,8 @@ function do_dark_reference() {
     $("#LOCAL_DATA_PAGE").fadeOut();
     $("#RESULTS_PAGE").fadeIn();
     $("#DATA_PLOT").fadeIn();
+    $("#STATUS_BAR").hide();
+    $("#REV_PROGRESS_BAR").show();
 }
 
 function do_mastering() {
