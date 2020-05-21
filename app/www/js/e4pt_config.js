@@ -126,7 +126,7 @@ frame_data = [
              'tip_diameter':62.51,
              'blade_width':0.26
          },
-         '7':{
+         '7.1':{
              'RIGHT':['A', 10.0, 10.0, 2.005],
              'TOP':['B', 90.0, 90.0, 2.005],
              'LEFT':['C', 170.0, 170.0, 2.005],
@@ -167,6 +167,7 @@ frame_data = [
                  '10':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
                  '17':['TOP', 'TOP RIGHT', 'BOTTOM RIGHT', 'BOTTOM', 'BOTTOM LEFT', 'TOP LEFT']},
      'spacers':[
+         {'stage':'2', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'1.336', 'max':'1.436', 'size':'2.0815', 'color':'BLACK', 'image':'7FA-R5-R10'},
          {'stage':'2', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'2.668', 'max':'2.768', 'size':'0.75', 'color':'BLACK', 'image':'7FA-R2'},
          {'stage':'5', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'1.337', 'max':'1.437', 'size':'2.0815', 'color':'BLACK', 'image':'7FA-R5-R10'},
          {'stage':'5', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'1.59', 'max':'1.69', 'size':'1.828', 'color':'GREEN', 'image':'7FA-R5-2'},
@@ -179,6 +180,108 @@ frame_data = [
          {'stage':'17', 'position':['TOP', 'BOTTOM'], 'min':'2.236', 'max':'2.336', 'size':'1.182', 'color':'GOLD', 'image':'7FA-R17-2'},
          {'stage':'17', 'position':['TOP', 'BOTTOM'], 'min':'3.001', 'max':'3.101', 'size':'0.417', 'color':'SILVER', 'image':'7FA-R17-3'}
      ],
+     'stage_info':{
+         '2':{
+             'RIGHT':['A', 10.0, 10.0, 1.386],
+             'TOP':['B', 80.0, 90.0, 1.386],
+             'LEFT':['C', 170.0, 170.0, 1.386],
+             'BOTTOM':['D', 260.0, 270.0, 1.386],
+             'blade_count':34,
+             'tip_diameter':73.294,
+             'blade_width':0.221
+         },
+         '2.1':{
+             'RIGHT':['A', 10.0, 10.0, 2.718],
+             'TOP':['B', 80.0, 90.0, 2.718],
+             'LEFT':['C', 170.0, 170.0, 2.718],
+             'BOTTOM':['D', 260.0, 270.0, 2.718],
+             'blade_count':34,
+             'tip_diameter':73.294,
+             'blade_width':0.221
+         },
+         '5':{
+             'RIGHT':['A', 15.0, 15.0, 1.387],
+             'TOP':['B', 80.0, 90.0, 1.387],
+             'LEFT':['C', 165.0, 165.0, 1.387],
+             'BOTTOM':['D', 260.0, 270.0, 1.387],
+             'blade_count':46,
+             'tip_diameter':66.039,
+             'blade_width':0.261
+         },
+         '5.1':{
+             'RIGHT':['A', 15.0, 15.0, 1.64],
+             'TOP':['B', 80.0, 90.0, 1.64],
+             'LEFT':['C', 165.0, 165.0, 1.64],
+             'BOTTOM':['D', 260.0, 270.0, 1.64],
+             'blade_count':46,
+             'tip_diameter':66.038,
+             'blade_width':0.261
+         },
+         '10':{
+             'RIGHT':['A', 15.0, 15.0, 1.75],
+             'TOP':['B', 80.0, 90.0, 8.613],
+             'LEFT':['C', 165.0, 165.0, 1.75],
+             'BOTTOM':['D', 260.0, 270.0, 8.613],
+             'blade_count':70,
+             'tip_diameter':65.497,
+             'blade_width':0.169
+         },
+         '17':{
+             'TOP RIGHT':['A', 10.0, 20.0, 1.386],
+             'TOP LEFT':['B', 170.0, 160.0, 1.386],
+             'BOTTOM LEFT':['C', 190.0, 200.0, 1.386],
+             'BOTTOM RIGHT':['D', 350.0, 340.0, 1.386],
+             'blade_count':60,
+             'tip_diameter':65.463,
+             'blade_width':0.174
+         },
+         '17.1':{
+             'TOP RIGHT':['A', 10.0, 20.0, 1.786],
+             'TOP LEFT':['B', 170.0, 160.0, 1.786],
+             'BOTTOM LEFT':['C', 190.0, 200.0, 1.786],
+             'BOTTOM RIGHT':['D', 350.0, 340.0, 1.786],
+             'blade_count':60,
+             'tip_diameter':65.463,
+             'blade_width':0.174
+         },
+         '17.2':{
+             'TOP RIGHT':['A', 15.0, 20.0, 2.286],
+             'TOP LEFT':['B', 170.0, 160.0, 2.286],
+             'BOTTOM LEFT':['C', 190.0, 200.0, 2.286],
+             'BOTTOM RIGHT':['D', 350.0, 340.0, 2.286],
+             'blade_count':60,
+             'tip_diameter':65.463,
+             'blade_width':0.174
+         },
+         '17.3':{
+             'TOP':['A', 100.0, 90.0, 1.386],
+             'BOTTOM':['C', 280.0, 270.0, 1.386],
+             'blade_count':60,
+             'tip_diameter':65.463,
+             'blade_width':0.174
+         },
+         '17.4':{
+             'TOP':['A', 100.0, 90.0, 1.786],
+             'BOTTOM':['C', 280.0, 270.0, 1.786],
+             'blade_count':60,
+             'tip_diameter':65.463,
+             'blade_width':0.174
+         },
+         '17.5':{
+             'TOP':['A', 90.0, 90.0, 2.286],
+             'BOTTOM':['C', 270.0, 270.0, 2.286],
+             'blade_count':60,
+             'tip_diameter':65.463,
+             'blade_width':0.174
+         },
+         '17.6':{
+             'TOP':['A', 90.0, 90.0, 3.051],
+             'BOTTOM':['C', 270.0, 270.0, 3.051],
+             'blade_count':60,
+             'tip_diameter':65.463,
+             'blade_width':0.174
+         },
+     },
      'turning_gear_rpm':6.9,
      'max_turn_time':0,
      'rotor_mode':'rotating',
@@ -475,11 +578,10 @@ frame_data = [
      'spacers':[
          {'stage':'2', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'6.127', 'color':'BLACK', 'image':'9FA-R2'},
          {'stage':'5', 'position':['LEFT', 'RIGHT'], 'min':'2.027', 'max':'2.127', 'size':'7.286', 'color':'BLACK', 'image':'9FA-R5LR'},
-         {'stage':'5', 'position':['TOP', 'BOTTOM'], 'min':'2.027', 'max':'2.127', 'size':'3.624', 'color':'BLACK', 'image':'9FA-R5TB'},
-         {'stage':'5', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'2.273', 'max':'2.373', 'size':'7.04', 'color':'BLUE', 'image':'9FA-R5-2'},
-         {'stage':'10', 'position':['LEFT', 'RIGHT'], 'min':'2.027', 'max':'2.127', 'size':'7.613', 'color':'BLACK', 'image':'9FA-R10LR'},
-         {'stage':'10', 'position':['TOP', 'BOTTOM'], 'min':'2.027', 'max':'2.127', 'size':'0.75', 'color':'BLACK', 'image':'9FA-R10TB'},
-         {'stage':'10', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'2.273', 'max':'2.373', 'size':'7.471', 'color':'GREEN', 'image':'9FA-R10-2'},
+         {'stage':'5', 'position':['TOP', 'BOTTOM'], 'min':'5.689', 'max':'5.789', 'size':'3.624', 'color':'BLACK', 'image':'9FA-R5TB'},
+         {'stage':'10', 'position':['LEFT', 'RIGHT'], 'min':'1.7', 'max':'1.8', 'size':'7.613', 'color':'BLACK', 'image':'9FA-R10LR'},
+         {'stage':'10', 'position':['TOP', 'BOTTOM'], 'min':'8.563', 'max':'8.663', 'size':'0.75', 'color':'BLACK', 'image':'9FA-R10TB'},
+         {'stage':'10', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'1.842', 'max':'1.942', 'size':'7.471', 'color':'GREEN', 'image':'9FA-R10-2'},
          {'stage':'17', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'2.273', 'max':'2.373', 'size':'7.04', 'color':'BLACK', 'image':'9FA-R17-1'},
          {'stage':'17', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'2.692', 'max':'2.792', 'size':'6.621', 'color':'RED', 'image':'9FA-R17-2'}
      ],
@@ -502,7 +604,7 @@ frame_data = [
              'tip_diameter':79.255,
              'blade_width':0.496
          },
-         '5':{
+         '5.1':{
              'RIGHT':['A', 15.0, 15.0, 2.323],
              'TOP':['B', 90.0, 90.0, 2.323],
              'LEFT':['C', 165.0, 165.0, 2.323],
@@ -520,7 +622,7 @@ frame_data = [
              'tip_diameter':78.597,
              'blade_width':0.305
          },
-         '10X':{
+         '10.1':{
              'RIGHT':['A', 15.0, 15.0, 1.892],
              'TOP':['B', 90.0, 90.0, 1.892],
              'LEFT':['C', 165.0, 165.0, 1.892],
@@ -538,7 +640,7 @@ frame_data = [
              'tip_diameter':78.549,
              'blade_width':0.446
          },
-         '17X':{
+         '17.1':{
              'RIGHT':['A', 13.0, 13.0, 2.742],
              'TOP':['B', 90.0, 90.0, 2.742],
              'LEFT':['C', 167.0, 167.0, 2.742],
