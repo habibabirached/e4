@@ -1438,7 +1438,7 @@ function requestE4PtData(acquisitionTime) {
 }
 
 function requestE4PtDataWithMetaData(acquisitionTime, frame, sn, stage, position, casing_thickness, spacer_thickness) {
-    console.log("Requesting " + acquisitionTime + " seconds of data");
+    console.log("Requesting " + acquisitionTime + "s data");
     console.log("Meta data: " + frame + "; " + sn + "; " + stage + "; " + position);
     frame = frame.replace(/\s+/g, '_'); // replace all the spaces with underscores
     sn = sn.replace(/\s+/g, '_');
@@ -1451,9 +1451,10 @@ function requestE4PtDataWithMetaData(acquisitionTime, frame, sn, stage, position
     var tip_diameter = 0;
     if (typeof current_frame_data.stage_info !== 'undefined') {
         if (typeof current_frame_data.stage_info[current_stage] !== 'undefined') {
-            num_blades = current_frame_data.stage_info[current_stage].blade_count;
-            blade_width = current_frame_data.stage_info[current_stage].blade_width;
-            tip_diameter = current_frame_data.stage_info[current_stage].tip_diameter;
+            stage_details = get_stage_details(position, casing_thickness);
+            num_blades = stage_details.blade_count;
+            blade_width = stage_details.blade_width;
+            tip_diameter = stage_details.tip_diameter;
         }
     }
     var message = {"args":["send_data",acquisitionTime, frame, sn, stage, position, casing_thickness, spacer_thickness, num_blades, tip_diameter, blade_width]};
@@ -1466,6 +1467,43 @@ function requestE4PtDataWithMetaData(acquisitionTime, frame, sn, stage, position
                                                pluginMessage(msg);
                                                }, null);
     }
+}
+
+// get_stage_details find the specific information for this stage, given the frame, position,
+// and casing thickness.
+function get_stage_details(position, casing_thickness) {
+    var details = {};
+    details["blade_width"] = 0;
+    details["blade_count"] = 0;
+    details["tip_diameter"] = 0;
+    var stageKeys = Object.keys(current_frame_data.stage_info); // Get all the stage information names
+    for (var idx in stageKeys) {
+        var stageKey = stageKeys[idx];
+        var stageInt = Math.floor(parseFloat(stageKeys[idx])); // Get the stage number for this entry.
+        var stageStr = stageInt.toString(10);
+        var foundDetails = false;
+        if (stageStr == current_stage ) {
+            var detailKeys = Object.keys(current_frame_data.stage_info[stageKey]);
+            for (var key in detailKeys) {
+                if (detailKeys[key] == position) {
+                    console.log("Found Position");
+                    var caseThck = current_frame_data.stage_info[stageKey][position][3];
+                    if ((casing_thickness > (caseThck - 0.050)) && (casing_thickness < (caseThck + 0.05))) {
+                        console.log("For: position = ", position, "; casing_thickness = ", casing_thickness);
+                        console.log("Found: ", stageKey, "; ", detailKeys[key], "; ", caseThck);
+                        details["blade_width"] = current_frame_data.stage_info[stageKey].blade_width;
+                        details["blade_count"] = current_frame_data.stage_info[stageKey].blade_count;
+                        details["tip_diameter"] = current_frame_data.stage_info[stageKey].tip_diameter;
+                        console.log("blade_width: ", details["blade_width"], "; blade_count: ", details["blade_count"], "; tip_diameter: ", details["tip_diameter"]);
+                        foundDetails = true;
+                        break;
+                    }
+                }
+            }
+        }
+        if (foundDetails) break;
+    }
+    return details;
 }
 
 function sendWSMessage(msg_text) {
