@@ -53,7 +53,7 @@
 //#define SEND_DISPLACEMENT_ONLY
 
 // Number of desired points measured per blade.
-#define DESIRED_POINTS_PER_BLADE 5.0
+#define DESIRED_POINTS_PER_BLADE 4.0
 
 // This option, when defined causes the program to output
 // the minimum clearance for each blade rather than the
@@ -183,6 +183,7 @@ enum ifc242xValue {
 @property (nonatomic, retain) NSTimer* timerProgress;
 @property (nonatomic, retain) NSTimer* timerWaiting;
 @property (strong, nonatomic) NSMutableArray* kernel;
+@property (strong, nonatomic) NSRunLoop* networkRunLoop;
 
 // Variables needed for data collection.
 @property (nonatomic) int tmpCounter;
@@ -319,6 +320,7 @@ enum ifc242xValue {
 @synthesize leftoverBytes = _leftoverBytes;
 
 @synthesize connectionMode = _connectionMode;
+@synthesize networkRunLoop = _networkRunLoop;
 
 - (int)interfaceHandle {
     static int handle = 0;
@@ -339,6 +341,7 @@ enum ifc242xValue {
         _manager.connectionMode = @"serial"; // default connection mode.
         _manager.measurement_rate = @"1.0";
         _manager.last_saved_file = @"";
+        _manager.networkRunLoop = nil;
         [_manager initializeSensor];
 
     }
@@ -362,8 +365,8 @@ enum ifc242xValue {
 }
 
 - (void)connectDevice:(NSString*)ip_address port:(int)port {
-    
-    dispatch_async(dispatch_get_main_queue(), ^{
+
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
         NSLog(@"@connectDevice: %@:%d", ip_address, port);
         if (port == self.dataPort) self.dataStreamIsOpen = false;
         if (port == self.telnetPort) self.telnetStreamIsOpen = false;
@@ -407,8 +410,10 @@ enum ifc242xValue {
         NSOutputStream* outputStream = (__bridge NSOutputStream *)writeStream;
         [inputStream setDelegate:self];
         [outputStream setDelegate:self];
-        [inputStream scheduleInRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
-        [outputStream scheduleInRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
+        [inputStream scheduleInRunLoop:self.networkRunLoop forMode:NSDefaultRunLoopMode];
+        [outputStream scheduleInRunLoop:self.networkRunLoop forMode:NSDefaultRunLoopMode];
+        //[inputStream scheduleInRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
+        //[outputStream scheduleInRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
         [inputStream open];
         [outputStream open];
         
@@ -443,8 +448,10 @@ enum ifc242xValue {
     }
     else {
         NSLog(@"    stream not open.");
-        [self.inputDataStream removeFromRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
-        [self.outputDataStream removeFromRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
+        [self.inputDataStream removeFromRunLoop:self.networkRunLoop forMode:NSDefaultRunLoopMode];
+        [self.outputDataStream removeFromRunLoop:self.networkRunLoop forMode:NSDefaultRunLoopMode];
+        //[self.inputDataStream removeFromRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
+        //[self.outputDataStream removeFromRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
         
         // apple documentation also says to set delegate connection to nil (how?)
         
@@ -470,13 +477,29 @@ enum ifc242xValue {
         [timer invalidate];
         self.progress = 1.0;
     }
-    int intProgress = (int)roundf(self.progress*100); // Convert progress to a rounded whole %.
-    NSString* progress = [NSString stringWithFormat:@"%d",intProgress];
-    //NSLog(@"Progress Timer: %@",progress);
-    NSDictionary* jsonDict = @{@"type":@"progress",@"progress":progress};
-    CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];
-    result.keepCallback = [NSNumber numberWithBool:YES];
-    [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+    [self reportProgress];
+}
+    
+- (void)reportProgress {
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
+    //dispatch_async(dispatch_get_main_queue(), ^{
+        NSLog(@"Reporting progress: %f",self.progress);
+        int intProgress = (int)roundf(self.progress*100); // Convert progress to a rounded whole %.
+        NSString* progress = [NSString stringWithFormat:@"%d",intProgress];
+        NSDictionary* jsonDict = @{@"type":@"progress",@"progress":progress};
+        if (false) {
+            NSError* error;
+            NSData *jsonData=[NSJSONSerialization dataWithJSONObject:jsonDict options:NSJSONWritingSortedKeys error:&error];
+            NSString *jsonString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+            jsonString = [jsonString stringByReplacingOccurrencesOfString:@"\n" withString:@""];
+            [self.plugin.commandDelegate evalJs:[NSString stringWithFormat:@"pluginMessage(%@);",jsonString]];
+        }
+        else {
+            CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];
+            result.keepCallback = [NSNumber numberWithBool:YES];
+            [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+        }
+    });
 }
 
 - (void)timeoutWaitTimer:(NSTimer*)timer {
@@ -607,9 +630,13 @@ enum ifc242xValue {
         NSLog(@"  telnet is not ready yet...");
         if ([self.connectionMode containsString:@"ethernet"]){
             if (self.outputTelnetStream != nil) {
+                NSLog(@"outputTelnetStream is not nil.");
                 NSString* command = @"\n";
                 NSData* cmdData = [[NSData alloc] initWithData:[command dataUsingEncoding:NSUTF8StringEncoding]];
                 [self.outputTelnetStream write:(const unsigned char*)[cmdData bytes] maxLength:[cmdData length]];
+            }
+            else {
+                NSLog(@"outputTelnetStream is nil!");
             }
         }
         if ([self.connectionMode containsString:@"serial"]){
@@ -709,10 +736,12 @@ enum ifc242xValue {
     [self.telnetCmds addObject:[NSString stringWithFormat:@"GETINFO\n"]];
     
     if ([self.connectionMode containsString:@"ethernet"]) {
-        if (self.inputTelnetStream == nil) {
-            NSLog(@"connectingDevice from initializeSensor");
-            [self connectDevice:self.ipAddress port:self.telnetPort];
-        }
+        // No need to connect the device here since sendTelnetCommand will do it.
+        // Doing it here risks doing it twice with unpredictable results.
+        //if (self.inputTelnetStream == nil) {
+        //    NSLog(@"connectingDevice from initializeSensor");
+        //    [self connectDevice:self.ipAddress port:self.telnetPort];
+        //}
 
         NSLog(@"Calling sendTelnetCommand from initializeSensor");
         [self sendTelnetCommand];
@@ -862,9 +891,11 @@ enum ifc242xValue {
     
     if ([self.connectionMode containsString:@"ethernet"]) {
         if (self.inputDataStream != nil)
-            [self.inputDataStream removeFromRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
+            [self.inputDataStream removeFromRunLoop:self.networkRunLoop forMode:NSDefaultRunLoopMode];
+            //[self.inputDataStream removeFromRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
         if (self.outputDataStream != nil)
-            [self.outputDataStream removeFromRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
+            [self.outputDataStream removeFromRunLoop:self.networkRunLoop forMode:NSDefaultRunLoopMode];
+            //[self.outputDataStream removeFromRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
         // apple documentation also says to set delegate connection to nil (how?)
         if (self.inputDataStream != nil) {
             [self.inputDataStream close];
@@ -885,9 +916,11 @@ enum ifc242xValue {
 - (void)disconnectTelnet {
     NSLog(@"@disconnectTelnet.");
     if (self.inputTelnetStream != nil)
-        [self.inputTelnetStream removeFromRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
+        [self.inputTelnetStream removeFromRunLoop:self.networkRunLoop forMode:NSDefaultRunLoopMode];
+        //[self.inputTelnetStream removeFromRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
     if (self.outputTelnetStream != nil)
-        [self.outputTelnetStream removeFromRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
+        [self.outputTelnetStream removeFromRunLoop:self.networkRunLoop forMode:NSDefaultRunLoopMode];
+        //[self.outputTelnetStream removeFromRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
     // apple documentation also says to set delegate connection to nil (how?)
     if (self.inputTelnetStream != nil) {
         [self.inputTelnetStream close];
@@ -909,6 +942,7 @@ enum ifc242xValue {
     
     if ([cmd containsString:@"ping"]) {
         NSLog(@"Got ping");
+        return;
     }
     if ([cmd containsString:@"send_data"]) {
         NSLog(@"Got send_data");
@@ -984,6 +1018,7 @@ enum ifc242xValue {
         else {
             [self doDataCollection:acqTime];
         }
+        return;
     }
     if ([cmd containsString:@"scan_meta_data"]) {
         NSLog(@"Got scan_meta_data");
@@ -996,16 +1031,19 @@ enum ifc242xValue {
         self.metaData.user = [msgArray objectAtIndex:5];
         self.metaData.units = [msgArray objectAtIndex:6];
         self.metaData.state = [msgArray objectAtIndex:7];
+        return;
     }
     if ([cmd containsString:@"clear_meta_data"]) {
         NSLog(@"Got clear_meta_data");
         [self clearMetaData];
+        return;
     }
     if ([cmd containsString:@"get_data_file"]) {
         NSLog(@"Got get_data_file");
         NSDictionary* jsonDict = @{@"type":@"filename",@"fname":self.last_saved_file};
         CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];// You can send data, String, int, array, dictionary, etc.
         [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+        return;
     }
     if ([cmd containsString:@"do_dark_reference"]) {
         NSLog(@"Got do_dark_reference");
@@ -1026,6 +1064,7 @@ enum ifc242xValue {
                                                                            repeats:NO];
             });
         }
+        return;
     }
     if ([cmd containsString:@"do_mastering"]) {
         NSLog(@"Got do_mastering");
@@ -1046,6 +1085,7 @@ enum ifc242xValue {
                                                                            repeats:NO];
             });
         }
+        return;
     }
     if ([cmd containsString:@"set_measuring_rate"]) {
         NSLog(@"Got set_measuring_rate");
@@ -1072,6 +1112,7 @@ enum ifc242xValue {
                                                                            repeats:NO];
             });
         }
+        return;
     }
     if ([cmd containsString:@"set_threshold"]) {
         NSLog(@"Got set_threshold");
@@ -1088,6 +1129,7 @@ enum ifc242xValue {
                                                                            repeats:NO];
             });
         }
+        return;
     }
     if ([cmd containsString:@"set_demo_mode"]) {
         NSLog(@"Got set_demo_mode");
@@ -1108,6 +1150,7 @@ enum ifc242xValue {
         if (!self.demoMode) {
             [self initializeSensor];
         }
+        return;
     }
     if ([cmd containsString:@"set_connection_mode"]) {
         NSString* mode = [msgArray objectAtIndex:1];
@@ -1126,16 +1169,21 @@ enum ifc242xValue {
         CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];
         result.keepCallback = [NSNumber numberWithBool:YES];
         [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+        return;
     }
     if ([cmd containsString:@"shutdown"]) {
         exit(0);
     }
     if ([cmd containsString:@"get_version"]) {
+        if (self.pState == notReady) {
+            [self initializeSensor];
+        }
         NSString* appVersion = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleShortVersionString"];
         NSDictionary* jsonDict = @{@"type":@"version",@"version":appVersion};
         CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];
         result.keepCallback = [NSNumber numberWithBool:YES];
         [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+        return;
     }
     else {
         NSLog(@"Got %@",msg);
@@ -1217,14 +1265,17 @@ enum ifc242xValue {
     
     if (!self.demoMode) {
         // now call collect data with the acquisition time.
-        dispatch_async(dispatch_get_main_queue(), ^{
-            NSLog(@"Setting up progress timer. Main Thread = %d", [NSThread isMainThread]);
-            self.timerProgress = [ NSTimer scheduledTimerWithTimeInterval:1.0
-                                                                   target:self
-                                                                 selector:@selector(timeoutProgressTimer:)
-                                                                 userInfo:nil
-                                                                  repeats:YES];
-        });
+        // Serial mode reports progress through a timer.
+        if ([self.connectionMode containsString:@"serial"]) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                NSLog(@"Setting up progress timer. Main Thread = %d", [NSThread isMainThread]);
+                self.timerProgress = [ NSTimer scheduledTimerWithTimeInterval:1.0
+                                                                       target:self
+                                                                     selector:@selector(timeoutProgressTimer:)
+                                                                     userInfo:nil
+                                                                      repeats:YES];
+            });
+        }
         [self collectData:num_sets casingThickness:[self.metaData.casing_thickness floatValue]];
     }
     else {
@@ -1319,7 +1370,8 @@ enum ifc242xValue {
     
     if (self.demoMode) return;  // Do nothing in demo mode.
     __block NSStream* theStream = inStream;
-    dispatch_async(dispatch_get_main_queue(), ^{
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+    //dispatch_async(dispatch_get_main_queue(), ^{
         NSLog(@"Processing stream, stream event %lu", (unsigned long)streamEvent);
         
         NSNumber* port = [theStream propertyForKey:(__bridge NSString*)kCFStreamPropertySocketRemotePortNumber];
@@ -1413,7 +1465,6 @@ enum ifc242xValue {
                     uint8_t tmpBuf[2048];
                     
                     if ([self.inputDataStream hasBytesAvailable]) {
-                        
                         while (self.set_count < self.num_sets) {
                             len2 = [self.inputDataStream read:tmpBuf maxLength:4];
                             if ( strncmp((const char*)tmpBuf, "DATA", 4) == 0 ) {
@@ -1492,8 +1543,17 @@ enum ifc242xValue {
                                     self.data_index += 1;
                                 }
                                 
-                                self.set_count += 1;
+                                // num_sets was calculated assuming 100 samples per report.  This is not always correct,
+                                // so we account for that here.
+                                float set_inc = (float)num_frames / 100.0;
+                                
+                                self.set_count += set_inc;
                                 self.progress = (float)self.set_count / (float)self.num_sets;
+                                float prog = floorf(self.progress * 100);
+                                if ( fmodf(prog, 10.0) == 0 ) {
+                                    NSLog(@"Should report progress: %f", prog);
+                                    [self reportProgress];
+                                }
                                 //NSLog(@"updating progress: %f", self.progress);
                             }
                             //else {
@@ -1562,7 +1622,8 @@ enum ifc242xValue {
                 {
                     NSLog(@"NSStreamEventEndEncountered for port = %@", port);
                     [theStream close];
-                    [theStream removeFromRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
+                    [theStream removeFromRunLoop:self.networkRunLoop forMode:NSDefaultRunLoopMode];
+                    //[theStream removeFromRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
                     //          [theStream release];
                     theStream = nil;
                     
@@ -1606,7 +1667,7 @@ enum ifc242xValue {
         self.controllerType = @"IFC2421";
     }
     if ([prompt containsString:@"->"]) {
-        NSLog(@"Got telnet prompt");
+        NSLog(@"Got telnet prompt: telnetCmds.count = %lu",(unsigned long)self.telnetCmds.count);
         self.telnetIsReady = true;
         if (self.pState == initializationInProgress) {
             if (self.telnetCmds.count == 0) {
@@ -2280,12 +2341,9 @@ enum ifc242xValue {
         
     // Create and start the comm thread.  We'll use this thread to manage the rscMgr so
     // we don't tie up the UI thread.
-    if (self.commThread == nil) {
-        self.commThread = [[NSThread alloc] initWithTarget:self
-                                             selector:@selector(startCommThread:)
-                                               object:nil];
-        [self.commThread start];  // Actually create the thread
-    }
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        [self startCommThread:nil];
+    });
 }
 
 // start the communication thread
@@ -2294,12 +2352,16 @@ enum ifc242xValue {
 
     // initialize RscMgr on this thread
     // so it schedules delegate callbacks for this thread
-    self.rscMgr = [[RscMgr alloc] init];
-    
-    [self.rscMgr setDelegate:self];
+    if (self.rscMgr == nil) {
+        self.rscMgr = [[RscMgr alloc] init];
+        [self.rscMgr setDelegate:self];
+    }
     
     // run the run loop
-    [[NSRunLoop currentRunLoop] run];
+    if (self.networkRunLoop == nil) {
+        self.networkRunLoop = [NSRunLoop currentRunLoop];
+        [self.networkRunLoop run];
+    }
 }
 
 - (void)sendSerialData:(NSString*)cmd {
@@ -2678,6 +2740,13 @@ enum ifc242xValue {
 - (void) cableDisconnected {
     NSLog(@"@cableDisconnected");
     self.cableConnected = NO;
+    self.pState = notReady;
+    NSDictionary* jsonDict = @{@"type":@"status",@"status":@"disconnected"};
+    NSError* error;
+    NSData *jsonData=[NSJSONSerialization dataWithJSONObject:jsonDict options:NSJSONWritingSortedKeys error:&error];
+    NSString *jsonString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+    jsonString = [jsonString stringByReplacingOccurrencesOfString:@"\n" withString:@""];
+    [self.plugin.commandDelegate evalJs:[NSString stringWithFormat:@"pluginMessage(%@);",jsonString]];
 }
 
 
