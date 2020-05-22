@@ -1234,6 +1234,11 @@ function pluginMessage(msg) {
                 document.getElementById("STATUS_DISPLAY").innerHTML = "Connected"
                 serialConnected = true;
             }
+            if (msg.status == "disconnected") {
+                setIndicatorColor("white");
+                document.getElementById("STATUS_DISPLAY").innerHTML = "Disconnected"
+                serialConnected = false;
+            }
             if (msg.status == "acquiring") {
                 setIndicatorColor("red");
                 $("#REV_PROGRESS").html('&nbsp' + '0%');
@@ -1285,10 +1290,15 @@ function pluginMessage(msg) {
         case "alert":
             console.log("Received an alert message: ", msg.message);
             e4PtAlert(msg.message);
+            break;
         case "progress":
             //console.log("Progress: ", msg.progress);
             $("#REV_PROGRESS").html('&nbsp' + msg.progress + '%');
             $("#REV_PROGRESS").css('width', msg.progress + '%');
+            break;
+        default:
+            console.log("pluginMessage: Hit default case.");
+            break;
     }
 }
 
