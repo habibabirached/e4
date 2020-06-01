@@ -61,7 +61,7 @@
 //#define OUTPUT_MINIMUM
 
 // For using simulated data
-#define SIMULATED_DATA 0
+//#define SIMULATED_DATA
 
 enum pluginState {
     ready = 0,
@@ -201,6 +201,7 @@ enum ifc242xValue {
 @property (strong, nonatomic) NSMutableArray* displacements;
 @property (strong, nonatomic) NSMutableArray* filtered;
 @property (strong, nonatomic) NSMutableArray* blade_clearances;
+@property (strong, nonatomic) NSMutableArray* clearance_quality;
 @property (strong, nonatomic) NSMutableArray* point_counts;
 @property (strong, nonatomic) NSMutableArray* intensities;
 @property (strong, nonatomic) NSMutableArray* min_locs;
@@ -290,6 +291,7 @@ enum ifc242xValue {
 @synthesize filtered = _filtered;
 @synthesize blade_clearances = _blade_clearances;
 @synthesize stage_clearance = _stage_clearance;
+@synthesize clearance_quality = _clearance_quality;
 @synthesize point_counts = _point_counts;
 @synthesize intensities = _intensities;
 @synthesize min_locs = _min_locs;
@@ -342,6 +344,11 @@ enum ifc242xValue {
         _manager.measurement_rate = @"1.0";
         _manager.last_saved_file = @"";
         _manager.networkRunLoop = nil;
+#ifdef SIMULATED_DATA
+        _manager.demoMode = true;
+#else
+        _manager.demoMode = false;
+#endif
         [_manager initializeSensor];
 
     }
@@ -487,7 +494,10 @@ enum ifc242xValue {
         int intProgress = (int)roundf(self.progress*100); // Convert progress to a rounded whole %.
         NSString* progress = [NSString stringWithFormat:@"%d",intProgress];
         NSDictionary* jsonDict = @{@"type":@"progress",@"progress":progress};
-        if (false) {
+        // Below are two ways to report progress back to the UI.  The later seems to cause a crash
+        // when collecting data via ethernet. I'm leaving the code for now, but will use the more
+        // direct method that does not crash.
+        if (true) {
             NSError* error;
             NSData *jsonData=[NSJSONSerialization dataWithJSONObject:jsonDict options:NSJSONWritingSortedKeys error:&error];
             NSString *jsonString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
@@ -687,6 +697,7 @@ enum ifc242xValue {
     if (self.displacements == nil) self.displacements = [[NSMutableArray alloc] init];
     if (self.filtered == nil) self.filtered = [[NSMutableArray alloc] init];
     if (self.blade_clearances == nil) self.blade_clearances = [[NSMutableArray alloc] init];
+    if (self.clearance_quality == nil) self.clearance_quality = [[NSMutableArray alloc] init];
     if (self.point_counts == nil) self.point_counts = [[NSMutableArray alloc] init];
     if (self.intensities == nil) self.intensities = [[NSMutableArray alloc] init];
     if (self.min_locs == nil) self.min_locs = [[NSMutableArray alloc] init];
@@ -696,20 +707,23 @@ enum ifc242xValue {
     [self clearMetaData];
     [self computeKernel:KERNEL_SIGMA kernel_size:KERNEL_SIZE]; // Compute the LoG filter kernel.
     self.stage_clearance = 0;
-    self.demoMode = (SIMULATED_DATA == 0) ? false : true;
     self.controllerType = @"";
+    
 #ifdef SEND_DISPLACEMENT_ONLY
     self.nextIFCValue = IFCDisplacement;
 #else
     self.nextIFCValue = IFCIntensity;
 #endif
+    
     self.nSync = false;
     self.leftoverBytes = 0;
     self.startTime = [[NSDate date] timeIntervalSince1970]; // start time timestamp in whole seconds.
     self.progress = 0.0;
     self.delayResponse = false;
 
-    
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [self.timerSendTelnetCommand invalidate];
+    });
     [self.telnetCmds removeAllObjects];
     [self.telnetCmds addObject:[NSString stringWithFormat:@"ETHERMODE ETHERNET\n"]];
     if ([self.connectionMode containsString:@"ethernet"]) {
@@ -743,11 +757,13 @@ enum ifc242xValue {
         //    [self connectDevice:self.ipAddress port:self.telnetPort];
         //}
 
-        NSLog(@"Calling sendTelnetCommand from initializeSensor");
+        NSLog(@"Calling sendTelnetCommand from initializeSensor with ethernet connection");
+        [self setupSerialCableAndCommThread];
         [self sendTelnetCommand];
     }
     else if ([self.connectionMode containsString:@"serial"]) {
-        [self setupSerialCable];
+        [self setupSerialCableAndCommThread];
+        NSLog(@"Calling sendTelnetCommand from initializeSensor with serial connection");
         [self sendTelnetCommand];
     }
 
@@ -833,6 +849,7 @@ enum ifc242xValue {
 
 - (void)setMeasurementRateAndIntensityThreshold:(NSString*)rate threshold:(NSString*)threshold {
     if (![self checkReady]) return;
+    if (self.demoMode) return;
     self.pState = setMeasurementRateInProgress;
     self.measurement_rate = rate;
     [self.telnetCmds addObject:[NSString stringWithFormat:@"MEASRATE %@\n", rate]];
@@ -1002,17 +1019,22 @@ enum ifc242xValue {
                 [self setMeasurementRateAndIntensityThreshold:mRate threshold:intThresh];
                 // The timeoutWaitTimer callback will start data acquisition after the measurement
                 // rate is set.  If the timeout expires, the user just gets an error message.
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    NSDictionary* info = [[NSDictionary alloc] initWithObjectsAndKeys:
-                                         [NSNumber numberWithFloat:7.0], @"timeout",
-                                         @"doDataCollection", @"nextProcess",
-                                         acqTime, @"acqTime", nil];
-                    self.timerWaiting = [ NSTimer scheduledTimerWithTimeInterval:3.0
-                                                                          target:self
-                                                                        selector:@selector(timeoutWaitTimer:)
-                                                                        userInfo:info
-                                                                         repeats:YES];
-                });
+                if (!self.demoMode) {
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        NSDictionary* info = [[NSDictionary alloc] initWithObjectsAndKeys:
+                                              [NSNumber numberWithFloat:7.0], @"timeout",
+                                              @"doDataCollection", @"nextProcess",
+                                              acqTime, @"acqTime", nil];
+                        self.timerWaiting = [ NSTimer scheduledTimerWithTimeInterval:3.0
+                                                                              target:self
+                                                                            selector:@selector(timeoutWaitTimer:)
+                                                                            userInfo:info
+                                                                             repeats:YES];
+                    });
+                }
+                else {
+                    [self doDataCollection:acqTime];
+                }
             }
         }
         else {
@@ -1318,6 +1340,7 @@ enum ifc242xValue {
     [self.displacements removeAllObjects];
     [self.filtered removeAllObjects];
     [self.blade_clearances removeAllObjects];
+    [self.clearance_quality removeAllObjects];
     [self.point_counts removeAllObjects];
     [self.intensities removeAllObjects];
     [self.min_locs removeAllObjects];
@@ -1548,9 +1571,11 @@ enum ifc242xValue {
                                 float set_inc = (float)num_frames / 100.0;
                                 
                                 self.set_count += set_inc;
-                                self.progress = (float)self.set_count / (float)self.num_sets;
-                                float prog = floorf(self.progress * 100);
-                                if ( fmodf(prog, 10.0) == 0 ) {
+                                float prog = (float)self.set_count / (float)self.num_sets;
+                                prog = floorf(prog * 10) / 10;  // Round down to the nearest 10 percent
+                                NSLog(@"num_sets: %d; set_count: %f; set_inc: %f; prog: %f; num_frames: %d",self.num_sets, self.set_count, set_inc, prog, num_frames);
+                                if ( prog > self.progress ) {
+                                    self.progress = prog;
                                     NSLog(@"Should report progress: %f", prog);
                                     [self reportProgress];
                                 }
@@ -1566,9 +1591,9 @@ enum ifc242xValue {
                         
                         // Load dummy data for testing without a rotor,
                         // but connected to a real sensor.
-                        if (SIMULATED_DATA == 1) {
+#ifdef SIMULATED_DATA
                             [self loadCSVFile];
-                        }
+#endif
 
                         // At this point we should have all the data that was requested.
                         // We need to do any required processing/filtering, save to file,
@@ -1724,6 +1749,8 @@ enum ifc242xValue {
     NSString *minLocsJSONString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
     jsonData = [NSJSONSerialization dataWithJSONObject:self.blade_clearances options:NSJSONWritingSortedKeys error:&error];
     NSString *bladeClrsJSONString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+    jsonData = [NSJSONSerialization dataWithJSONObject:self.clearance_quality options:NSJSONWritingSortedKeys error:&error];
+    NSString *clrQualityJSONString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
     
     NSDateFormatter *dateFormatter=[[NSDateFormatter alloc] init];
     [dateFormatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
@@ -1735,6 +1762,7 @@ enum ifc242xValue {
                                    @"intensity":intensJSONString,
                                    @"locs":minLocsJSONString,
                                    @"gaps":bladeClrsJSONString,
+                                   @"quality":clrQualityJSONString,
                                    @"clearance":clearance,
                                    @"casing_thickness":self.metaData.casing_thickness,
                                    @"spacer_thickness":self.metaData.spacer_thickness,
@@ -1889,7 +1917,8 @@ enum ifc242xValue {
             neg_crossing[i] = false;
         }
     }
-    
+
+// This debug stanza allows one to see where the zero-crossings occur.
 #if 0
     [self.filtered removeAllObjects];
     float f = 1.0;
@@ -1906,6 +1935,7 @@ enum ifc242xValue {
     // These averages are the per-blade clearances
     [self.filtered removeAllObjects];
     [self.blade_clearances removeAllObjects];
+    [self.clearance_quality removeAllObjects];
     for (i=0; i<self.displacements.count; i++) {
         if (neg_crossing[i]) {
             // We've encountered a negative zero-crossing
@@ -1977,11 +2007,22 @@ enum ifc242xValue {
                     [self.blade_clearances addObject:[NSNumber numberWithFloat:min_clearance]];
 #else
                     [self.blade_clearances addObject:[NSNumber numberWithFloat:clearance]];
+                    // Check if minimum clearance is >0.001" (0.0254mm) from average clearance.  If so we consider it an outlier.
+                    // Quality is the fraction of points whose values are <= 0.001" from the mean.
+                    float quality = (float)count;
+                    if (fabs(clearance - min_clearance) > 0.0254) {
+                        for (int j=start + FILTER_EDGE_SIZE_START; j<=stop - FILTER_EDGE_SIZE_STOP; j++) {
+                            NSNumber* d = [self.displacements objectAtIndex:j];
+                            if (fabs(clearance - [d floatValue]) > 0.0254) quality -= 1.0;
+                        }
+                    }
+                    quality = quality / (float)count;
+                    [self.clearance_quality addObject:[NSNumber numberWithFloat:quality]];
                     min_loc = ((float)start + (float)stop) / 2.0;
 #endif
                     [self.min_locs addObject:[NSNumber numberWithFloat:min_loc]];
                 }
-                NSLog(@"Clearance: %f", clearance);
+                    NSLog(@"Clearance: %f; Quality: %@", clearance, [self.clearance_quality lastObject]);
                 for (int j=start; j<=stop; j++) {
                     [self.filtered addObject:[NSNumber numberWithFloat:clearance]];
                 }
@@ -2303,8 +2344,8 @@ enum ifc242xValue {
 //
 
 // For IFC242x controller user 8N1 configuration.
-- (void)setupSerialCable {
-    NSLog(@"@setupSerialCable");
+- (void)setupSerialCableAndCommThread {
+    NSLog(@"@setupSerialCableAndCommThread");
     
     if (self.byteBuffer == nil) {
         self.byteBuffer = (uint8_t *) malloc(BYTE_BUFFER_SIZE);
@@ -2362,6 +2403,7 @@ enum ifc242xValue {
         self.networkRunLoop = [NSRunLoop currentRunLoop];
         [self.networkRunLoop run];
     }
+    //[[NSRunLoop currentRunLoop] run];
 }
 
 - (void)sendSerialData:(NSString*)cmd {
@@ -2662,9 +2704,9 @@ enum ifc242xValue {
         CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];// You can send data, String, int, array, dictionary, etc.
         result.keepCallback = [NSNumber numberWithBool:YES];
         [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
-        if (SIMULATED_DATA == 1) {
+#ifdef SIMULATED_DATA
             [self loadCSVFile];
-        }
+#endif
         NSLog(@"Calling compute clearance...");
         [self computeClearance]; // computeClearance changes pState to clearanceComputationInProgress
         NSLog(@"Calling returnData");
