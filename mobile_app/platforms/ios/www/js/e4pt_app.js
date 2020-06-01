@@ -58,6 +58,7 @@ var E4PTdata = {
     "locs":[],
     "minima":[],
     "data":[],
+    "quality":[],
     "clearance":"",
     "alreadyOnLDB":"false",
     "pouchdb_id": ""
@@ -1276,6 +1277,7 @@ function pluginMessage(msg) {
             msg.intensity = JSON.parse(msg.intensity);
             msg.locs = JSON.parse(msg.locs);
             msg.gaps = JSON.parse(msg.gaps);
+            msg.quality = JSON.parse(msg.quality);
             processE4PtData(msg);
             break;
         case "filename":
@@ -1555,7 +1557,8 @@ function parse_data() {
     console.log("Clearance average: ", E4PTdata.clearance);
     // Only update the clearance info if we have all the data to do so.
     if (current_frame_data['position'] != null) {
-      update_clearance(E4PTdata.clearance);
+      var clearance_f = calibrateClearance(E4PTdata.clearance);
+      update_clearance(clearance_f);
     }
 
     E4PTdata.frame = document.getElementById("FRAME_SIZE").value;
@@ -1572,6 +1575,40 @@ function parse_data() {
     if (doDBSave) {
       addDBEntry(E4PTdata); // save the data autmatically after acquisition
     }
+}
+
+function calibrateClearance(clearance) {
+    console.log("@calibrateClearance: clearance = ", clearance);
+    if (clearance.length == 0) {
+        clearance = 0.0;
+    }
+    var clearance_f = 0.0
+    if ((typeof clearance) != "string") {
+        clearance_f = clearance;
+    }
+    else {
+        clearance_f = parseFloat(clearance);
+    }
+    // Account for Start-of-measurement-range (SMR), SL, & Spacer
+    // Sensor measurements come in mm, so we may have to account for units as well.
+    // First do all calculations in mm.
+    var units = E4PTdata.units.toUpperCase();
+    var scaleFactor = 1.0;
+    if (units.includes("IN")) {
+        scaleFactor = 25.4;
+    }
+    
+    if (clearance_f < -9.0) {
+        // This is an error condition.
+        console.log("Clearance error condition encountered.");
+    }
+    else {
+        // clearance = displacement + SMR + SL - (Shim thickness + Spacer thickness) - Casing thickness
+        clearance_f = (clearance_f/scaleFactor) + (sensor_data.start_measurement_range + sensor_data.sensor_length)/scaleFactor - E4PTdata.spacer_thickness - E4PTdata.casing_thickness;
+    }
+    E4PTdata.clearance = clearance_f;
+    console.log("Leaving calibrateClearance: clearance_f = ", clearance_f);
+    return clearance_f;
 }
 
 function update_clearance(clearance) {
@@ -1593,53 +1630,51 @@ function update_clearance(clearance) {
         clearance_f = parseFloat(clearance);
     }
     var err_id = document.getElementById("CLEARANCE_ERROR");
+    var err_str = "";
     if (clearance_f == -9.997) {
-        err_id.innerHTML = "Error: No gaps detected in data.";
+        err_str = "Error: No gaps detected in data.";
     }
     if (clearance_f == -9.998) {
-        err_id.innerHTML = "Error: gaps contains all NaN values.";
+        err_str = "Error: gaps contains all NaN values.";
     }
     if (clearance_f == -9.999) {
-        err_id.innerHTML = "Error: Clearance computed to NaN value.";
+        err_str = "Error: Clearance computed to NaN value.";
     }
     if (clearance_f == -9.996) {
-        err_id.innerHTML = "Error: Problem finding blade tips (1).";
+        err_str = "Error: Problem finding blade tips (1).";
     }
     if (clearance_f == -9.995) {
-        err_id.innerHTML = "Error: Problem finding blade tips (2).";
+        err_str = "Error: Problem finding blade tips (2).";
     }
     if (clearance_f == -9.994) {
-        err_id.innerHTML = "Error: Problem finding blade tips (3).";
+        err_str = "Error: Problem finding blade tips (3).";
     }
     if (clearance_f < -9.0) {
         document.getElementById(el_id).innerHTML = "Err";
+        err_id.innerHTML = err_str;
         return;
     }
     if (isNaN(clearance_f)) {
         document.getElementById(el_id).innerHTML = "";
+        err_id.innerHTML = err_str;
         return;
     }
-    
-    // Now account for SMR, SL, & Spacer
-    // Sensor measurements come in mm, so we may have to account for units as well.
-    // First do all calculations in mm.
-    var units = E4PTdata.units.toUpperCase();
-    var scaleFactor = 1.0;
-    if (units.includes("IN")) {
-        scaleFactor = 25.4;
+    if (E4PTdata.quality.length > 0) {
+        var defects = 0;
+        for (var i=0; i<E4PTdata.quality.length; i++) {
+            if (E4PTdata.quality[i] < 1.0) {
+                defects = defects + 1;
+            }
+        }
+        if (defects > 0) {
+            err_str = err_str + " Data for " + defects + " blades deviates by >0.001 in.";
+            err_id.innerHTML = err_str;
+        }
     }
+    err_id.innerHTML = err_str;
 
-    // clearance = displacement + SMR + SL - (Shim thickness + Spacer thickness) - Casing thickness
-    clearance_f = (clearance_f/scaleFactor) + (sensor_data.smr + sensor_data.sensor_length)/scaleFactor - E4PTdata.spacer_thickness - E4PTdata.casing_thickness;
-    E4PTdata.clearance = clearance_f;
+    document.getElementById(el_id).innerHTML = clearance_f.toFixed(3);
     
-    if (isNaN(clearance_f)) {
-        document.getElementById(el_id).innerHTML = "NaN";
-    }
-    else {
-        document.getElementById(el_id).innerHTML = clearance_f.toFixed(3);
-    }
-
     clearances = [];
     for (var i=0; i<current_frame_data['position'][stage].length; i++) {
         var p = current_frame_data['position'][stage][i];
