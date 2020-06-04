@@ -217,9 +217,6 @@ $(document).ready(function(){
     document.getElementById("SET_MEASUREMENT_RATE_BUTTON").addEventListener('click', function(){
     set_measurement_rate("1");
     }, {passive: true});
-    document.getElementById("SET_MEASUREMENT_RATE_BUTTON_2").addEventListener('click', function(){
-    set_measurement_rate("2");
-    }, {passive: true});
     document.getElementById("SET_THRESHOLD_BUTTON").addEventListener('click', function(){
     set_threshold();
     }, {passive: true});
@@ -289,7 +286,12 @@ $(document).ready(function(){
     document.getElementById("SETUP_CLOSE_BUTTON").addEventListener('click', function(){
         $("#FRD_PAGE").fadeOut();
     }, {passive: true});
-
+    document.getElementById("SETUP_CLOSE_BUTTON2").addEventListener('click', function(){
+        $("#INITIALIZE_SENSOR_PAGE").fadeOut();
+    }, {passive: true});
+    document.getElementById("SETUP_CLOSE_BUTTON3").addEventListener('click', function(){
+        $("#SENSOR_SETUP_PAGE").fadeOut();
+    }, {passive: true});
     setupAccordian();
     if (communicationChannel == "WebSocket") {
         createWS();
