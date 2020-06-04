@@ -292,6 +292,9 @@ $(document).ready(function(){
     document.getElementById("SETUP_CLOSE_BUTTON3").addEventListener('click', function(){
         $("#SENSOR_SETUP_PAGE").fadeOut();
     }, {passive: true});
+    document.getElementById("SETUP_CLOSE_BUTTON4").addEventListener('click', function(){
+        $("#SETUP_PAGE").fadeOut();
+    }, {passive: true});
     setupAccordian();
     if (communicationChannel == "WebSocket") {
         createWS();
@@ -1390,7 +1393,7 @@ function setMasterMessage( txtColor, bgColor, txt ) {
 function setMasterMessage2( txtColor, bgColor, txt ) {
     document.getElementById("master_message_2").style.color = txtColor;
     document.getElementById("master_message_2").style.background = bgColor;
-    document.getElementById("master_message_2").value = txt;
+    document.getElementById("master_message_2").innerHTML = txt;
 }
 
 function processE4PtData(msg) {
