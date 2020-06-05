@@ -1387,7 +1387,7 @@ function setIndicatorColor( color ) {
 function setMasterMessage( txtColor, bgColor, txt ) {
     document.getElementById("master_message").style.color = txtColor;
     document.getElementById("master_message").style.background = bgColor;
-    document.getElementById("master_message").value = txt;
+    document.getElementById("master_message").innerHTML = txt;
 }
 
 function setMasterMessage2( txtColor, bgColor, txt ) {
