@@ -184,6 +184,7 @@ enum ifc242xValue {
 @property (nonatomic, retain) NSTimer* timerWaiting;
 @property (strong, nonatomic) NSMutableArray* kernel;
 @property (strong, nonatomic) NSRunLoop* networkRunLoop;
+@property (strong, nonatomic) dispatch_queue_t networkQueue;
 
 // Variables needed for data collection.
 @property (nonatomic) int tmpCounter;
@@ -323,6 +324,7 @@ enum ifc242xValue {
 
 @synthesize connectionMode = _connectionMode;
 @synthesize networkRunLoop = _networkRunLoop;
+@synthesize networkQueue = _networkQueue;
 
 - (int)interfaceHandle {
     static int handle = 0;
@@ -373,7 +375,7 @@ enum ifc242xValue {
 
 - (void)connectDevice:(NSString*)ip_address port:(int)port {
 
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+    dispatch_async(self.networkQueue, ^{
         NSLog(@"@connectDevice: %@:%d", ip_address, port);
         if (port == self.dataPort) self.dataStreamIsOpen = false;
         if (port == self.telnetPort) self.telnetStreamIsOpen = false;
@@ -489,7 +491,6 @@ enum ifc242xValue {
     
 - (void)reportProgress {
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
-    //dispatch_async(dispatch_get_main_queue(), ^{
         NSLog(@"Reporting progress: %f",self.progress);
         int intProgress = (int)roundf(self.progress*100); // Convert progress to a rounded whole %.
         NSString* progress = [NSString stringWithFormat:@"%d",intProgress];
@@ -557,10 +558,21 @@ enum ifc242xValue {
                 // update then hide the progress bar.
                 self.progress = 1.0;
                 msg = @"Dark referencing complete.";
-                NSDictionary* jsonDict = @{@"type":@"alert",@"message":msg};
-                CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];
-                result.keepCallback = [NSNumber numberWithBool:YES];
-                [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+                dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
+                    NSDictionary* jsonDict = @{@"type":@"alert",@"message":msg};
+                    if (true) {
+                        NSError* error;
+                        NSData *jsonData=[NSJSONSerialization dataWithJSONObject:jsonDict options:NSJSONWritingSortedKeys error:&error];
+                        NSString *jsonString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+                        jsonString = [jsonString stringByReplacingOccurrencesOfString:@"\n" withString:@""];
+                        [self.plugin.commandDelegate evalJs:[NSString stringWithFormat:@"pluginMessage(%@);",jsonString]];
+                    }
+                    else {
+                        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];
+                        result.keepCallback = [NSNumber numberWithBool:YES];
+                        [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+                    }
+                });
                 if ([nextProc containsString:@"doDataCollection"]) {
                     NSString* acqTime = [info valueForKey:@"acqTime"];
                     NSLog(@"Dark reference complete. Do data collection. %@s",acqTime);
@@ -1392,9 +1404,10 @@ enum ifc242xValue {
 - (void)stream:(NSStream *)inStream handleEvent:(NSStreamEvent)streamEvent {
     
     if (self.demoMode) return;  // Do nothing in demo mode.
-    __block NSStream* theStream = inStream;
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-    //dispatch_async(dispatch_get_main_queue(), ^{
+
+    dispatch_async(self.networkQueue, ^{
+        NSStream* theStream = inStream;
+        
         NSLog(@"Processing stream, stream event %lu", (unsigned long)streamEvent);
         
         NSNumber* port = [theStream propertyForKey:(__bridge NSString*)kCFStreamPropertySocketRemotePortNumber];
@@ -1471,11 +1484,13 @@ enum ifc242xValue {
                         break;
                     }
                     NSLog(@"NSStreamEventHasBytesAvailable");
+                    NSThread* thrd = [NSThread currentThread];
+                    NSLog(@"Thread: %@; isMainThread: %d",[thrd debugDescription], [NSThread isMainThread]);
                     if(foundInputDataS) NSLog(@"  stream is an input data stream");
                     if(foundOutputDataS) NSLog(@"  stream is an output data stream");
                     if(foundInputTelnetS) NSLog(@"  stream is an input telnet stream");
                     if(foundOutputTelnetS) NSLog(@"  stream is an output telnet stream");
-                    NSLog(@"  TCP process data");
+                    NSLog(@"  TCP process data - %@; %d",[thrd debugDescription], [NSThread isMainThread]);
                     
                     long int len2;
                     uint32_t order_number;
@@ -1648,8 +1663,6 @@ enum ifc242xValue {
                     NSLog(@"NSStreamEventEndEncountered for port = %@", port);
                     [theStream close];
                     [theStream removeFromRunLoop:self.networkRunLoop forMode:NSDefaultRunLoopMode];
-                    //[theStream removeFromRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
-                    //          [theStream release];
                     theStream = nil;
                     
                     if ([port intValue] == TELNET_PORT) {
@@ -2382,7 +2395,8 @@ enum ifc242xValue {
         
     // Create and start the comm thread.  We'll use this thread to manage the rscMgr so
     // we don't tie up the UI thread.
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+    self.networkQueue = dispatch_queue_create("global_network_queue", DISPATCH_QUEUE_SERIAL); // Not DISPATCH_QUEUE_CONCURRENT
+    dispatch_async(self.networkQueue, ^{
         [self startCommThread:nil];
     });
 }
@@ -2400,6 +2414,7 @@ enum ifc242xValue {
     
     // run the run loop
     if (self.networkRunLoop == nil) {
+        NSLog(@"Setting up network runloop");
         self.networkRunLoop = [NSRunLoop currentRunLoop];
         [self.networkRunLoop run];
     }
