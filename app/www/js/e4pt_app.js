@@ -295,6 +295,10 @@ $(document).ready(function(){
     document.getElementById("SETUP_CLOSE_BUTTON4").addEventListener('click', function(){
         $("#SETUP_PAGE").fadeOut();
     }, {passive: true});
+    document.getElementById("SETUP_CLOSE_BUTTON5").addEventListener('click', function(){
+        $("#LOCAL_DATA_PAGE").fadeOut();
+        $("#TITLE_BAR").text("e-4Pt Tool");
+    }, {passive: true});
     setupAccordian();
     if (communicationChannel == "WebSocket") {
         createWS();
@@ -2352,6 +2356,13 @@ function sortTable(n) {
       }
     }
   }
+    
+  // Add color to the header of the column by which the table is sorted.
+  let cols = ["FRAME_COL","SN_COL","CUSTOMER_COL","SITE_COL","DESC_COL","DATE_COL","TIME_COL"];
+  for (i=0; i<cols.length; i++) {
+    document.getElementById(cols[i]).style.color = "white";
+  }
+  document.getElementById(cols[n-1]).style.color = "aqua";
 }
 
 function loadLocalData(id) {

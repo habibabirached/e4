@@ -360,29 +360,34 @@
         </div>
             
         <!-- --------------- LOCAL STORED DATA TABLE PAGE --------------------- -->
-        <div class="FIXED H100 Z0 LOCAL_DATA_PAGE">
-            <div id="LOCAL_DATA_PAGE" class="HIDE">
-                <H2 align="center"><U>Local Data</U></H2><br/>
+        <div id="LOCAL_DATA_PAGE" class="OVERLAY_PARTIAL" style="top:5.9vmin">
+            <div class="RELATIVE TOP0 W100 COLOR_T_BLACK" style="height:5vmin; position:sticky">
+                <div class="COL_FL FONT_WHITE FONT8 PW2"></div>
+                <div id="SETUP_CLOSE_BUTTON5" class="COL_FR BUTTON PW1">
+                    <i class="fa fa-window-close FONT10 FONT_WHITE"></i>
+                </div>
+            </div>
+                <H2 align="center" class="FONT_WHITE"><U>Local Data</U></H2><br/>
                 <table id="LOCAL_DATA_TABLE" class="local_data_table">
                     <thead id="LOCAL_DATA_TABLE_HEADER">
                         <tr>
-                            <th class="local_data_header" style="display:none;">UUID</th> <!-- not visible -->
-                            <th class="local_data_header" onclick="sortTable(1)">Frame</th>
-                            <th class="local_data_header" onclick="sortTable(2)">S/N</th>
-                            <th class="local_data_header" onclick="sortTable(3)">Customer</th>
-                            <th class="local_data_header" onclick="sortTable(4)">Site</th>
-                            <th class="local_data_header" onclick="sortTable(5)">Description</th>
-                            <th class="local_data_header" onclick="sortTable(6)">Date</th>
-                            <th class="local_data_header" onclick="sortTable(7)">Time</th>
+                            <th class="TOP_ROW" style="display:none;">UUID</th> <!-- not visible -->
+                            <th class="TOP_ROW" id="FRAME_COL" onclick="sortTable(1)">Frame</th>
+                            <th class="TOP_ROW" id="SN_COL" onclick="sortTable(2)">S/N</th>
+                            <th class="TOP_ROW" id="CUSTOMER_COL" onclick="sortTable(3)">Customer</th>
+                            <th class="TOP_ROW" id="SITE_COL" onclick="sortTable(4)">Site</th>
+                            <th class="TOP_ROW" id="DESC_COL" onclick="sortTable(5)">Description</th>
+                            <th class="TOP_ROW" id="DATE_COL" onclick="sortTable(6)">Date</th>
+                            <th class="TOP_ROW" id="TIME_COL" onclick="sortTable(7)">Time</th>
                         </tr>
                     </thead>
                     <tbody id="LOCAL_DATA_TABLE_BODY">
                     </tbody>
                 </table>
                 <br/>
-                <input class="TRACC_BUTTON" type="submit" value="Clear Database" id="CLEAR_DB_BUTTON"/>
+                <div id="CLEAR_DB_BUTTON" class="BUTTON W35 OVERLAY_BUTTON" style="margin:0 auto;">CLEAR DATABASE</div>
                 <br/><br/><br/><br/>
-            </div>
+            <!-- </div> -->
         </div>
 
         <!-- --------------- IMPORTS ------------------------- -->
