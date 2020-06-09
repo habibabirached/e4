@@ -509,48 +509,42 @@ frame_data = [
     'spacers':[
         {'stage':'1', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'4.402', 'color':'RED', 'image':'7HA02-R1'},
         {'stage':'6', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'6.715', 'color':'BLUE', 'image':'7HA02-R6'},
-        {'stage':'10', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'2.793', 'color':'BLACK', 'image':'7HA02-R11'},
-        {'stage':'14', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'4.259', 'size':'5.154', 'color':'GREEN', 'image':'7HA02-R14'},
-        {'stage':'14', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'4.260', 'max':'6.631', 'size':'2.782', 'color':'GREEN', 'image':'7HA02-R14'}
+        {'stage':'10', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'7.504', 'color':'SILVER', 'image':'7HA02-R11'},
+        {'stage':'14', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'7.504', 'color':'SILVER', 'image':'7HA02-R14'},
     ],
     'stage_info':{
         '1':{
-            'RIGHT':['A', 0.0, 0.0, 2.718],
-            'TOP':['B', 90.0, 90.0, 2.718],
-            'LEFT':['C', 180.0, 180.0, 2.718],
-            'BOTTOM':['D', 270.0, 270.0, 2.718],
+            'RIGHT':['A', 0.0, 0.0, 4.959],
+            'TOP':['B', 90.0, 90.0, 4.959],
+            'LEFT':['C', 180.0, 180.0, 4.959],
+            'BOTTOM':['D', 270.0, 270.0, 4.959],
             'blade_count':24,
             'tip_diameter':95.296,
             'blade_width':0.075
               },
         '6':{
-            'RIGHT':['A', 0.0, 0.0, 1.815],
-            'TOP':['B', 90.0, 90.0, 1.815],
-            'LEFT':['C', 180.0, 180.0, 1.815],
-            'BOTTOM':['D', 270.0, 270.0, 1.815],
+            'RIGHT':['A', 0.0, 0.0, 2.641],
+            'TOP':['B', 90.0, 90.0, 2.641],
+            'LEFT':['C', 180.0, 180.0, 2.641],
+            'BOTTOM':['D', 270.0, 270.0, 2.641],
             'blade_count':72,
             'tip_diameter':78.632,
             'blade_width':0.06
         },
         '10':{
-            'RIGHT':['A', 0.0, 0.0, 2.597],
-            'TOP':['B', 90.0, 90.0, 2.597],
-            'LEFT':['C', 180.0, 180.0, 2.597],
-            'BOTTOM':['D', 270.0, 270.0, 2.597],
+            'RIGHT':['A', 0.0, 0.0, 1.870],
+            'TOP':['B', 90.0, 90.0, 1.870],
+            'LEFT':['C', 180.0, 180.0, 1.870],
+            'BOTTOM':['D', 270.0, 270.0, 1.870],
             'blade_count':85,
             'tip_diameter':72.22,
             'blade_width':0.06
         },
         '14':{
-            'RIGHT':['A', 0.0, 0.0, 1.786],
-            'LEFT':['B', 180.0, 180.0, 1.786],
-            'blade_count':92,
-            'tip_diameter':69.814,
-            'blade_width':0.060
-        },
-        '14.1':{
-            'TOP':['A', 100.0, 100.0, 1.786],
-            'BOTTOM':['B', 280.0, 280.0, 1.786],
+            'RIGHT':['A', 0.0, 0.0, 1.860],
+            'TOP':['B', 90.0, 90.0, 1.860],
+            'LEFT':['B', 180.0, 180.0, 1.860],
+            'BOTTOM':['D', 270.0, 270.0, 1.860],
             'blade_count':92,
             'tip_diameter':69.814,
             'blade_width':0.060
