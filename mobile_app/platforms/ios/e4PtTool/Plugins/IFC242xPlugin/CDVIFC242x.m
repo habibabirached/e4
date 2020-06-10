@@ -1229,8 +1229,9 @@ enum ifc242xValue {
 // 3 elements. (1) acquisition time; (2) measurement rate; (3) error messages, if any.
 - (NSArray*)acquisitionTimeAndRate:(float)RPM {
     float bladeWidth = [self.metaData.blade_width floatValue];
-    float inchesPerSecond = M_PI * [self.metaData.tip_diameter floatValue] * RPM / 60.0;
-    float acquisitionTime =  1.05 * [self.metaData.tip_diameter floatValue] / inchesPerSecond;
+    float circumference = M_PI * [self.metaData.tip_diameter floatValue];
+    float inchesPerSecond = circumference * RPM / 60.0;
+    float acquisitionTime =  1.10 * (circumference)/ inchesPerSecond;
     float samplesPerInch = DESIRED_POINTS_PER_BLADE / bladeWidth;
     float measRate = inchesPerSecond * samplesPerInch; // measRate in Hz.
     // Round measurement rate to the next highest 100 Hz.
