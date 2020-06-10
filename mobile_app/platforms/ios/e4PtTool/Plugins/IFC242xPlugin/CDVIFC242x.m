@@ -61,7 +61,7 @@
 //#define OUTPUT_MINIMUM
 
 // For using simulated data
-#define SIMULATED_DATA
+//#define SIMULATED_DATA
 
 enum pluginState {
     ready = 0,
