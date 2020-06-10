@@ -649,9 +649,9 @@ function set_threshold() {
         e4PtAlert("Threshold is not a number.");
         return;
     }
-    if (threshold_f < 0.0) {
-        threshold_f = 0.0;
-        document.getElementById(el_id).value = 0.0;
+    if (threshold_f < 0.5) {
+        threshold_f = 0.5;
+        document.getElementById(el_id).value = 0.5;
     }
     if (threshold_f > 100.0) {
         threshold_f = 100.0;
@@ -1602,9 +1602,14 @@ function calibrateClearance(clearance) {
     // Sensor measurements come in mm, so we may have to account for units as well.
     // First do all calculations in mm.
     var units = E4PTdata.units.toUpperCase();
-    var scaleFactor = 1.0;
-    if (units.includes("IN")) {
-        scaleFactor = 25.4;
+    var SMR = sensor_data.start_measurement_range; // in inches
+    var SL = sensor_data.sensor_length; // in inches
+    var spacer = E4PTdata.spacer_thickness; // in inches
+    var casing_thickness = E4PTdata.casing_thickness; // may be in mm or inches
+    var scale_factor = 1.0;
+    if (units.includes("MM")) {
+        casing_thickness = casing_thickness / 25.4; // convert to inches
+        scale_factor = 25.4;
     }
     
     if (clearance_f < -9.0) {
@@ -1613,7 +1618,12 @@ function calibrateClearance(clearance) {
     }
     else {
         // clearance = displacement + SMR + SL - (Shim thickness + Spacer thickness) - Casing thickness
-        clearance_f = (clearance_f/scaleFactor) + (sensor_data.start_measurement_range + sensor_data.sensor_length)/scaleFactor - E4PTdata.spacer_thickness - E4PTdata.casing_thickness;
+        //
+        // Clearance comes from the sensor in "mm".  SMR, Sensor Length, Spacer Thickness and Casing thickness are in
+        // inches.  Here we calculate the clearance in inches.
+        clearance_f = clearance_f/25.4;  // Clearance comes in mm, so convert to inches
+        clearance_f = clearance_f + (SMR + SL) - spacer - casing_thickness; // Compute clearance in inches.
+        clearance_f = clearance_f / scale_factor; // convert to desired units.
     }
     E4PTdata.clearance = clearance_f;
     console.log("Leaving calibrateClearance: clearance_f = ", clearance_f);

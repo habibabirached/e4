@@ -61,7 +61,7 @@
 //#define OUTPUT_MINIMUM
 
 // For using simulated data
-//#define SIMULATED_DATA
+#define SIMULATED_DATA
 
 enum pluginState {
     ready = 0,
@@ -1240,8 +1240,8 @@ enum ifc242xValue {
     measRate *= 100.0;
     
     NSString* errorMessage = @"";
-    if (measRate > 6000.0) {
-        measRate = 6000.0;
+    if (measRate > 6500.0) {
+        measRate = 6500.0;
         samplesPerInch = measRate / inchesPerSecond;
         float ptsPerBlade = samplesPerInch * bladeWidth;
         errorMessage = [NSString stringWithFormat:@"ErrorRateHigh\n%f pts/blade. ",ptsPerBlade];
@@ -2617,7 +2617,36 @@ enum ifc242xValue {
                 (self.readPtr == endPtr) ? (self.readPtr = self.byteBuffer) : self.readPtr++;
                 dval = dval | ((*self.readPtr & 0x3F) << 12);
                 (self.readPtr == endPtr) ? (self.readPtr = self.byteBuffer) : self.readPtr++;
-                displacement = ((float)dval - 98232.0) * [self.metaData.sensor_measurement_range floatValue] / 65536.0;
+                // Error checking
+                NSString* error_msg = @"";
+                if (dval > 262072) {
+                    error_msg = @"Error ";
+                    if (dval == 262073) {
+                        error_msg = [error_msg stringByAppendingString:@"RS422 interface underflow"];
+                    }
+                    if (dval == 262074) {
+                        error_msg = [error_msg stringByAppendingString:@"RS422 interface overflow"];
+                    }
+                    if (dval == 262075) {
+                        error_msg = [error_msg stringByAppendingString:@"Too much data for baud rate"];
+                    }
+                    if (dval == 262076) {
+                        error_msg = [error_msg stringByAppendingString:@"No peak present"];
+                    }
+                    if (dval == 262077) {
+                        error_msg = [error_msg stringByAppendingString:@"Peak in front of measuring range"];
+                    }
+                    if (dval == 262078) {
+                        error_msg = [error_msg stringByAppendingString:@"Peak is behind measuring range"];
+                    }
+                    if (dval == 262079) {
+                        error_msg = [error_msg stringByAppendingString:@"Measuring value cannot be calculated"];
+                    }
+                    displacement = OUT_OF_RANGE;
+                }
+                else {
+                    displacement = ((float)dval - 98232.0) * [self.metaData.sensor_measurement_range floatValue] / 65536.0;
+                }
                 NSString* log = [NSString stringWithFormat:@"D:%f: ", displacement];
                 logStr = [logStr stringByAppendingString:log];
                 if (self.pState == collectingDataInProgress) {
