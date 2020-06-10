@@ -189,7 +189,7 @@ frame_data = [
             'BOTTOM':['D', 270.0, 270.0, 1.387],
             'blade_count':4,
             'tip_diameter':5.56,
-            'blade_width':0.228
+            'blade_width':0.120
          },
          '11':{
             'RIGHT':['A', 0.0, 0.0, 1.387],
@@ -198,7 +198,7 @@ frame_data = [
             'BOTTOM':['D', 270.0, 270.0, 1.387],
             'blade_count':4,
             'tip_diameter':5.56,
-            'blade_width':0.228
+            'blade_width':0.111
          },
          '14':{
             'RIGHT':['A', 0.0, 0.0, 1.387],
@@ -207,7 +207,7 @@ frame_data = [
             'LEFT':['D', 270.0, 270.0, 1.387],
             'blade_count':4,
             'tip_diameter':5.56,
-            'blade_width':0.228
+            'blade_width':0.121
          },
      },
     'turning_gear_rpm':6.9,
