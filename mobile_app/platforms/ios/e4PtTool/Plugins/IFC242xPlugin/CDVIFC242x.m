@@ -1843,8 +1843,11 @@ enum ifc242xValue {
     // Find the top 3 peaks. One should be at 15. There should be one or two
     // others.  Two if measuring squealer tips; One if not.
     NSLog(@"Finding peaks...");
+    // max1,2,3: The max value for this histogram peak.
+    // peak1,2,3: The location of the peak, i.e. the bin number.s
     int max1, max2, max3, i, peak1, peak2, peak3;
-    max1 = max2 = max3 = i = peak1 = peak2 = peak3 = 0;
+    max1 = max2 = max3 = i = 0;
+    peak1 = peak2 = peak3 = -1; // peakN = -1 means the peak is not found.
     for (i=0; i<nbins; i++) {
         if (hBins[i] > max1) {
             max1 = hBins[i];
@@ -1865,10 +1868,13 @@ enum ifc242xValue {
     }
     NSLog(@"Peaks: %d, %d, %d", peak1, peak2, peak3);
     // Look at the difference between peaks to see if we're dealing with squealers or not.
+    // Check that peakN is >=0 because otherwise the peak was not found.
     NSLog(@"Finding threshold...");
-    float peakDiff = 1.0; // peak separation of 1mm
-    float d12 = fabs((float)peak2 - (float)peak1);
-    float d23 = fabs((float)peak3 - (float)peak2);
+    float peakDiff = 2.0; // peak separation of 2mm
+    float d12 = 0;
+    if ((peak2 >= 0) && (peak1 >= 0)) d12 = fabs((float)peak2 - (float)peak1);
+    float d23 = 0;
+    if ((peak2 >= 0) && (peak3 >= 0)) d23 = fabs((float)peak3 - (float)peak2);
     float threshold = 0.0;
     if ((d12 >= peakDiff) && (d23 >= peakDiff)) {
         // Looks like squealer tips.
@@ -2027,7 +2033,13 @@ enum ifc242xValue {
                     if (fabs(clearance - min_clearance) > 0.0254) {
                         for (int j=start + FILTER_EDGE_SIZE_START; j<=stop - FILTER_EDGE_SIZE_STOP; j++) {
                             NSNumber* d = [self.displacements objectAtIndex:j];
-                            if (fabs(clearance - [d floatValue]) > 0.0254) quality -= 1.0;
+                            NSNumber* intnst = [self.intensities objectAtIndex:j];
+                            if ((fabs(clearance - [d floatValue]) > 0.0254) && ([intnst floatValue] > 0)) {
+                                quality -= 1.0;
+                            }
+                            if (quality <= 0.0) {
+                                NSLog(@"Bad Quality: q = %f at index %d; displacement = %f; clearance = %f; int = %f", quality, j, [d floatValue], clearance, [intnst floatValue]);
+                            }
                         }
                     }
                     quality = quality / (float)count;
@@ -2243,6 +2255,7 @@ enum ifc242xValue {
         }
         if (r == 1) {
             self.metaData.casing_thickness = [lineArray objectAtIndex:7]; // Get casing thickness once.
+            self.metaData.casing_thickness = [self.metaData.casing_thickness stringByReplacingOccurrencesOfString:@"\r" withString:@""];
         }
         NSString* tmp = [lineArray objectAtIndex:4];
         [self.displacements addObject:[NSNumber numberWithFloat:[tmp floatValue]]];
