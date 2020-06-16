@@ -236,27 +236,42 @@
                     </tr>
                 </table>
                 <br/>
-                Position:  <select class="BORDER_BLACK_1 TXTFIELD" id="SENSOR_POSITION">
-                    <!-- These values are updated by javascript -->
-                    <option value="TOP">Top</option>
-                    <option value="BOTTOM">Bottom</option>
-                    <option value="LEFT">Left</option>
-                    <option value="RIGHT">Right</option>
-                </select>
-                <br/>
-                <br/>
-                Stage:  <select class="BORDER_BLACK_1 TXTFIELD" id="SENSOR_STAGE">
-                    <!-- These values are updated by javascript -->
-                    <option value="S1">Stage 1</option>
-                    <option value="S2">Stage 2</option>
-                </select>
-                <br/>
-                <br/>
-                <H2 id="CASING_THICKNESS_LABEL">Casing Thickness (inches):</H2>
-                <input class="BORDER_BLACK_1 TXTFIELD" type="text" id="CASING_THICKNESS" value=""/><br/><br/>
-                <H2 id="SPACER_THICKNESS_LABEL">Spacer Thickness (inches):</H2>
-                <input class="BORDER_BLACK_1 TXTFIELD" type="text" id="SPACER_THICKNESS" value=""/><p id="SPACER_COLOR_LABEL"></p>
-                <p id="CLEARANCE_ERROR"></p>
+                <table class="data_options_table">
+                    <tr class="data_options_row">
+                        <td  class="data_options_cell">
+                            Position:  <select class="BORDER_BLACK_1 TXTFIELD" id="SENSOR_POSITION">
+                                <!-- These values are updated by javascript -->
+                                <option value="TOP">Top</option>
+                                <option value="BOTTOM">Bottom</option>
+                                <option value="LEFT">Left</option>
+                                <option value="RIGHT">Right</option>
+                            </select>
+                        </td>
+                        <td  class="data_options_cell">
+                            Stage:  <select class="BORDER_BLACK_1 TXTFIELD" id="SENSOR_STAGE">
+                                <!-- These values are updated by javascript -->
+                                <option value="S1">Stage 1</option>
+                                <option value="S2">Stage 2</option>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr class="data_options_row">
+                        <td  class="data_options_cell">
+                            <fieldset style="border:0">
+                                <legend id="CASING_THICKNESS_LABEL">Casing Thickness (inches)</legend>
+                                <input class="BORDER_BLACK_1 TXTFIELD" type="text" id="CASING_THICKNESS" value=""/>
+                            </fieldset>
+                        </td>
+                        <td  class="data_options_cell">
+                            <fieldset>
+                                <legend id="SPACER_THICKNESS_LABEL">Spacer Thickness</legend>
+                                <input class="BORDER_BLACK_1 TXTFIELD" type="text" id="SPACER_THICKNESS" value=""/>
+                                <p id="SPACER_COLOR_LABEL"></p>
+                            </fieldset>
+                            <p id="CLEARANCE_ERROR"></p>
+                        </td>
+                    </tr>
+                </table>
                 <br/>
                 <br/>
                 <div class="W100">

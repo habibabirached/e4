@@ -888,6 +888,8 @@ function setup_data_collection_page(dateStr, timeStr, update_position) {
 
     // Setup the data tables.  We use different tables for each stage because
     // the number of positions for each stage could be different.
+    // The "super" table contains all the tables for the different stages.
+    
     var stages = current_frame_data['stage'];
     html_buf.push("<tr class=\"sensor_super_tr\">"); // The sub-tables all go in one row in the super-table
     for (stage_index = 0; stage_index < stages.length; stage_index++) {
