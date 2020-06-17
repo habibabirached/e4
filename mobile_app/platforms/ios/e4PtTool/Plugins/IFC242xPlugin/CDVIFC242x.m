@@ -63,6 +63,9 @@
 // For using simulated data
 //#define SIMULATED_DATA
 
+// For testing purposes define TEST_CODE
+//#define TEST_CODE
+
 enum pluginState {
     ready = 0,
     initializationInProgress,
@@ -600,7 +603,7 @@ enum ifc242xValue {
         [self processComplete:@"connected"];
     }
     if ([arg containsString:@"collect_data"]) {
-        [self loadCSVFile];
+        [self loadCSVFile:@""];
         NSDictionary* jsonDict = @{@"type":@"status",@"status":@"processing"};
         CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];// You can send data, String, int, array, dictionary, etc.
         result.keepCallback = [NSNumber numberWithBool:YES];
@@ -778,6 +781,10 @@ enum ifc242xValue {
         NSLog(@"Calling sendTelnetCommand from initializeSensor with serial connection");
         [self sendTelnetCommand];
     }
+
+#ifdef TEST_CODE
+    [self codeTest];
+#endif
 
 }
 
@@ -1608,7 +1615,7 @@ enum ifc242xValue {
                         // Load dummy data for testing without a rotor,
                         // but connected to a real sensor.
 #ifdef SIMULATED_DATA
-                            [self loadCSVFile];
+                        [self loadCSVFile:@""];
 #endif
 
                         // At this point we should have all the data that was requested.
@@ -1785,7 +1792,7 @@ enum ifc242xValue {
     CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDataDict];// You can send data, String, int, array, dictionary, etc.
     result.keepCallback = [NSNumber numberWithBool:NO];
     [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
-    [self saveCSVFile];
+    [self saveCSVFile:@""];
     [self clearData];
 }
 
@@ -2050,7 +2057,13 @@ enum ifc242xValue {
                 }
                     NSLog(@"Clearance: %f; Quality: %@", clearance, [self.clearance_quality lastObject]);
                 for (int j=start; j<=stop; j++) {
-                    [self.filtered addObject:[NSNumber numberWithFloat:clearance]];
+                    NSNumber* d = [self.displacements objectAtIndex:j];
+                    if ([d floatValue] != OUT_OF_RANGE) {
+                        [self.filtered addObject:[NSNumber numberWithFloat:clearance]];
+                    }
+                    else {
+                        [self.filtered addObject:[NSNumber numberWithFloat:OUT_OF_RANGE]];
+                    }
                 }
             }
             i = stop; // Move the start point ahead to where we stopped.
@@ -2225,17 +2238,23 @@ enum ifc242xValue {
 // for debugging when a rotor is not available.  It reads a CSV file
 // and populates the data structures as though the data had come from
 // the sensor.
-- (void)loadCSVFile {
+- (bool)loadCSVFile:(NSString*)filePath {
     [self clearData]; // Clear everything out to re-write it from CSV file.
     NSString* fName = @"test_data"; // test data file
-    NSString* csvPath = [[NSBundle mainBundle] pathForResource:fName ofType:@"csv"];
+    NSString* csvPath = @"";
+    if (filePath.length == 0) {
+        csvPath = [[NSBundle mainBundle] pathForResource:fName ofType:@"csv"];
+    }
+    else {
+        csvPath = filePath;
+    }
     NSFileManager* fm = [NSFileManager defaultManager];
     if ([fm fileExistsAtPath:csvPath]) {
         NSLog(@"Found CSV file.");
     }
     else {
         NSLog(@"CSV file not found.");
-        return;
+        return false;
     }
     NSString* fullFile = [NSString stringWithContentsOfFile:csvPath encoding:NSUTF8StringEncoding error:nil];
     NSArray* rows = [fullFile componentsSeparatedByString:@"\n"]; // this breaks up the file into rows
@@ -2273,9 +2292,10 @@ enum ifc242xValue {
         r++;
     }
     NSLog(@"Completed parsing CSV file.");
+    return true;
 }
 
-- (void)saveCSVFile {
+- (void)saveCSVFile:(NSString*)fileName {
     // If called with no displacements, don't write a file, just return;
     if (self.displacements.count == 0) return;
     // Get the date & time for the filename.
@@ -2303,20 +2323,25 @@ enum ifc242xValue {
     // Create a file name as sn_stage_pos_state_datetime.csv.
     // If there is no serial number, just save to the data folder.
     NSString* csvFileName = [[NSString alloc] init];
-    if (self.metaData.serial_number.length == 0) {
-        csvFileName = [NSString stringWithFormat:@"%@/%@",
-                       dataDir,
-                       [NSString stringWithFormat:@"data_%@.csv",dateStr]];
+    if (fileName.length == 0) {
+        if (self.metaData.serial_number.length == 0) {
+            csvFileName = [NSString stringWithFormat:@"%@/%@",
+                           dataDir,
+                           [NSString stringWithFormat:@"data_%@.csv",dateStr]];
+        }
+        else {
+            NSString* fName = [NSString stringWithFormat:@"%@_%@_%@_%@.csv",
+                               self.metaData.serial_number, self.metaData.stage,
+                               self.metaData.position, dateStr];
+            csvFileName = [NSString stringWithFormat:@"%@/%@", turbineDir, fName];
+        }
+        // Change the data-time string format in the filename.
+        csvFileName = [csvFileName stringByReplacingOccurrencesOfString:@" " withString:@"_"];
+        csvFileName = [csvFileName stringByReplacingOccurrencesOfString:@":" withString:@"-"];
     }
     else {
-        NSString* fName = [NSString stringWithFormat:@"%@_%@_%@_%@.csv",
-                           self.metaData.serial_number, self.metaData.stage,
-                           self.metaData.position, dateStr];
-        csvFileName = [NSString stringWithFormat:@"%@/%@", turbineDir, fName];
+        csvFileName = [NSString stringWithFormat:@"%@/%@", docPath, fileName];
     }
-    // Change the data-time string format in the filename.
-    csvFileName = [csvFileName stringByReplacingOccurrencesOfString:@" " withString:@"_"];
-    csvFileName = [csvFileName stringByReplacingOccurrencesOfString:@":" withString:@"-"];
     self.last_saved_file = csvFileName;
     // Now write the file...
     // Open the output file.
@@ -2353,7 +2378,7 @@ enum ifc242xValue {
         dataStr =  [NSString stringWithFormat:@"%d,%@,%@,%@,%@,%@,%@,%@\n",
                     i,[self.point_counts objectAtIndex:i],[self.datasetIds objectAtIndex:i],
                     [self.times objectAtIndex:i], [self.displacements objectAtIndex:i],
-                    [self.displacements objectAtIndex:i], [self.intensities objectAtIndex:i],
+                    [self.filtered objectAtIndex:i], [self.intensities objectAtIndex:i],
                     self.metaData.casing_thickness];
         [handle writeData:[dataStr dataUsingEncoding:NSUTF8StringEncoding]];
     }
@@ -2763,7 +2788,7 @@ enum ifc242xValue {
         result.keepCallback = [NSNumber numberWithBool:YES];
         [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
 #ifdef SIMULATED_DATA
-            [self loadCSVFile];
+        [self loadCSVFile:@""];
 #endif
         NSLog(@"Calling compute clearance...");
         [self computeClearance]; // computeClearance changes pState to clearanceComputationInProgress
@@ -2848,7 +2873,30 @@ enum ifc242xValue {
     jsonString = [jsonString stringByReplacingOccurrencesOfString:@"\n" withString:@""];
     [self.plugin.commandDelegate evalJs:[NSString stringWithFormat:@"pluginMessage(%@);",jsonString]];
 }
-
+    
+- (void)codeTest {
+    // test files
+    NSArray* files = @[@"R10_Bottom_1.csv", @"R10_Bottom_2.csv", @"R10_Left_1.csv", @"R10_Left_2.csv", @"R10_Right_1.csv", @"R10_Right_2.csv", @"R10_Top_1.csv", @"R10_Top_2.csv", @"R14_LH_LH_1.csv", @"R14_LH_LH_2.csv", @"R14_LH_RH_1.csv", @"R14_LH_RH_2.csv", @"R14_UH_LH_1.csv", @"R14_UH_LH_2.csv", @"R14_UH_RH_1.csv", @"R14_UH_RH_2.csv", @"R1_Left_1KHz_1.csv", @"R1_Left_1KHz_2.csv", @"R1_Left_2KHz_1.csv", @"R1_Left_400Hz_1.csv", @"R1_Right_2.csv", @"R1_Top_2KHz_2.csv", @"R6_Bottom_1.csv", @"R6_Bottom_2.csv", @"R6_Left_1.csv", @"R6_Left_2.csv", @"R6_Right_1.csv", @"R6_Right_2.csv", @"R6_Top_1.csv", @"R6_Top_2.csv"];
+    NSString* docPath;
+    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+    if (paths.count > 0) {
+        docPath = [paths objectAtIndex:0];
+    }
+    // The files should all be loaded in a folder named "test" in the documents folder.
+    for (NSString* file in files) {
+        NSString* filePath = [NSString stringWithFormat:@"%@/%@",docPath,file];
+        if (![self loadCSVFile:filePath]) {
+            continue;
+        }
+        if ([file containsString:@"R10"]) self.metaData.num_blades = @"85";
+        if ([file containsString:@"R14"]) self.metaData.num_blades = @"92";
+        if ([file containsString:@"R1_"]) self.metaData.num_blades = @"24";
+        if ([file containsString:@"R6"]) self.metaData.num_blades = @"72";
+        [self computeClearance];
+        NSString* outFile = [file stringByReplacingOccurrencesOfString:@".csv" withString:@"-test-out.csv"];
+        [self saveCSVFile:outFile];
+    }
+}
 
 @end
 
@@ -2985,6 +3033,8 @@ enum ifc242xValue {
         [self.manager messageHandler:msgStr];
     }];
 }
+
+
 
 @end
 
