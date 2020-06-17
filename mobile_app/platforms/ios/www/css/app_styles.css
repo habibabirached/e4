@@ -286,11 +286,21 @@ body{
   transform: translate(-50%, -50%);
 }
 
-.TURBINE_SETUP_PAGE{
+.TURBINE_SETUP{
   margin: 0;
   margin-left: 0%;
-  position: absolute;
-	top: 10%;
+  /*position: absolute;*/
+	/*top: 10%;*/
+    
+    position: fixed;
+    bottom: 5vmin;
+    right: 0;
+    left: 0;
+    top: 5.1vmin;
+    z-index: 1;
+    background-color: var(--TRACC-lightgrey);
+    display: none;
+    
 	/*
   left: 50%;
   -ms-transform: translate(-50%, -50%);
@@ -312,6 +322,8 @@ table.turbine_header_table{
     border: none;
     width:75%;
     left: 25%;
+    top: 5vmin;
+    background-color: var(--TRACC-lightgrey);
 }
 
 td.turbine_header_cell{
@@ -319,24 +331,31 @@ td.turbine_header_cell{
     border: none;
     font-weight: bold;
     text-align: left;
+    background-color: var(--TRACC-lightgrey);
 }
 
 table.sensor_super_table{
   border-collapse:collapse!important;
   width:75%;
   left: 25%;
+  background-color: var(--TRACC-lightgrey);
 }
 
 table.sensor_sub_table{
   width:90%;
   top: 90%;
   left: 50%;
+  background-color: var(--TRACC-lightgrey);
+}
+
+td.sensor_sub_td{
+    background-color:white;
 }
 
 td.sensor_super_td {
     padding: 1vh;
     font-size:2.5vmin;
-    background-color:white;
+    background-color: var(--TRACC-lightgrey);
     border-collapse:collapse!important;
     border: none;
     text-align: center;
@@ -347,7 +366,8 @@ td.sensor_super_td {
 tr.sensor_super_tr {
     padding: 1vh;
     font-size:2.5vmin;
-    background-color:white;
+    /*background-color:white;*/
+    background-color: var(--TRACC-lightgrey);
     border-collapse:collapse!important;
     border: none;
     text-align: center;
@@ -356,15 +376,16 @@ tr.sensor_super_tr {
 }
 
 table.local_data_table{
-  border-collapse:collapse!important;
-	width:80%;
-	margin-left:10%;
-	margin-right:10%;
+    border-collapse:collapse!important;
+    width:80%;
+    margin-left:10%;
+    margin-right:10%;
 }
 
 table.data_options_table{
     border-collapse:collapse!important;
     border: none;
+    background-color: var(--TRACC-lightgrey);
 }
 
 tr.data_options_row{
@@ -375,6 +396,7 @@ tr.data_options_row{
 td.data_options_cell{
     border-collapse:collapse!important;
     border: none;
+    background-color: var(--TRACC-lightgrey);
 }
 
 th.local_data_header {

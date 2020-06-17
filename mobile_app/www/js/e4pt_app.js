@@ -125,7 +125,6 @@ $(document).ready(function(){
         $("#DATA_PLOT").fadeOut();
         $("#INITIALIZE_SENSOR_PAGE").fadeOut();
         $("#LOCAL_DATA_PAGE").fadeOut();
-        $("#TURBINE_SETUP_PAGE").fadeIn();
         turbine_setup(true);
     }, {passive: true});
     document.getElementById("CLEAR_DB_BUTTON").addEventListener('click', function(){
@@ -499,6 +498,7 @@ function initialize_sensor() {
 }
 
 function turbine_setup(reset) {
+    $("#TURBINE_SETUP_PAGE").fadeIn();
 
     // Get frame type
     var frm_idx = document.getElementById("FRAME_SIZE").selectedIndex;
@@ -899,15 +899,15 @@ function setup_data_collection_page(dateStr, timeStr, update_position) {
         var stage = stages[stage_index];
         var positions = current_frame_data['position'][stage];
         html_buf.push("<td class=\"sensor_super_td\"><table class=\"sensor_sub_table\">");
-        var header_row = "<tr class=\"sensor_super_tr\"><td>POSITION</td><td>";
+        var header_row = "<tr class=\"sensor_super_tr\"><td class=\"sensor_sub_td\">POSITION</td><td class=\"sensor_sub_td\">";
         header_row = header_row + "STAGE " + stages[stage_index];
         header_row = header_row + "</td></tr>";
         html_buf.push(header_row);
         for (position_index = 0; position_index < positions.length; position_index++) {
-            html_buf.push("<tr><td>" + positions[position_index] + "</td>");
+            html_buf.push("<tr><td class=\"sensor_sub_td\">" + positions[position_index] + "</td>");
             var el_id = positions[position_index] + stages[stage_index];
             el_id = el_id.replace(/\s+/g, '_');
-            html_buf.push("<td id='" + el_id +
+            html_buf.push("<td class=\"sensor_sub_td\" id='" + el_id +
                           "' onclick='set_grid_position(\"" + positions[position_index] +
                           "\", \"" + stages[stage_index] +
                           "\")'></td>");
@@ -2463,6 +2463,5 @@ function loadLocalData(id) {
     }
 
     turbine_setup(false);
-    $("#TURBINE_SETUP_PAGE").fadeIn();
   });
 }
