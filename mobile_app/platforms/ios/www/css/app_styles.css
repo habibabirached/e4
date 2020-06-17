@@ -844,19 +844,27 @@ margin: 50px;
 #DATA_PLOT2 {
   z-index: -1;
   overflow:hidden;
-  height:100%;
+  height:75%;
   width:100%;
   position:relative
+  margin: 0 auto;
+  text-align: center;
+  background-color: var(--TRACC-lightgrey);
 }
 
-#CLEARANCE_PLOT {
+.CLEARANCE_PLOT {
   z-index: -1;
   overflow:hidden;
-  height:100%;
-  width:100%;
-  position:relative
+  height:75%;
+  width:75%;
+  margin: 0 auto;
+  text-align: center;
+  background-color: var(--TRACC-lightgrey);
 }
 
+.highcharts-container {
+    margin: 0 auto;
+}
 
 #container {
       width: 50px;
