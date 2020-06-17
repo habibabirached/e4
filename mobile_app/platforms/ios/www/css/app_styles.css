@@ -288,7 +288,7 @@ body{
 
 .TURBINE_SETUP_PAGE{
   margin: 0;
-	margin-left: 5%;
+  margin-left: 0%;
   position: absolute;
 	top: 10%;
 	/*
@@ -305,6 +305,20 @@ body{
 	margin-left: 5%;
   position: absolute;
 	top: 10%;
+}
+
+table.turbine_header_table{
+    border-collapse:collapse!important;
+    border: none;
+    width:75%;
+    left: 25%;
+}
+
+td.turbine_header_cell{
+    border-collapse:collapse!important;
+    border: none;
+    font-weight: bold;
+    text-align: left;
 }
 
 table.sensor_super_table{
@@ -669,7 +683,10 @@ th.local_data_header {
 	z-index: -1;
 }
 
-
+.BUTTON_GROUP{
+    margin: 0 auto;
+    text-align: center;
+}
 
 
 .OVERLAY_BUTTON{

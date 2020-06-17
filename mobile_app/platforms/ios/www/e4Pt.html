@@ -51,11 +51,11 @@
         <!-- --------------- LEFT MENU ---------------------  -->
         <div id="LEFT_MENU" class="FIXED H100 LEFT0 COLOR_T_BLACK Z0" style="top:1vmin">
             <BR/><BR/>
-            <div id="FRD_BUTTON" class="TRACC_BUTTON">SETUP</div>
+            <div id="FRD_BUTTON" class="TRACC_BUTTON">TOOL SETUP</div>
+            <div id="SENSOR_SETUP_BUTTON" class="TRACC_BUTTON">SENSOR SETUP</div>
             <div id="SETUP_BUTTON" class="TRACC_BUTTON">MEASURE TURBINE</div>
             <div id="OPEN_LOCAL_DATA" class="TRACC_BUTTON">OPEN LOCAL</div>
             <div id="GET_DATA_BUTTON" class="TRACC_BUTTON">GET DATA</div>
-            <div id="SENSOR_SETUP_BUTTON" class="TRACC_BUTTON">SENSOR SETUP</div>
             <div id="DOWNLOAD_FILE_BUTTON_01" class="TRACC_BUTTON">EXPORT DATA</div>
             <div id="SHUTDOWN_BUTTON" class="TRACC_BUTTON">SHUTDOWN</div>
             <!--
@@ -228,14 +228,23 @@
         <!-- --------------- TURBINE DATA COLLECTION PAGE --------------------- -->
         <div class="FIXED H100 Z0 TURBINE_SETUP_PAGE">
             <div id="TURBINE_SETUP_PAGE" class="HIDE">
-                <H2 id="TURBINE_SETUP_HEADER">Turbine S/N:</H2>
+                <table class="turbine_header_table">
+                    <tr class="data_options_row">
+                        <td class="turbine_header_cell"><p id="HEADER_DATETIME"></p></td>
+                        <td class="turbine_header_cell"><p id="HEADER_CUSTOMER"></p></td>
+                    </tr>
+                    <tr class="data_options_row">
+                        <td class="turbine_header_cell"><p id="HEADER_FRAME"></p></td>
+                        <td class="turbine_header_cell"><p id="HEADER_SERIAL"></p></td>
+                    </tr>
+                </table>
                 <!-- This table gets constructed by javascript -->
                 <table id="SENSOR_DATA_TABLE" class="sensor_super_table">
                     <tr>
                         <td></td>
                     </tr>
                 </table>
-                <br/>
+                <!-- <br/> -->
                 <table class="data_options_table">
                     <tr class="data_options_row">
                         <td  class="data_options_cell">
@@ -266,22 +275,21 @@
                             <fieldset>
                                 <legend id="SPACER_THICKNESS_LABEL">Spacer Thickness</legend>
                                 <input class="BORDER_BLACK_1 TXTFIELD" type="text" id="SPACER_THICKNESS" value=""/>
-                                <p id="SPACER_COLOR_LABEL"></p>
                             </fieldset>
-                            <p id="CLEARANCE_ERROR"></p>
                         </td>
                     </tr>
+                    <tr class="data_options_row">
+                        <td class="data_options_cell"><p id="CLEARANCE_ERROR"></p></td>
+                        <td class="data_options_cell"><p id="SPACER_COLOR_LABEL"></p></td>
+                    </tr>
                 </table>
-                <br/>
-                <br/>
-                <div class="W100">
+                <div class="BUTTON_GROUP">
                     <div id="STAGE_COLLECT_BUTTON" class="IN_BLOCK BUTTON W15 OVERLAY_BUTTON">GO!</div>
                     <div id="COLLECTION_RESET_BUTTON" class="IN_BLOCK BUTTON W15 OVERLAY_BUTTON">RESET</div>
                     <div id="CUSTOMER_REPORT_BUTTON" class="IN_BLOCK BUTTON W15 OVERLAY_BUTTON">REPORT</div>
                     <div id="DOWNLOAD_FILE_BUTTON_02" class="IN_BLOCK BUTTON W15 OVERLAY_BUTTON">EXPORT</div>
-                    <br/><br/><br/><br/>
                 </div>
-                
+                <br/><br/><br/><br/>
                 <div class="BLOCK H100 Z0" id="CLEARANCE_PLOT">
                     <p></p>
                     <div id="CLEARANCE_PLOT"></div>
@@ -303,21 +311,6 @@
                     <i class="fa fa-window-close FONT10 FONT_WHITE"></i>
                 </div>
             </div>
-            <button class="ACCORDION">PROBE MASTERING</button>
-            <div class="PANEL SELECTED_ROW">
-                <H2><U>Probe Mastering</U></H2><br/>
-                <p><U>Instructions:</U></p>
-                <ol style="padding:40px">
-                    <li>Clean mating surfaces of the Probe and the Set Master.</li>
-                    <li>Insert Probe into the Set Master.</li>
-                    <li>Press Start.</li>
-                    <li>Wait until the screen changes.</li>
-                </ol>
-                <div id="START_MASTER_BUTTON" class="BUTTON W25 OVERLAY_BUTTON" style="margin:0 auto;">START</div>
-                <br/>
-                <div id="master_message" class="W25 OVERLAY_BUTTON" style="margin:0 auto;" disabled>READY</div>
-                <br/>
-            </div>
             <button class="ACCORDION">DARK REFERENCE</button>
             <div class="PANEL SELECTED_ROW">
                 <hr>
@@ -332,6 +325,21 @@
                 <p>This page will disappear and the indicator light will flash yellow, then red. After &lt;30 seconds, you should see a flat line displayed indicating a successfull dark reference.</p>
                 <br/>
                 <div id="START_DARK_REFERENCE_BUTTON" class="BUTTON W40 OVERLAY_BUTTON" style="margin:0 auto;">START DARK REFERENCE</div>
+                <br/>
+            </div>
+            <button class="ACCORDION">PROBE MASTERING</button>
+            <div class="PANEL SELECTED_ROW">
+                <H2><U>Probe Mastering</U></H2><br/>
+                <p><U>Instructions:</U></p>
+                <ol style="padding:40px">
+                    <li>Clean mating surfaces of the Probe and the Set Master.</li>
+                    <li>Insert Probe into the Set Master.</li>
+                    <li>Press Start.</li>
+                    <li>Wait until the screen changes.</li>
+                </ol>
+                <div id="START_MASTER_BUTTON" class="BUTTON W25 OVERLAY_BUTTON" style="margin:0 auto;">START</div>
+                <br/>
+                <div id="master_message" class="W25 OVERLAY_BUTTON" style="margin:0 auto;" disabled>READY</div>
                 <br/>
             </div>
             <button class="ACCORDION">MEASUREMENT RATE</button>

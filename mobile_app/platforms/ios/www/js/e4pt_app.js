@@ -879,7 +879,10 @@ function setup_data_collection_page(dateStr, timeStr, update_position) {
     E4PTdata.date = dateStr;
     E4PTdata.time = timeStr;
     var header = "<p>" + dateStr + "  -  " + timeStr + "</p><p>" + customer + " - " + site + "</p><p>Frame: " + E4PTdata.frame + "</p><p>S/N: " + E4PTdata.serial_number + "</p>";
-    document.getElementById("TURBINE_SETUP_HEADER").innerHTML = header;
+    document.getElementById("HEADER_DATETIME").innerHTML = "Date: " + dateStr;
+    document.getElementById("HEADER_CUSTOMER").innerHTML = "Customer: " + customer + " - " + site;
+    document.getElementById("HEADER_FRAME").innerHTML = "Frame: " + E4PTdata.frame;
+    document.getElementById("HEADER_SERIAL").innerHTML = "S/N: " + E4PTdata.serial_number;
     document.getElementById("SENSOR_STAGE").selectedIndex = current_stage_index;
     document.getElementById("SENSOR_POSITION").selectedIndex = current_position_index;
     var html_buf = [];
