@@ -358,6 +358,13 @@ enum ifc242xValue {
 
     }
     
+    dispatch_async(dispatch_get_main_queue(), ^{
+        UIApplication* app = [UIApplication sharedApplication];
+        if (![app isIdleTimerDisabled]) {
+            [app setIdleTimerDisabled:true]; // This allows the app to keep the iPad from sleeping while the app is open.
+        }
+    });
+    
     return _manager;
 }
 
