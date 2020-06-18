@@ -142,7 +142,7 @@
                     <i class="fa fa-window-close FONT10 FONT_WHITE"></i>
                 </div>
             </div>
-            <div class="FIXED ROW W100" style="top:16vh;">
+            <div class="FIXED ROW W100" style="top:9vmax;">
                 <select id="FRAME_SIZE" class="SCAN_INFO_BOX">
                     <!-- These values are overwritten by javascript -->
                     <option value="6B">6B</option>
@@ -155,38 +155,38 @@
                 </select>
                 <p class="SCAN_INFO_TEXT">FRAME:</p>
             </div>
-            <div class="FIXED ROW W100" style="top:23vh;">
+            <div class="FIXED ROW W100" style="top:16vmax;">
                 <input class="SCAN_INFO_BOX" type="text" id="SERIAL_NUMBER" value=""/>
                 <div class="SCAN_INFO_TEXT">SERIAL NUMBER:</div>
                 <br/><br/>
             </div>
-            <div class="FIXED ROW W100" style="top:28vh;">
+            <div class="FIXED ROW W100" style="top:21vmax;">
                 <input class="SCAN_INFO_BOX" type="text" id="CUSTOMER" value=""/>
                 <div class="SCAN_INFO_TEXT">CUSTOMER:</div>
             </div>
-            <div class="FIXED ROW W100" style="top:33vh;">
+            <div class="FIXED ROW W100" style="top:26vmax;">
                 <input class="SCAN_INFO_BOX" type="text" id="SITE" value=""/>
                 <div class="SCAN_INFO_TEXT">SITE:</div>
             </div>
-            <div class="FIXED ROW W100" style="top:38vh;">
+            <div class="FIXED ROW W100" style="top:31vmax;">
                 <input class="SCAN_INFO_BOX" type="text" id="OPERATOR" value=""/>
-                <div class="SCAN_INFO_TEXT">OPERATOR (Name or SSO):</div>
+                <div class="SCAN_INFO_TEXT">OPERATOR:</div>
             </div>
-            <div class="FIXED ROW W100" style="top:43vh;">
+            <div class="FIXED ROW W100" style="top:36vmax;">
                 <select class="SCAN_INFO_BOX" id="UNITS">
                     <option value="In">Inches</option>
                     <option value="MM">MM</option>
                 </select>
                 <p class="SCAN_INFO_TEXT">UNITS:</p>
             </div>
-            <div class="FIXED ROW W100" style="top:50vh;">
+            <div class="FIXED ROW W100" style="top:43vmax;">
                 <select class="SCAN_INFO_BOX" id="TURBINE_STATE">
                     <option value="OPENING">Opening</option>
                     <option value="CLOSING">Closing</option>
                 </select>
                 <p class="SCAN_INFO_TEXT">STATE:</p>
             </div>
-            <div class="FIXED ROW W100" style="top:57vh;">
+            <div class="FIXED ROW W100" style="top:50vmax;">
                 <textarea id="DESCRIPTION" class="SCAN_INFO_BOX" value="" style="height:10vh; padding:1vmin; word-wrap:break-word; word-break: break-all; white-space: normal; line-height:normal"></textarea>
                 <p class="SCAN_INFO_TEXT">DESCRIPTION:</p>
             </div>
@@ -226,60 +226,66 @@
         </div>
             
         <!-- --------------- TURBINE DATA COLLECTION PAGE --------------------- -->
-        <div id="TURBINE_SETUP_PAGE" class="TURBINE_SETUP SCROLL_Y">
-                <table class="turbine_header_table">
-                    <tr class="data_options_row">
-                        <td class="turbine_header_cell"><p id="HEADER_DATETIME"></p></td>
-                        <td class="turbine_header_cell"><p id="HEADER_CUSTOMER"></p></td>
+        <div id="TURBINE_SETUP_PAGE" class="TURBINE_SETUP SCROLL_Y" style="top:5vmin">
+                <table class="TURBINE_HEADER_TABLE">
+                    <tr class="DATA_OPTIONS_ROW">
+                        <td class="TURBINE_HEADER_CELL"><p id="HEADER_DATETIME"></p></td>
+                        <td class="TURBINE_HEADER_CELL"><p id="HEADER_CUSTOMER"></p></td>
                     </tr>
-                    <tr class="data_options_row">
-                        <td class="turbine_header_cell"><p id="HEADER_FRAME"></p></td>
-                        <td class="turbine_header_cell"><p id="HEADER_SERIAL"></p></td>
+                    <tr class="DATA_OPTIONS_ROW">
+                        <td class="TURBINE_HEADER_CELL"><p id="HEADER_FRAME"></p></td>
+                        <td class="TURBINE_HEADER_CELL"><p id="HEADER_SERIAL"></p></td>
                     </tr>
                 </table>
                 <!-- This table gets constructed by javascript -->
-                <table id="SENSOR_DATA_TABLE" class="sensor_super_table">
+                <table id="SENSOR_DATA_TABLE" class="SENSOR_SUPER_TABLE">
                     <tr>
                         <td></td>
                     </tr>
                 </table>
                 <!-- <br/> -->
-                <table class="data_options_table">
-                    <tr class="data_options_row">
-                        <td  class="data_options_cell">
-                            Position:  <select class="BORDER_BLACK_1 TXTFIELD" id="SENSOR_POSITION">
-                                <!-- These values are updated by javascript -->
-                                <option value="TOP">Top</option>
-                                <option value="BOTTOM">Bottom</option>
-                                <option value="LEFT">Left</option>
-                                <option value="RIGHT">Right</option>
-                            </select>
-                        </td>
-                        <td  class="data_options_cell">
-                            Stage:  <select class="BORDER_BLACK_1 TXTFIELD" id="SENSOR_STAGE">
-                                <!-- These values are updated by javascript -->
-                                <option value="S1">Stage 1</option>
-                                <option value="S2">Stage 2</option>
-                            </select>
-                        </td>
-                    </tr>
-                    <tr class="data_options_row">
-                        <td  class="data_options_cell">
+                <table class="DATA_OPTIONS_TABLE">
+                    <tr class="DATA_OPTIONS_ROW">
+                        <td  class="DATA_OPTIONS_CELL">
                             <fieldset style="border:0">
-                                <legend id="CASING_THICKNESS_LABEL">Casing Thickness (inches)</legend>
-                                <input class="BORDER_BLACK_1 TXTFIELD" type="text" id="CASING_THICKNESS" value=""/>
+                                <legend id="SENSOR_POSITION_LABEL" class="SCAN_INFO_TEXT_C">Position</legend>
+                                <select class="DATA_OPTIONS_BOX" id="SENSOR_POSITION">
+                                    <!-- These values are updated by javascript -->
+                                    <option value="TOP">Top</option>
+                                    <option value="BOTTOM">Bottom</option>
+                                    <option value="LEFT">Left</option>
+                                    <option value="RIGHT">Right</option>
+                                </select>
                             </fieldset>
                         </td>
-                        <td  class="data_options_cell">
-                            <fieldset>
-                                <legend id="SPACER_THICKNESS_LABEL">Spacer Thickness</legend>
-                                <input class="BORDER_BLACK_1 TXTFIELD" type="text" id="SPACER_THICKNESS" value=""/>
+                        <td  class="DATA_OPTIONS_CELL">
+                            <fieldset style="border:0">
+                                <legend id="SENSOR_STAGE_LABEL" class="SCAN_INFO_TEXT_C">Stage</legend>
+                                <select class="DATA_OPTIONS_BOX" id="SENSOR_STAGE">
+                                    <!-- These values are updated by javascript -->
+                                    <option value="S1">Stage 1</option>
+                                    <option value="S2">Stage 2</option>
+                                </select>
                             </fieldset>
                         </td>
                     </tr>
-                    <tr class="data_options_row">
-                        <td class="data_options_cell"><p id="CLEARANCE_ERROR"></p></td>
-                        <td class="data_options_cell"><p id="SPACER_COLOR_LABEL"></p></td>
+                    <tr class="DATA_OPTIONS_ROW">
+                        <td  class="DATA_OPTIONS_CELL">
+                            <fieldset style="border:0">
+                                <legend id="CASING_THICKNESS_LABEL" class="SCAN_INFO_TEXT_C">Casing Thickness (in)</legend>
+                                <input class="DATA_OPTIONS_BOX" type="text" id="CASING_THICKNESS" value=""/>
+                            </fieldset>
+                        </td>
+                        <td  class="DATA_OPTIONS_CELL">
+                            <fieldset>
+                                <legend id="SPACER_THICKNESS_LABEL" class="SCAN_INFO_TEXT_C">Spacer Thickness</legend>
+                                <input class="DATA_OPTIONS_BOX" type="text" id="SPACER_THICKNESS" value=""/>
+                            </fieldset>
+                        </td>
+                    </tr>
+                    <tr class="DATA_OPTIONS_ROW">
+                        <td class="DATA_OPTIONS_CELL"><p id="CLEARANCE_ERROR"></p></td>
+                        <td class="DATA_OPTIONS_CELL"><p id="SPACER_COLOR_LABEL"></p></td>
                     </tr>
                 </table>
                 <div class="BUTTON_GROUP">
@@ -388,7 +394,7 @@
                 </div>
             </div>
                 <H2 align="center" class="FONT_WHITE"><U>Local Data</U></H2><br/>
-                <table id="LOCAL_DATA_TABLE" class="local_data_table">
+                <table id="LOCAL_DATA_TABLE" class="LOCAL_DATA_TABLE">
                     <thead id="LOCAL_DATA_TABLE_HEADER">
                         <tr>
                             <th class="TOP_ROW" style="display:none;">UUID</th> <!-- not visible -->

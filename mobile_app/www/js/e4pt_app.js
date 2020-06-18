@@ -520,12 +520,12 @@ function turbine_setup(reset) {
 
     var units = document.getElementById("UNITS").value;
     if (units == "In") {
-        document.getElementById("CASING_THICKNESS_LABEL").innerHTML = "Casing Thickness (inches):";
-        document.getElementById("SPACER_THICKNESS_LABEL").innerHTML = "Spacer Thickness (inches):";
+        document.getElementById("CASING_THICKNESS_LABEL").innerHTML = "Casing Thickness (in)";
+        document.getElementById("SPACER_THICKNESS_LABEL").innerHTML = "Spacer Thickness (in)";
     }
     if (units == "MM") {
-        document.getElementById("CASING_THICKNESS_LABEL").innerHTML = "Casing Thickness (mm):";
-        document.getElementById("SPACER_THICKNESS_LABEL").innerHTML = "Spacer Thickness (mm):";
+        document.getElementById("CASING_THICKNESS_LABEL").innerHTML = "Casing Thickness (mm)";
+        document.getElementById("SPACER_THICKNESS_LABEL").innerHTML = "Spacer Thickness (mm)";
     }
 }
 
@@ -894,20 +894,20 @@ function setup_data_collection_page(dateStr, timeStr, update_position) {
     // The "super" table contains all the tables for the different stages.
     
     var stages = current_frame_data['stage'];
-    html_buf.push("<tr class=\"sensor_super_tr\">"); // The sub-tables all go in one row in the super-table
+    html_buf.push("<tr class=\"SENSOR_SUPER_TR\">"); // The sub-tables all go in one row in the super-table
     for (stage_index = 0; stage_index < stages.length; stage_index++) {
         var stage = stages[stage_index];
         var positions = current_frame_data['position'][stage];
-        html_buf.push("<td class=\"sensor_super_td\"><table class=\"sensor_sub_table\">");
-        var header_row = "<tr class=\"sensor_super_tr\"><td class=\"sensor_sub_td\">POSITION</td><td class=\"sensor_sub_td\">";
+        html_buf.push("<td class=\"SENSOR_SUPER_TD\"><table class=\"SENSOR_SUB_TABLE\">");
+        var header_row = "<tr class=\"SENSOR_SUPER_TR\"><td class=\"SENSOR_SUB_TD\">POSITION</td><td class=\"SENSOR_SUB_TD\">";
         header_row = header_row + "STAGE " + stages[stage_index];
         header_row = header_row + "</td></tr>";
         html_buf.push(header_row);
         for (position_index = 0; position_index < positions.length; position_index++) {
-            html_buf.push("<tr><td class=\"sensor_sub_td\">" + positions[position_index] + "</td>");
+            html_buf.push("<tr><td class=\"SENSOR_SUB_TD\">" + positions[position_index] + "</td>");
             var el_id = positions[position_index] + stages[stage_index];
             el_id = el_id.replace(/\s+/g, '_');
-            html_buf.push("<td class=\"sensor_sub_td\" id='" + el_id +
+            html_buf.push("<td class=\"SENSOR_SUB_TD\" id='" + el_id +
                           "' onclick='set_grid_position(\"" + positions[position_index] +
                           "\", \"" + stages[stage_index] +
                           "\")'></td>");

@@ -35,7 +35,7 @@ body{
 .BLOCK{display: block;}.IN_BLOCK{display: inline-block;}
 
 .W0{width:0%}.W5{width:5%}.W10{width:10%}.W15{width:15%}.W16{width:16%}.W17{width:17%}.W18{width:18%}.W20{width:20%}.W25{width:25%}.W30{width:30%}.W35{width:35%}.W40{width:40%}.W50{width:50%}.W55{width:55%}.W60{width:60%}.W65{width:65%}.W70{width:70%}.W75{width:75%}.W80{width:80%}.W85{width:85%}.W90{width:90%}.W95{width:95}.W100{width:100%}
-.H0{width:0%}.H5{height:5%}.H10{height:10%}.H15{height:15%}.H20{height:20%}.H25{height:25%}.H30{height:30%}.H35{height:35%}.H40{height:40%}.H50{height:50%}.H55{height:55%}.H60{height:60%}.H65{height:65%}.H70{height:70%}.H75{height:75%}.H80{height:80%}.H85{height:85%}.H90{height:90%}.H95{height:95%}.H100{height:100%}
+.H0{height:0%}.H5{height:5%}.H10{height:10%}.H15{height:15%}.H20{height:20%}.H25{height:25%}.H30{height:30%}.H35{height:35%}.H40{height:40%}.H50{height:50%}.H55{height:55%}.H60{height:60%}.H65{height:65%}.H70{height:70%}.H75{height:75%}.H80{height:80%}.H85{height:85%}.H90{height:90%}.H95{height:95%}.H100{height:100%}
 
 .HROW{
 	height: 5vmin;
@@ -317,7 +317,7 @@ body{
 	top: 10%;
 }
 
-table.turbine_header_table{
+table.TURBINE_HEADER_TABLE{
     border-collapse:collapse!important;
     border: none;
     width:75%;
@@ -326,7 +326,7 @@ table.turbine_header_table{
     background-color: var(--TRACC-lightgrey);
 }
 
-td.turbine_header_cell{
+td.TURBINE_HEADER_CELL{
     border-collapse:collapse!important;
     border: none;
     font-weight: bold;
@@ -334,25 +334,25 @@ td.turbine_header_cell{
     background-color: var(--TRACC-lightgrey);
 }
 
-table.sensor_super_table{
+table.SENSOR_SUPER_TABLE{
   border-collapse:collapse!important;
   width:75%;
   left: 25%;
   background-color: var(--TRACC-lightgrey);
 }
 
-table.sensor_sub_table{
+table.SENSOR_SUB_TABLE{
   width:90%;
   top: 90%;
   left: 50%;
   background-color: var(--TRACC-lightgrey);
 }
 
-td.sensor_sub_td{
+td.SENSOR_SUB_TD{
     background-color:white;
 }
 
-td.sensor_super_td {
+td.SENSOR_SUPER_TD{
     padding: 1vh;
     font-size:2.5vmin;
     background-color: var(--TRACC-lightgrey);
@@ -363,7 +363,7 @@ td.sensor_super_td {
     font-weight: normal;
 }
 
-tr.sensor_super_tr {
+tr.SENSOR_SUPER_TR{
     padding: 1vh;
     font-size:2.5vmin;
     /*background-color:white;*/
@@ -375,31 +375,48 @@ tr.sensor_super_tr {
     font-weight: normal;
 }
 
-table.local_data_table{
+table.LOCAL_DATA_TABLE{
     border-collapse:collapse!important;
     width:80%;
     margin-left:10%;
     margin-right:10%;
 }
 
-table.data_options_table{
+table.DATA_OPTIONS_TABLE{
     border-collapse:collapse!important;
     border: none;
+    width:75%;
+    left: 25%;
     background-color: var(--TRACC-lightgrey);
 }
 
-tr.data_options_row{
+tr.DATA_OPTIONS_ROW{
     border-collapse:collapse!important;
     border: none;
+    width: 100vw;
 }
 
-td.data_options_cell{
+td.DATA_OPTIONS_CELL{
     border-collapse:collapse!important;
     border: none;
+    width: 40vw;
     background-color: var(--TRACC-lightgrey);
 }
 
-th.local_data_header {
+.DATA_OPTIONS_BOX{
+    float:right;
+    margin-right: 2vw;
+    padding-left: 0.5vw;
+    width: 40vw;
+    border: 1px solid black;
+    color: black;
+    caret-color: black;
+    font-size:2vw;
+    white-space: nowrap;
+    height: 4vmax;
+}
+
+th.LOCAL_DATA_HEADER {
 	background-color:#C2C2C2;
 }
 
@@ -433,8 +450,9 @@ th.local_data_header {
 	border: 1px solid black;
 	color: black;
 	caret-color: black;
-	font-size:2vw;
+	font-size:2vmax;
 	white-space: nowrap;
+    height: 4vmax;
 }
 
 .SCAN_INFO_TEXT{
@@ -443,8 +461,17 @@ th.local_data_header {
  	margin-right: 1vw;
 	vertical-align:middle;
 	color:white;
-	font-size:2vw;
+	font-size:2vmax;
 	white-space: nowrap;
+}
+
+.SCAN_INFO_TEXT_C{
+    margin: 0 auto;
+    text-align: center;
+    vertical-align:middle;
+    color:white;
+    font-size:2vmax;
+    white-space: nowrap;
 }
 
 #STABLE_DISPLAY_TEXT{
