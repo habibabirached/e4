@@ -228,8 +228,8 @@ body{
 .HIDE{display:none;}
 
 #LEFT_MENU{
-    width:25vmin;
-	margin-left: -25vmin;
+    width:50vmin;
+	margin-left: -50vmin;
 	border-right: 1px solid black;
 }
 

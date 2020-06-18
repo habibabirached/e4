@@ -149,12 +149,6 @@ $(document).ready(function(){
         createTable();
         $("#RESULTS_PAGE").fadeIn();
     }
-    //document.getElementById("OPEN_EXTERNAL_FILE_BUTTON").addEventListener('change', function(){
-    //    loadExternalFile();
-    //}, {passive: true})
-    //document.getElementById("OPEN_EXTERNAL_FILE_BUTTON").addEventListener('click', function(){
-    //    document.getElementById("OPEN_EXTERNAL_FILE_BUTTON").value =null;
-    //}, {passive: true})
     document.getElementById("OPEN_LOCAL_DATA").addEventListener('click', function(){
        $("#DATA_PLOT").fadeOut();
         try {
@@ -398,7 +392,7 @@ function setupAccordian(){
 function toggle_menu() {
     console.log("fsRoot: ", fsRoot);
 	if (menu_open){
-		$('#LEFT_MENU').animate({"margin-left": '-=25vmin'});
+		$('#LEFT_MENU').animate({"margin-left": '-=50vmin'});
 		menu_open = false;
 	}
 	else{
@@ -419,7 +413,7 @@ function toggle_menu() {
             communicationChannel = "WebSocket";
         }
 
-		$('#LEFT_MENU').animate({"margin-left": '+=25vmin'});
+		$('#LEFT_MENU').animate({"margin-left": '+=50vmin'});
 		menu_open = true;
 	}
 }
