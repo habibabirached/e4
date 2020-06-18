@@ -5,6 +5,7 @@
 	};
 	objectVersion = 46;
 	objects = {
+
 /* Begin PBXBuildFile section */
 		0207DA581B56EA530066E2B4 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0207DA571B56EA530066E2B4 /* Images.xcassets */; };
 		12344B51C8B2431DB9B76BAD /* CDVIFC242x.m in Sources */ = {isa = PBXBuildFile; fileRef = 56C8BA499AC34BA1A23C72AD /* CDVIFC242x.m */; };
@@ -16,6 +17,7 @@
 		302D95F214D2391D003F00A1 /* MainViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 302D95F014D2391D003F00A1 /* MainViewController.xib */; };
 		325F01D33B3C44F8B5BC6CB7 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 27C8AE50A7134DBBB4D8437E /* AudioToolbox.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
 		4EAFAC365C2440FCAF8A946A /* CDVLocalFilesystem.m in Sources */ = {isa = PBXBuildFile; fileRef = 300DBDE79B6643A08EBC896B /* CDVLocalFilesystem.m */; };
+		5667AFFF249BC3340086E54D /* ExternalAccessory.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5667AFFD249BC3330086E54D /* ExternalAccessory.framework */; };
 		56BD91B924323B69008117BD /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 56BD91B824323B69008117BD /* Settings.bundle */; };
 		56EFBB46243E527A007A00D7 /* test_data.csv in Resources */ = {isa = PBXBuildFile; fileRef = 56EFBB45243E527A007A00D7 /* test_data.csv */; };
 		6AFF5BF91D6E424B00AB3073 /* CDVLaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6AFF5BF81D6E424B00AB3073 /* CDVLaunchScreen.storyboard */; };
@@ -86,9 +88,11 @@
 		3047A5111AB8059700498E2A /* build.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = build.xcconfig; path = cordova/build.xcconfig; sourceTree = SOURCE_ROOT; };
 		32CA4F630368D1EE00C91783 /* e4PtTool-Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "e4PtTool-Prefix.pch"; sourceTree = "<group>"; };
 		3DD394F9D31A439ABD46EB3D /* CDVIFC242x.h */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.c.h; name = CDVIFC242x.h; path = IFC242xPlugin/CDVIFC242x.h; sourceTree = "<group>"; };
+		5667AFFD249BC3330086E54D /* ExternalAccessory.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ExternalAccessory.framework; path = System/Library/Frameworks/ExternalAccessory.framework; sourceTree = SDKROOT; };
 		56BD91B824323B69008117BD /* Settings.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = Settings.bundle; sourceTree = "<group>"; };
 		56C8BA499AC34BA1A23C72AD /* CDVIFC242x.m */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.c.objc; name = CDVIFC242x.m; path = IFC242xPlugin/CDVIFC242x.m; sourceTree = "<group>"; };
 		56EFBB45243E527A007A00D7 /* test_data.csv */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = test_data.csv; path = ../../data/test_data.csv; sourceTree = "<group>"; };
+		5E211B522F4E4062B414D04E /* RscMgr.h */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.c.h; name = RscMgr.h; path = IFC242xPlugin/RscMgr.h; sourceTree = "<group>"; };
 		6AFF5BF81D6E424B00AB3073 /* CDVLaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = CDVLaunchScreen.storyboard; path = e4PtTool/CDVLaunchScreen.storyboard; sourceTree = SOURCE_ROOT; };
 		6F467D4C84704BCF8BAAA0C6 /* BNHtmlPdfKit.m */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.c.objc; name = BNHtmlPdfKit.m; path = "cordova-pdf-generator/BNHtmlPdfKit.m"; sourceTree = "<group>"; };
 		774053A272D0425AA6358D92 /* sqlite3.c */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = sqlite3.c; path = "cordova-sqlite-storage/sqlite3.c"; sourceTree = "<group>"; };
@@ -104,9 +108,11 @@
 		BAF009F1E03C4EB0975F8B73 /* CDVSplashScreen.h */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.c.h; name = CDVSplashScreen.h; path = "cordova-plugin-splashscreen/CDVSplashScreen.h"; sourceTree = "<group>"; };
 		BC69AA3F80664CE7A7A12478 /* DocPickerViewController.h */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.c.h; name = DocPickerViewController.h; path = doc_picker_plugin/DocPickerViewController.h; sourceTree = "<group>"; };
 		C2DD6451BE364BA9B9E7EC11 /* CDVNotification.bundle */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = "wrapper.plug-in"; path = CDVNotification.bundle; sourceTree = "<group>"; };
+		C3A3CC3F5FD148E1BDE8A96A /* redparkSerial.h */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.c.h; name = redparkSerial.h; path = IFC242xPlugin/redparkSerial.h; sourceTree = "<group>"; };
 		CA0FB8DC2B5540A48CA6C487 /* PSPDFThreadSafeMutableDictionary.h */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.c.h; name = PSPDFThreadSafeMutableDictionary.h; path = "cordova-sqlite-storage/PSPDFThreadSafeMutableDictionary.h"; sourceTree = "<group>"; };
 		CCE63CF7E6EF4582BDB40A42 /* MessageUI.framework */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = wrapper.framework; name = MessageUI.framework; path = System/Library/Frameworks/MessageUI.framework; sourceTree = SDKROOT; };
 		D8A453CA905049EC91305D9E /* CDVAssetLibraryFilesystem.h */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.c.h; name = CDVAssetLibraryFilesystem.h; path = "cordova-plugin-file/CDVAssetLibraryFilesystem.h"; sourceTree = "<group>"; };
+		DAB96CE0A28F450D8FEB9FAD /* libRscMgrUniv.a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = archive.ar; name = libRscMgrUniv.a; path = e4PtTool/Plugins/IFC242xPlugin/libRscMgrUniv.a; sourceTree = "<group>"; };
 		E208835430374DD59669992A /* CDVSplashScreen.m */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.c.objc; name = CDVSplashScreen.m; path = "cordova-plugin-splashscreen/CDVSplashScreen.m"; sourceTree = "<group>"; };
 		E4617DF62F9A4FABAAF83BF9 /* PDFGenerator.m */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.c.objc; name = PDFGenerator.m; path = "cordova-pdf-generator/PDFGenerator.m"; sourceTree = "<group>"; };
 		EB87FDF31871DA8E0020F90C /* www */ = {isa = PBXFileReference; lastKnownFileType = folder; name = www; path = ../../www; sourceTree = "<group>"; };
@@ -116,9 +122,6 @@
 		F840E1F0165FE0F500CFE078 /* config.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; name = config.xml; path = e4PtTool/config.xml; sourceTree = "<group>"; };
 		FAF50F29E03C46D0A3AC2F21 /* APPEmailComposerImpl.m */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.c.objc; name = APPEmailComposerImpl.m; path = "cordova-plugin-email-composer/APPEmailComposerImpl.m"; sourceTree = "<group>"; };
 		FEC92214BFA844C0ABEF7246 /* CDVLocalFilesystem.h */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.c.h; name = CDVLocalFilesystem.h; path = "cordova-plugin-file/CDVLocalFilesystem.h"; sourceTree = "<group>"; };
-		DAB96CE0A28F450D8FEB9FAD /* libRscMgrUniv.a */ = {isa = PBXFileReference; name = "libRscMgrUniv.a"; path = "e4PtTool/Plugins/IFC242xPlugin/libRscMgrUniv.a"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = archive.ar; explicitFileType = undefined; includeInIndex = 0; };
-		C3A3CC3F5FD148E1BDE8A96A /* redparkSerial.h */ = {isa = PBXFileReference; name = "redparkSerial.h"; path = "IFC242xPlugin/redparkSerial.h"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; explicitFileType = undefined; includeInIndex = 0; };
-		5E211B522F4E4062B414D04E /* RscMgr.h */ = {isa = PBXFileReference; name = "RscMgr.h"; path = "IFC242xPlugin/RscMgr.h"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; explicitFileType = undefined; includeInIndex = 0; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -126,6 +129,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5667AFFF249BC3340086E54D /* ExternalAccessory.framework in Frameworks */,
 				301BF552109A68D80062928A /* libCordova.a in Frameworks */,
 				325F01D33B3C44F8B5BC6CB7 /* AudioToolbox.framework in Frameworks */,
 				253E32C8092341E0AEB6649C /* MessageUI.framework in Frameworks */,
@@ -203,6 +207,7 @@
 		29B97323FDCFA39411CA2CEA /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				5667AFFD249BC3330086E54D /* ExternalAccessory.framework */,
 				27C8AE50A7134DBBB4D8437E /* AudioToolbox.framework */,
 				CCE63CF7E6EF4582BDB40A42 /* MessageUI.framework */,
 				DAB96CE0A28F450D8FEB9FAD /* libRscMgrUniv.a */,
@@ -454,13 +459,13 @@
 				INFOPLIST_FILE = "e4PtTool/e4PtTool-Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
-				PRODUCT_NAME = e4PtTool;
-				PROVISIONING_PROFILE_SPECIFIER = "XCBOT e4PtTool ENT Dist Profile";
-				TARGETED_DEVICE_FAMILY = "1,2";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"\"$(SRCROOT)/e4PtTool/Plugins/IFC242xPlugin\"",
 				);
+				PRODUCT_NAME = e4PtTool;
+				PROVISIONING_PROFILE_SPECIFIER = "XCBOT e4PtTool ENT Dist Profile";
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
 		};
@@ -483,13 +488,13 @@
 				INFOPLIST_FILE = "e4PtTool/e4PtTool-Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
-				PRODUCT_NAME = e4PtTool;
-				PROVISIONING_PROFILE_SPECIFIER = "XCBOT e4PtTool ENT Dist Profile";
-				TARGETED_DEVICE_FAMILY = "1,2";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"\"$(SRCROOT)/e4PtTool/Plugins/IFC242xPlugin\"",
 				);
+				PRODUCT_NAME = e4PtTool;
+				PROVISIONING_PROFILE_SPECIFIER = "XCBOT e4PtTool ENT Dist Profile";
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};
