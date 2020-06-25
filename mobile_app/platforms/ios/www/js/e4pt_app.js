@@ -1477,7 +1477,7 @@ function requestE4PtDataWithMetaData(acquisitionTime, frame, sn, stage, position
             tip_diameter = stage_details.tip_diameter;
         }
     }
-    var message = {"args":["send_data",acquisitionTime, frame, sn, stage, position, casing_thickness, spacer_thickness, num_blades, tip_diameter, blade_width]};
+    var message = {"args":["send_data",acquisitionTime, frame, sn, stage, position, casing_thickness, spacer_thickness, num_blades, tip_diameter, blade_width, sensor_data.master_offset]};
     if (communicationChannel == "WebSocket") {
         message = JSON.stringify(message);
         sendWSMessage(message);
@@ -1605,6 +1605,7 @@ function calibrateClearance(clearance) {
     var SL = sensor_data.sensor_length; // in inches
     var spacer = E4PTdata.spacer_thickness; // in inches
     var casing_thickness = E4PTdata.casing_thickness; // may be in mm or inches
+    var MO = sensor_data.master_offset;
     var scale_factor = 1.0;
     if (units.includes("MM")) {
         casing_thickness = casing_thickness / 25.4; // convert to inches
@@ -1616,12 +1617,12 @@ function calibrateClearance(clearance) {
         console.log("Clearance error condition encountered.");
     }
     else {
-        // clearance = displacement + SMR + SL - (Shim thickness + Spacer thickness) - Casing thickness
+        // clearance = displacement + MO + SMR + SL - (Shim thickness + Spacer thickness) - Casing thickness
         //
-        // Clearance comes from the sensor in "mm".  SMR, Sensor Length, Spacer Thickness and Casing thickness are in
+        // Clearance comes from the sensor in "mm".  SMR, Sensor Length, MO, Spacer Thickness and Casing thickness are in
         // inches.  Here we calculate the clearance in inches.
         clearance_f = clearance_f/25.4;  // Clearance comes in mm, so convert to inches
-        clearance_f = clearance_f + (SMR + SL) - spacer - casing_thickness; // Compute clearance in inches.
+        clearance_f = clearance_f + (SMR + SL) - spacer - casing_thickness + MO; // Compute clearance in inches.
         clearance_f = clearance_f / scale_factor; // convert to desired units.
     }
     E4PTdata.clearance = clearance_f;

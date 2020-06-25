@@ -103,6 +103,7 @@ enum ifc242xValue {
 @property (strong, nonatomic) NSString* sensor_measurement_range;
 @property (strong, nonatomic) NSString* blade_width;
 @property (strong, nonatomic) NSString* tip_diameter;
+@property (strong, nonatomic) NSString* master_offset;
     
 
 -(instancetype)init;
@@ -126,6 +127,7 @@ enum ifc242xValue {
 @synthesize sensor_measurement_range = _sensor_measurement_range;
 @synthesize blade_width = _blade_width;
 @synthesize tip_diameter = _tip_diameter;
+@synthesize master_offset = _master_offset;
     
 
 -(instancetype)init {
@@ -137,6 +139,7 @@ enum ifc242xValue {
     self.casing_thickness = @"";
     self.spacer_thickness = @"";
     self.state = @"";
+    self.master_offset = @"";
     return self;
 }
 
@@ -1013,6 +1016,7 @@ enum ifc242xValue {
             self.metaData.num_blades = [msgArray objectAtIndex:8];
             self.metaData.tip_diameter = [msgArray objectAtIndex:9];
             self.metaData.blade_width = [msgArray objectAtIndex:10];
+            self.metaData.master_offset = [msgArray objectAtIndex:11];
         }
         
         // Check if the value is specified in rpm.  If so, extract the rpm value.
@@ -2280,7 +2284,8 @@ enum ifc242xValue {
             continue;
         }
         if (r == 1) {
-            self.metaData.casing_thickness = [lineArray objectAtIndex:7]; // Get casing thickness once.
+            NSString* casingThickness = [lineArray objectAtIndex:7]; // Get casing thickness once.
+            if ([casingThickness floatValue] > 0.0) self.metaData.casing_thickness = casingThickness;
             self.metaData.casing_thickness = [self.metaData.casing_thickness stringByReplacingOccurrencesOfString:@"\r" withString:@""];
         }
         NSString* tmp = [lineArray objectAtIndex:4];

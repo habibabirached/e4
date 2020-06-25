@@ -1,7 +1,8 @@
 // Sensor parameters (in mm).
 sensor_data = {
     'start_measurement_range':0.433,
-    'sensor_length':8.922
+    'sensor_length':8.9655,
+    'master_offset':-0.035
 };
 frame_data = [
     {'frame':'6B',
