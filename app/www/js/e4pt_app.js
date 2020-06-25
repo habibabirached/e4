@@ -89,6 +89,7 @@ $(document).ready(function(){
         $("#INITIALIZE_SENSOR_PAGE").fadeOut();
         $("#TURBINE_SETUP_PAGE").fadeOut();
         $("#LOCAL_DATA_PAGE").fadeOut();
+        $("#FILE_CHOOSER_PAGE").fadeOut();
         toggle_menu();
     }, {passive: true});
     document.getElementById("FRD_BUTTON").addEventListener('click', function(){
@@ -214,10 +215,11 @@ $(document).ready(function(){
     set_threshold();
     }, {passive: true});
     document.getElementById("DOWNLOAD_FILE_BUTTON_01").addEventListener('click', function(){
-	doFileDownload();
+    toggle_menu();
+    listDir(cordova.file.documentsDirectory + "data");
     }, {passive: true});
     document.getElementById("DOWNLOAD_FILE_BUTTON_02").addEventListener('click', function(){
-	doFileDownload();
+    listDir(cordova.file.documentsDirectory + E4PTdata.serial_number);
     }, {passive: true});
     document.getElementById("STAGE_COLLECT_BUTTON").addEventListener('click', function(){
     collect_stage_data();
@@ -291,6 +293,9 @@ $(document).ready(function(){
     document.getElementById("SETUP_CLOSE_BUTTON5").addEventListener('click', function(){
         $("#LOCAL_DATA_PAGE").fadeOut();
         $("#TITLE_BAR").text("e-4Pt Tool");
+    }, {passive: true});
+    document.getElementById("SETUP_CLOSE_BUTTON6").addEventListener('click', function(){
+        $("#FILE_CHOOSER_PAGE").fadeOut();
     }, {passive: true});
     setupAccordian();
     if (communicationChannel == "WebSocket") {
@@ -456,6 +461,7 @@ function sensor_setup() {
     $("#SENSOR_SETUP_PAGE").fadeIn();
     $("#TURBINE_SETUP_PAGE").fadeOut();
     $("#LOCAL_DATA_PAGE").fadeOut();
+    $("#FILE_CHOOSER_PAGE").fadeOut();
 }
 
 function send_scan_meta_data() {
@@ -1380,6 +1386,59 @@ function uploadFileToBox(fileFullPath) {
 // boxUploadCallback is called when the file upload to box has completed.
 function boxUploadCallback() {
     console.log("@boxUploadCallback");
+}
+
+//examples: 
+//listDir(cordova.file.documentsDirectory + "data");
+//listDir(cordova.file.documentsDirectory + serial_number);
+function listDir(path){
+    window.resolveLocalFileSystemURL(path,
+        function (fileSystem) {
+            var reader = fileSystem.createReader();
+            reader.readEntries(
+                function (entries) {
+                    console.log(entries);
+                    populateFileTable(entries);
+                },
+                function (err) {
+                    err = "Error: " + err;
+                    console.log(err);
+                }
+            );
+        },
+        function (err) {
+            err = "Error: " + err;
+            console.log(err);
+        }
+    );
+}
+
+function populateFileTable(entries) {
+    $("#FILE_CHOOSER_PAGE").fadeIn();
+    var prev_tbody = document.getElementById("LOCAL_FILE_TABLE_BODY");
+    var tbody = document.createElement("tbody");
+    tbody.setAttribute("id","LOCAL_FILE_TABLE_BODY");
+    // Create the table body.
+    for (var i=0; i<entries.length; i++) {
+        if (!entries[i].isFile) continue;  // ignore any non-file entries
+        if (entries[i].name == ".DS_Store") continue;
+        let fileDLFn = "fileDownloadFunction(\"" + entries[i].nativeURL + "\")";
+        var new_row = tbody.insertRow(-1);
+        var cell0 = new_row.insertCell(-1);
+        cell0.innerHTML = entries[i].name;
+        cell0.setAttribute("onclick",fileDLFn);
+    }
+    prev_tbody.parentNode.replaceChild(tbody, prev_tbody);
+}
+
+function fileDownloadFunction(fileURL) {
+    $("#FILE_CHOOSER_PAGE").fadeOut();
+    // remove:"file://" from URL.  exportFile will export downloadFileName.
+    downloadFileName = fileURL.replace("file://","");
+    const segments = fileURL.split('/');
+    let fileName = segments.pop() || segments.pop();
+    let prompt = "Email or Upload\n" + fileName + "?";
+    e4PtPrompt(prompt, exportFile, "Get File", ["Email","Upload to Box","Cancel"]);
 }
 
 function setIndicatorColor( color ) {
