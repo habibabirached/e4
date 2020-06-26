@@ -413,6 +413,11 @@ function toggle_menu() {
             window.plugins.IFC242x.messageToDevice(message, function(msg) {
                                                    pluginMessage(msg);
                                                    }, null);
+            // Get the sensor parameters
+            message = {"args":["get_sensor_parameters"]};
+            window.plugins.IFC242x.messageToDevice(message, function(msg) {
+                                                   pluginMessage(msg);
+                                                   }, null);
         }
         else {
             communicationChannel = "WebSocket";
@@ -1311,6 +1316,12 @@ function pluginMessage(msg) {
             //console.log("Progress: ", msg.progress);
             $("#REV_PROGRESS").html('&nbsp' + msg.progress + '%');
             $("#REV_PROGRESS").css('width', msg.progress + '%');
+            break;
+        case "sensor_params":
+            console.log("Received sensor parameters message");
+            sensor_data.start_measurement_range = JSON.parse(msg.start_measurement_range);
+            sensor_data.master_offset = JSON.parse(msg.master_offset);
+            sensor_data.sensor_length = JSON.parse(msg.sensor_length);
             break;
         default:
             console.log("pluginMessage: Hit default case.");

@@ -1237,6 +1237,32 @@ enum ifc242xValue {
         [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
         return;
     }
+    if ([cmd containsString:@"get_sensor_parameters"]) {
+        NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+        NSString *smr = [defaults stringForKey:@"startMeasurementRange"];
+        NSString *mo = [defaults stringForKey:@"masterOffset"];
+        NSString *sl = [defaults stringForKey:@"sensorLength"];
+        if ((smr == nil) || (mo == nil) || (sl == nil)) {
+            [self registerDefaultsFromSettingsBundle];
+            smr = [defaults stringForKey:@"startMeasurementRange"];
+            mo = [defaults stringForKey:@"masterOffset"];
+            sl = [defaults stringForKey:@"sensorLength"];
+        }
+        NSDictionary* jsonDict = @{@"type":@"sensor_params", @"start_measurement_range":smr, @"master_offset":mo, @"sensor_length":sl};
+        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];
+        [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+        return;
+    }
+    if ([cmd containsString:@"set_sensor_parameters"]) {
+        NSString* smr = [msgArray objectAtIndex:1];
+        NSString* sl = [msgArray objectAtIndex:2];
+        NSString* mo = [msgArray objectAtIndex:3];
+        NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+        [defaults setValue:smr forKey:@"startMeasurementRange"];
+        [defaults setValue:mo forKey:@"masterOffset"];
+        [defaults setValue:sl forKey:@"sensorLength"];
+        return;
+    }
     else {
         NSLog(@"Got %@",msg);
     }
@@ -2884,6 +2910,27 @@ enum ifc242xValue {
     NSString *jsonString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
     jsonString = [jsonString stringByReplacingOccurrencesOfString:@"\n" withString:@""];
     [self.plugin.commandDelegate evalJs:[NSString stringWithFormat:@"pluginMessage(%@);",jsonString]];
+}
+    
+- (void)registerDefaultsFromSettingsBundle {
+    NSString *settingsBundle = [[NSBundle mainBundle] pathForResource:@"Settings" ofType:@"bundle"];
+    if(!settingsBundle) {
+        NSLog(@"Could not find Settings.bundle");
+        return;
+    }
+    
+    NSDictionary *settings = [NSDictionary dictionaryWithContentsOfFile:[settingsBundle stringByAppendingPathComponent:@"Root.plist"]];
+    NSArray *preferences = [settings objectForKey:@"PreferenceSpecifiers"];
+
+    NSMutableDictionary *defaultsToRegister = [[NSMutableDictionary alloc] initWithCapacity:[preferences count]];
+    for(NSDictionary *prefSpecification in preferences) {
+        NSString *key = [prefSpecification objectForKey:@"Key"];
+        if(key && [[prefSpecification allKeys] containsObject:@"DefaultValue"]) {
+            [defaultsToRegister setObject:[prefSpecification objectForKey:@"DefaultValue"] forKey:key];
+        }
+    }
+
+    [[NSUserDefaults standardUserDefaults] registerDefaults:defaultsToRegister];
 }
     
 - (void)codeTest {
