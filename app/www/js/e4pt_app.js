@@ -297,6 +297,9 @@ $(document).ready(function(){
     document.getElementById("SETUP_CLOSE_BUTTON6").addEventListener('click', function(){
         $("#FILE_CHOOSER_PAGE").fadeOut();
     }, {passive: true});
+    document.getElementById("SENSOR_PARAMS_UPDATE_BUTTON").addEventListener('click', function(){
+        authorizeSensorParamsUpdate();
+    }, {passive: true});
     setupAccordian();
     if (communicationChannel == "WebSocket") {
         createWS();
@@ -413,11 +416,6 @@ function toggle_menu() {
             window.plugins.IFC242x.messageToDevice(message, function(msg) {
                                                    pluginMessage(msg);
                                                    }, null);
-            // Get the sensor parameters
-            message = {"args":["get_sensor_parameters"]};
-            window.plugins.IFC242x.messageToDevice(message, function(msg) {
-                                                   pluginMessage(msg);
-                                                   }, null);
         }
         else {
             communicationChannel = "WebSocket";
@@ -426,6 +424,14 @@ function toggle_menu() {
 		$('#LEFT_MENU').animate({"margin-left": '+=50vmin'});
 		menu_open = true;
 	}
+}
+
+function get_sensor_parameters() {
+    // Get the sensor parameters
+    message = {"args":["get_sensor_parameters"]};
+    window.plugins.IFC242x.messageToDevice(message, function(msg) {
+                                           pluginMessage(msg);
+                                           }, null);
 }
 
 function set_demo_mode(tf) {
@@ -1307,6 +1313,7 @@ function pluginMessage(msg) {
         case "version":
             console.log("Received version message: ", msg.version);
             document.getElementById("APP_VERSION").innerHTML = "VERSION " + msg.version;
+            get_sensor_parameters();
             break;
         case "alert":
             console.log("Received an alert message: ", msg.message);
@@ -1318,14 +1325,99 @@ function pluginMessage(msg) {
             $("#REV_PROGRESS").css('width', msg.progress + '%');
             break;
         case "sensor_params":
-            console.log("Received sensor parameters message");
+            console.log("Received sensor parameters message: ", msg.start_measurement_range, ", ", msg.sensor_length, ", ", msg.master_offset);
             sensor_data.start_measurement_range = JSON.parse(msg.start_measurement_range);
             sensor_data.master_offset = JSON.parse(msg.master_offset);
             sensor_data.sensor_length = JSON.parse(msg.sensor_length);
+            document.getElementById("START_MEASUREMENT_RANGE").value = sensor_data.start_measurement_range.toString(10);
+            document.getElementById("SENSOR_LENGTH").value = sensor_data.sensor_length.toString(10);
+            document.getElementById("MASTER_OFFSET").value = sensor_data.master_offset.toString(10);
             break;
         default:
             console.log("pluginMessage: Hit default case.");
             break;
+    }
+}
+
+function authorizeSensorParamsUpdate() {
+    if (document.getElementById("START_MEASUREMENT_RANGE").disabled == false) {
+        updateSensorParameters(document.getElementById("START_MEASUREMENT_RANGE").value,
+                               document.getElementById("SENSOR_LENGTH").value,
+                               document.getElementById("MASTER_OFFSET").value);
+        return;
+    }
+    // Prompt user for password.
+    var nav = navigator.notification;
+    if (nav != null) {
+        // We have plugins so we're in Cordova.  Use the Cordova notification.
+        navigator.notification.prompt('Please enter the password.',
+                                      confirmPassword,
+                                      'Enter Password',
+                                      ['Ok','Cancel'],
+                                      '');
+    }
+    else {
+        // No plugins, so we must not be in Cordova. Use a standard prompt.
+        let pw = window.prompt("Please enter the password.", "1");
+        confirmPassword({"input1":pw});
+    }
+}
+
+function confirmPassword(results) {
+    if (results.buttonIndex > 1) return;
+    if (results.input1 == "Gr0undH0g") {
+        document.getElementById("START_MEASUREMENT_RANGE").disabled = false;
+        document.getElementById("SENSOR_LENGTH").disabled = false;
+        document.getElementById("MASTER_OFFSET").disabled = false;
+        document.getElementById("SENSOR_PARAMS_UPDATE_BUTTON").innerHTML = "LOCK VALUES";
+    }
+    else {
+        e4PtAlert("Invalid password.");
+    }
+}
+
+function updateSensorParameters(smr, sl, mo) {
+    // Before updating the values, make sure the user has entered valid numbers.
+    let smr_f = parseFloat(smr);
+    let sl_f = parseFloat(sl);
+    let mo_f = parseFloat(mo);
+    // If a number is not valid, give the user a chance to try again or abort.
+    if (isNaN(smr_f) || isNaN(sl_f) || isNaN(mo_f)) {
+        e4PtConfirm("Please enter only floating point values.\nPlease try again.", function(buttonIndex) {
+                    if (buttonIndex==1){//OK
+                      return; // This changes nothing and lets the user try again.
+                    } else if (buttonIndex==2) {//Cancel - This cancels and gets the previous values back.
+                        let message = {"args":["get_sensor_parameters"]};
+                        if (communicationChannel == "WebSocket") {
+                            message = JSON.stringify(message);
+                        sendWSMessage(message);
+                        }
+                        else if (communicationChannel == "Plugin") {
+                            window.plugins.IFC242x.messageToDevice(message, function(msg) {
+                                                                   pluginMessage(msg);
+                                                                   }, null);
+                        }
+                        document.getElementById("START_MEASUREMENT_RANGE").disabled = true;
+                        document.getElementById("SENSOR_LENGTH").disabled = true;
+                        document.getElementById("MASTER_OFFSET").disabled = true;
+                        document.getElementById("SENSOR_PARAMS_UPDATE_BUTTON").innerHTML = "UPDATE";
+                    }
+                    });
+        return;
+    }
+    document.getElementById("START_MEASUREMENT_RANGE").disabled = true;
+    document.getElementById("SENSOR_LENGTH").disabled = true;
+    document.getElementById("MASTER_OFFSET").disabled = true;
+    document.getElementById("SENSOR_PARAMS_UPDATE_BUTTON").innerHTML = "UPDATE";
+    let message = {"args":["set_sensor_parameters",smr_f.toString(10), sl_f.toString(10), mo_f.toString(10)]};
+    if (communicationChannel == "WebSocket") {
+        message = JSON.stringify(message);
+        sendWSMessage(message);
+    }
+    else if (communicationChannel == "Plugin") {
+        window.plugins.IFC242x.messageToDevice(message, function(msg) {
+                                               pluginMessage(msg);
+                                               }, null);
     }
 }
 
