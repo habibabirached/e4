@@ -8,6 +8,36 @@
 	<array>
 		<dict>
 			<key>Type</key>
+			<string>PSTitleValueSpecifier</string>
+			<key>Title</key>
+			<string>Master Offset: </string>
+			<key>Key</key>
+			<string>masterOffset</string>
+			<key>DefaultValue</key>
+			<string>-0.035</string>
+		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSTitleValueSpecifier</string>
+			<key>Title</key>
+			<string>Start of Measurement Range: </string>
+			<key>Key</key>
+			<string>startMeasurementRange</string>
+			<key>DefaultValue</key>
+			<string>0.433</string>
+		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSTitleValueSpecifier</string>
+			<key>Title</key>
+			<string>Sensor Length: </string>
+			<key>Key</key>
+			<string>sensorLength</string>
+			<key>DefaultValue</key>
+			<string>8.9655</string>
+		</dict>
+		<dict>
+			<key>Type</key>
 			<string>PSGroupSpecifier</string>
 			<key>Title</key>
 			<string>Settings for e-4Point Tool</string>

@@ -133,6 +133,41 @@
                 </div>
                     <br/><br/>
             </div>
+            <button class="ACCORDION">SENSOR PARAMETERS</button>
+            <div class="PANEL">
+                <br/>
+                <table class="SENSOR_OPTIONS_TABLE">
+                    <tr class="SENSOR_OPTIONS_ROW">
+                        <td  class="SENSOR_OPTIONS_CELL">
+                            <fieldset style="border:0">
+                                <legend align="center" id="START_MEASUREMENT_RANGE_LABEL" class="SCAN_INFO_TEXT_C">Start of Measurement Range (in)</legend>
+                                <input class="SENSOR_OPTIONS_BOX" type="text" id="START_MEASUREMENT_RANGE" value="" disabled="true"/>
+                            </fieldset>
+                        </td>
+                        <td  class="SENSOR_OPTIONS_CELL">
+                            <fieldset>
+                                <legend align="center" id="SENSOR_LENGTH_LABEL" class="SCAN_INFO_TEXT_C">Sensor Length</legend>
+                                <input class="SENSOR_OPTIONS_BOX" type="text" id="SENSOR_LENGTH" value="" disabled="true"/>
+                            </fieldset>
+                        </td>
+                        <td  class="SENSOR_OPTIONS_CELL">
+                            <fieldset>
+                                <legend align="center" id="MASTER_OFFSET_LABEL" class="SCAN_INFO_TEXT_C">Master Offset</legend>
+                                <input class="SENSOR_OPTIONS_BOX" type="text" id="MASTER_OFFSET" value="" disabled="true"/>
+                            </fieldset>
+                        </td>
+                    </tr>
+                </table>
+                <br/>
+                <div class="BUTTON_GROUP">
+                    <div id="SENSOR_PARAMS_UPDATE_BUTTON" class="IN_BLOCK BUTTON W15 OVERLAY_BUTTON">UPDATE</div>
+                </div>
+                <br/>
+                <div>
+                    <h4><p align="center">Only authorized users should change the sensor parameters here.</p></h4>
+                </div>
+                <br/><br/>
+            </div>
         </div>
         <!-- --------------- FRAME SELECT PAGE ---------------------  -->
         <div id="SETUP_PAGE" class="OVERLAY_PARTIAL" style="top:5.9vmin">

@@ -416,6 +416,41 @@ td.DATA_OPTIONS_CELL{
     height: 4vmax;
 }
 
+table.SENSOR_OPTIONS_TABLE{
+    border-collapse:collapse!important;
+    border: none;
+    width:100%;
+    left: 25%;
+    background-color: var(--TRACC-lightgrey);
+}
+
+tr.SENSOR_OPTIONS_ROW{
+    border-collapse:collapse!important;
+    border: none;
+    width: 100vw;
+}
+
+td.SENSOR_OPTIONS_CELL{
+    border-collapse:collapse!important;
+    border: none;
+    width: 25vw;
+    background-color: var(--TRACC-lightgrey);
+}
+
+.SENSOR_OPTIONS_BOX{
+    float:center;
+    text-align:right;
+    margin-right: 2vw;
+    padding-left: 0.5vw;
+    width: 25vw;
+    border: 1px solid black;
+    color: black;
+    caret-color: black;
+    font-size:2vw;
+    white-space: nowrap;
+    height: 4vmax;
+}
+
 th.LOCAL_DATA_HEADER {
 	background-color:#C2C2C2;
 }

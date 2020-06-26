@@ -1261,6 +1261,10 @@ enum ifc242xValue {
         [defaults setValue:smr forKey:@"startMeasurementRange"];
         [defaults setValue:mo forKey:@"masterOffset"];
         [defaults setValue:sl forKey:@"sensorLength"];
+        NSString* msgStr = [NSString stringWithFormat:@"Sensor Parameters are Set."];
+        NSDictionary* jsonDict = @{@"type":@"alert",@"message":msgStr};
+        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];
+        [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
         return;
     }
     else {
