@@ -419,8 +419,7 @@ td.DATA_OPTIONS_CELL{
 table.SENSOR_OPTIONS_TABLE{
     border-collapse:collapse!important;
     border: none;
-    width:100%;
-    left: 25%;
+    width: 90vw;
     background-color: var(--TRACC-lightgrey);
 }
 
@@ -449,6 +448,14 @@ td.SENSOR_OPTIONS_CELL{
     font-size:2vw;
     white-space: nowrap;
     height: 4vmax;
+}
+
+.SENSOR_OPTIONS_TEXT_C{
+    margin: 0 auto;
+    text-align: center;
+    vertical-align:middle;
+    color:white;
+    font-size:2vmax;
 }
 
 th.LOCAL_DATA_HEADER {
