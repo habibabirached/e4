@@ -300,6 +300,9 @@ $(document).ready(function(){
     document.getElementById("SENSOR_PARAMS_UPDATE_BUTTON").addEventListener('click', function(){
         authorizeSensorParamsUpdate();
     }, {passive: true});
+    document.getElementById("FILE_EXPORT_BUTTON").addEventListener('click', function(){
+    multipleFileDownloadFunction();
+    }, {passive: true});
     setupAccordian();
     if (communicationChannel == "WebSocket") {
         createWS();
@@ -1421,6 +1424,49 @@ function updateSensorParameters(smr, sl, mo) {
     }
 }
 
+// exportFiles is the callback from a prompt to email, upload or cancel.
+// The returned option is 1 (email), 2 (upload) or 3 (cancel).
+function exportFiles(option) {
+    console.log("@exportFiles");
+    // generate attachment list (array).
+    let attachmentList = [];
+    let tbl = document.getElementById("LOCAL_FILE_TABLE_BODY");
+    for (let i=0; i<tbl.rows.length; i++) {
+        let row = tbl.rows[i];
+        let cell = row.cells[0]; // Should only be one cell.
+        for (let j=0; j<cell.classList.length; j++) {
+            if (cell.classList[j] = "SELECTED_ROW") {
+                console.log("exportFiles: Appending " + cell.attributes.nativeURL.value);
+                attachmentList.push(cell.attributes.nativeURL.value);
+            }
+        }
+    }
+    if (option == 1) {
+        console.log("Email");
+        subject = "e-4Pt Tool Data";
+        sendEmailWithAttachment( subject , attachmentList);
+    }
+    else if (option == 2) {
+        console.log("Upload To Box");
+        if (attachmentList.length == 1) {
+            downloadFileName = attachmentList[0].replace("file://","");
+            uploadFileToBox(downloadFileName);
+        }
+        else if (attachmentList.length > 1) {
+            e4PtAlert("Box upload only supports one file at a time.\nPlease select only one file.");
+        }
+    }
+    else {
+        console.log("Cancel");
+    }
+    // Clear selected items.
+    for (let i=0; i<tbl.rows.length; i++) {
+        let row = tbl.rows[i];
+        let cell = row.cells[0]; // Should only be one cell.
+        cell.classList.remove("SELECTED_ROW");
+    }
+}
+
 // exportFile is the callback from a prompt to email, upload or cancel.
 // The returned option is 1 (email), 2 (upload) or 3 (cancel).
 function exportFile(option) {
@@ -1525,23 +1571,45 @@ function populateFileTable(entries) {
     for (var i=0; i<entries.length; i++) {
         if (!entries[i].isFile) continue;  // ignore any non-file entries
         if (entries[i].name == ".DS_Store") continue;
-        let fileDLFn = "fileDownloadFunction(\"" + entries[i].nativeURL + "\")";
+        let fileSelectFn = "toggleFileSelected(\"" + entries[i].nativeURL + "\"," + (i-1) + ")";
         var new_row = tbody.insertRow(-1);
         var cell0 = new_row.insertCell(-1);
         cell0.innerHTML = entries[i].name;
-        cell0.setAttribute("onclick",fileDLFn);
+        cell0.setAttribute("onclick",fileSelectFn);
+        cell0.setAttribute("nativeURL",entries[i].nativeURL);
     }
     prev_tbody.parentNode.replaceChild(tbody, prev_tbody);
+}
+
+function toggleFileSelected(fileName, idx) {
+    let tbl = document.getElementById("LOCAL_FILE_TABLE_BODY");
+    let row = tbl.rows[idx];
+    let cell = row.cells[0]; // Should only be one cell.
+    cell.classList.toggle("SELECTED_ROW");
 }
 
 function fileDownloadFunction(fileURL) {
     $("#FILE_CHOOSER_PAGE").fadeOut();
     // remove:"file://" from URL.  exportFile will export downloadFileName.
     downloadFileName = fileURL.replace("file://","");
+    // The next two lines gets just the file name from the full file path.
     const segments = fileURL.split('/');
     let fileName = segments.pop() || segments.pop();
     let prompt = "Email or Upload\n" + fileName + "?";
     e4PtPrompt(prompt, exportFile, "Get File", ["Email","Upload to Box","Cancel"]);
+}
+
+function multipleFileDownloadFunction(){
+    console.log("@multipleFileDownloadFunction");
+    let prompt = "Email or Upload Files?";
+    e4PtPrompt(prompt, exportFiles, "Get File", ["Email","Upload to Box","Cancel"]);
+}
+
+function selectedFilesDownloadFunction(){
+    let tbl = document.getElementById("LOCAL_FILE_TABLE_BODY");
+    for (let i=0; i<tbl.rows.length; i++) {
+        let cell = tbl.rows[i].cells[0]; // There's only one cell per row in the file lists.
+    }
 }
 
 function setIndicatorColor( color ) {
