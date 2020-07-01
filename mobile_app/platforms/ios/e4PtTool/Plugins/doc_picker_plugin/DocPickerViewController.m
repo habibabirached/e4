@@ -89,7 +89,15 @@
     
     self.isUpload = true;
     
+    if ([[command.arguments objectAtIndex:0] isKindOfClass:[NSArray class]]) {
+        // This is a list of files. Use a different handler for this.
+        NSArray* fileList = [command.arguments objectAtIndex:0];
+        [self uploadFilesToBox:fileList :self.viewController];
+        return;
+    }
+    
     NSString *boxFileUploadPath=[command.arguments objectAtIndex:0];
+
     
     // Make sure file exists first.
     if (![[NSFileManager defaultManager] fileExistsAtPath:boxFileUploadPath]) {
@@ -163,6 +171,62 @@
     NSLog(@" documentPicker initiated 12");
     NSLog(@" File Uploaded to Box ");
     
+}
+
+- (void)uploadFilesToBox:(NSArray *)urlArray : (UIViewController *)controller{
+    
+    self.isUpload = true;
+    
+    // Make sure files exists first.
+    for (NSString* fileURL in urlArray) {
+        if (![[NSFileManager defaultManager] fileExistsAtPath:fileURL]) {
+            // Oops. The file doesn't exist.
+            NSString* msg = [NSString stringWithFormat:@"File does not exist.\n%@",fileURL];
+            UIAlertController * alert=   [UIAlertController
+                                          alertControllerWithTitle:@"Alert!"
+                                          message:msg
+                                          preferredStyle:UIAlertControllerStyleAlert];
+            UIAlertAction* ok = [UIAlertAction
+                                 actionWithTitle:@"OK"
+                                 style:UIAlertActionStyleDefault
+                                 handler:^(UIAlertAction * action)
+                                 {
+                                     [alert dismissViewControllerAnimated:YES completion:nil];
+                                 }];
+            [alert addAction:ok];
+            [self.viewController presentViewController:alert animated:YES completion:nil];
+            
+            return;
+        }
+    }
+    
+    NSMutableArray* urls = [[NSMutableArray alloc] init];
+    for (NSString* fileURL in urlArray) {
+        [urls addObject:[[NSURL fileURLWithPath:fileURL] URLByStandardizingPath]];
+    }
+    
+    //NSURL *url = [NSURL fileURLWithPath:boxFileUploadPath];
+    
+    NSLog(@" 3 uploadFileToBox CALLED with %lu files",urls.count);
+    UIDocumentPickerViewController *documentPicker = [[UIDocumentPickerViewController alloc] initWithURLs:urls inMode:UIDocumentPickerModeExportToService];
+    NSLog(@" documentPicker initiated %@",documentPicker);
+    documentPicker.delegate = self;
+    NSLog(@" documentPicker initiated 1 [self.viewController dismissViewControllerAnimated:YES completion:nil];");
+    documentPicker.modalPresentationStyle = UIModalPresentationFormSheet;
+    //[self.viewController dismissViewControllerAnimated:NO completion:nil];
+    //    dispatch_async(dispatch_get_main_queue(), ^(void){
+    //         [self.viewController presentViewController:documentPicker animated:NO completion:nil];
+    //    });
+    
+    double delayInSeconds = 0.5;
+    dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, delayInSeconds * NSEC_PER_SEC);
+    dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
+        [self.viewController presentViewController:documentPicker animated:NO completion:nil];
+    });
+    
+    
+    NSLog(@" documentPicker initiated 13");
+    NSLog(@" Files Uploaded to Box ");
 }
 
 /*
