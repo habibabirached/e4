@@ -1424,7 +1424,7 @@ function updateSensorParameters(smr, sl, mo) {
     }
 }
 
-// exportFiles is the callback from a prompt to email, upload or cancel.
+// exportFiles is the callback from a prompt to email, upload or cancel. Handles multiple files.
 // The returned option is 1 (email), 2 (upload) or 3 (cancel).
 function exportFiles(option) {
     console.log("@exportFiles");
@@ -1448,13 +1448,10 @@ function exportFiles(option) {
     }
     else if (option == 2) {
         console.log("Upload To Box");
-        if (attachmentList.length == 1) {
-            downloadFileName = attachmentList[0].replace("file://","");
-            uploadFileToBox(downloadFileName);
+        for (let i=0; i<attachmentList.length; i++) {
+            attachmentList[i] = attachmentList[i].replace("file://","");
         }
-        else if (attachmentList.length > 1) {
-            e4PtAlert("Box upload only supports one file at a time.\nPlease select only one file.");
-        }
+        uploadFileToBox(attachmentList);
     }
     else {
         console.log("Cancel");
@@ -1467,7 +1464,7 @@ function exportFiles(option) {
     }
 }
 
-// exportFile is the callback from a prompt to email, upload or cancel.
+// exportFile is the callback from a prompt to email, upload or cancel. Only handles one file.
 // The returned option is 1 (email), 2 (upload) or 3 (cancel).
 function exportFile(option) {
     console.log("@exportFile: ", option);
