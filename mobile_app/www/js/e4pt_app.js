@@ -1267,6 +1267,7 @@ function pluginMessage(msg) {
                 setIndicatorColor("white");
                 document.getElementById("STATUS_DISPLAY").innerHTML = "Disconnected"
                 serialConnected = false;
+                e4PtAlert("Controller was disconnected.\nToggle side menu to reconnect.");
             }
             if (msg.status == "acquiring") {
                 setIndicatorColor("red");
@@ -1329,6 +1330,8 @@ function pluginMessage(msg) {
             break;
         case "sensor_params":
             console.log("Received sensor parameters message: ", msg.start_measurement_range, ", ", msg.sensor_length, ", ", msg.master_offset);
+            setIndicatorColor("green");
+            serialConnected = true;
             sensor_data.start_measurement_range = JSON.parse(msg.start_measurement_range);
             sensor_data.master_offset = JSON.parse(msg.master_offset);
             sensor_data.sensor_length = JSON.parse(msg.sensor_length);

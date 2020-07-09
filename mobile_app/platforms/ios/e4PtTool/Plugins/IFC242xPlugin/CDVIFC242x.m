@@ -792,6 +792,12 @@ enum ifc242xValue {
         [self sendTelnetCommand];
     }
 
+    // Remove notifications before adding them so they are not added multiple times.
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationDidEnterBackgroundNotification object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationWillEnterForegroundNotification object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(appMovedToBackground:) name:UIApplicationDidEnterBackgroundNotification object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(appMovedToForeground:) name:UIApplicationWillEnterForegroundNotification object:nil];
+
 #ifdef TEST_CODE
     [self codeTest];
 #endif
@@ -1762,8 +1768,8 @@ enum ifc242xValue {
             }
         }
         if (self.pState == setMeasurementRateInProgress) {
-            NSLog(@"Set measurement rate complete");
             if (self.telnetCmds.count == 0) {
+                NSLog(@"Set measurement rate complete");
                 [self processComplete:@"connected"];
             }
         }
@@ -1772,8 +1778,8 @@ enum ifc242xValue {
             [self processComplete:@"connected"];
         }
         if (self.pState == darkReferenceInProgress) {
-            NSLog(@"Dark Correction Complete.");
             if (self.telnetCmds.count == 0) {
+                NSLog(@"Dark Correction Complete.");
                 [self processComplete:@"connected"];
             }
         }
@@ -1838,7 +1844,6 @@ enum ifc242xValue {
 }
 
 - (void)processComplete:(NSString*)statusMsg {
-    
     if (self.pState == setMeasurementRateInProgress) {
         NSString* msgStr = [NSString stringWithFormat:@"Measurement rate set to %@ kHz.", self.measurement_rate];
         NSDictionary* jsonDict = @{@"type":@"alert",@"message":msgStr};
@@ -2883,6 +2888,10 @@ enum ifc242xValue {
 
 // Redpark Serial Cable has been connected and/or application moved to foreground.
 // protocol is the string which matched from the protocol list passed to initWithProtocol:
+//
+// NOTE:  Regardless of what the Redpark SDK document says, this function is NOT called
+// when the app goes to the foreground.  To accomplish this I set up a notification in
+// the NSNotificationCenter and call this function manually from that notification.
 - (void) cableConnected:(NSString *)protocol {
     NSLog(@"@cableConnected");
 
@@ -2900,10 +2909,13 @@ enum ifc242xValue {
     portCfg.rxFlowControl = self.rts;     // set flow control options
     portCfg.txFlowControl = self.cts;
     [self.rscMgr setPortConfig:&portCfg requestStatus: NO];
-    
 }
 
 // Redpark Serial Cable was disconnected and/or application moved to background
+//
+// NOTE:  Regardless of what the Redpark SDK document says, this function is NOT called
+// when the app goes to the background.  To accomplish this I set up a notification in
+// the NSNotificationCenter and call this function manually from that notification.
 - (void) cableDisconnected {
     NSLog(@"@cableDisconnected");
     self.cableConnected = NO;
@@ -2914,6 +2926,21 @@ enum ifc242xValue {
     NSString *jsonString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
     jsonString = [jsonString stringByReplacingOccurrencesOfString:@"\n" withString:@""];
     [self.plugin.commandDelegate evalJs:[NSString stringWithFormat:@"pluginMessage(%@);",jsonString]];
+
+}
+
+- (void)appMovedToBackground:(NSNotification*)note {
+    NSLog(@"App moved to background.");
+    // Some stuff to stop the serial cable & prepare it to be reconnected.
+    CFRunLoopStop(CFRunLoopGetCurrent());
+    self.networkRunLoop = nil;
+    self.networkQueue = nil;
+    self.rscMgr = nil;
+    [self cableDisconnected];
+}
+
+- (void)appMovedToForeground:(NSNotification*)note {
+    NSLog(@"App moved to foreground.");
 }
     
 - (void)registerDefaultsFromSettingsBundle {
