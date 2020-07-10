@@ -83,10 +83,10 @@ function makeCircleTables(stages, positions, data) {
     reportHTML = reportHTML + "<tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>";
     var otip_clr = get_tip_clearance("opening", stages[j], "left", data);
     var ctip_clr = get_tip_clearance("closing", stages[j], "left", data);
-    reportHTML = reportHTML + "<tr><td>O<br/>C</td><td class=\"cCell2\" id=\"OCL_" + stages[j] + "\"></td>" + otip_clr + "<br/>" + ctip_clr + "<td></td>";
+    reportHTML = reportHTML + "<tr><td>O<br/>C</td><td class=\"cCell2\" id=\"OCL_" + stages[j] + "\">" + otip_clr + "<br/>" + ctip_clr + "</td><td></td>";
     reportHTML = reportHTML + "<td class=\"circleCell\" id=\"stageCell_1\"><b>Stage " + stages[j];
-    otip_clr = get_tip_clearance("opening", stages[j], "left", data);
-    ctip_clr = get_tip_clearance("closing", stages[j], "left", data);
+    otip_clr = get_tip_clearance("opening", stages[j], "right", data);
+    ctip_clr = get_tip_clearance("closing", stages[j], "right", data);
     reportHTML = reportHTML + " Clearance</b></td><td></td><td class=\"cCell2\" id=\"OCR_" + stages[j] + "\">" + otip_clr + "<br/>" + ctip_clr + "</td>";
     reportHTML = reportHTML + "<td>O<br/>C</td></tr>";
     reportHTML = reportHTML + "<tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>";
