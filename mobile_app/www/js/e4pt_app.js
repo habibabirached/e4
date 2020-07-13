@@ -1735,9 +1735,10 @@ function get_stage_details(position, casing_thickness) {
         if (stageStr == current_stage ) {
             var detailKeys = Object.keys(current_frame_data.stage_info[stageKey]);
             for (var key in detailKeys) {
-                if (detailKeys[key] == position) {
+                let pos = position.replace(/_+/g, ' '); // Put spaces back in position for comparisons
+                if (detailKeys[key] == pos) {
                     console.log("Found Position");
-                    var caseThck = current_frame_data.stage_info[stageKey][position][3];
+                    var caseThck = current_frame_data.stage_info[stageKey][pos][3];
                     if ((casing_thickness > (caseThck - 0.050)) && (casing_thickness < (caseThck + 0.05))) {
                         console.log("For: position = ", position, "; casing_thickness = ", casing_thickness);
                         console.log("Found: ", stageKey, "; ", detailKeys[key], "; ", caseThck);
