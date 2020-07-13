@@ -2349,6 +2349,7 @@ enum ifc242xValue {
     NSDateFormatter *dateFormatter=[[NSDateFormatter alloc] init];
     [dateFormatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
     NSString* dateStr = [dateFormatter stringFromDate:[NSDate date]];
+    dateStr = [dateStr substringFromIndex:2]; // Remove char 0-1, to get a shortened 2-digit year.
     // Get path to documents directory
     NSString* docPath;
     NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
@@ -2367,6 +2368,14 @@ enum ifc242xValue {
     if (![fm fileExistsAtPath:dataDir]) {
         [fm createDirectoryAtPath:dataDir withIntermediateDirectories:NO attributes:nil error:&error]; //Create folder
     }
+    // Create a shortened position string: Top = T, Bottom = B, Right = R, Left = L, Top Left = TL, etc.
+    NSString* pos = @"";
+    if (self.metaData.position.length > 0) {
+        NSArray* posArr = [self.metaData.position componentsSeparatedByString:@"_"];
+        for (NSString* p in posArr) {
+            pos = [NSString stringWithFormat:@"%@%@",pos,[p substringToIndex:1]]; // Use the first char from each word in the position string.
+        }
+    }
     // Create a file name as sn_stage_pos_state_datetime.csv.
     // If there is no serial number, just save to the data folder.
     NSString* csvFileName = [[NSString alloc] init];
@@ -2379,7 +2388,7 @@ enum ifc242xValue {
         else {
             NSString* fName = [NSString stringWithFormat:@"%@_%@_%@_%@.csv",
                                self.metaData.serial_number, self.metaData.stage,
-                               self.metaData.position, dateStr];
+                               pos, dateStr];
             csvFileName = [NSString stringWithFormat:@"%@/%@", turbineDir, fName];
         }
         // Change the data-time string format in the filename.
@@ -2394,7 +2403,7 @@ enum ifc242xValue {
     // Open the output file.
     NSFileHandle *handle;
     if ([fm fileExistsAtPath:csvFileName]) {
-        NSLog(@"Deleting existing dispositions CSV file...");
+        NSLog(@"Deleting existing CSV file...");
         NSError* error;
         BOOL success = [fm removeItemAtPath:csvFileName error:&error];
         if (success) {
@@ -2408,7 +2417,7 @@ enum ifc242xValue {
     NSLog(@"Creating empty CSV file...");
     BOOL success = [fm createFileAtPath:csvFileName contents:nil attributes:nil];
     if (success) {
-        NSLog(@"   Created CSV File.");
+        NSLog(@"   Created CSV File %@.", csvFileName);
     }
     else {
         NSLog(@"   Failed to create CSV File %@.", csvFileName);
