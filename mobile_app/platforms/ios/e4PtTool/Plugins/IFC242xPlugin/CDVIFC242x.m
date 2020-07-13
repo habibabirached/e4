@@ -817,8 +817,8 @@ enum ifc242xValue {
     [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
     [self.telnetCmds addObject:[NSString stringWithFormat:@"MASTERSIGNAL 01DIST1 NONE\n"]];
     [self.telnetCmds addObject:[NSString stringWithFormat:@"MASTERSIGNAL 01DIST1 5.0\n"]];
-    [self.telnetCmds addObject:[NSString stringWithFormat:@"MASTER 01DIST1 SET\n"]];
     [self.telnetCmds addObject:[NSString stringWithFormat:@"MASTER 01DIST1 ACTIVE\n"]];
+    [self.telnetCmds addObject:[NSString stringWithFormat:@"MASTER 01DIST1 SET\n"]];
     [self sendTelnetCommand];
 }
 
