@@ -1568,15 +1568,17 @@ function populateFileTable(entries) {
     var tbody = document.createElement("tbody");
     tbody.setAttribute("id","LOCAL_FILE_TABLE_BODY");
     // Create the table body.
+    let rowIdx = 0;
     for (var i=0; i<entries.length; i++) {
         if (!entries[i].isFile) continue;  // ignore any non-file entries
         if (entries[i].name == ".DS_Store") continue;
-        let fileSelectFn = "toggleFileSelected(\"" + entries[i].nativeURL + "\"," + (i-1) + ")";
+        let fileSelectFn = "toggleFileSelected(\"" + entries[i].nativeURL + "\"," + rowIdx + ")";
         var new_row = tbody.insertRow(-1);
         var cell0 = new_row.insertCell(-1);
         cell0.innerHTML = entries[i].name;
         cell0.setAttribute("onclick",fileSelectFn);
         cell0.setAttribute("nativeURL",entries[i].nativeURL);
+        rowIdx += 1;
     }
     prev_tbody.parentNode.replaceChild(tbody, prev_tbody);
 }
