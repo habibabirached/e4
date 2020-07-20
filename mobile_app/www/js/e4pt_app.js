@@ -23,16 +23,24 @@ var Data_Set = function() {
     this.case_thickness = null;
     //this.pts = null;
     this.clearance = null;
+    this.max_clr = null;
+    this.min_clr = null;
+    this.med_clr = null;
+    this.std_clr = null;
     this.quality = null;
     this.state = null;
 };
 
-Data_Set.prototype.add_data = function(state, stage, position, case_thickness, blade_number, pts, used_in_avg, clearance, quality) {
+Data_Set.prototype.add_data = function(state, stage, position, case_thickness, blade_number, pts, used_in_avg, clearance, max_clr, min_clr, med_clr, std_clr, quality) {
     this.stage = stage;
     this.position = position;
     this.case_thickness = case_thickness;
     //this.pts = pts;
     this.clearance = clearance;
+    this.max_clr = max_clr;
+    this.min_clr = min_clr;
+    this.med_clr = med_clr;
+    this.std_clr = std_clr;
     this.quality = quality;
     this.state = state;
 };
@@ -60,6 +68,10 @@ var E4PTdata = {
     "data":[],
     "quality":[],
     "clearance":"",
+    "max_clr":"",
+    "min_clr":"",
+    "med_clr":"",
+    "std_clr":"",
     "alreadyOnLDB":"false",
     "pouchdb_id": ""
 };
@@ -90,6 +102,7 @@ $(document).ready(function(){
         $("#TURBINE_SETUP_PAGE").fadeOut();
         $("#LOCAL_DATA_PAGE").fadeOut();
         $("#FILE_CHOOSER_PAGE").fadeOut();
+        $("#DATA_DETAILS_PAGE").fadeOut();
         toggle_menu();
     }, {passive: true});
     document.getElementById("FRD_BUTTON").addEventListener('click', function(){
@@ -297,11 +310,17 @@ $(document).ready(function(){
     document.getElementById("SETUP_CLOSE_BUTTON6").addEventListener('click', function(){
         $("#FILE_CHOOSER_PAGE").fadeOut();
     }, {passive: true});
+    document.getElementById("SETUP_CLOSE_BUTTON7").addEventListener('click', function(){
+        $("#DATA_DETAILS_PAGE").fadeOut();
+    }, {passive: true});
     document.getElementById("SENSOR_PARAMS_UPDATE_BUTTON").addEventListener('click', function(){
         authorizeSensorParamsUpdate();
     }, {passive: true});
     document.getElementById("FILE_EXPORT_BUTTON").addEventListener('click', function(){
-    multipleFileDownloadFunction();
+        multipleFileDownloadFunction();
+    }, {passive: true});
+    document.getElementById("DATA_DETAILS_BUTTON").addEventListener('click', function(){
+        populateDetailsTable();
     }, {passive: true});
     setupAccordian();
     if (communicationChannel == "WebSocket") {
@@ -476,6 +495,7 @@ function sensor_setup() {
     $("#TURBINE_SETUP_PAGE").fadeOut();
     $("#LOCAL_DATA_PAGE").fadeOut();
     $("#FILE_CHOOSER_PAGE").fadeOut();
+    $("#DATA_DETAILS_PAGE").fadeOut();
 }
 
 function send_scan_meta_data() {
@@ -1583,6 +1603,57 @@ function populateFileTable(entries) {
     prev_tbody.parentNode.replaceChild(tbody, prev_tbody);
 }
 
+function populateDetailsTable() {
+    $("#DATA_DETAILS_PAGE").fadeIn();
+    var prev_tbody = document.getElementById("DATA_DETAILS_TABLE_BODY");
+    var tbody = document.createElement("tbody");
+    tbody.setAttribute("id","DATA_DETAILS_TABLE_BODY");
+    // Create the table body.
+    let tmp = "";
+    let rowIdx = 0;
+    for (let i=0; i<E4PTdata.sets.length; i++) {
+        let clickFn = "toggleDetailsSelected(\"" + rowIdx + "\")";
+        var new_row = tbody.insertRow(-1);
+        var cell1 = new_row.insertCell(-1);
+        cell1.setAttribute("onclick",clickFn);
+        tmp = E4PTdata.sets[i].stage;
+        if (typeof tmp == 'undefined') tmp = "";
+        cell1.innerHTML = tmp;
+        var cell2 = new_row.insertCell(-1);
+        cell2.setAttribute("onclick",clickFn);
+        tmp = E4PTdata.sets[i].position;
+        if (typeof tmp == 'undefined') tmp = "";
+        cell2.innerHTML = tmp;
+        var cell3 = new_row.insertCell(-1);
+        cell3.setAttribute("onclick",clickFn);
+        tmp = E4PTdata.sets[i].clearance;
+        if (typeof tmp == 'undefined') tmp = "";
+        cell3.innerHTML = tmp;
+        var cell4 = new_row.insertCell(-1);
+        cell4.setAttribute("onclick",clickFn);
+        tmp = E4PTdata.sets[i].max_clr;
+        if (typeof tmp == 'undefined') tmp = "";
+        cell4.innerHTML = tmp;
+        var cell5 = new_row.insertCell(-1);
+        cell5.setAttribute("onclick",clickFn);
+        tmp = E4PTdata.sets[i].min_clr;
+        if (typeof tmp == 'undefined') tmp = "";
+        cell5.innerHTML = tmp;
+        var cell6 = new_row.insertCell(-1);
+        cell6.setAttribute("onclick",clickFn);
+        tmp = E4PTdata.sets[i].med_clr;
+        if (typeof tmp == 'undefined') tmp = "";
+        cell6.innerHTML = tmp;
+        var cell7 = new_row.insertCell(-1);
+        cell7.setAttribute("onclick",clickFn);
+        tmp = E4PTdata.sets[i].std_clr;
+        if (typeof tmp == 'undefined') tmp = "";
+        cell7.innerHTML = tmp;
+        rowIdx += 1;
+    }
+    prev_tbody.parentNode.replaceChild(tbody, prev_tbody);
+}
+
 function toggleFileSelected(fileName, idx) {
     let tbl = document.getElementById("LOCAL_FILE_TABLE_BODY");
     let row = tbl.rows[idx];
@@ -1590,8 +1661,16 @@ function toggleFileSelected(fileName, idx) {
     cell.classList.toggle("SELECTED_ROW");
 }
 
+function toggleDetailsSelected(idx) {
+    let tbl = document.getElementById("DATA_DETAILS_TABLE_BODY");
+    let row = tbl.rows[idx];
+    let cell = row.cells[0]; // Should only be one cell.
+    cell.classList.toggle("SELECTED_ROW");
+}
+
 function fileDownloadFunction(fileURL) {
     $("#FILE_CHOOSER_PAGE").fadeOut();
+    $("#DATA_DETAILS_PAGE").fadeOut();
     // remove:"file://" from URL.  exportFile will export downloadFileName.
     downloadFileName = fileURL.replace("file://","");
     // The next two lines gets just the file name from the full file path.
@@ -1796,7 +1875,7 @@ function parse_data() {
         E4PTdata.minima = [];
     }
     console.log("Clearance average: ", E4PTdata.clearance);
-    // Only update the clearance info if we have all the data to do so.
+    // Only update the clearance(s) info if we have all the data to do so.
     if (current_frame_data['position'] != null) {
         var clearance_f = parseFloat(E4PTdata.clearance);
         let units = E4PTdata.units.toUpperCase();
@@ -1815,8 +1894,10 @@ function parse_data() {
     set.case_thickness = E4PTdata.casing_thickness;
     set.clearance = E4PTdata.clearance;
     set.state = E4PTdata.state;
-    //set.pts = E4PTdata.data;
-    //set.quality = E4PTdata.intensity;
+    set.max_clr = E4PTdata.max_clr;
+    set.min_clr = E4PTdata.min_clr;
+    set.med_clr = E4PTdata.med_clr;
+    set.std_clr = E4PTdata.std_clr;
     E4PTdata.sets.push(set);
     if (doDBSave) {
       addDBEntry(E4PTdata); // save the data autmatically after acquisition
@@ -2506,9 +2587,9 @@ function listInternalFiles() {
 }
 
 // sortTable(n) is lifted straight from https://www.w3schools.com/howto/howto_js_sort_table.asp
-function sortTable(n) {
+function sortTable(srtTable, n) {
   var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
-  table = document.getElementById("LOCAL_DATA_TABLE");
+  table = document.getElementById(srtTable);
   switching = true;
   // Set the sorting direction to ascending:
   dir = "asc";
@@ -2562,6 +2643,9 @@ function sortTable(n) {
     
   // Add color to the header of the column by which the table is sorted.
   let cols = ["FRAME_COL","SN_COL","CUSTOMER_COL","SITE_COL","DESC_COL","DATE_COL","TIME_COL"];
+  if (srtTable == "DATA_DETAILS_TABLE") {
+    cols = ["STAGE_COL","POSITION_COL","CLEARANCE_COL","MAX_CLR_COL","MIN_CLR_COL","MED_CLR_COL","STD_CLR_COL"];
+  }
   for (i=0; i<cols.length; i++) {
     document.getElementById(cols[i]).style.color = "white";
   }

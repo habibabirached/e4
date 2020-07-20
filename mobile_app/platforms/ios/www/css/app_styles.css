@@ -481,6 +481,12 @@ table.LOCAL_FILE_TABLE{
     top: 0;
 }
 
+#DATA_DETAILS_TABLE_HEADER {
+    position: sticky;
+    z-index: 2;
+    top: 0;
+}
+
 .TXTFIELD {
     font-size:24px;
 }

@@ -330,6 +330,7 @@
                     <div id="COLLECTION_RESET_BUTTON" class="IN_BLOCK BUTTON W15 OVERLAY_BUTTON">RESET</div>
                     <div id="CUSTOMER_REPORT_BUTTON" class="IN_BLOCK BUTTON W15 OVERLAY_BUTTON">REPORT</div>
                     <div id="DOWNLOAD_FILE_BUTTON_02" class="IN_BLOCK BUTTON W15 OVERLAY_BUTTON">EXPORT</div>
+                    <div id="DATA_DETAILS_BUTTON" class="IN_BLOCK BUTTON W15 OVERLAY_BUTTON">DETAILS</div>
                 </div>
                 <br/>
                 <div class="CLEARANCE_PLOT BLOCK H100 Z0" id="CLEARANCE_PLOT">
@@ -436,13 +437,13 @@
                         <thead id="LOCAL_DATA_TABLE_HEADER" class="LOCAL_DATA_TABLE_HEADER">
                             <tr>
                                 <th class="TOP_ROW" style="display:none;">UUID</th> <!-- not visible -->
-                                <th class="TOP_ROW" id="FRAME_COL" onclick="sortTable(1)">Frame</th>
-                                <th class="TOP_ROW" id="SN_COL" onclick="sortTable(2)">S/N</th>
-                                <th class="TOP_ROW" id="CUSTOMER_COL" onclick="sortTable(3)">Customer</th>
-                                <th class="TOP_ROW" id="SITE_COL" onclick="sortTable(4)">Site</th>
-                                <th class="TOP_ROW" id="DESC_COL" onclick="sortTable(5)">Description</th>
-                                <th class="TOP_ROW" id="DATE_COL" onclick="sortTable(6)">Date</th>
-                                <th class="TOP_ROW" id="TIME_COL" onclick="sortTable(7)">Time</th>
+                                <th class="TOP_ROW" id="FRAME_COL" onclick="sortTable('LOCAL_DATA_TABLE',1)">Frame</th>
+                                <th class="TOP_ROW" id="SN_COL" onclick="sortTable('LOCAL_DATA_TABLE',2)">S/N</th>
+                                <th class="TOP_ROW" id="CUSTOMER_COL" onclick="sortTable('LOCAL_DATA_TABLE',3)">Customer</th>
+                                <th class="TOP_ROW" id="SITE_COL" onclick="sortTable('LOCAL_DATA_TABLE',4)">Site</th>
+                                <th class="TOP_ROW" id="DESC_COL" onclick="sortTable('LOCAL_DATA_TABLE',5)">Description</th>
+                                <th class="TOP_ROW" id="DATE_COL" onclick="sortTable('LOCAL_DATA_TABLE',6)">Date</th>
+                                <th class="TOP_ROW" id="TIME_COL" onclick="sortTable('LOCAL_DATA_TABLE',7)">Time</th>
                             </tr>
                         </thead>
                         <tbody id="LOCAL_DATA_TABLE_BODY">
@@ -475,6 +476,36 @@
                 </div>
                 <div class="BUTTON_GROUP">
                     <div id="FILE_EXPORT_BUTTON" class="IN_BLOCK BUTTON W15 OVERLAY_BUTTON">EXPORT</div>
+                </div>
+            </div>
+        </div>
+        <!-- --------------- Data Details Page --------------------- -->
+        <div id="DATA_DETAILS_PAGE" class="OVERLAY_PARTIAL" style="top:5.9vmin">
+            <div class="RELATIVE TOP0 W100 COLOR_T_BLACK" style="height:5vmin; position:sticky">
+                <div class="COL_FL FONT_WHITE FONT8 PW2"></div>
+                <div id="SETUP_CLOSE_BUTTON7" class="COL_FR BUTTON PW1">
+                    <i class="fa fa-window-close FONT10 FONT_WHITE"></i>
+                </div>
+                <H2 align="center" class="FONT_WHITE"><U>Data Details</U></H2><br/>
+                <div class="BLOCK SCROLL_Y" style="height:70vh;">
+                    <table id="DATA_DETAILS_TABLE" class="DATA_DETAILS_TABLE">
+                        <thead id="DATA_DETAILS_TABLE_HEADER" class="DATA_DETAILS_TABLE_HEADER">
+                            <tr>
+                                <th class="TOP_ROW" id="STAGE_COL" onclick="sortDetailsTable('DATA_DETAILS_TABLE',1)">Stg</th>
+                                <th class="TOP_ROW" id="POSITION_COL" onclick="sortDetailsTable('DATA_DETAILS_TABLE',2)">Pos</th>
+                                <th class="TOP_ROW" id="CLEARANCE_COL" onclick="sortDetailsTable('DATA_DETAILS_TABLE',3)">Clr</th>
+                                <th class="TOP_ROW" id="MAX_CLR_COL" onclick="sortDetailsTable('DATA_DETAILS_TABLE',4)">Max.Clr</th>
+                                <th class="TOP_ROW" id="MIN_CLR_COL" onclick="sortDetailsTable('DATA_DETAILS_TABLE',5)">Min.Clr</th>
+                                <th class="TOP_ROW" id="MED_CLR_COL" onclick="sortDetailsTable('DATA_DETAILS_TABLE',6)">Med.Clr</th>
+                                <th class="TOP_ROW" id="STD_CLR_COL" onclick="sortDetailsTable('DATA_DETAILS_TABLE',7)">Std.Clr</th>
+                            </tr>
+                        </thead>
+                        <tbody id="DATA_DETAILS_TABLE_BODY">
+                        </tbody>
+                    </table>
+                </div>
+                <div class="BUTTON_GROUP">
+                    <div id="DETAILS_EXPORT_BUTTON" class="IN_BLOCK BUTTON W15 OVERLAY_BUTTON">EXPORT</div>
                 </div>
             </div>
         </div>

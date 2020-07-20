@@ -1860,10 +1860,10 @@ enum ifc242xValue {
                                    @"clearance":clearance,
                                    @"casing_thickness":self.metaData.casing_thickness,
                                    @"spacer_thickness":self.metaData.spacer_thickness,
-                                   @"stage_max_clearance":stg_max_clr,
-                                   @"stage_min_clearance":stg_min_clr,
-                                   @"stage_median_clearance":stg_med_clr,
-                                   @"stage_clearance_std":stg_clr_std,
+                                   @"max_clr":stg_max_clr,
+                                   @"min_clr":stg_min_clr,
+                                   @"med_clr":stg_med_clr,
+                                   @"std_clr":stg_clr_std,
                                    @"date":dateStr
                                    };
     CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDataDict];// You can send data, String, int, array, dictionary, etc.
