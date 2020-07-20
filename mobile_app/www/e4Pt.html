@@ -431,22 +431,24 @@
                 </div>
             </div>
                 <H2 align="center" class="FONT_WHITE"><U>Local Data</U></H2><br/>
-                <table id="LOCAL_DATA_TABLE" class="LOCAL_DATA_TABLE">
-                    <thead id="LOCAL_DATA_TABLE_HEADER">
-                        <tr>
-                            <th class="TOP_ROW" style="display:none;">UUID</th> <!-- not visible -->
-                            <th class="TOP_ROW" id="FRAME_COL" onclick="sortTable(1)">Frame</th>
-                            <th class="TOP_ROW" id="SN_COL" onclick="sortTable(2)">S/N</th>
-                            <th class="TOP_ROW" id="CUSTOMER_COL" onclick="sortTable(3)">Customer</th>
-                            <th class="TOP_ROW" id="SITE_COL" onclick="sortTable(4)">Site</th>
-                            <th class="TOP_ROW" id="DESC_COL" onclick="sortTable(5)">Description</th>
-                            <th class="TOP_ROW" id="DATE_COL" onclick="sortTable(6)">Date</th>
-                            <th class="TOP_ROW" id="TIME_COL" onclick="sortTable(7)">Time</th>
-                        </tr>
-                    </thead>
-                    <tbody id="LOCAL_DATA_TABLE_BODY">
-                    </tbody>
-                </table>
+                <div class="BLOCK SCROLL_Y" style="height:60vh;">
+                    <table id="LOCAL_DATA_TABLE" class="LOCAL_DATA_TABLE">
+                        <thead id="LOCAL_DATA_TABLE_HEADER" class="LOCAL_DATA_TABLE_HEADER">
+                            <tr>
+                                <th class="TOP_ROW" style="display:none;">UUID</th> <!-- not visible -->
+                                <th class="TOP_ROW" id="FRAME_COL" onclick="sortTable(1)">Frame</th>
+                                <th class="TOP_ROW" id="SN_COL" onclick="sortTable(2)">S/N</th>
+                                <th class="TOP_ROW" id="CUSTOMER_COL" onclick="sortTable(3)">Customer</th>
+                                <th class="TOP_ROW" id="SITE_COL" onclick="sortTable(4)">Site</th>
+                                <th class="TOP_ROW" id="DESC_COL" onclick="sortTable(5)">Description</th>
+                                <th class="TOP_ROW" id="DATE_COL" onclick="sortTable(6)">Date</th>
+                                <th class="TOP_ROW" id="TIME_COL" onclick="sortTable(7)">Time</th>
+                            </tr>
+                        </thead>
+                        <tbody id="LOCAL_DATA_TABLE_BODY">
+                        </tbody>
+                    </table>
+                </div>
                 <br/>
                 <div id="CLEAR_DB_BUTTON" class="BUTTON W35 OVERLAY_BUTTON" style="margin:0 auto;">CLEAR DATABASE</div>
                 <br/><br/><br/><br/>

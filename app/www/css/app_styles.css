@@ -462,6 +462,12 @@ th.LOCAL_DATA_HEADER {
 	background-color:#C2C2C2;
 }
 
+#LOCAL_DATA_TABLE_HEADER {
+    position: sticky;
+    z-index: 2;
+    top: 0;
+}
+
 table.LOCAL_FILE_TABLE{
     border-collapse:collapse!important;
     width:80%;
