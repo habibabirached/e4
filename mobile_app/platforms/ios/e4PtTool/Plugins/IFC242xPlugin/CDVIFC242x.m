@@ -101,6 +101,8 @@ enum ifc242xValue {
 @property (strong, nonatomic) NSString* units;
 @property (strong, nonatomic) NSString* num_blades;
 @property (strong, nonatomic) NSString* sensor_measurement_range;
+@property (strong, nonatomic) NSString* start_measurement_range;
+@property (strong, nonatomic) NSString* sensor_length;
 @property (strong, nonatomic) NSString* blade_width;
 @property (strong, nonatomic) NSString* tip_diameter;
 @property (strong, nonatomic) NSString* master_offset;
@@ -213,6 +215,10 @@ enum ifc242xValue {
 @property (strong, nonatomic) NSMutableArray* intensities;
 @property (strong, nonatomic) NSMutableArray* min_locs;
 @property (nonatomic) float stage_clearance;
+@property (nonatomic) float stage_max_clearance;
+@property (nonatomic) float stage_min_clearance;
+@property (nonatomic) float stage_median_clearance;
+@property (nonatomic) float stage_clearance_std;
 
 @property (nonatomic) NSTimeInterval startTime;
 @property (nonatomic) NSTimeInterval testTime;
@@ -327,6 +333,11 @@ enum ifc242xValue {
 @synthesize val1Ptr = _val1Ptr;
 @synthesize nextIFCValue = _nextIFCValue;
 @synthesize leftoverBytes = _leftoverBytes;
+
+@synthesize stage_max_clearance = _stage_max_clearance;
+@synthesize stage_min_clearance = _stage_min_clearance;
+@synthesize stage_median_clearance = _stage_median_clearance;
+@synthesize stage_clearance_std = _stage_clearance_std;
 
 @synthesize connectionMode = _connectionMode;
 @synthesize networkRunLoop = _networkRunLoop;
@@ -1088,6 +1099,7 @@ enum ifc242xValue {
         self.metaData.site = [msgArray objectAtIndex:4];
         self.metaData.user = [msgArray objectAtIndex:5];
         self.metaData.units = [msgArray objectAtIndex:6];
+        self.metaData.units = [self.metaData.units uppercaseString]; // We want units to be consistently in upper case.
         self.metaData.state = [msgArray objectAtIndex:7];
         return;
     }
@@ -1254,6 +1266,9 @@ enum ifc242xValue {
             mo = [defaults stringForKey:@"masterOffset"];
             sl = [defaults stringForKey:@"sensorLength"];
         }
+        self.metaData.start_measurement_range = smr;
+        self.metaData.sensor_length = sl;
+        self.metaData.master_offset = mo;
         NSDictionary* jsonDict = @{@"type":@"sensor_params", @"start_measurement_range":smr, @"master_offset":mo, @"sensor_length":sl};
         CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];
         [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
@@ -1267,6 +1282,9 @@ enum ifc242xValue {
         [defaults setValue:smr forKey:@"startMeasurementRange"];
         [defaults setValue:mo forKey:@"masterOffset"];
         [defaults setValue:sl forKey:@"sensorLength"];
+        self.metaData.start_measurement_range = smr;
+        self.metaData.sensor_length = sl;
+        self.metaData.master_offset = mo;
         NSString* msgStr = [NSString stringWithFormat:@"Sensor Parameters are Set."];
         NSDictionary* jsonDict = @{@"type":@"alert",@"message":msgStr};
         CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];
@@ -1414,6 +1432,10 @@ enum ifc242xValue {
     if (self.byteBuffer != nil) {
         for (int i=0; i<BYTE_BUFFER_SIZE; i++) self.byteBuffer[i] = 0;
     }
+    self.stage_max_clearance = 0.0;
+    self.stage_min_clearance = FLT_MAX;
+    self.stage_median_clearance = 0.0;
+    self.stage_clearance_std = 0.0;
 }
 
 // The collectData function is patterned after the e4PtTool python function
@@ -1819,12 +1841,16 @@ enum ifc242xValue {
     NSString *bladeClrsJSONString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
     jsonData = [NSJSONSerialization dataWithJSONObject:self.clearance_quality options:NSJSONWritingSortedKeys error:&error];
     NSString *clrQualityJSONString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
-    
+
     NSDateFormatter *dateFormatter=[[NSDateFormatter alloc] init];
     [dateFormatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
     NSString* dateStr = [dateFormatter stringFromDate:[NSDate date]];
     NSString* clearance = [NSString stringWithFormat:@"%f",self.stage_clearance];
-    
+    NSString* stg_max_clr = [NSString stringWithFormat:@"%f", self.stage_max_clearance];
+    NSString* stg_min_clr = [NSString stringWithFormat:@"%f", self.stage_min_clearance];
+    NSString* stg_med_clr = [NSString stringWithFormat:@"%f", self.stage_median_clearance];
+    NSString* stg_clr_std = [NSString stringWithFormat:@"%f", self.stage_clearance_std];
+
     NSDictionary* jsonDataDict = @{@"type":@"data",
                                    @"data":dispJSONString,
                                    @"intensity":intensJSONString,
@@ -1834,6 +1860,10 @@ enum ifc242xValue {
                                    @"clearance":clearance,
                                    @"casing_thickness":self.metaData.casing_thickness,
                                    @"spacer_thickness":self.metaData.spacer_thickness,
+                                   @"stage_max_clearance":stg_max_clr,
+                                   @"stage_min_clearance":stg_min_clr,
+                                   @"stage_median_clearance":stg_med_clr,
+                                   @"stage_clearance_std":stg_clr_std,
                                    @"date":dateStr
                                    };
     CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDataDict];// You can send data, String, int, array, dictionary, etc.
@@ -1939,6 +1969,10 @@ enum ifc242xValue {
         NSLog(@"Looks like not squealer tips.");
         threshold = ((float)peak1 + (float)peak3)/2.0;
     }
+    
+    // Force threshold for now.
+    threshold = 4.5;
+    
     NSLog(@"Found Threshold: %f\nThresholding data...",threshold);
     
     // Perform edge detection with an LoG filter
@@ -2118,13 +2152,49 @@ enum ifc242xValue {
             [self.filtered addObject:[NSNumber numberWithFloat:OUT_OF_RANGE]];
         }
     }
+    // Now iterate over the filtered values and calibrate them to arrive at actual clearance values.
+    // clearance_f = clearance_f + (SMR + SL) - spacer - casing_thickness + MO;
+    // Filtered clearances are in mm.
+    // Sensor parameters (SMR, SL, Spacer thickness & casing thickness are in inches.
+    //
+    // Get values into consistent units of mm. Perform calculations in mm
+    float inToMM = 25.4;
+    float smr = [self.metaData.start_measurement_range floatValue] * inToMM;
+    float sl = [self.metaData.sensor_length floatValue] * inToMM;
+    float mo = [self.metaData.master_offset floatValue] * inToMM;
+    float ct = [self.metaData.casing_thickness floatValue] * inToMM;
+    float st = [self.metaData.spacer_thickness floatValue] * inToMM;
+    // Calibrate the filtered values
+    for (unsigned int i = 0; i< self.filtered.count; i++) {
+        if ([[self.filtered objectAtIndex:i] floatValue] == OUT_OF_RANGE) continue;  // no need to calibrate out-of-range values.
+        float clearance_f = [[self.filtered objectAtIndex:i] floatValue] + smr + sl - st - ct + mo;
+        [self.filtered replaceObjectAtIndex:i withObject:[NSNumber numberWithFloat:clearance_f]];
+    }
+    // Calibrate the blade clearances
+    for (unsigned int i = 0; i< self.blade_clearances.count; i++) {
+        float clearance_f = [[self.blade_clearances objectAtIndex:i] floatValue] + smr + sl - st - ct + mo;
+        [self.blade_clearances replaceObjectAtIndex:i withObject:[NSNumber numberWithFloat:clearance_f]];
+    }
+        
+    // Now iterate over the blade_clearances to get the average clearance for the stage,
+    // as well as max, min, median, and stdev.
     self.stage_clearance = 0.0;
+    self.stage_max_clearance = 0.0;
+    self.stage_min_clearance = FLT_MAX;
+    self.stage_median_clearance = 0.0;
+    self.stage_clearance_std = 0;
+    NSMutableArray* statsBuff = [[NSMutableArray alloc] init];
     int stage_num_blades = (int)[self.metaData.num_blades integerValue];
     if (stage_num_blades > 0) {
         // This clause is used when the number of blades has been specified.
+        // Use only the number of specified blades so that no blades are counted twice.
         for (i=0; i<stage_num_blades; i++) {
-            if (self.blade_clearances.count > i ) {
+            // Make sure we don't try to go beyond the bounds of the array of clearances.
+            if (i < self.blade_clearances.count) {
                 NSNumber* c = [self.blade_clearances objectAtIndex:i];
+                if ([c floatValue] > self.stage_max_clearance) self.stage_max_clearance = [c floatValue];
+                if ([c floatValue] < self.stage_min_clearance) self.stage_min_clearance = [c floatValue];
+                [statsBuff addObject:c];
                 self.stage_clearance += [c floatValue];
             }
         }
@@ -2142,6 +2212,9 @@ enum ifc242xValue {
             for (i=0; i<self.blade_clearances.count; i++) {
                 NSNumber* c = [self.blade_clearances objectAtIndex:i];
                 self.stage_clearance += [c floatValue];
+                if ([c floatValue] > self.stage_max_clearance) self.stage_max_clearance = [c floatValue];
+                if ([c floatValue] < self.stage_min_clearance) self.stage_min_clearance = [c floatValue];
+                [statsBuff addObject:c];
             }
             int divisor = (int)self.blade_clearances.count;
             if (divisor != 0) {
@@ -2152,6 +2225,11 @@ enum ifc242xValue {
             }
         }
     }
+    // Now find the median clearance value for this stage...
+    NSArray* sortedBuff = [statsBuff sortedArrayUsingSelector:@selector(compare:)];
+    NSUInteger middle = [sortedBuff count] / 2;
+    self.stage_median_clearance = [[sortedBuff objectAtIndex:middle] floatValue];
+    self.stage_clearance_std = [[self standardDeviationOf:statsBuff] floatValue];
 
     free(neg_crossing);
     free(pos_crossing);
@@ -2160,6 +2238,52 @@ enum ifc242xValue {
     free(hBins);
 
     NSLog(@"computeClearance Done.");
+}
+
+- (NSNumber *)meanOf:(NSArray *)array {
+    double runningTotal = 0.0;
+    for(NSNumber *number in array) {
+        runningTotal += [number doubleValue];
+    }
+    return [NSNumber numberWithDouble:(runningTotal / [array count])];
+}
+    
+- (NSNumber *)standardDeviationOf:(NSArray *)array  {
+    if(![array count]) return nil;
+        
+    double mean = [[self meanOf:array] doubleValue];
+    double sumOfSquaredDifferences = 0.0;
+        
+    for(NSNumber *number in array) {
+        double valueOfNumber = [number doubleValue];
+        double difference = valueOfNumber - mean;
+        sumOfSquaredDifferences += difference * difference;
+    }
+        
+    return [NSNumber numberWithDouble:sqrt(sumOfSquaredDifferences / [array count])];
+}
+
+// convertToInches converts all the output values to inches prior to output.
+// Currently this function is not used.
+- (void)convertToInches {
+    //[self.kernel replaceObjectAtIndex:idx withObject:[NSNumber numberWithFloat:k_val]];
+    NSNumber* tmp = [NSNumber numberWithInt:0];
+    for (unsigned int i=0; i< self.displacements.count; i++) {
+        tmp = [NSNumber numberWithFloat:([[self.displacements objectAtIndex:i] floatValue] / 25.4)];
+        [self.displacements replaceObjectAtIndex:i withObject:tmp];
+    }
+    for (unsigned int i=0; i< self.filtered.count; i++) {
+        tmp = [NSNumber numberWithFloat:([[self.filtered objectAtIndex:i] floatValue] / 25.4)];
+        [self.filtered replaceObjectAtIndex:i withObject:tmp];
+    }
+    for (unsigned int i=0; i< self.blade_clearances.count; i++) {
+        tmp = [NSNumber numberWithFloat:([[self.blade_clearances objectAtIndex:i] floatValue] / 25.4)];
+        [self.blade_clearances replaceObjectAtIndex:i withObject:tmp];
+    }
+    self.stage_max_clearance /= 25.4;
+    self.stage_min_clearance /= 25.4;
+    self.stage_median_clearance /= 25.4;
+    self.stage_clearance_std /= 25.4;
 }
 
 // computeKernel computes a normalized Laplacian-of-Gaussian kernel for
@@ -2383,10 +2507,10 @@ enum ifc242xValue {
         if (self.metaData.serial_number.length == 0) {
             csvFileName = [NSString stringWithFormat:@"%@/%@",
                            dataDir,
-                           [NSString stringWithFormat:@"data_%@.csv",dateStr]];
+                           [NSString stringWithFormat:@"data_%@_mm.csv",dateStr]];
         }
         else {
-            NSString* fName = [NSString stringWithFormat:@"%@_%@_%@_%@.csv",
+            NSString* fName = [NSString stringWithFormat:@"%@_%@_%@_%@_mm.csv",
                                self.metaData.serial_number, self.metaData.stage,
                                pos, dateStr];
             csvFileName = [NSString stringWithFormat:@"%@/%@", turbineDir, fName];

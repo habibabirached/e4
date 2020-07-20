@@ -896,7 +896,7 @@ function setup_data_collection_page(dateStr, timeStr, update_position) {
     document.getElementById("HEADER_DATETIME").innerHTML = "Date: " + dateStr;
     document.getElementById("HEADER_CUSTOMER").innerHTML = "Customer: " + customer + " - " + site;
     document.getElementById("HEADER_FRAME").innerHTML = "Frame: " + E4PTdata.frame;
-    document.getElementById("HEADER_SERIAL").innerHTML = "S/N: " + E4PTdata.serial_number;
+    document.getElementById("HEADER_SERIAL").innerHTML = "S/N: " + E4PTdata.serial_number + ";  Units: " + E4PTdata.units;
     document.getElementById("SENSOR_STAGE").selectedIndex = current_stage_index;
     document.getElementById("SENSOR_POSITION").selectedIndex = current_position_index;
     var html_buf = [];
@@ -1798,7 +1798,12 @@ function parse_data() {
     console.log("Clearance average: ", E4PTdata.clearance);
     // Only update the clearance info if we have all the data to do so.
     if (current_frame_data['position'] != null) {
-      var clearance_f = calibrateClearance(E4PTdata.clearance);
+        var clearance_f = parseFloat(E4PTdata.clearance);
+        let units = E4PTdata.units.toUpperCase();
+        if (units.includes("IN")) {
+            clearance_f = clearance_f / 25.4; // Clearances come back in mm. Convert to inches if needed.
+            E4PTdata.clearance = clearance_f.toString(10);
+        }
       update_clearance(clearance_f);
     }
 
@@ -1816,51 +1821,6 @@ function parse_data() {
     if (doDBSave) {
       addDBEntry(E4PTdata); // save the data autmatically after acquisition
     }
-}
-
-function calibrateClearance(clearance) {
-    console.log("@calibrateClearance: clearance = ", clearance);
-    if (clearance.length == 0) {
-        clearance = 0.0;
-    }
-    var clearance_f = 0.0
-    if ((typeof clearance) != "string") {
-        clearance_f = clearance;
-    }
-    else {
-        clearance_f = parseFloat(clearance);
-    }
-    // Account for Start-of-measurement-range (SMR), SL, & Spacer
-    // Sensor measurements come in mm, so we may have to account for units as well.
-    // First do all calculations in mm.
-    var units = E4PTdata.units.toUpperCase();
-    var SMR = sensor_data.start_measurement_range; // in inches
-    var SL = sensor_data.sensor_length; // in inches
-    var spacer = E4PTdata.spacer_thickness; // in inches
-    var casing_thickness = E4PTdata.casing_thickness; // may be in mm or inches
-    var MO = sensor_data.master_offset;
-    var scale_factor = 1.0;
-    if (units.includes("MM")) {
-        casing_thickness = casing_thickness / 25.4; // convert to inches
-        scale_factor = 25.4;
-    }
-    
-    if (clearance_f < -9.0) {
-        // This is an error condition.
-        console.log("Clearance error condition encountered.");
-    }
-    else {
-        // clearance = displacement + MO + SMR + SL - (Shim thickness + Spacer thickness) - Casing thickness
-        //
-        // Clearance comes from the sensor in "mm".  SMR, Sensor Length, MO, Spacer Thickness and Casing thickness are in
-        // inches.  Here we calculate the clearance in inches.
-        clearance_f = clearance_f/25.4;  // Clearance comes in mm, so convert to inches
-        clearance_f = clearance_f + (SMR + SL) - spacer - casing_thickness + MO; // Compute clearance in inches.
-        clearance_f = clearance_f / scale_factor; // convert to desired units.
-    }
-    E4PTdata.clearance = clearance_f;
-    console.log("Leaving calibrateClearance: clearance_f = ", clearance_f);
-    return clearance_f;
 }
 
 function update_clearance(clearance) {
