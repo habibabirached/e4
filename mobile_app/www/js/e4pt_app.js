@@ -1627,31 +1627,40 @@ function populateDetailsTable() {
         var cell3 = new_row.insertCell(-1);
         cell3.setAttribute("onclick",clickFn);
         tmp = E4PTdata.sets[i].clearance;
-        if (typeof tmp == 'undefined') tmp = "";
-        cell3.innerHTML = tmp;
+        cell3.innerHTML = checkValue(E4PTdata.sets[i].clearance,3);
         var cell4 = new_row.insertCell(-1);
         cell4.setAttribute("onclick",clickFn);
-        tmp = E4PTdata.sets[i].max_clr;
-        if (typeof tmp == 'undefined') tmp = "";
-        cell4.innerHTML = tmp;
+        cell4.innerHTML = checkValue(E4PTdata.sets[i].max_clr,3);
         var cell5 = new_row.insertCell(-1);
         cell5.setAttribute("onclick",clickFn);
-        tmp = E4PTdata.sets[i].min_clr;
-        if (typeof tmp == 'undefined') tmp = "";
-        cell5.innerHTML = tmp;
+        cell5.innerHTML = checkValue(E4PTdata.sets[i].min_clr,3);
         var cell6 = new_row.insertCell(-1);
         cell6.setAttribute("onclick",clickFn);
-        tmp = E4PTdata.sets[i].med_clr;
-        if (typeof tmp == 'undefined') tmp = "";
-        cell6.innerHTML = tmp;
+        cell6.innerHTML = checkValue(E4PTdata.sets[i].med_clr,3);
         var cell7 = new_row.insertCell(-1);
         cell7.setAttribute("onclick",clickFn);
-        tmp = E4PTdata.sets[i].std_clr;
-        if (typeof tmp == 'undefined') tmp = "";
-        cell7.innerHTML = tmp;
+        cell7.innerHTML = checkValue(E4PTdata.sets[i].std_clr,3);
         rowIdx += 1;
     }
     prev_tbody.parentNode.replaceChild(tbody, prev_tbody);
+}
+
+// checkValue(val) checks a string to make sure it's a number,
+// and converts it to a string with only n decimal places.
+function checkValue(val,n) {
+    if (typeof val == 'undefined') {
+        val = "";
+    }
+    else {
+        let tmp_f = parseFloat(val);
+        if (isNaN(tmp_f)) {
+            val = "";
+        }
+        else {
+            val = tmp_f.toFixed(n);
+        }
+    }
+    return val;
 }
 
 function toggleFileSelected(fileName, idx) {
@@ -1898,10 +1907,35 @@ function parse_data() {
     set.min_clr = E4PTdata.min_clr;
     set.med_clr = E4PTdata.med_clr;
     set.std_clr = E4PTdata.std_clr;
-    E4PTdata.sets.push(set);
+    addOrReplaceSet(set);
     if (doDBSave) {
       addDBEntry(E4PTdata); // save the data autmatically after acquisition
     }
+}
+
+// addOrReplace(set) will check existing data to see if there is already data for this
+// stage & position.  If not, it will add it.  If so, it will replace it.
+function addOrReplaceSet(set) {
+    // This next line looks up any previous data set for this stage and position.  If it is not
+    // found the result will be undefined.
+    let priorSet = E4PTdata.sets.find(o => ((o.stage === set.stage) && (o.position === set.position)));
+    if (typeof priorSet == 'undefined') {
+        // There is no prior data for this set, so add this set and return.
+        E4PTdata.sets.push(set);
+        return;
+    }
+    // If prior data for this stage & position was found, replace it with this new data.
+    console.log("priorSet before:  ", priorSet);
+    priorSet.stage = set.stage;
+    priorSet.position = set.position;
+    priorSet.case_thickness = set.case_thickness;
+    priorSet.clearance = set.clearance;
+    priorSet.state = set.state;
+    priorSet.max_clr = set.max_clr;
+    priorSet.min_clr = set.min_clr;
+    priorSet.med_clr = set.med_clr;
+    priorSet.std_clr = set.std_clr;
+    console.log("priorSet after:  ", priorSet);
 }
 
 function update_clearance(clearance) {
