@@ -322,6 +322,10 @@ $(document).ready(function(){
     document.getElementById("DATA_DETAILS_BUTTON").addEventListener('click', function(){
         populateDetailsTable();
     }, {passive: true});
+    document.getElementById("DETAILS_EXPORT_BUTTON").addEventListener('click', function(){
+        let prompt = "Email or Upload Files?";
+        e4PtPrompt(prompt, exportDetailsFile, "Get File", ["Email","Upload to Box","Cancel"]);
+    }, {passive: true});
     setupAccordian();
     if (communicationChannel == "WebSocket") {
         createWS();
@@ -1447,6 +1451,32 @@ function updateSensorParameters(smr, sl, mo) {
     }
 }
 
+function exportDetailsFile(option) {
+    let targetFolder = "data";
+    let fileName = "data_details.csv";
+    if ((typeof E4PTdata.serial_number !== 'undefined') || ( E4PTdata.serial_number.length > 0 )) {
+        targetFolder = cordova.file.documentsDirectory + E4PTdata.serial_number;
+        fileName = E4PTdata.serial_number + "_details.csv";
+    }
+    fileName = targetFolder + "/" + fileName;
+    let attachmentList = [fileName];
+    if (option == 1) {
+        console.log("Email");
+        subject = "e-4Pt Tool Data";
+        sendEmailWithAttachment( subject , attachmentList);
+    }
+    else if (option == 2) {
+        console.log("Upload To Box");
+        for (let i=0; i<attachmentList.length; i++) {
+            attachmentList[i] = attachmentList[i].replace("file://","");
+        }
+        uploadFileToBox(attachmentList);
+    }
+    else {
+        console.log("Cancel");
+    }
+}
+
 // exportFiles is the callback from a prompt to email, upload or cancel. Handles multiple files.
 // The returned option is 1 (email), 2 (upload) or 3 (cancel).
 function exportFiles(option) {
@@ -1701,8 +1731,6 @@ function writeToFile(targetFolder, fileName, fileData) {
                     console.log("Successfully saved this record on device.");
                 };
                 fileWriter.write(fileData);
-                fileWriter.flush();
-                fileWriter.close();
             }, function(error) {
                 console.log(error);
             });
