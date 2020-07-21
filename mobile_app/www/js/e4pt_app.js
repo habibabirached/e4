@@ -1604,6 +1604,7 @@ function populateFileTable(entries) {
 }
 
 function populateDetailsTable() {
+    writeDetailsFile();  // Write the CSV file so it will be produced at the same time as the table.
     $("#DATA_DETAILS_PAGE").fadeIn();
     var prev_tbody = document.getElementById("DATA_DETAILS_TABLE_BODY");
     var tbody = document.createElement("tbody");
@@ -1661,6 +1662,52 @@ function checkValue(val,n) {
         }
     }
     return val;
+}
+
+// writeDetailsFile() does just that.  It writes a CSV file containing
+// the details for the data collected.
+function writeDetailsFile() {
+    // Construct a string containing the file contents.
+    let contents = "stage,position,clearance,max_clr,min_clr,med_clr,std_clr\n";
+    for (let i=0; i<E4PTdata.sets.length; i++) {
+        contents = contents + E4PTdata.sets[i].stage + ","
+                            + E4PTdata.sets[i].position +  ","
+                            + checkValue(E4PTdata.sets[i].clearance,3) + ","
+                            + checkValue(E4PTdata.sets[i].max_clr,3) + ","
+                            + checkValue(E4PTdata.sets[i].min_clr,3) + ","
+                            + checkValue(E4PTdata.sets[i].med_clr,3) + ","
+                            + checkValue(E4PTdata.sets[i].std_clr,3) + "\n";
+    }
+    let targetFolder = "data"; // default directory
+    let fileName = "data_details.csv";
+    if ((typeof E4PTdata.serial_number !== 'undefined') || ( E4PTdata.serial_number.length > 0 )) {
+        targetFolder = cordova.file.documentsDirectory + E4PTdata.serial_number;
+        fileName = E4PTdata.serial_number + "_details.csv";
+    }
+    writeToFile(targetFolder, fileName, contents);
+}
+
+// writeToFile writes fileData to fileName.
+// fileName should contain the full path to the file.
+function writeToFile(targetFolder, fileName, fileData) {
+    window.resolveLocalFileSystemURL(targetFolder, function(dir) {
+        dir.getFile(fileName, {create:true, exclusive: false}, function(file) {
+            if(!file) {
+                return;
+            }
+            let myFileUrl = file.toURL();
+            file.createWriter(function(fileWriter) {
+                fileWriter.onwriteend = function (evt) {
+                    console.log("Successfully saved this record on device.");
+                };
+                fileWriter.write(fileData);
+                fileWriter.flush();
+                fileWriter.close();
+            }, function(error) {
+                console.log(error);
+            });
+        });
+    });
 }
 
 function toggleFileSelected(fileName, idx) {
