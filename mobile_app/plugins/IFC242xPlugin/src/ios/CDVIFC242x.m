@@ -826,10 +826,24 @@ enum ifc242xValue {
     CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];// You can send data, String, int, array, dictionary, etc.
     result.keepCallback = [NSNumber numberWithBool:YES]; // This is the magic option that lets you call a callback AGAIN!
     [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+
+    // These next few lines are not intuitive.  Mastering is a process internal to the controller.
+    // However, it can't complete unless output is being generated (apparently).  This has been shown
+    // by manually trying to master using a telnet window.
+    // However, we don't want to contend with data pouring in while we are just mastering.  So instead,
+    // we enable data on the OPPOSITE output from that to which we are connected.  That way mastering
+    // can proceed and we are not inundated with data.
+    if ([self.connectionMode containsString:@"serial"]) {
+        [self.telnetCmds addObject:[NSString stringWithFormat:@"OUTPUT ETHERNET\n"]];
+    }
+    if ([self.connectionMode containsString:@"ethernet"]) {
+        [self.telnetCmds addObject:[NSString stringWithFormat:@"OUTPUT RS422\n"]];
+    }
+
     [self.telnetCmds addObject:[NSString stringWithFormat:@"MASTERSIGNAL 01DIST1 NONE\n"]];
     [self.telnetCmds addObject:[NSString stringWithFormat:@"MASTERSIGNAL 01DIST1 5.0\n"]];
-    [self.telnetCmds addObject:[NSString stringWithFormat:@"MASTER 01DIST1 ACTIVE\n"]];
     [self.telnetCmds addObject:[NSString stringWithFormat:@"MASTER 01DIST1 SET\n"]];
+    [self.telnetCmds addObject:[NSString stringWithFormat:@"OUTPUT NONE\n"]];
     [self sendTelnetCommand];
 }
 
@@ -1580,6 +1594,9 @@ enum ifc242xValue {
                     uint8_t tmpBuf[2048];
                     
                     if ([self.inputDataStream hasBytesAvailable]) {
+                        if (self.pState == masteringInProgress) {
+                            return; // Don't do anything with incoming data while mastering.
+                        }
                         while (self.set_count < self.num_sets) {
                             len2 = [self.inputDataStream read:tmpBuf maxLength:4];
                             if ( strncmp((const char*)tmpBuf, "DATA", 4) == 0 ) {
@@ -1813,15 +1830,9 @@ enum ifc242xValue {
             // Check for mastering commands still in the queue.  If there are none, then
             // mastering is complete.  If there are still mastering commands in the queue
             // then mastering is not complete.
-            bool foundMasterCommand = false;
-            for (NSString* cmd in self.telnetCmds) {
-                if ([cmd containsString:@"MASTER"]) {
-                    foundMasterCommand = true;
-                }
-            }
-            if (!foundMasterCommand) {
+            if (self.telnetCmds.count == 0) {
                 NSLog(@"Mastering Complete.");
-                [self processComplete:@"done_mastering"];
+                [self processComplete:@"done_mastering"];  // This will set pState = ready.
             }
         }
     }
@@ -2226,10 +2237,12 @@ enum ifc242xValue {
         }
     }
     // Now find the median clearance value for this stage...
-    NSArray* sortedBuff = [statsBuff sortedArrayUsingSelector:@selector(compare:)];
-    NSUInteger middle = [sortedBuff count] / 2;
-    self.stage_median_clearance = [[sortedBuff objectAtIndex:middle] floatValue];
-    self.stage_clearance_std = [[self standardDeviationOf:statsBuff] floatValue];
+    if (statsBuff.count > 1) {
+        NSArray* sortedBuff = [statsBuff sortedArrayUsingSelector:@selector(compare:)];
+        NSUInteger middle = [sortedBuff count] / 2;
+        self.stage_median_clearance = [[sortedBuff objectAtIndex:middle] floatValue];
+        self.stage_clearance_std = [[self standardDeviationOf:statsBuff] floatValue];
+    }
 
     free(neg_crossing);
     free(pos_crossing);
