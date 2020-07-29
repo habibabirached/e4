@@ -843,29 +843,31 @@ function generate_customer_report() {
 }
 
 function writeToFile(folder, fileName, fileData, callback=null) {
-    console.log("@writeToFileAndEmail: fileName = ", fileName);
+    console.log("@writeToFile: fileName = ", fileName);
     var targetFolder = cordova.file.documentsDirectory + folder + "/";
     window.resolveLocalFileSystemURL(targetFolder, function(dir) {
-                                     dir.getFile(fileName, {create:true, exclusive: false}, function(file) {
-                                                 if(!file) {
-                                                    return;
-                                                 }
-                                                 var myFileUrl = file.toURL();
-                                                 file.createWriter(function(fileWriter) {
-                                                                     fileWriter.onwriteend = function (evt) {
-                                                                      console.log("@fileWriter.onwriteend");
-                                                                      callback();
-                                                                     }
-                                                                     fileWriter.write(fileData);
-                                                                   },
-                                                                   function(error) {
-                                                                     console.log(error);
-                                                                     if (callback!=null){
-                                                                        callback();
-                                                                     }
-                                                                   });
-                                                 });
-                                     });
+        dir.getFile(fileName, {create:true, exclusive: false}, function(file) {
+            if(!file) {
+                return;
+            }
+            var myFileUrl = file.toURL();
+            file.createWriter(function(fileWriter) {
+                fileWriter.onwriteend = function (evt) {
+                    console.log("@fileWriter.onwriteend");
+                    if (callback != null) {
+                        callback();
+                    }
+                }
+                fileWriter.write(fileData);
+            },
+            function(error) {
+                console.log(error);
+                if (callback!=null){
+                    callback();
+                }
+            });
+        });
+    });
 }
 
 function fileSaveCallback() {
@@ -1711,31 +1713,10 @@ function writeDetailsFile() {
     let targetFolder = "data"; // default directory
     let fileName = "data_details.csv";
     if ((typeof E4PTdata.serial_number !== 'undefined') || ( E4PTdata.serial_number.length > 0 )) {
-        targetFolder = cordova.file.documentsDirectory + E4PTdata.serial_number;
+        targetFolder = E4PTdata.serial_number;
         fileName = E4PTdata.serial_number + "_details.csv";
     }
-    writeToFile(targetFolder, fileName, contents);
-}
-
-// writeToFile writes fileData to fileName.
-// fileName should contain the full path to the file.
-function writeToFile(targetFolder, fileName, fileData) {
-    window.resolveLocalFileSystemURL(targetFolder, function(dir) {
-        dir.getFile(fileName, {create:true, exclusive: false}, function(file) {
-            if(!file) {
-                return;
-            }
-            let myFileUrl = file.toURL();
-            file.createWriter(function(fileWriter) {
-                fileWriter.onwriteend = function (evt) {
-                    console.log("Successfully saved this record on device.");
-                };
-                fileWriter.write(fileData);
-            }, function(error) {
-                console.log(error);
-            });
-        });
-    });
+    writeToFile(targetFolder, fileName, contents, null);
 }
 
 function toggleFileSelected(fileName, idx) {
