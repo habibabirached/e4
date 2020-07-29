@@ -50,7 +50,7 @@
 			<key>Key</key>
 			<string>Version</string>
 			<key>DefaultValue</key>
-			<string>0.1.53</string>
+			<string>0.1.54</string>
 		</dict>
 		<dict>
 			<key>Type</key>
