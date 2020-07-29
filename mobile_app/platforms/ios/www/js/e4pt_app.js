@@ -2097,7 +2097,7 @@ function update_clearance(clearance) {
 
 function plot_data() {
   console.log("@e4pt_app::plot_data()");
-    var subtitle = E4PTdata.date + "; Avg. Tip Dist: " + E4PTdata.clearance;
+  let subtitle = E4PTdata.date + "; Avg. Tip Dist: " + E4PTdata.clearance;
   Highcharts.chart('DATA_PLOT', {
     chart: {
       renderTo: 'DATA_PLOT',
@@ -2193,6 +2193,7 @@ function plot_data() {
 
 function plot_data_2() {
   console.log("@e4pt_app::plot_data_2()");
+  let subtitle = E4PTdata.date + "; Avg. Tip Dist: " + E4PTdata.clearance;
   Highcharts.chart('DATA_PLOT2', {
     chart: {
       renderTo: 'DATA_PLOT2',
@@ -2223,7 +2224,7 @@ function plot_data_2() {
       fontFamily: 'Veranda'
     },
     subtitle: {
-      text: E4PTdata.date
+      text: subtitle
     },
     yAxis: {
       title: {
@@ -2265,7 +2266,7 @@ function plot_data_2() {
     series: [
       {
         type: 'line',
-        name: 'Sensor Data',
+        name: 'Filtered Sensor Data',
         data: E4PTdata.data
         //data: E4PTdata.sets[E4PTdata.sets.length-1].pts
       },
