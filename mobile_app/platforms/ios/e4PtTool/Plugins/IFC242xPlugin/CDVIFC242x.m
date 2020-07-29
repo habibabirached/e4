@@ -219,6 +219,7 @@ enum ifc242xValue {
 @property (nonatomic) float stage_min_clearance;
 @property (nonatomic) float stage_median_clearance;
 @property (nonatomic) float stage_clearance_std;
+@property (nonatomic) BOOL calibratedAcquire;
 
 @property (nonatomic) NSTimeInterval startTime;
 @property (nonatomic) NSTimeInterval testTime;
@@ -338,6 +339,7 @@ enum ifc242xValue {
 @synthesize stage_min_clearance = _stage_min_clearance;
 @synthesize stage_median_clearance = _stage_median_clearance;
 @synthesize stage_clearance_std = _stage_clearance_std;
+@synthesize calibratedAcquire = _calibratedAcquire;
 
 @synthesize connectionMode = _connectionMode;
 @synthesize networkRunLoop = _networkRunLoop;
@@ -1033,6 +1035,7 @@ enum ifc242xValue {
             acqTime = [msgArray objectAtIndex:1];
             self.metaData.casing_thickness = [msgArray objectAtIndex:2];
             [self clearMetaData];
+            self.calibratedAcquire = false;
         }
         if (msgArray.count > 4) {
             // Call from JavaScript:
@@ -1048,6 +1051,7 @@ enum ifc242xValue {
             self.metaData.tip_diameter = [msgArray objectAtIndex:9];
             self.metaData.blade_width = [msgArray objectAtIndex:10];
             self.metaData.master_offset = [msgArray objectAtIndex:11];
+            self.calibratedAcquire = true;
         }
         
         // Check if the value is specified in rpm.  If so, extract the rpm value.
@@ -1841,8 +1845,15 @@ enum ifc242xValue {
 
 - (void)returnData {
     NSError* error;
-    NSData* jsonData = [NSJSONSerialization dataWithJSONObject:self.displacements options:NSJSONWritingSortedKeys error:&error];
-    //NSData* jsonData = [NSJSONSerialization dataWithJSONObject:self.filtered options:NSJSONWritingSortedKeys error:&error];
+    NSData* jsonData;
+    // If we've done a calibrated acquisition we pass back the filtered, calibrated data.
+    // If we've done an uncalibrated acquisition we pass back the raw, uncalibrated data.
+    if (self.calibratedAcquire) {
+        jsonData = [NSJSONSerialization dataWithJSONObject:self.filtered options:NSJSONWritingSortedKeys error:&error];
+    }
+    else {
+        jsonData = [NSJSONSerialization dataWithJSONObject:self.displacements options:NSJSONWritingSortedKeys error:&error];
+    }
     NSString *dispJSONString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
     jsonData = [NSJSONSerialization dataWithJSONObject:self.intensities options:NSJSONWritingSortedKeys error:&error];
     NSString *intensJSONString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
@@ -2176,15 +2187,17 @@ enum ifc242xValue {
     float ct = [self.metaData.casing_thickness floatValue] * inToMM;
     float st = [self.metaData.spacer_thickness floatValue] * inToMM;
     // Calibrate the filtered values
-    for (unsigned int i = 0; i< self.filtered.count; i++) {
-        if ([[self.filtered objectAtIndex:i] floatValue] == OUT_OF_RANGE) continue;  // no need to calibrate out-of-range values.
-        float clearance_f = [[self.filtered objectAtIndex:i] floatValue] + smr + sl - st - ct + mo;
-        [self.filtered replaceObjectAtIndex:i withObject:[NSNumber numberWithFloat:clearance_f]];
-    }
-    // Calibrate the blade clearances
-    for (unsigned int i = 0; i< self.blade_clearances.count; i++) {
-        float clearance_f = [[self.blade_clearances objectAtIndex:i] floatValue] + smr + sl - st - ct + mo;
-        [self.blade_clearances replaceObjectAtIndex:i withObject:[NSNumber numberWithFloat:clearance_f]];
+    if (self.calibratedAcquire) {
+        for (unsigned int i = 0; i< self.filtered.count; i++) {
+            if ([[self.filtered objectAtIndex:i] floatValue] == OUT_OF_RANGE) continue;  // no need to calibrate out-of-range values.
+            float clearance_f = [[self.filtered objectAtIndex:i] floatValue] + smr + sl - st - ct + mo;
+            [self.filtered replaceObjectAtIndex:i withObject:[NSNumber numberWithFloat:clearance_f]];
+        }
+            // Calibrate the blade clearances
+        for (unsigned int i = 0; i< self.blade_clearances.count; i++) {
+            float clearance_f = [[self.blade_clearances objectAtIndex:i] floatValue] + smr + sl - st - ct + mo;
+            [self.blade_clearances replaceObjectAtIndex:i withObject:[NSNumber numberWithFloat:clearance_f]];
+        }
     }
         
     // Now iterate over the blade_clearances to get the average clearance for the stage,
