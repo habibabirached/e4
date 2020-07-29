@@ -506,12 +506,13 @@ frame_data = [
     'position':{'1':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
                 '6':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
                 '10':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
-                '14':['TOP', 'RIGHT', 'BOTTOM', 'LEFT']},
+                '14':['TOP RIGHT', 'TOP LEFT', 'BOTTOM RIGHT', 'BOTTOM LEFT']},
     'spacers':[
         {'stage':'1', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'4.402', 'color':'RED', 'image':'7HA02-R1'},
         {'stage':'6', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'6.715', 'color':'BLUE', 'image':'7HA02-R6'},
         {'stage':'10', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'7.504', 'color':'SILVER', 'image':'7HA02-R11'},
-        {'stage':'14', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'7.504', 'color':'SILVER', 'image':'7HA02-R14'},
+        {'stage':'14', 'position':['TOP RIGHT', 'TOP LEFT', 'BOTTOM RIGHT', 'BOTTOM LEFT'], 'min':'0', 'max':'100', 'size':'7.504', 'color':'SILVER', 'image':'7HA02-R14'},
+
     ],
     'stage_info':{
         '1':{
@@ -542,12 +543,68 @@ frame_data = [
             'blade_width':0.06
         },
         '14':{
-            'RIGHT':['A', 0.0, 0.0, 1.860],
-            'TOP':['B', 90.0, 90.0, 1.860],
-            'LEFT':['B', 180.0, 180.0, 1.860],
-            'BOTTOM':['D', 270.0, 270.0, 1.860],
+            'TOP RIGHT':['A', 0.0, 0.0, 1.860],
+            'TOP LEFT':['B', 90.0, 90.0, 1.860],
+            'BOTTOM RIGHT':['B', 180.0, 180.0, 1.860],
+            'BOTTOM LEFT':['D', 270.0, 270.0, 1.860],
             'blade_count':92,
             'tip_diameter':69.814,
+            'blade_width':0.060
+        },
+    },
+    'turning_gear_rpm':6.9,
+    'max_turn_time':0,
+    'rotor_mode':'rotating',
+    'measure_mode':'dynamic',
+    'option':'full_turn'
+    },
+    {'frame':'7HA.03',
+    'stage':['1', '6', '10', '14'],
+    'position':{'1':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
+    '6':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
+    '10':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
+    '14':['TOP RIGHT', 'TOM LEFT', 'BOTTOM RIGHT', 'BOTTOM LEFT']},
+    'spacers':[
+        {'stage':'1', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'4.402', 'color':'RED', 'image':'7HA03-R1'},
+        {'stage':'6', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'6.715', 'color':'BLUE', 'image':'7HA03-R6'},
+        {'stage':'10', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'7.504', 'color':'SILVER', 'image':'7HA03-R11'},
+        {'stage':'14', 'position':['TOP RIGHT', 'TOP LEFT', 'BOTTOM RIGHT', 'BOTTOM LEFT'], 'min':'0', 'max':'100', 'size':'7.504', 'color':'SILVER', 'image':'7HA03-R14'},
+    ],
+    'stage_info':{
+        '1':{
+            'RIGHT':['A', 0.0, 0.0, 5.283],
+            'TOP':['B', 90.0, 90.0, 5.283],
+            'LEFT':['C', 180.0, 180.0, 5.283],
+            'BOTTOM':['D', 270.0, 270.0, 5.283],
+            'blade_count':24,
+            'tip_diameter':102.886,
+            'blade_width':0.150
+        },
+        '6':{
+            'RIGHT':['A', 0.0, 0.0, 2.664],
+            'TOP':['B', 90.0, 90.0, 2.664],
+            'LEFT':['C', 180.0, 180.0, 2.664],
+            'BOTTOM':['D', 270.0, 270.0, 2.664],
+            'blade_count':72,
+            'tip_diameter':81.126,
+            'blade_width':0.06
+        },
+        '10':{
+            'RIGHT':['A', 0.0, 0.0, 3.451],
+            'TOP':['B', 90.0, 90.0, 3.451],
+            'LEFT':['C', 180.0, 180.0, 3.451],
+            'BOTTOM':['D', 270.0, 270.0, 3.451],
+            'blade_count':85,
+            'tip_diameter':74.656,
+            'blade_width':0.06
+        },
+        '14':{
+            'TOP RIGHT':['A', 0.0, 0.0, 1.890],
+            'TOP LEFT':['B', 90.0, 90.0, 1.890],
+            'BOTTOM RIGHT':['B', 180.0, 180.0, 1.890],
+            'BOTTOM LEFT':['D', 270.0, 270.0, 1.890],
+            'blade_count':92,
+            'tip_diameter':71.128,
             'blade_width':0.060
         },
     },
