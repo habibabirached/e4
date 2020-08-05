@@ -1925,18 +1925,20 @@ enum ifc242xValue {
     self.pState = clearanceComputationInProgress;
     // Displacement values will be between 0-15.
     // We create a coarse histogram to see how many peaks we find.
-    int nbins = OUT_OF_RANGE + 1;
+    float hMult = 4.0;  // This multiplier will change the size & resolution of the histogram.
+    int nbins = (OUT_OF_RANGE*hMult) + 1;  // Should give 61 bins for hMult = 4.0.
     int* hBins = (int*)malloc(nbins * sizeof(int));
-    float* data = (float*)malloc(self.displacements.count * sizeof(float));
     for (int i=0; i<nbins; i++) hBins[i] = 0;
     // Populate the histogram by converting displacements to histogram indices.
     // Round each displacement to get the bin index.
     NSLog(@"Populating histogram...");
-    int idx = 0;
+    float d=0.0;
+    int bIdx = 0;
     for (NSNumber* n in self.displacements) {
-        float d = [n floatValue];
-        data[idx++] = d; // poplulate a temporary data array.
-        int bIdx = (int)floor(d); // Using floor makes bin edges integers. E.g. [0-1][+1-2][+2-3]...
+        // exclude OUT_OF_RANGE points.
+        if ([n floatValue] == (float)OUT_OF_RANGE) continue;
+        d = hMult * [n floatValue];  // multiply the value by hMult to get the index.
+        bIdx = (int)floor(d); // Using floor makes bin edges integers. E.g. [0-1][+1-2][+2-3]...
         if (bIdx > nbins-1) bIdx = nbins - 1; // Don't overflow
         if (bIdx < 0) bIdx = 0; // Don't underflow
         hBins[bIdx]++; // Increment the histogram bin
@@ -1945,55 +1947,11 @@ enum ifc242xValue {
     for (int i=0; i<nbins; i++) {
         NSLog(@" hBin[%d]: %d",i, hBins[i]);
     }
-    // Find the top 3 peaks. One should be at 15. There should be one or two
-    // others.  Two if measuring squealer tips; One if not.
-    NSLog(@"Finding peaks...");
-    // max1,2,3: The max value for this histogram peak.
-    // peak1,2,3: The location of the peak, i.e. the bin number.s
-    int max1, max2, max3, i, peak1, peak2, peak3;
-    max1 = max2 = max3 = i = 0;
-    peak1 = peak2 = peak3 = -1; // peakN = -1 means the peak is not found.
-    for (i=0; i<nbins; i++) {
-        if (hBins[i] > max1) {
-            max1 = hBins[i];
-            peak1 = i;
-        }
-    }
-    for (i=0; i<nbins; i++) {
-        if ((hBins[i] > max2) && (hBins[i] < max1)) {
-            max2 = hBins[i];
-            peak2 = i;
-        }
-    }
-    for (i=0; i<nbins; i++) {
-        if ((hBins[i] > max3) && (hBins[i] < max2)) {
-            max3 = hBins[i];
-            peak3 = i;
-        }
-    }
-    NSLog(@"Peaks: %d, %d, %d", peak1, peak2, peak3);
-    // Look at the difference between peaks to see if we're dealing with squealers or not.
-    // Check that peakN is >=0 because otherwise the peak was not found.
-    NSLog(@"Finding threshold...");
-    float peakDiff = 2.0; // peak separation of 2mm
-    float d12 = 0;
-    if ((peak2 >= 0) && (peak1 >= 0)) d12 = fabs((float)peak2 - (float)peak1);
-    float d23 = 0;
-    if ((peak2 >= 0) && (peak3 >= 0)) d23 = fabs((float)peak3 - (float)peak2);
-    float threshold = 0.0;
-    if ((d12 >= peakDiff) && (d23 >= peakDiff)) {
-        // Looks like squealer tips.
-        NSLog(@"Looks like squealer tips.");
-        threshold = ((float)peak2 + (float)peak3)/2.0;
-    }
-    else {
-        // Looks like this is not a squealer tip.
-        NSLog(@"Looks like not squealer tips.");
-        threshold = ((float)peak1 + (float)peak3)/2.0;
-    }
+    // Use Otsu's method to get threshold
+    float threshold = [self otsuSegmentation:hBins nbins:nbins maxBin:((float)OUT_OF_RANGE)];
     
-    // Force threshold for now.
-    threshold = 4.5;
+    // Force threshold here.
+    // threshold = 4.5;
     
     NSLog(@"Found Threshold: %f\nThresholding data...",threshold);
     
@@ -2008,7 +1966,7 @@ enum ifc242xValue {
     // Fill sig_sign buffer with just 1 or -1 indicating the sign
     // of the filtered signal.
     int* sig_sign = (int*)malloc(self.filtered.count * sizeof(int));
-    i=0;
+    int i=0;
     for (NSNumber* n in self.filtered) {
         if ([n floatValue] >= 0) {
             sig_sign[i] = 1;
@@ -2260,10 +2218,93 @@ enum ifc242xValue {
     free(neg_crossing);
     free(pos_crossing);
     free(sig_sign);
-    free(data);
     free(hBins);
 
     NSLog(@"computeClearance Done.");
+}
+    
+// otsuSegmentation performs a segmentation of the histogram into 2 classes
+// using the Otsu method from image segmentation.
+// See: https://en.wikipedia.org/wiki/Otsu%27s_method
+// If the 2 classes are seen as too close to one another, then there is
+// likely only a single class.
+-(float)otsuSegmentation:(int*)hist nbins:(int)nbins maxBin:(float)maxBin {
+    float w0, w1;
+    float u0, u1;
+    float sigma2;
+    float maxSigma = 0.0;
+    float threshold = 0.0;
+    int threshold_idx = 0;
+    // I found that iterating in different directions gives different answers.
+    // Iterating from higher to lower values gave me thresholds that were further
+    // from the tips.
+    //for (int k=0; k < nbins; k++) {
+    for (int k=nbins-1; k >= 0; k--) {
+        // lower & upper bounds for classes
+        w0 = 0.0; w1 = 0.0;
+        u0 = 0.0; u1 = 0.0;
+        // class 1 goes from 0 to k-1
+        for (int i=0; i < k; i++) {
+            w0 += hist[i];
+            u0 += hist[i] * ((float)(i+1) * (float)maxBin / nbins);
+        }
+        u0 = u0 / w0;
+        // class 2 goes from k to nbins-1
+        for (int i=k; i < nbins; i++) {
+            w1 += hist[i];
+            u1 += hist[i] * ((float)(i+1) * (float)maxBin / nbins);
+        }
+        u1 = u1 / w1;
+        sigma2 = w0*w1*(u0-u1)*(u0-u1);
+        
+        // Get the threshold by finding the max sigma2
+        if (sigma2 > maxSigma) {
+            maxSigma = sigma2;
+            threshold_idx = k;
+            threshold = ((float)(k+1) * (float)maxBin / nbins);
+        }
+    }
+
+    // Calculate the two cluster means based on the calculated threshold.
+    w0 = 0.0; w1 = 0.0;
+    u0 = 0.0; u1 = 0.0;
+    for (int i=0; i<nbins; i++) {
+        float p = ((float)(i+1) * (float)maxBin / nbins);
+        if (i <= threshold_idx) {
+            w0 += hist[i];
+            u0 += hist[i] * p;
+        }
+        if (i >  threshold_idx) {
+            w1 += hist[i];
+            u1 += hist[i] * p;
+        }
+    }
+    // We need divide-by-zero protection.  If one of the w values is zero
+    // this is probably a unimodal distribution.
+    if (w0 == 0) {
+        u1 = u1 / w1;
+        u0 = u1;
+    }
+    else if (w1 == 0) {
+        u0 = u0 / w0;
+        u1 = u0;
+    }
+    else {
+        u0 = u0 / w0;
+        u1 = u1 / w1;
+    }
+    
+    // Check to see if the two cluster means are too close to each other.
+    // We use the criteria of 1mm separation as "too close".
+    if (fabsf(u1-u0) < 1.0 ) {
+        // These means are too close.  This is probably a unimodal distribution.
+        // I.e. NOT squealer tips.  The threshold becomes the average of the
+        // distance between the OUT_OF_RANGE value and the average of the two
+        // "otsu" means.
+        threshold = ((float)OUT_OF_RANGE + ((u0+u1)/2.0)) / 2.0;
+    }
+
+    return threshold;
 }
 
 - (NSNumber *)meanOf:(NSArray *)array {
