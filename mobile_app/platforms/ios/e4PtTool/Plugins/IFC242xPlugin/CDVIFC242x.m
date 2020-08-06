@@ -813,6 +813,7 @@ enum ifc242xValue {
 
 #ifdef TEST_CODE
     [self codeTest];
+    NSLog(@"codeTest Complete.");
 #endif
 
 }
@@ -1951,7 +1952,7 @@ enum ifc242xValue {
     float threshold = [self otsuSegmentation:hBins nbins:nbins maxBin:((float)OUT_OF_RANGE)];
     
     // Force threshold here.
-    // threshold = 4.5;
+    // threshold = 4.5;  // FYI, the threshold of 4.5 had some problems on some positions in the test rig.
     
     NSLog(@"Found Threshold: %f\nThresholding data...",threshold);
     
@@ -2115,10 +2116,10 @@ enum ifc242xValue {
 #endif
                     [self.min_locs addObject:[NSNumber numberWithFloat:min_loc]];
                 }
-                    NSLog(@"Clearance: %f; Quality: %@", clearance, [self.clearance_quality lastObject]);
+                NSLog(@"Clearance: %f; Quality: %@", clearance, [self.clearance_quality lastObject]);
                 for (int j=start; j<=stop; j++) {
                     NSNumber* d = [self.displacements objectAtIndex:j];
-                    if ([d floatValue] != OUT_OF_RANGE) {
+                    if (([d floatValue] != OUT_OF_RANGE) && (count > 0)) {
                         [self.filtered addObject:[NSNumber numberWithFloat:clearance]];
                     }
                     else {
@@ -2233,12 +2234,11 @@ enum ifc242xValue {
     float u0, u1;
     float sigma2;
     float maxSigma = 0.0;
-    float threshold = 0.0;
+    float threshold1 = 0.0;
     int threshold_idx = 0;
     // I found that iterating in different directions gives different answers.
-    // Iterating from higher to lower values gave me thresholds that were further
-    // from the tips.
-    //for (int k=0; k < nbins; k++) {
+    // Since the threshold seems to live on the edge of one of the classes,
+    // I'll iterate both directions and take the average of the two thresholds.
     for (int k=nbins-1; k >= 0; k--) {
         // lower & upper bounds for classes
         w0 = 0.0; w1 = 0.0;
@@ -2261,7 +2261,36 @@ enum ifc242xValue {
         if (sigma2 > maxSigma) {
             maxSigma = sigma2;
             threshold_idx = k;
-            threshold = ((float)(k+1) * (float)maxBin / nbins);
+            threshold1 = ((float)(k+1) * (float)maxBin / nbins);
+        }
+    }
+    maxSigma = 0.0;
+    float threshold2 = 0.0;
+    threshold_idx = 0;
+    // Iterate the other direction.
+    for (int k=0; k < nbins; k++) {
+        // lower & upper bounds for classes
+        w0 = 0.0; w1 = 0.0;
+        u0 = 0.0; u1 = 0.0;
+        // class 1 goes from 0 to k-1
+        for (int i=0; i < k; i++) {
+            w0 += hist[i];
+            u0 += hist[i] * ((float)(i+1) * (float)maxBin / nbins);
+        }
+        u0 = u0 / w0;
+        // class 2 goes from k to nbins-1
+        for (int i=k; i < nbins; i++) {
+            w1 += hist[i];
+            u1 += hist[i] * ((float)(i+1) * (float)maxBin / nbins);
+        }
+        u1 = u1 / w1;
+        sigma2 = w0*w1*(u0-u1)*(u0-u1);
+        
+        // Get the threshold by finding the max sigma2
+        if (sigma2 > maxSigma) {
+            maxSigma = sigma2;
+            threshold_idx = k;
+            threshold2 = ((float)(k+1) * (float)maxBin / nbins);
         }
     }
 
@@ -2301,10 +2330,17 @@ enum ifc242xValue {
         // I.e. NOT squealer tips.  The threshold becomes the average of the
         // distance between the OUT_OF_RANGE value and the average of the two
         // "otsu" means.
-        threshold = ((float)OUT_OF_RANGE + ((u0+u1)/2.0)) / 2.0;
+        threshold1 = ((float)OUT_OF_RANGE + ((u0+u1)/2.0)) / 2.0;
+    }
+    else {
+        // The means are adequately separated here so we probably have two classes.
+        // However the Otsu threshold seems to live on the edge of one of the two classes
+        // (depending on which way we traversed the historgram.  So for a final threshold
+        // is taken as the average of thresholds calculated going each direction.
+        threshold1 = (threshold1+threshold2) / 2.0;
     }
 
-    return threshold;
+    return threshold1;
 }
 
 - (NSNumber *)meanOf:(NSArray *)array {
@@ -2462,6 +2498,8 @@ enum ifc242xValue {
     for (int i=0; i<offset; i++) [self.filtered addObject:[NSNumber numberWithFloat:0]]; // offset
     for (int i=0; i<x_length; i++) {
         float tmpf = temp_buffer[i] - threshold;
+        tmpf = roundf(tmpf * 1e5)/1e5;  // round to 5 decimal places
+        tmpf = (tmpf == 0.0) ? 0.0 : tmpf; // This avoids problems that have happened where -0 is generated, causing a sign change.
         [self.filtered addObject:[NSNumber numberWithFloat:tmpf]];
     }
     
@@ -3166,7 +3204,8 @@ enum ifc242xValue {
     
 - (void)codeTest {
     // test files
-    NSArray* files = @[@"R10_Bottom_1.csv", @"R10_Bottom_2.csv", @"R10_Left_1.csv", @"R10_Left_2.csv", @"R10_Right_1.csv", @"R10_Right_2.csv", @"R10_Top_1.csv", @"R10_Top_2.csv", @"R14_LH_LH_1.csv", @"R14_LH_LH_2.csv", @"R14_LH_RH_1.csv", @"R14_LH_RH_2.csv", @"R14_UH_LH_1.csv", @"R14_UH_LH_2.csv", @"R14_UH_RH_1.csv", @"R14_UH_RH_2.csv", @"R1_Left_1KHz_1.csv", @"R1_Left_1KHz_2.csv", @"R1_Left_2KHz_1.csv", @"R1_Left_400Hz_1.csv", @"R1_Right_2.csv", @"R1_Top_2KHz_2.csv", @"R6_Bottom_1.csv", @"R6_Bottom_2.csv", @"R6_Left_1.csv", @"R6_Left_2.csv", @"R6_Right_1.csv", @"R6_Right_2.csv", @"R6_Top_1.csv", @"R6_Top_2.csv"];
+    NSArray* files = @[@"299662_10_BOTTOM_2020-07-11_14-20-51.csv", @"299662_10_LEFT_2020-07-11_14-24-07.csv", @"299662_10_RIGHT_2020-07-11_14-44-10.csv", @"299662_10_TOP_2020-07-11_14-39-49.csv", @"299662_14_BOTTOM_2020-07-11_15-09-58.csv", @"299662_14_LEFT_2020-07-11_15-06-10.csv", @"299662_14_RIGHT_2020-07-11_14-48-37.csv", @"299662_14_TOP_2020-07-11_15-01-49.csv", @"299662_1_BOTTOM_2020-07-11_15-34-38.csv", @"299662_1_LEFT_2020-07-11_15-15-17.csv", @"299662_1_RIGHT_2020-07-11_15-30-18.csv", @"299662_1_TOP_2020-07-11_15-17-02.csv", @"299662_6_BOTTOM_2020-07-11_14-17-14.csv", @"299662_6_LEFT_2020-07-11_15-37-08.csv", @"299662_6_RIGHT_2020-07-11_14-06-09.csv", @"299662_6_TOP_2020-07-11_14-03-02.csv"];
+    //NSArray* files = @[@"299662_10_LEFT_2020-07-11_14-24-07.csv"];
     NSString* docPath;
     NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
     if (paths.count > 0) {
@@ -3174,6 +3213,7 @@ enum ifc242xValue {
     }
     // The files should all be loaded in a folder named "test" in the documents folder.
     for (NSString* file in files) {
+        NSLog(@"Now testing %@",file);
         NSString* filePath = [NSString stringWithFormat:@"%@/%@",docPath,file];
         if (![self loadCSVFile:filePath]) {
             continue;
