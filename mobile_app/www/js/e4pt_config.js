@@ -565,10 +565,10 @@ frame_data = [
     '10':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
     '14':['TOP RIGHT', 'TOM LEFT', 'BOTTOM RIGHT', 'BOTTOM LEFT']},
     'spacers':[
-        {'stage':'1', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'4.402', 'color':'RED', 'image':'7HA03-R1'},
-        {'stage':'6', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'6.715', 'color':'BLUE', 'image':'7HA03-R6'},
-        {'stage':'10', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'7.504', 'color':'SILVER', 'image':'7HA03-R11'},
-        {'stage':'14', 'position':['TOP RIGHT', 'TOP LEFT', 'BOTTOM RIGHT', 'BOTTOM LEFT'], 'min':'0', 'max':'100', 'size':'7.504', 'color':'SILVER', 'image':'7HA03-R14'},
+        {'stage':'1', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'3.933', 'color':'RED', 'image':'7HA03-R1'},
+        {'stage':'6', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'6.680', 'color':'BLUE', 'image':'7HA03-R6'},
+        {'stage':'10', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'5.888', 'color':'SILVER', 'image':'7HA03-R11'},
+        {'stage':'14', 'position':['TOP RIGHT', 'TOP LEFT', 'BOTTOM RIGHT', 'BOTTOM LEFT'], 'min':'0', 'max':'100', 'size':'7.483', 'color':'SILVER', 'image':'7HA03-R14'},
     ],
     'stage_info':{
         '1':{
