@@ -358,15 +358,25 @@ function fsFail(err) {
 }
 
 // overrideSettings is called when the user checks the box to override.
-function overrideSettings {
-    //if (manualOverride == true) {
-    //    manualOverride = false;
-        //$("#SENSOR_SETUP_PAGE").fadeOut(); // This line may not be strictly necessary.
-    //}
-    //else {
-    //    manualOverride = true;
-        //$("#SENSOR_SETUP_PAGE").fadeIn();
-    //}
+function overrideSettings() {
+    if (manualOverride == true) {
+        manualOverride = false;
+        $("#SENSOR_SETUP_PAGE").fadeOut(); // This line may not be strictly necessary.
+    }
+    else {
+        manualOverride = true;
+        $("#SENSOR_SETUP_PAGE").fadeIn();
+    }
+    var message = {"args":["set_manual_override",manualOverride]};
+    if (communicationChannel == "WebSocket") {
+        message = JSON.stringify(message);
+        sendWSMessage(message);
+    }
+    else if (communicationChannel == "Plugin") {
+        window.plugins.IFC242x.messageToDevice(message, function(msg) {
+                                               pluginMessage(msg);
+                                               }, null);
+    }
 }
 
 function acquisitionTimePromptCallback(results) {

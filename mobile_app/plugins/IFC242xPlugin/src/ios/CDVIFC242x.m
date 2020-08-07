@@ -235,6 +235,7 @@ enum ifc242xValue {
 @property (nonatomic) bool delayResponse;
 
 @property (nonatomic) bool demoMode;
+@property (nonatomic) bool overrideAutoSettings;
 @property (strong, nonatomic) NSString* controllerType;
 
 @property (strong, nonatomic) CDVIFC242x* plugin;
@@ -310,6 +311,7 @@ enum ifc242xValue {
 @synthesize intensities = _intensities;
 @synthesize min_locs = _min_locs;
 @synthesize demoMode = _demoMode;
+@synthesize overrideAutoSettings = _overrideAutoSettings;
 @synthesize startTime = _startTime;
 @synthesize testTime = _testTime;
 @synthesize delayResponse = _delayResponse;
@@ -365,6 +367,7 @@ enum ifc242xValue {
         _manager.measurement_rate = @"1.0";
         _manager.last_saved_file = @"";
         _manager.networkRunLoop = nil;
+        _manager.overrideAutoSettings = false;
 #ifdef SIMULATED_DATA
         _manager.demoMode = true;
 #else
@@ -911,6 +914,7 @@ enum ifc242xValue {
 }
 
 - (void)setMeasurementRateAndIntensityThreshold:(NSString*)rate threshold:(NSString*)threshold {
+    NSLog(@"setMeasurementRateAndIntensityThreshold");
     if (![self checkReady]) return;
     if (self.demoMode) return;
     self.pState = setMeasurementRateInProgress;
@@ -1081,8 +1085,15 @@ enum ifc242xValue {
                 NSString* mRate = [NSString stringWithFormat:@"%.3f", [tmpNum floatValue]];
                 tmpNum = [timeAndRate objectAtIndex:2];
                 NSString* intThresh = [NSString stringWithFormat:@"%.3f", [tmpNum floatValue]];
-                NSLog(@"Found measurement rate: %@; intensity threshold: %@", mRate, intThresh);
-                [self setMeasurementRateAndIntensityThreshold:mRate threshold:intThresh];
+                float interval = 1.0;
+                if (!self.overrideAutoSettings) {
+                    interval = 3.0; // Give it more time to set things up.
+                    NSLog(@"Using auto-settings: Found measurement rate: %@; intensity threshold: %@", mRate, intThresh);
+                    [self setMeasurementRateAndIntensityThreshold:mRate threshold:intThresh];
+                }
+                else {
+                    NSLog(@"Overriding auto-settings.");
+                }
                 // The timeoutWaitTimer callback will start data acquisition after the measurement
                 // rate is set.  If the timeout expires, the user just gets an error message.
                 if (!self.demoMode) {
@@ -1091,7 +1102,7 @@ enum ifc242xValue {
                                               [NSNumber numberWithFloat:7.0], @"timeout",
                                               @"doDataCollection", @"nextProcess",
                                               acqTime, @"acqTime", nil];
-                        self.timerWaiting = [ NSTimer scheduledTimerWithTimeInterval:3.0
+                        self.timerWaiting = [ NSTimer scheduledTimerWithTimeInterval:interval
                                                                               target:self
                                                                             selector:@selector(timeoutWaitTimer:)
                                                                             userInfo:info
@@ -1217,6 +1228,17 @@ enum ifc242xValue {
                                                                           userInfo:demoMsg
                                                                            repeats:NO];
             });
+        }
+        return;
+    }
+    if ([cmd containsString:@"set_manual_override"]) {
+        NSLog(@"Got set_manual_override");
+        NSString* mode = [msgArray objectAtIndex:1];
+        if ([mode containsString:@"true"]) {
+            self.overrideAutoSettings = true;
+        }
+        else if ([mode containsString:@"false"]) {
+            self.overrideAutoSettings = false;
         }
         return;
     }

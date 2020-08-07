@@ -399,7 +399,7 @@ tr.DATA_OPTIONS_ROW{
 td.DATA_OPTIONS_CELL{
     border-collapse:collapse!important;
     border: none;
-    width: 40vw;
+    width: 30vw;
     background-color: var(--TRACC-lightgrey);
 }
 
@@ -407,13 +407,18 @@ td.DATA_OPTIONS_CELL{
     float:right;
     margin-right: 2vw;
     padding-left: 0.5vw;
-    width: 40vw;
+    width: 30vw;
     border: 1px solid black;
     color: black;
     caret-color: black;
     font-size:2vw;
     white-space: nowrap;
     height: 4vmax;
+}
+
+.OVERRIDE_BOX {
+    width: 3vmax;
+    height: 3vmax;
 }
 
 table.SENSOR_OPTIONS_TABLE{
