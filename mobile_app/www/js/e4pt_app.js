@@ -1942,11 +1942,23 @@ function parse_data() {
     console.log("Clearance average: ", E4PTdata.clearance);
     // Only update the clearance(s) info if we have all the data to do so.
     if (current_frame_data['position'] != null) {
-        var clearance_f = parseFloat(E4PTdata.clearance);
+        let clearance_f = parseFloat(E4PTdata.clearance);
+        let max_clr_f = parseFloat(E4PTdata.max_clr);
+        let min_clr_f = parseFloat(E4PTdata.min_clr);
+        let med_clr_f = parseFloat(E4PTdata.med_clr);
+        let std_clr_f = parseFloat(E4PTdata.std_clr);
         let units = E4PTdata.units.toUpperCase();
         if (units.includes("IN")) {
             clearance_f = clearance_f / 25.4; // Clearances come back in mm. Convert to inches if needed.
+            max_clr_f = max_clr_f / 25.4;
+            min_clr_f = min_clr_f / 25.4;
+            med_clr_f = med_clr_f / 25.4;
+            std_clr_f = std_clr_f / 25.4;
             E4PTdata.clearance = clearance_f.toString(10);
+            E4PTdata.max_clr = max_clr_f.toString(10);
+            E4PTdata.min_clr = min_clr_f.toString(10);
+            E4PTdata.med_clr = med_clr_f.toString(10);
+            E4PTdata.std_clr = std_clr_f.toString(10);
         }
       update_clearance(clearance_f);
     }
