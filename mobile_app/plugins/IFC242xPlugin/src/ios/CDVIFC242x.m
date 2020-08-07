@@ -2335,7 +2335,7 @@ enum ifc242xValue {
     else {
         // The means are adequately separated here so we probably have two classes.
         // However the Otsu threshold seems to live on the edge of one of the two classes
-        // (depending on which way we traversed the historgram.  So for a final threshold
+        // (depending on which way we traversed the historgram).  So the final threshold
         // is taken as the average of thresholds calculated going each direction.
         threshold1 = (threshold1+threshold2) / 2.0;
     }
