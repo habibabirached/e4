@@ -9,6 +9,7 @@ var fsRoot = "";
 var appDir = "";
 var serialConnected = false;
 var doDBSave = false;
+var manualOverride = false;
 
 var local_db = new PouchDB('e4ptdb');
 
@@ -326,6 +327,9 @@ $(document).ready(function(){
         let prompt = "Email or Upload Files?";
         e4PtPrompt(prompt, exportDetailsFile, "Get File", ["Email","Upload to Box","Cancel"]);
     }, {passive: true});
+    document.getElementById("MANUAL_OVERRIDE").addEventListener('click', function(){
+        overrideSettings();
+    }, {passive: true});
     setupAccordian();
     if (communicationChannel == "WebSocket") {
         createWS();
@@ -351,6 +355,18 @@ function gotFS(fileSystem) {
 
 function fsFail(err) {
     console.log("Failed to get file system: ", err);
+}
+
+// overrideSettings is called when the user checks the box to override.
+function overrideSettings {
+    //if (manualOverride == true) {
+    //    manualOverride = false;
+        //$("#SENSOR_SETUP_PAGE").fadeOut(); // This line may not be strictly necessary.
+    //}
+    //else {
+    //    manualOverride = true;
+        //$("#SENSOR_SETUP_PAGE").fadeIn();
+    //}
 }
 
 function acquisitionTimePromptCallback(results) {
