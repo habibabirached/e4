@@ -27,6 +27,20 @@ body{
     user-select: none;
 }
 
+ol {
+    counter-reset: item;
+    padding-top: 0!important;
+    padding-bottom: 0!important;
+    padding-right: 0!important;
+    padding-left: 5vmin!important;
+}
+.ol_li{ display: block; }
+.ol_li:before {
+  content: counters(item, ".") " ";
+  counter-increment: item;
+  font-weight: bold;
+}
+
 .ROW{width:100%;display:table;}
 .ROW:after {content:"";display: table;clear: both;}
 .COL_EQUAL{display:table-cell; text-align: center; vertical-align: center;}
@@ -222,6 +236,9 @@ body{
 .BORDER_WHITE_3{border: 3px solid white;}
 .BORDER_WHITE_4{border: 4px solid white;}
 .BORDER_WHITE_5{border: 5px solid white;}
+
+.B{font-weight: bold;}
+.U{text-decoration: underline;}
 
 .RAD1{border-radius: 1vmin;}
 
@@ -490,6 +507,51 @@ table.LOCAL_FILE_TABLE{
     position: sticky;
     z-index: 2;
     top: 0;
+}
+
+table.FRD_TABLE{
+    border-collapse:collapse;
+}
+
+td.FRD_TABLE_CELL{
+  padding: 0.75pt;
+  border: 1pt solid windowtext;
+  border-image: none;
+  width: 276.75pt;
+  vertical-align: top;
+}
+
+p.FRD_CELL_ENTRY_LEFT{
+   margin-top:0in;
+   margin-right:0in;
+   margin-bottom:.0001pt;
+   margin-left:0in;
+   line-height:normal;
+   font-size:15px;
+   font-family:"Calibri",sans-serif;
+   vertical-align:baseline;
+}
+
+p.FRD_CELL_ENTRY_RIGHT{
+   margin-top:0in;
+   margin-right:0in;
+   margin-bottom:.0001pt;
+   margin-left:0in;
+   line-height:normal;
+   font-size:15px;
+   font-family:"Calibri",sans-serif;
+   text-align:right;
+   vertical-align:baseline;
+}
+
+#FRD_LI_1{
+    margin-top:0in;
+    margin-right:0in;
+    margin-bottom:8.0pt;
+    margin-left:0in;
+    line-height:107%;
+    font-size:15px;
+    font-family:"Calibri",sans-serif;
 }
 
 .TXTFIELD {
