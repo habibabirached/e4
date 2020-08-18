@@ -111,6 +111,10 @@ $(document).ready(function(){
 	$("#DATA_PLOT").fadeOut();
         $("#FRD_PAGE").fadeIn();
     }, {passive: true});
+    document.getElementById("FRD_VIEW_BUTTON").addEventListener('click', function(){
+        toggle_menu();
+        show_FRD();
+    }, {passive: true});
     document.getElementById("SETUP_BUTTON").addEventListener('click', function(){
         toggle_menu();
 	      $("#DATA_PLOT").fadeOut();
@@ -476,6 +480,28 @@ function toggle_menu() {
 		$('#LEFT_MENU').animate({"margin-left": '+=50vmin'});
 		menu_open = true;
 	}
+}
+
+function show_FRD() {
+    //window.location.href = "frd.html";
+    //$('#FRD_DIV').load('frd.html');
+    //$.mobile.navigate("frd.html", {
+    //    transition: "fade"
+    //});
+    
+    const xhr = new XMLHttpRequest()
+    xhr.open('GET', 'frd.html');
+    xhr.onload = () => {
+      if (xhr.status == 200)
+        success(xhr.response)
+      else if (failure)
+        failure(xhr.status)
+    }
+    xhr.send()
+}
+
+function hide_FRD() {
+    window.location.href = "e4Pt.html";
 }
 
 function get_sensor_parameters() {

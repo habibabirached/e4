@@ -35,6 +35,10 @@
             {
               "xml": "<feature name=\"IFC242x\"><param name=\"ios-package\" value=\"CDVIFC242x\" /></feature>",
               "count": 1
+            },
+            {
+              "xml": "<feature name=\"InAppBrowser\"><param name=\"ios-package\" value=\"CDVWKInAppBrowser\" /><param name=\"onload\" value=\"true\" /></feature>",
+              "count": 1
             }
           ],
           "/widget": [
@@ -83,6 +87,9 @@
       "PACKAGE_NAME": "com.ge.ent.e4PtTool"
     },
     "IFC242xPlugin": {
+      "PACKAGE_NAME": "com.ge.ent.e4PtTool"
+    },
+    "cordova-plugin-inappbrowser": {
       "PACKAGE_NAME": "com.ge.ent.e4PtTool"
     }
   },
@@ -319,6 +326,14 @@
       "clobbers": [
         "window.plugins.IFC242xPlugin"
       ]
+    },
+    {
+      "id": "cordova-plugin-inappbrowser.inappbrowser",
+      "file": "plugins/cordova-plugin-inappbrowser/www/inappbrowser.js",
+      "pluginId": "cordova-plugin-inappbrowser",
+      "clobbers": [
+        "cordova.InAppBrowser.open"
+      ]
     }
   ],
   "plugin_metadata": {
@@ -330,6 +345,7 @@
     "doc_picker_plugin": "0.2.0",
     "cordova-pdf-generator": "2.0.8",
     "cordova-plugin-file": "6.0.2",
-    "IFC242xPlugin": "0.1.0"
+    "IFC242xPlugin": "0.1.0",
+    "cordova-plugin-inappbrowser": "4.0.0"
   }
 }

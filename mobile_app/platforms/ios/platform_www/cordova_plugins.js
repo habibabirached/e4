@@ -231,6 +231,14 @@ module.exports = [
     "clobbers": [
       "window.plugins.IFC242xPlugin"
     ]
+  },
+  {
+    "id": "cordova-plugin-inappbrowser.inappbrowser",
+    "file": "plugins/cordova-plugin-inappbrowser/www/inappbrowser.js",
+    "pluginId": "cordova-plugin-inappbrowser",
+    "clobbers": [
+      "cordova.InAppBrowser.open"
+    ]
   }
 ];
 module.exports.metadata = 
@@ -244,7 +252,8 @@ module.exports.metadata =
   "doc_picker_plugin": "0.2.0",
   "cordova-pdf-generator": "2.0.8",
   "cordova-plugin-file": "6.0.2",
-  "IFC242xPlugin": "0.1.0"
+  "IFC242xPlugin": "0.1.0",
+  "cordova-plugin-inappbrowser": "4.0.0"
 };
 // BOTTOM OF METADATA
 });

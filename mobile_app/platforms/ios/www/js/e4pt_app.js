@@ -111,6 +111,10 @@ $(document).ready(function(){
 	$("#DATA_PLOT").fadeOut();
         $("#FRD_PAGE").fadeIn();
     }, {passive: true});
+    document.getElementById("FRD_VIEW_BUTTON").addEventListener('click', function(){
+        toggle_menu();
+        show_FRD();
+    }, {passive: true});
     document.getElementById("SETUP_BUTTON").addEventListener('click', function(){
         toggle_menu();
 	      $("#DATA_PLOT").fadeOut();
@@ -476,6 +480,10 @@ function toggle_menu() {
 		$('#LEFT_MENU').animate({"margin-left": '+=50vmin'});
 		menu_open = true;
 	}
+}
+
+function show_FRD() {
+    var ref = cordova.InAppBrowser.open('./frd.html', '_blank', 'location=yes');
 }
 
 function get_sensor_parameters() {

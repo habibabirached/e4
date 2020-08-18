@@ -33,6 +33,9 @@
     },
     "IFC242xPlugin": {
       "PACKAGE_NAME": "com.ge.ent.e4PtTool"
+    },
+    "cordova-plugin-inappbrowser": {
+      "PACKAGE_NAME": "com.ge.ent.e4PtTool"
     }
   },
   "dependent_plugins": {}
