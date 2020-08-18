@@ -78,5 +78,13 @@
     },
     "is_top_level": true,
     "variables": {}
+  },
+  "cordova-plugin-fileviewer2": {
+    "source": {
+      "type": "registry",
+      "id": "cordova-plugin-fileviewer2"
+    },
+    "is_top_level": true,
+    "variables": {}
   }
 }

@@ -39,6 +39,10 @@
             {
               "xml": "<feature name=\"InAppBrowser\"><param name=\"ios-package\" value=\"CDVWKInAppBrowser\" /><param name=\"onload\" value=\"true\" /></feature>",
               "count": 1
+            },
+            {
+              "xml": "<feature name=\"FileViewer2\"><param name=\"ios-package\" value=\"LSFileViewer2\" /></feature>",
+              "count": 1
             }
           ],
           "/widget": [
@@ -90,6 +94,9 @@
       "PACKAGE_NAME": "com.ge.ent.e4PtTool"
     },
     "cordova-plugin-inappbrowser": {
+      "PACKAGE_NAME": "com.ge.ent.e4PtTool"
+    },
+    "cordova-plugin-fileviewer2": {
       "PACKAGE_NAME": "com.ge.ent.e4PtTool"
     }
   },
@@ -334,6 +341,14 @@
       "clobbers": [
         "cordova.InAppBrowser.open"
       ]
+    },
+    {
+      "id": "cordova-plugin-fileviewer2.FileViewer2",
+      "file": "plugins/cordova-plugin-fileviewer2/www/fileviewer2.js",
+      "pluginId": "cordova-plugin-fileviewer2",
+      "clobbers": [
+        "fileviewer2"
+      ]
     }
   ],
   "plugin_metadata": {
@@ -346,6 +361,7 @@
     "cordova-pdf-generator": "2.0.8",
     "cordova-plugin-file": "6.0.2",
     "IFC242xPlugin": "0.1.0",
-    "cordova-plugin-inappbrowser": "4.0.0"
+    "cordova-plugin-inappbrowser": "4.0.0",
+    "cordova-plugin-fileviewer2": "1.0.2"
   }
 }

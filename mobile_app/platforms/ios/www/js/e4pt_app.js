@@ -483,7 +483,19 @@ function toggle_menu() {
 }
 
 function show_FRD() {
-    var ref = cordova.InAppBrowser.open('./frd.html', '_blank', 'location=yes');
+    window.plugins.fileviewer2.open(appDir + 'frd.docx',{
+            error : function(e) {
+                console.log('Error status: ' + e.status + ' - Error message: ' + e.message);
+            },
+            success : function () {
+                console.log('file opened successfully');
+            }
+        }
+    );
+}
+
+function hide_FRD() {
+    window.plugins.fileviewer2.dismiss();
 }
 
 function get_sensor_parameters() {

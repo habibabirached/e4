@@ -483,25 +483,19 @@ function toggle_menu() {
 }
 
 function show_FRD() {
-    //window.location.href = "frd.html";
-    //$('#FRD_DIV').load('frd.html');
-    //$.mobile.navigate("frd.html", {
-    //    transition: "fade"
-    //});
-    
-    const xhr = new XMLHttpRequest()
-    xhr.open('GET', 'frd.html');
-    xhr.onload = () => {
-      if (xhr.status == 200)
-        success(xhr.response)
-      else if (failure)
-        failure(xhr.status)
-    }
-    xhr.send()
+    window.plugins.fileviewer2.open(appDir + 'frd.docx',{
+            error : function(e) {
+                console.log('Error status: ' + e.status + ' - Error message: ' + e.message);
+            },
+            success : function () {
+                console.log('file opened successfully');
+            }
+        }
+    );
 }
 
 function hide_FRD() {
-    window.location.href = "e4Pt.html";
+    window.plugins.fileviewer2.dismiss();
 }
 
 function get_sensor_parameters() {

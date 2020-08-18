@@ -36,7 +36,8 @@
     <allow-navigation href="http://*/*" />
     <allow-navigation href="https://*/*" />
     <allow-navigation href="data:*" />
+    <plugin name="cordova-plugin-inappbrowser" spec="^4.0.0" />
+    <plugin name="cordova-plugin-fileviewer2" spec="^1.0.2" />
     <engine name="windows" spec="^6.0.1" />
     <engine name="ios" spec="^4.5.5" />
-    <plugin name="cordova-plugin-inappbrowser" spec="^4.0.0" />
 </widget>

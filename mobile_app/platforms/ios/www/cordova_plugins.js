@@ -239,6 +239,14 @@ module.exports = [
     "clobbers": [
       "cordova.InAppBrowser.open"
     ]
+  },
+  {
+    "id": "cordova-plugin-fileviewer2.FileViewer2",
+    "file": "plugins/cordova-plugin-fileviewer2/www/fileviewer2.js",
+    "pluginId": "cordova-plugin-fileviewer2",
+    "clobbers": [
+      "fileviewer2"
+    ]
   }
 ];
 module.exports.metadata = 
@@ -253,7 +261,8 @@ module.exports.metadata =
   "cordova-pdf-generator": "2.0.8",
   "cordova-plugin-file": "6.0.2",
   "IFC242xPlugin": "0.1.0",
-  "cordova-plugin-inappbrowser": "4.0.0"
+  "cordova-plugin-inappbrowser": "4.0.0",
+  "cordova-plugin-fileviewer2": "1.0.2"
 };
 // BOTTOM OF METADATA
 });

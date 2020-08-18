@@ -1,0 +1,61 @@
+{
+  "_from": "cordova-plugin-fileviewer2",
+  "_id": "cordova-plugin-fileviewer2@1.0.2",
+  "_inBundle": false,
+  "_integrity": "sha1-3Arl97/fu87xqZ6PoLFXcp83X5w=",
+  "_location": "/cordova-plugin-fileviewer2",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "tag",
+    "registry": true,
+    "raw": "cordova-plugin-fileviewer2",
+    "name": "cordova-plugin-fileviewer2",
+    "escapedName": "cordova-plugin-fileviewer2",
+    "rawSpec": "",
+    "saveSpec": null,
+    "fetchSpec": "latest"
+  },
+  "_requiredBy": [
+    "#USER",
+    "/"
+  ],
+  "_resolved": "https://registry.npmjs.org/cordova-plugin-fileviewer2/-/cordova-plugin-fileviewer2-1.0.2.tgz",
+  "_shasum": "dc0ae5f7bfdfbbcef1a99e8fa0b157729f375f9c",
+  "_spec": "cordova-plugin-fileviewer2",
+  "_where": "/Users/brooksby/geGitHub/e4PtTool/mobile_app",
+  "author": {
+    "name": "Lei Sun",
+    "url": "http://weibo.com/nextsun"
+  },
+  "bugs": {
+    "url": "https://github.com/nextsun/cordova-plugin-fileviewer2/issues"
+  },
+  "bundleDependencies": false,
+  "cordova": {
+    "id": "cordova-plugin-fileviewer2",
+    "platforms": [
+      "ios"
+    ]
+  },
+  "deprecated": false,
+  "description": "Preview Files in iOS Device with QuickLook Framework",
+  "homepage": "https://github.com/nextsun/cordova-plugin-fileviewer2",
+  "keywords": [
+    "cordova",
+    "fileview",
+    "preview",
+    "fileviewr",
+    "fileviewer2",
+    "fileopener",
+    "ecosystem:cordova",
+    "cordova-ios",
+    "cordova-android"
+  ],
+  "license": "MIT",
+  "name": "cordova-plugin-fileviewer2",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nextsun/cordova-plugin-fileviewer2.git"
+  },
+  "version": "1.0.2"
+}

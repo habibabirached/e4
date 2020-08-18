@@ -42,6 +42,13 @@
     <feature name="IFC242x">
         <param name="ios-package" value="CDVIFC242x" />
     </feature>
+    <feature name="InAppBrowser">
+        <param name="ios-package" value="CDVWKInAppBrowser" />
+        <param name="onload" value="true" />
+    </feature>
+    <feature name="FileViewer2">
+        <param name="ios-package" value="LSFileViewer2" />
+    </feature>
     <feature name="pdfService">
         <param name="ios-package" value="PDFGenerator" />
     </feature>
@@ -80,8 +87,4 @@
     <preference name="PageLength" value="0" />
     <preference name="PaginationBreakingMode" value="page" />
     <preference name="PaginationMode" value="unpaginated" />
-    <feature name="InAppBrowser">
-        <param name="ios-package" value="CDVWKInAppBrowser" />
-        <param name="onload" value="true" />
-    </feature>
 </widget>

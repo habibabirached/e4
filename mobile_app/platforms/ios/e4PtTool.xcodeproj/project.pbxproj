@@ -39,6 +39,8 @@
 		0C5A79C56C3147D9B0806371 /* CDVInAppBrowserNavigationController.m in Sources */ = {isa = PBXBuildFile; fileRef = 41722477FB2D4F1C90BAEE42 /* CDVInAppBrowserNavigationController.m */; };
 		29AB18C4E73D442BA105BE75 /* CDVWKInAppBrowser.m in Sources */ = {isa = PBXBuildFile; fileRef = 652B36934BCF4D8786A19D7B /* CDVWKInAppBrowser.m */; };
 		9B33192EA07F46E88A3BE46C /* CDVWKInAppBrowserUIDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = C5B8B630B82E4122A9827F8B /* CDVWKInAppBrowserUIDelegate.m */; };
+		31CC20E6B4664B23A3C55619 /* LSFileViewer2.m in Sources */ = {isa = PBXBuildFile; fileRef = A87BABD164284DB399612DE4 /* LSFileViewer2.m */; };
+		362CDC05EA68449D8DABBA3B /* LSPreviewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 195F8A0E2F524956AE4BFF27 /* LSPreviewController.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -133,6 +135,10 @@
 		6C2F913BAB914681A99BFB39 /* CDVInAppBrowserNavigationController.h */ = {isa = PBXFileReference; name = "CDVInAppBrowserNavigationController.h"; path = "cordova-plugin-inappbrowser/CDVInAppBrowserNavigationController.h"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; explicitFileType = undefined; includeInIndex = 0; };
 		0B0ED31B67924EC6AD8E35D1 /* CDVWKInAppBrowser.h */ = {isa = PBXFileReference; name = "CDVWKInAppBrowser.h"; path = "cordova-plugin-inappbrowser/CDVWKInAppBrowser.h"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; explicitFileType = undefined; includeInIndex = 0; };
 		FF782DAB3489443BA51CBE01 /* CDVWKInAppBrowserUIDelegate.h */ = {isa = PBXFileReference; name = "CDVWKInAppBrowserUIDelegate.h"; path = "cordova-plugin-inappbrowser/CDVWKInAppBrowserUIDelegate.h"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; explicitFileType = undefined; includeInIndex = 0; };
+		A87BABD164284DB399612DE4 /* LSFileViewer2.m */ = {isa = PBXFileReference; name = "LSFileViewer2.m"; path = "cordova-plugin-fileviewer2/LSFileViewer2.m"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; explicitFileType = undefined; includeInIndex = 0; };
+		195F8A0E2F524956AE4BFF27 /* LSPreviewController.m */ = {isa = PBXFileReference; name = "LSPreviewController.m"; path = "cordova-plugin-fileviewer2/LSPreviewController.m"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; explicitFileType = undefined; includeInIndex = 0; };
+		0AD50F76A664484D8ADA6CDE /* LSFileViewer2.h */ = {isa = PBXFileReference; name = "LSFileViewer2.h"; path = "cordova-plugin-fileviewer2/LSFileViewer2.h"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; explicitFileType = undefined; includeInIndex = 0; };
+		D19BB9871AAC40BA874F4B65 /* LSPreviewController.h */ = {isa = PBXFileReference; name = "LSPreviewController.h"; path = "cordova-plugin-fileviewer2/LSPreviewController.h"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; explicitFileType = undefined; includeInIndex = 0; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -288,6 +294,10 @@
 				6C2F913BAB914681A99BFB39 /* CDVInAppBrowserNavigationController.h */,
 				0B0ED31B67924EC6AD8E35D1 /* CDVWKInAppBrowser.h */,
 				FF782DAB3489443BA51CBE01 /* CDVWKInAppBrowserUIDelegate.h */,
+				A87BABD164284DB399612DE4 /* LSFileViewer2.m */,
+				195F8A0E2F524956AE4BFF27 /* LSPreviewController.m */,
+				0AD50F76A664484D8ADA6CDE /* LSFileViewer2.h */,
+				D19BB9871AAC40BA874F4B65 /* LSPreviewController.h */,
 			);
 			name = Plugins;
 			path = e4PtTool/Plugins;
@@ -446,6 +456,8 @@
 				0C5A79C56C3147D9B0806371 /* CDVInAppBrowserNavigationController.m in Sources */,
 				29AB18C4E73D442BA105BE75 /* CDVWKInAppBrowser.m in Sources */,
 				9B33192EA07F46E88A3BE46C /* CDVWKInAppBrowserUIDelegate.m in Sources */,
+				31CC20E6B4664B23A3C55619 /* LSFileViewer2.m in Sources */,
+				362CDC05EA68449D8DABBA3B /* LSPreviewController.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
