@@ -483,7 +483,7 @@ function toggle_menu() {
 }
 
 function show_FRD() {
-    fileviewer2.open(appDir + 'www/FRD.docx',{
+    fileviewer2.open(appDir + 'www/FRD.pdf',{
             error : function(e) {
                 console.log('Error status: ' + e.status + ' - Error message: ' + e.message);
             },
