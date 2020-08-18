@@ -483,7 +483,7 @@ function toggle_menu() {
 }
 
 function show_FRD() {
-    window.plugins.fileviewer2.open(appDir + 'frd.docx',{
+    fileviewer2.open(appDir + 'www/FRD.docx',{
             error : function(e) {
                 console.log('Error status: ' + e.status + ' - Error message: ' + e.message);
             },
@@ -495,7 +495,7 @@ function show_FRD() {
 }
 
 function hide_FRD() {
-    window.plugins.fileviewer2.dismiss();
+    fileviewer2.dismiss();
 }
 
 function get_sensor_parameters() {
