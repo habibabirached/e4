@@ -250,9 +250,11 @@ $(document).ready(function(){
     }, {passive: true});
     document.getElementById("SENSOR_STAGE").addEventListener('change', function(){
         set_stage();
+        update_spacer_value();
     }, {passive: true});
     document.getElementById("SENSOR_POSITION").addEventListener('change', function(){
         set_position();
+        update_spacer_value();
     }, {passive: true});
     document.getElementById("CASING_THICKNESS").addEventListener('change', function(){
         update_spacer_value();
@@ -1069,8 +1071,8 @@ function update_spacer_value() {
     spacer_color = "Spacer color is " + spacer.color;
   }
 
-  let imageName = 'img/spacers/noImage.png';
-  if (typeof spacer.image !== 'undefined') imageName = 'img/spacers/' + spacer.image + '.png';
+  let imageName = 'img/spacers/Unknown.gif';
+  if (typeof spacer.image !== 'undefined') imageName = 'img/spacers/' + spacer.image + '.gif';
     
   document.getElementById("SPACER_THICKNESS").value = spacer_value;
   document.getElementById("SPACER_COLOR_LABEL").innerHTML = spacer_color;
