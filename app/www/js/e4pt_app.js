@@ -334,6 +334,9 @@ $(document).ready(function(){
     document.getElementById("MANUAL_OVERRIDE").addEventListener('click', function(){
         overrideSettings();
     }, {passive: true});
+    document.getElementById("SPACER_THUMBNAIL").addEventListener('click', function(){
+        showSpacerImage();
+    }, {passive: true});
     setupAccordian();
     if (communicationChannel == "WebSocket") {
         createWS();
@@ -359,6 +362,16 @@ function gotFS(fileSystem) {
 
 function fsFail(err) {
     console.log("Failed to get file system: ", err);
+}
+
+function showSpacerImage() {
+    let imageName = document.getElementById("SPACER_THUMBNAIL").getAttribute("src");
+    let spacerImageRef = cordova.InAppBrowser.open('imageView.html', '_blank', 'location=no');
+    spacerImageRef.addEventListener('loadstop', function() {
+        spacerImageRef.executeScript({code:
+            'document.getElementById("IMAGE_VIEW").setAttribute("src","' + imageName + '")'
+        });
+    });
 }
 
 // overrideSettings is called when the user checks the box to override.
@@ -1055,9 +1068,14 @@ function update_spacer_value() {
     spacer_value = spacer.size;
     spacer_color = "Spacer color is " + spacer.color;
   }
+
+  let imageName = 'img/spacers/noImage.png';
+  if (typeof spacer.image !== 'undefined') imageName = 'img/spacers/' + spacer.image + '.png';
+    
   document.getElementById("SPACER_THICKNESS").value = spacer_value;
   document.getElementById("SPACER_COLOR_LABEL").innerHTML = spacer_color;
   document.getElementById("SPACER_COLOR_LABEL").style.color = spacer.color;
+  document.getElementById("SPACER_THUMBNAIL").setAttribute("src",imageName);
 }
 
 function advance_position() {
