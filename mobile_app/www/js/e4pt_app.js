@@ -339,6 +339,9 @@ $(document).ready(function(){
     document.getElementById("SPACER_THUMBNAIL").addEventListener('click', function(){
         showSpacerImage();
     }, {passive: true});
+    document.getElementById("FRAME_DATA_CLEAR_BUTTON").addEventListener('click', function(){
+        clearFrameData();
+    }, {passive: true});
     setupAccordian();
     if (communicationChannel == "WebSocket") {
         createWS();
@@ -374,6 +377,59 @@ function showSpacerImage() {
             'document.getElementById("IMAGE_VIEW").setAttribute("src","' + imageName + '")'
         });
     });
+}
+
+// Clear all the current data to start fresh.
+function clearFrameData() {
+    // First, confirm that this is what the user want.
+    e4PtConfirm("Are you sure you want to clear all data and start a new collection?",
+             function(idx) {
+               // 1=OK, 2=Cancel
+               if (idx == 1) {
+                 console.log("Clearing all data.");
+                 // First clear the data E4PTdata structure
+                 E4PTdata.ofs_id = "";
+                 E4PTdata.frame = "";
+                 E4PTdata.serial_number = "";
+                 E4PTdata.data_name = "";
+                 E4PTdata.description = "";
+                 E4PTdata.customer = "";
+                 E4PTdata.site_name = "";
+                 E4PTdata.inspection_type = "";
+                 E4PTdata.operator = "";
+                 E4PTdata.units = "";
+                 E4PTdata.state = "";
+                 E4PTdata.final = {
+                     "SCAN":"",
+                 };
+                 E4PTdata.date =  "";
+                 E4PTdata.time =  "";
+                 E4PTdata.sets = [];
+                 E4PTdata.locs = [];
+                 E4PTdata.minima = [];
+                 E4PTdata.data = [];
+                 E4PTdata.quality = [];
+                 E4PTdata.clearance = "";
+                 E4PTdata.max_clr = "";
+                 E4PTdata.min_clr = "";
+                 E4PTdata.med_clr = "";
+                 E4PTdata.std_clr = "";
+                 E4PTdata.alreadyOnLDB = "false";
+                 E4PTdata.pouchdb_id =  "";
+                 // Clear the entries on the page
+                 document.getElementById("FRAME_SIZE").selectedIndex = 0;
+                 document.getElementById("SERIAL_NUMBER").value = "";
+                 document.getElementById("CUSTOMER").value = "";
+                 document.getElementById("SITE").value = "";
+                 document.getElementById("OPERATOR").value = "";
+                 document.getElementById("UNITS").selectedIndex = 0;
+                 document.getElementById("TURBINE_STATE").selectedIndex = 0;
+                 document.getElementById("DESCRIPTION").value = "";
+               }
+               else {
+                 console.log("Database clear was cancelled.");
+               }
+           });
 }
 
 // overrideSettings is called when the user checks the box to override.
