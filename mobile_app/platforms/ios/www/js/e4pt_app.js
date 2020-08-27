@@ -108,7 +108,7 @@ $(document).ready(function(){
     }, {passive: true});
     document.getElementById("FRD_BUTTON").addEventListener('click', function(){
         toggle_menu();
-	$("#DATA_PLOT").fadeOut();
+        $("#DATA_PLOT").fadeOut();
         $("#FRD_PAGE").fadeIn();
     }, {passive: true});
     document.getElementById("FRD_VIEW_BUTTON").addEventListener('click', function(){
@@ -117,7 +117,7 @@ $(document).ready(function(){
     }, {passive: true});
     document.getElementById("SETUP_BUTTON").addEventListener('click', function(){
         toggle_menu();
-	      $("#DATA_PLOT").fadeOut();
+        $("#DATA_PLOT").fadeOut();
         $("#SETUP_PAGE").fadeIn();
         set_frame_information();
     }, {passive: true});
@@ -653,6 +653,7 @@ function initialize_sensor() {
 }
 
 function turbine_setup(reset) {
+    $("#TITLE_BAR").text("DATA COLLECTION");
     $("#TURBINE_SETUP_PAGE").fadeIn();
 
     // Get frame type
