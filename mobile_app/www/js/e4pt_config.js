@@ -1,6 +1,7 @@
 // Sensor parameters (in mm).
 sensor_data = {
     'master_fixture_height':0,
+    'mastering_value':0,
     'master_offset':0
 };
 frame_data = [

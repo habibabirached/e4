@@ -1478,13 +1478,25 @@ function pluginMessage(msg) {
             $("#REV_PROGRESS").css('width', msg.progress + '%');
             break;
         case "sensor_params":
-            console.log("Received sensor parameters message: ", msg.master_fixture_height, ", ", msg.master_offset);
+            console.log("Received sensor parameters message: ", msg.master_fixture_height, ", ", msg.mastering_value, ", ", msg.master_offset);
             setIndicatorColor("green");
             serialConnected = true;
+            
             sensor_data.master_fixture_height = JSON.parse(msg.master_fixture_height);
+            let tmpStr = sensor_data.master_fixture_height.toString(10);
+            if (tmpStr.length == 1) tmpStr = sensor_data.master_fixture_height.toFixed(2).toString(10);
+            document.getElementById("MASTER_FIXTURE_HEIGHT").value = tmpStr;
+            
+            sensor_data.mastering_value = JSON.parse(msg.mastering_value);
+            tmpStr = sensor_data.mastering_value.toString(10);
+            if (tmpStr.length == 1) tmpStr = sensor_data.mastering_value.toFixed(2).toString(10);
+            document.getElementById("MASTERING_VALUE").value = tmpStr;
+
             sensor_data.master_offset = JSON.parse(msg.master_offset);
-            document.getElementById("MASTER_FIXTURE_HEIGHT").value = sensor_data.master_fixture_height.toString(10);
-            document.getElementById("MASTER_OFFSET").value = sensor_data.master_offset.toString(10);
+            tmpStr = sensor_data.master_offset.toString(10);
+            if (tmpStr.length == 1) tmpStr = sensor_data.master_offset.toFixed(2).toString(10);
+            document.getElementById("MASTER_OFFSET").value = tmpStr;
+            
             break;
         default:
             console.log("pluginMessage: Hit default case.");
@@ -1495,6 +1507,7 @@ function pluginMessage(msg) {
 function authorizeSensorParamsUpdate() {
     if (document.getElementById("MASTER_FIXTURE_HEIGHT").disabled == false) {
         updateSensorParameters(document.getElementById("MASTER_FIXTURE_HEIGHT").value,
+                               document.getElementById("MASTERING_VALUE").value,
                                document.getElementById("MASTER_OFFSET").value);
         return;
     }
@@ -1520,6 +1533,7 @@ function confirmPassword(results) {
     if (results.input1 == "Gr0undH0g") {
     //if (true) {
         document.getElementById("MASTER_FIXTURE_HEIGHT").disabled = false;
+        document.getElementById("MASTERING_VALUE").disabled = false;
         document.getElementById("MASTER_OFFSET").disabled = false;
         document.getElementById("SENSOR_PARAMS_UPDATE_BUTTON").innerHTML = "LOCK VALUES";
     }
@@ -1528,13 +1542,14 @@ function confirmPassword(results) {
     }
 }
 
-function updateSensorParameters(mfh, mo) {
+function updateSensorParameters(mfh, mval, mo) {
 
     // Before updating the values, make sure the user has entered valid numbers.
     let mfh_f = parseFloat(mfh);
+    let mstrval_f = parseFloat(mval);
     let mo_f = parseFloat(mo);
     // If a number is not valid, give the user a chance to try again or abort.
-    if (isNaN(mfh_f) || isNaN(mo_f)) {
+    if (isNaN(mfh_f) || isNaN(mstrval_f) || isNaN(mo_f)) {
         e4PtConfirm("Please enter only floating point values.\nPlease try again.", function(buttonIndex) {
                     if (buttonIndex==1){//OK
                       return; // This changes nothing and lets the user try again.
@@ -1550,6 +1565,7 @@ function updateSensorParameters(mfh, mo) {
                                                                    }, null);
                         }
                         document.getElementById("MASTER_FIXTURE_HEIGHT").disabled = true;
+                        document.getElementById("MASTERING_VALUE").disabled = true;
                         document.getElementById("MASTER_OFFSET").disabled = true;
                         document.getElementById("SENSOR_PARAMS_UPDATE_BUTTON").innerHTML = "UPDATE";
                     }
@@ -1557,9 +1573,10 @@ function updateSensorParameters(mfh, mo) {
         return;
     }
     document.getElementById("MASTER_FIXTURE_HEIGHT").disabled = true;
+    document.getElementById("MASTERING_VALUE").disabled = true;
     document.getElementById("MASTER_OFFSET").disabled = true;
     document.getElementById("SENSOR_PARAMS_UPDATE_BUTTON").innerHTML = "UPDATE";
-    let message = {"args":["set_sensor_parameters",mfh_f.toString(10), mo_f.toString(10)]};
+    let message = {"args":["set_sensor_parameters",mfh_f.toString(10), mstrval_f.toString(10), mo_f.toString(10)]};
     if (communicationChannel == "WebSocket") {
         message = JSON.stringify(message);
         sendWSMessage(message);

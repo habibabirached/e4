@@ -10,6 +10,16 @@
 			<key>Type</key>
 			<string>PSTitleValueSpecifier</string>
 			<key>Title</key>
+			<string>Mastering Value</string>
+			<key>Key</key>
+			<string>masteringValue</string>
+			<key>DefaultValue</key>
+			<string>6.0</string>
+		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSTitleValueSpecifier</string>
+			<key>Title</key>
 			<string>Master Offset: </string>
 			<key>Key</key>
 			<string>masterOffset</string>
