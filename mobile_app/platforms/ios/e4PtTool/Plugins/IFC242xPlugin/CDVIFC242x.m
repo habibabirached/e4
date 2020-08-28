@@ -43,6 +43,7 @@
 #define OUT_OF_RANGE 15.0
 #define FILTER_EDGE_SIZE_START 1
 #define FILTER_EDGE_SIZE_STOP 1
+#define MASTER_VALUE 5.0
 
 // Define SERIAL_SEND_TIMESTAMP if you want to have the timestamp
 // sent over the serial cable.  This takes more bits over the
@@ -101,8 +102,7 @@ enum ifc242xValue {
 @property (strong, nonatomic) NSString* units;
 @property (strong, nonatomic) NSString* num_blades;
 @property (strong, nonatomic) NSString* sensor_measurement_range;
-@property (strong, nonatomic) NSString* start_measurement_range;
-@property (strong, nonatomic) NSString* sensor_length;
+@property (strong, nonatomic) NSString* master_fixture_height;
 @property (strong, nonatomic) NSString* blade_width;
 @property (strong, nonatomic) NSString* tip_diameter;
 @property (strong, nonatomic) NSString* master_offset;
@@ -130,6 +130,7 @@ enum ifc242xValue {
 @synthesize blade_width = _blade_width;
 @synthesize tip_diameter = _tip_diameter;
 @synthesize master_offset = _master_offset;
+@synthesize master_fixture_height = _master_fixture_height;
     
 
 -(instancetype)init {
@@ -847,7 +848,7 @@ enum ifc242xValue {
     }
 
     [self.telnetCmds addObject:[NSString stringWithFormat:@"MASTERSIGNAL 01DIST1 NONE\n"]];
-    [self.telnetCmds addObject:[NSString stringWithFormat:@"MASTERSIGNAL 01DIST1 5.0\n"]];
+    [self.telnetCmds addObject:[NSString stringWithFormat:@"MASTERSIGNAL 01DIST1 %f\n", MASTER_VALUE]];
     [self.telnetCmds addObject:[NSString stringWithFormat:@"MASTER 01DIST1 SET\n"]];
     [self.telnetCmds addObject:[NSString stringWithFormat:@"OUTPUT NONE\n"]];
     [self sendTelnetCommand];
@@ -1298,33 +1299,27 @@ enum ifc242xValue {
     }
     if ([cmd containsString:@"get_sensor_parameters"]) {
         NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-        NSString *smr = [defaults stringForKey:@"startMeasurementRange"];
+        NSString *mfh = [defaults stringForKey:@"masterFixtureHeight"];
         NSString *mo = [defaults stringForKey:@"masterOffset"];
-        NSString *sl = [defaults stringForKey:@"sensorLength"];
-        if ((smr == nil) || (mo == nil) || (sl == nil)) {
+        if ((mfh == nil) || (mo == nil)) {
             [self registerDefaultsFromSettingsBundle];
-            smr = [defaults stringForKey:@"startMeasurementRange"];
+            mfh = [defaults stringForKey:@"masterFixtureHeight"];
             mo = [defaults stringForKey:@"masterOffset"];
-            sl = [defaults stringForKey:@"sensorLength"];
         }
-        self.metaData.start_measurement_range = smr;
-        self.metaData.sensor_length = sl;
+        self.metaData.master_fixture_height = mfh;
         self.metaData.master_offset = mo;
-        NSDictionary* jsonDict = @{@"type":@"sensor_params", @"start_measurement_range":smr, @"master_offset":mo, @"sensor_length":sl};
+        NSDictionary* jsonDict = @{@"type":@"sensor_params", @"master_fixture_height":mfh, @"master_offset":mo};
         CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];
         [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
         return;
     }
     if ([cmd containsString:@"set_sensor_parameters"]) {
-        NSString* smr = [msgArray objectAtIndex:1];
-        NSString* sl = [msgArray objectAtIndex:2];
-        NSString* mo = [msgArray objectAtIndex:3];
+        NSString* mfh = [msgArray objectAtIndex:1];
+        NSString* mo = [msgArray objectAtIndex:2];
         NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-        [defaults setValue:smr forKey:@"startMeasurementRange"];
+        [defaults setValue:mfh forKey:@"masterFixtureHeight"];
         [defaults setValue:mo forKey:@"masterOffset"];
-        [defaults setValue:sl forKey:@"sensorLength"];
-        self.metaData.start_measurement_range = smr;
-        self.metaData.sensor_length = sl;
+        self.metaData.master_fixture_height = mfh;
         self.metaData.master_offset = mo;
         NSString* msgStr = [NSString stringWithFormat:@"Sensor Parameters are Set."];
         NSDictionary* jsonDict = @{@"type":@"alert",@"message":msgStr};
@@ -2156,14 +2151,14 @@ enum ifc242xValue {
         }
     }
     // Now iterate over the filtered values and calibrate them to arrive at actual clearance values.
-    // clearance_f = clearance_f + (SMR + SL) - spacer - casing_thickness + MO;
+    // Old method: clearance_f = clearance_f + (SMR + SL) - spacer - casing_thickness + MO;
+    // New method: clearance_f = clearance_f + (MFH - 5.0) - spacer - casing_thickness + MO;
     // Filtered clearances are in mm.
-    // Sensor parameters (SMR, SL, Spacer thickness & casing thickness are in inches.
+    // Sensor parameters (Mastering fixture height, Spacer thickness & casing thickness) are in inches.
     //
     // Get values into consistent units of mm. Perform calculations in mm
     float inToMM = 25.4;
-    float smr = [self.metaData.start_measurement_range floatValue] * inToMM;
-    float sl = [self.metaData.sensor_length floatValue] * inToMM;
+    float mfh = [self.metaData.master_fixture_height floatValue] * inToMM;
     float mo = [self.metaData.master_offset floatValue] * inToMM;
     float ct = [self.metaData.casing_thickness floatValue] * inToMM;
     float st = [self.metaData.spacer_thickness floatValue] * inToMM;
@@ -2171,12 +2166,12 @@ enum ifc242xValue {
     if (self.calibratedAcquire) {
         for (unsigned int i = 0; i< self.filtered.count; i++) {
             if ([[self.filtered objectAtIndex:i] floatValue] == OUT_OF_RANGE) continue;  // no need to calibrate out-of-range values.
-            float clearance_f = [[self.filtered objectAtIndex:i] floatValue] + smr + sl - st - ct + mo;
+            float clearance_f = [[self.filtered objectAtIndex:i] floatValue] + mfh - st - ct + mo - MASTER_VALUE;
             [self.filtered replaceObjectAtIndex:i withObject:[NSNumber numberWithFloat:clearance_f]];
         }
             // Calibrate the blade clearances
         for (unsigned int i = 0; i< self.blade_clearances.count; i++) {
-            float clearance_f = [[self.blade_clearances objectAtIndex:i] floatValue] + smr + sl - st - ct + mo;
+            float clearance_f = [[self.blade_clearances objectAtIndex:i] floatValue] + mfh - st - ct + mo - MASTER_VALUE;
             [self.blade_clearances replaceObjectAtIndex:i withObject:[NSNumber numberWithFloat:clearance_f]];
         }
     }

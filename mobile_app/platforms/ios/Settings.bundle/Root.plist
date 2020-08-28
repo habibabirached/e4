@@ -14,27 +14,17 @@
 			<key>Key</key>
 			<string>masterOffset</string>
 			<key>DefaultValue</key>
-			<string>-0.035</string>
+			<string>0.000</string>
 		</dict>
 		<dict>
 			<key>Type</key>
 			<string>PSTitleValueSpecifier</string>
 			<key>Title</key>
-			<string>Start of Measurement Range: </string>
+			<string>Mastering Fixture Height</string>
 			<key>Key</key>
-			<string>startMeasurementRange</string>
+			<string>masterFixtureHeight</string>
 			<key>DefaultValue</key>
-			<string>0.433</string>
-		</dict>
-		<dict>
-			<key>Type</key>
-			<string>PSTitleValueSpecifier</string>
-			<key>Title</key>
-			<string>Sensor Length: </string>
-			<key>Key</key>
-			<string>sensorLength</string>
-			<key>DefaultValue</key>
-			<string>8.9655</string>
+			<string>9.5599</string>
 		</dict>
 		<dict>
 			<key>Type</key>
