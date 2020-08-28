@@ -1517,8 +1517,8 @@ function authorizeSensorParamsUpdate() {
 
 function confirmPassword(results) {
     if (results.buttonIndex > 1) return;
-    //if (results.input1 == "Gr0undH0g") {
-    if (true) {
+    if (results.input1 == "Gr0undH0g") {
+    //if (true) {
         document.getElementById("MASTER_FIXTURE_HEIGHT").disabled = false;
         document.getElementById("MASTER_OFFSET").disabled = false;
         document.getElementById("SENSOR_PARAMS_UPDATE_BUTTON").innerHTML = "LOCK VALUES";
