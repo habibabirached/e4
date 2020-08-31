@@ -59,6 +59,7 @@ function makePg1InfoTable(e4ptData) {
 };
 
 function makeCircleTables(stages, positions, data) {
+  reportHTML = reportHTML + "<center>";
   reportHTML = reportHTML + "<table>";
   var td_idx = 0;
   for (var j=0; j<stages.length; j++) {
@@ -116,6 +117,7 @@ function makeCircleTables(stages, positions, data) {
 
   }
   reportHTML = reportHTML + "</table>";
+  reportHTML = reportHTML + "</center>";
 };
 
 function closePg1() {
@@ -153,62 +155,82 @@ function makePg2Table(state, stages, positions, data) {
   }
   var uniquePositions = allPositions.filter(onlyUnique);
 
+  // We need to break the tables into groups no more
+  // than 4 position columns wide. Otherwise they over-run
+  // the page.  So here we count how many we need.
+  // Ultimately there will probably only be one or two groups.
+  let posCount = uniquePositions.length;
+  let tCount = 0;  // This is the number of "rows" we'll need.
+  let positionGroups = [];
+  while (posCount > 0) {
+    let group = uniquePositions.slice(tCount*4,(tCount*4)+4);
+    positionGroups.push(group);
+    tCount += 1;
+    posCount -= 4;
+  }
+
   // Line of text
   reportHTML = reportHTML + "<p class=\"pText0\">";
   reportHTML = reportHTML + state;
   reportHTML = reportHTML + "Rotor Position</p>";
 
-  // Table Headers
-  reportHTML = reportHTML + "<table class=\"header\">";
-  reportHTML = reportHTML + "<th colspan=\"1\" class=\"tCell1\">Stage</th>";
-  for (var i=0; i<uniquePositions.length; i++) {
-      reportHTML = reportHTML + "<th colspan=\"3\" class=\"tCell1\">";
-      reportHTML = reportHTML + uniquePositions[i];
-      reportHTML = reportHTML + "</th>";
-  }
+    for (let k=0; k<tCount; k++) {
 
-  // Table Sub-headers
-  reportHTML = reportHTML + "<tr><td class=\"tCell1\"></td>";
-  for (var i=0; i<uniquePositions.length; i++) {
-    reportHTML = reportHTML + "<td class=\"tCell1\">Measured Dimension</td>";
-    reportHTML = reportHTML + "<td class=\"tCell1\">Dimension Stamped on Casing</td>";
-    reportHTML = reportHTML + "<td class=\"tCell1\">Tip Clearance</td>";
-  }
-  reportHTML = reportHTML + "</tr>";
+        uniquePositions = positionGroups[k];
 
-  // Per-stage clearance data
-  for (var j=0; j<stages.length; j++) {
-    reportHTML = reportHTML + "<tr>";
-    var id = state.charAt(0) + "_stg_" + stages[j]; // e.g. "O_stg_1", "C_stg_6"
-    reportHTML = reportHTML + "<td class=\"tCell1\" id=\"" + id + "\">";
-    reportHTML = reportHTML + stages[j];
-    reportHTML = reportHTML + "</td>";
-    pos = positions[stages[j]];
-    for (var i=0; i<uniquePositions.length; i++) {
-      if (Object.values(pos).includes(uniquePositions[i])) {
-        var tip_clearance = get_tip_clearance(state, stages[j], uniquePositions[i], data);
-        var case_thickness = get_casing_thickness(state, stages[j], uniquePositions[i], data);
-        console.log("Stage: ", stages[j], " Position: ", uniquePositions[i], " Clearance: ", tip_clearance);
-        id = state.charAt(0) + "_md_" + stages[j] + "_" + abbreviated_position(uniquePositions[i]); // e.g. "O_md_1_L", "C_md_6_BR"
-        reportHTML = reportHTML + "<td class=\"tCell2\" id=\"" + id + "\">";
-        reportHTML = reportHTML + "";  // figure out how to get this data later
-        reportHTML = reportHTML + "</td>";
-        id = state.charAt(0) + "_dsc_" + stages[j] + "_" + abbreviated_position(uniquePositions[i]); // e.g. "O_dmc_1_L", "C_dmc_6_BR"
-        reportHTML = reportHTML + "<td class=\"tCell2\" id=\"" + id + "\">";
-        reportHTML = reportHTML + case_thickness;  // figure out how to get this data later
-        reportHTML = reportHTML + "</td>";
-        id = state.charAt(0) + "_tc_" + stages[j] + "_" + abbreviated_position(uniquePositions[i]); // e.g. "O_tc_1_L", "C_tc_6_BR"
-        reportHTML = reportHTML + "<td class=\"tCell2\" id=\"" + id + "\">";
-        reportHTML = reportHTML + tip_clearance;  // figure out how to get this data later
-        reportHTML = reportHTML + "</td>";
-      }
-      else {
-        reportHTML = reportHTML + "<td class=\"tCell2\"></td><td class=\"tCell2\"></td><td class=\"tCell2\"></td>";
-      }
+        // Table Headers
+        reportHTML = reportHTML + "<table class=\"header\">";
+        reportHTML = reportHTML + "<th colspan=\"1\" class=\"tCell1\">Stage</th>";
+        for (var i=0; i<uniquePositions.length; i++) {
+            reportHTML = reportHTML + "<th colspan=\"3\" class=\"tCell1\">";
+            reportHTML = reportHTML + uniquePositions[i];
+            reportHTML = reportHTML + "</th>";
+        }
+
+        // Table Sub-headers
+        reportHTML = reportHTML + "<tr><td class=\"tCell1\"></td>";
+        for (var i=0; i<uniquePositions.length; i++) {
+            reportHTML = reportHTML + "<td class=\"tCell1\">Measured Dimension</td>";
+            reportHTML = reportHTML + "<td class=\"tCell1\">Dimension Stamped on Casing</td>";
+            reportHTML = reportHTML + "<td class=\"tCell1\">Tip Clearance</td>";
+        }
+        reportHTML = reportHTML + "</tr>";
+
+        // Per-stage clearance data
+        for (let j=0; j<stages.length; j++) {
+            reportHTML = reportHTML + "<tr>";
+            var id = state.charAt(0) + "_stg_" + stages[j]; // e.g. "O_stg_1", "C_stg_6"
+            reportHTML = reportHTML + "<td class=\"tCell1\" id=\"" + id + "\">";
+            reportHTML = reportHTML + stages[j];
+            reportHTML = reportHTML + "</td>";
+            pos = positions[stages[j]];
+            for (let i=0; i<uniquePositions.length; i++) {
+                if (Object.values(pos).includes(uniquePositions[i])) {
+                    var tip_clearance = get_tip_clearance(state, stages[j], uniquePositions[i], data);
+                    var case_thickness = get_casing_thickness(state, stages[j], uniquePositions[i], data);
+                    console.log("Stage: ", stages[j], " Position: ", uniquePositions[i], " Clearance: ", tip_clearance);
+                    id = state.charAt(0) + "_md_" + stages[j] + "_" + abbreviated_position(uniquePositions[i]); // e.g. "O_md_1_L", "C_md_6_BR"
+                    reportHTML = reportHTML + "<td class=\"tCell2\" id=\"" + id + "\">";
+                    reportHTML = reportHTML + "";  // figure out how to get this data later
+                    reportHTML = reportHTML + "</td>";
+                    id = state.charAt(0) + "_dsc_" + stages[j] + "_" + abbreviated_position(uniquePositions[i]); // e.g. "O_dmc_1_L", "C_dmc_6_BR"
+                    reportHTML = reportHTML + "<td class=\"tCell2\" id=\"" + id + "\">";
+                    reportHTML = reportHTML + case_thickness;  // figure out how to get this data later
+                    reportHTML = reportHTML + "</td>";
+                    id = state.charAt(0) + "_tc_" + stages[j] + "_" + abbreviated_position(uniquePositions[i]); // e.g. "O_tc_1_L", "C_tc_6_BR"
+                    reportHTML = reportHTML + "<td class=\"tCell2\" id=\"" + id + "\">";
+                    reportHTML = reportHTML + tip_clearance;  // figure out how to get this data later
+                    reportHTML = reportHTML + "</td>";
+                }
+                else {
+                    reportHTML = reportHTML + "<td class=\"tCell2\"></td><td class=\"tCell2\"></td><td class=\"tCell2\"></td>";
+                }
+            }
+            reportHTML = reportHTML + "</tr>";
+        }
+        reportHTML = reportHTML + "</table>";
+        reportHTML = reportHTML + "<br>";
     }
-    reportHTML = reportHTML + "</tr>";
-  }
-  reportHTML = reportHTML + "</table>";
 }
 
 function abbreviated_position(pos) {
