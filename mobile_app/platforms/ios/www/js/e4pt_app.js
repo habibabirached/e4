@@ -130,13 +130,7 @@ $(document).ready(function(){
 	      setMasterMessage("white","green","Ready");
     }, {passive: true});
     document.getElementById("SN_SUBMIT_BUTTON").addEventListener('click', function(){
-        $("#SETUP_PAGE").fadeOut();
-        $("#RESULTS_PAGE").fadeOut();
-        $("#DATA_PLOT").fadeOut();
-        $("#INITIALIZE_SENSOR_PAGE").fadeIn();
-        $("#LOCAL_DATA_PAGE").fadeOut();
-        send_scan_meta_data();
-        initialize_sensor();
+        send_scan_meta_data(); // This does sensor initialization too.
     }, {passive: true});
     document.getElementById("COLLECT_DATA_BUTTON").addEventListener('click', function(){
         $("#SETUP_PAGE").fadeOut();
@@ -620,10 +614,23 @@ function sensor_setup() {
 }
 
 function send_scan_meta_data() {
+
+  // First make sure the user has input some meta-data.
+  E4PTdata.serial_number = document.getElementById("SERIAL_NUMBER").value;
+  if ( E4PTdata.serial_number.length == 0 ) {
+    e4PtAlert("Serial Number is required.");
+    return;
+  }
+
+  $("#SETUP_PAGE").fadeOut();
+  $("#RESULTS_PAGE").fadeOut();
+  $("#DATA_PLOT").fadeOut();
+  $("#INITIALIZE_SENSOR_PAGE").fadeIn();
+  $("#LOCAL_DATA_PAGE").fadeOut();
+
   // Here we get values from the UI, but we make sure they don't overrun bounds.
   var frm_idx = document.getElementById("FRAME_SIZE").selectedIndex;
   E4PTdata.frame = frame_data[frm_idx].frame;
-  E4PTdata.serial_number = document.getElementById("SERIAL_NUMBER").value;
   if (E4PTdata.serial_number.length > MAX_STR_LEN) E4PTdata.serial_number = E4PTdata.serial_number.substr(0,MAX_STR_LEN);
   E4PTdata.customer = document.getElementById("CUSTOMER").value;
     if (E4PTdata.customer.length > MAX_STR_LEN) E4PTdata.customer = E4PTdata.customer.substr(0,MAX_STR_LEN);
@@ -645,6 +652,9 @@ function send_scan_meta_data() {
                                             pluginMessage(msg);
                                            }, null);
   }
+    
+  initialize_sensor();
+    
 }
 
 function initialize_sensor() {
