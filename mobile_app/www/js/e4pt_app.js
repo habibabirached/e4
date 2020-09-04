@@ -10,6 +10,7 @@ var appDir = "";
 var serialConnected = false;
 var doDBSave = false;
 var manualOverride = false;
+var savedRPM = "";
 
 var local_db = new PouchDB('e4ptdb');
 
@@ -91,10 +92,10 @@ $(document).ready(function(){
     var attachFastClick = Origami.fastclick;
     attachFastClick(document.body);
     document.getElementById("MAIN_MENU").addEventListener('click', function(){
-              $("#TITLE_BAR").text("e-4Pt Tool");
-	      $("#FRD_PAGE").fadeOut();
-	      $("#SETUP_PAGE").fadeOut();
-	      $("#SCAN_INFO_PAGE").fadeOut();
+        $("#TITLE_BAR").text("e-4Pt Tool");
+        $("#FRD_PAGE").fadeOut();
+        $("#SETUP_PAGE").fadeOut();
+        $("#SCAN_INFO_PAGE").fadeOut();
         $("#RESULTS_PAGE").fadeOut();
         $("#FILE_LOADING_PAGE").fadeOut();
         $("#DB_LOADING_PAGE").fadeOut();
@@ -485,6 +486,8 @@ function acquisitionTimePromptWithMetaDataCallback(results) {
         acquisitionTime = acquisitionTime.toString() + "rpm";
         console.log("w/o RPM: ", acquisitionTime);
     }
+    savedRPM = acquisitionTime.replace("rpm","");
+    savedRPM = savedRPM.replace("RPM","");
     if (acquisitionTime != null) {
         //if (Number.isFinite(acquisitionTime)) {
         //    if (acquisitionTime > 0) {
@@ -665,6 +668,7 @@ function initialize_sensor() {
 function turbine_setup(reset) {
     $("#TITLE_BAR").text("DATA COLLECTION");
     $("#TURBINE_SETUP_PAGE").fadeIn();
+    savedRPM = "";
 
     // Get frame type
     var frm_idx = document.getElementById("FRAME_SIZE").selectedIndex;
@@ -853,11 +857,12 @@ function collect_stage_data() {
     var nav = navigator.notification;
     if (nav != null) {
         // We have plugins so we're in Cordova.  Use the Cordova notification.
-        navigator.notification.prompt('Please enter the rotor RPM.',
+        if (savedRPM == "") savedRPM = "1";
+        navigator.notification.prompt('Please enter or confirm the rotor RPM.',
                                       acquisitionTimePromptWithMetaDataCallback,
                                       'Enter RPM',
                                       ['Ok','Cancel'],
-                                      '1');
+                                      savedRPM);
     }
     else {
         // No plugins, so we must not be in Cordova. Use a standard prompt.
@@ -883,6 +888,7 @@ function reset_data_collection() {
     document.getElementById("CASING_THICKNESS").value = "";
     document.getElementById("CLEARANCE_ERROR").innerHTML = "";
     document.getElementById("SPACER_COLOR_LABEL").innerHTML = "";
+    savedRPM = "";
     setup_data_collection_page("", "", true);
     var obj = document.getElementById("DATA_PLOT2");
     var chart = Highcharts.charts[obj.getAttribute('data-highcharts-chart')];
