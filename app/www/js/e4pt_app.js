@@ -93,23 +93,11 @@ $(document).ready(function(){
     attachFastClick(document.body);
     document.getElementById("MAIN_MENU").addEventListener('click', function(){
         $("#TITLE_BAR").text("e-4Pt Tool");
-        $("#FRD_PAGE").fadeOut();
-        $("#SETUP_PAGE").fadeOut();
-        $("#SCAN_INFO_PAGE").fadeOut();
-        $("#RESULTS_PAGE").fadeOut();
-        $("#FILE_LOADING_PAGE").fadeOut();
-        $("#DB_LOADING_PAGE").fadeOut();
-        $("#SENSOR_SETUP_PAGE").fadeOut();
-        $("#INITIALIZE_SENSOR_PAGE").fadeOut();
-        $("#TURBINE_SETUP_PAGE").fadeOut();
-        $("#LOCAL_DATA_PAGE").fadeOut();
-        $("#FILE_CHOOSER_PAGE").fadeOut();
-        $("#DATA_DETAILS_PAGE").fadeOut();
         toggle_menu();
     }, {passive: true});
     document.getElementById("FRD_BUTTON").addEventListener('click', function(){
         toggle_menu();
-        $("#DATA_PLOT").fadeOut();
+        fadeOutAll();
         $("#FRD_PAGE").fadeIn();
     }, {passive: true});
     document.getElementById("FRD_VIEW_BUTTON").addEventListener('click', function(){
@@ -118,27 +106,15 @@ $(document).ready(function(){
     }, {passive: true});
     document.getElementById("SETUP_BUTTON").addEventListener('click', function(){
         toggle_menu();
-        $("#DATA_PLOT").fadeOut();
+        fadeOutAll();
         $("#SETUP_PAGE").fadeIn();
         set_frame_information();
-    }, {passive: true});
-    document.getElementById("SENSOR_SETUP_BUTTON").addEventListener('click', function(){
-        $("#SETUP_PAGE").fadeOut();
-        $("#RESULTS_PAGE").fadeOut();
-        $("#DATA_PLOT").fadeOut();
-        $("#LOCAL_DATA_PAGE").fadeOut();
-        $("#SENSOR_SETUP_PAGE").fadeIn();
-	      setMasterMessage("white","green","Ready");
     }, {passive: true});
     document.getElementById("SN_SUBMIT_BUTTON").addEventListener('click', function(){
         send_scan_meta_data(); // This does sensor initialization too.
     }, {passive: true});
     document.getElementById("COLLECT_DATA_BUTTON").addEventListener('click', function(){
-        $("#SETUP_PAGE").fadeOut();
-        $("#RESULTS_PAGE").fadeOut();
-        $("#DATA_PLOT").fadeOut();
-        $("#INITIALIZE_SENSOR_PAGE").fadeOut();
-        $("#LOCAL_DATA_PAGE").fadeOut();
+        fadeOutAll();
         turbine_setup(true);
     }, {passive: true});
     document.getElementById("CLEAR_DB_BUTTON").addEventListener('click', function(){
@@ -164,7 +140,7 @@ $(document).ready(function(){
         $("#RESULTS_PAGE").fadeIn();
     }
     document.getElementById("OPEN_LOCAL_DATA").addEventListener('click', function(){
-       $("#DATA_PLOT").fadeOut();
+       fadeOutAll();
         try {
             set_frame_information();
             listInternalFiles();
@@ -187,6 +163,7 @@ $(document).ready(function(){
     document.getElementById("GET_DATA_BUTTON").addEventListener('click', function(){
         console.log("@GET_DATA_BUTTON event listener function.");
         toggle_menu();
+        fadeOutAll();
         $("#DATA_PLOT").fadeIn();
         var acquisitionTime = null;
         doDBSave = false;
@@ -210,7 +187,9 @@ $(document).ready(function(){
     }, {passive: true});
     document.getElementById("SENSOR_SETUP_BUTTON").addEventListener('click', function(){
         toggle_menu();
-        sensor_setup();
+        fadeOutAll();
+        $("#SENSOR_SETUP_PAGE").fadeIn();
+        setMasterMessage("white","green","Ready");
     }, {passive: true});
     document.getElementById("START_MASTER_BUTTON").addEventListener('click', function(){
 	do_mastering();
@@ -238,7 +217,7 @@ $(document).ready(function(){
     collect_stage_data();
     }, {passive: true});
     document.getElementById("COLLECTION_RESET_BUTTON").addEventListener('click', function(){
-        reset_data_collection();
+        confirm_reset_data_collection();
     }, {passive: true});
     document.getElementById("CUSTOMER_REPORT_BUTTON").addEventListener('click', function(){
         generate_customer_report();
@@ -349,6 +328,21 @@ $(document).ready(function(){
 
     
 });
+
+function fadeOutAll() {
+    $("#FRD_PAGE").fadeOut();
+    $("#SETUP_PAGE").fadeOut();
+    $("#SCAN_INFO_PAGE").fadeOut();
+    $("#RESULTS_PAGE").fadeOut();
+    $("#FILE_LOADING_PAGE").fadeOut();
+    $("#DB_LOADING_PAGE").fadeOut();
+    $("#SENSOR_SETUP_PAGE").fadeOut();
+    $("#INITIALIZE_SENSOR_PAGE").fadeOut();
+    $("#TURBINE_SETUP_PAGE").fadeOut();
+    $("#LOCAL_DATA_PAGE").fadeOut();
+    $("#FILE_CHOOSER_PAGE").fadeOut();
+    $("#DATA_DETAILS_PAGE").fadeOut();
+}
 
 function gotFS(fileSystem) {
     // save the file system for later access
@@ -599,21 +593,6 @@ function set_connection_mode(mode) {
                                                pluginMessage(msg);
                                                }, null);
     }
-}
-
-function sensor_setup() {
-    console.log("@sensor_setup");
-    $("#FRD_PAGE").fadeOut();
-    $("#SETUP_PAGE").fadeOut();
-    $("#SCAN_INFO_PAGE").fadeOut();
-    $("#RESULTS_PAGE").fadeOut();
-    $("#FILE_LOADING_PAGE").fadeOut();
-    $("#DB_LOADING_PAGE").fadeOut();
-    $("#SENSOR_SETUP_PAGE").fadeIn();
-    $("#TURBINE_SETUP_PAGE").fadeOut();
-    $("#LOCAL_DATA_PAGE").fadeOut();
-    $("#FILE_CHOOSER_PAGE").fadeOut();
-    $("#DATA_DETAILS_PAGE").fadeOut();
 }
 
 function send_scan_meta_data() {
@@ -877,6 +856,19 @@ function setup_data_collection(update_position) {
     current_position_index = document.getElementById("SENSOR_POSITION").selectedIndex;
     current_position = current_frame_data['position'][current_stage][current_position_index];
     setup_data_collection_page("", "", update_position);
+}
+
+function confirm_reset_data_collection() {
+    e4PtConfirm("Are you sure you want to clear all data on this page?",
+      function(idx) {
+        if (idx == 1) {
+            console.log("Resetting data collection.");
+            reset_data_collection();
+        }
+        else {
+            console.log("Reset data collection was cancelled.");
+        }
+      });
 }
 
 function reset_data_collection() {
