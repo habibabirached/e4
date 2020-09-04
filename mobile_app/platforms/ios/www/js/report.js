@@ -12,6 +12,7 @@ function generateHTMLReport(e4ptData, current_frame_data) {
   makePg2Header(0, 0, 0, 0);
   makePg2Table("Opening", current_frame_data["stage"], current_frame_data["position"], e4ptData);
   makePg2Table("Closing", current_frame_data["stage"], current_frame_data["position"], e4ptData);
+  makeProprietaryNotice();
   reportHTML = reportHTML + "</div></body></html>";
   return reportHTML;
 };
@@ -28,6 +29,14 @@ function createPageTop() {
   reportHTML = reportHTML + "<body>";
   reportHTML = reportHTML + "<div id=\"report_content\">";
   return reportHTML;
+}
+
+function makeProprietaryNotice() {
+    let d = new Date();
+    let yy = d.getFullYear();
+    reportHTML = reportHTML + "<p style=\"text-align:center;font-size:100%;color:#ff6600;font-family:Arial;font-style:italic\">Copyright &copy ";
+    reportHTML = reportHTML + yy;
+    reportHTML = reportHTML + " General Electric Company. GE Proprietary Information and Confidential Information. All Rights Reserved.</p>";
 }
 
 function makePageBanner() {
@@ -122,6 +131,7 @@ function makeCircleTables(stages, positions, data) {
 
 function closePg1() {
   reportHTML = reportHTML + "<p class=\"pText0\">All axial clearances are measured with rotor against the loaded thrust face. Refer to EM5260 to confirm rotor position.</p>";
+  makeProprietaryNotice()
   reportHTML = reportHTML + "<hr class=\"break_line\">";
 };
 
@@ -160,7 +170,7 @@ function makePg2Table(state, stages, positions, data) {
   // the page.  So here we count how many we need.
   // Ultimately there will probably only be one or two groups.
   let posCount = uniquePositions.length;
-  let tCount = 0;  // This is the number of "rows" we'll need.
+  let tCount = 0;  // This is the number of tables we'll need.
   let positionGroups = [];
   while (posCount > 0) {
     let group = uniquePositions.slice(tCount*4,(tCount*4)+4);
@@ -171,8 +181,7 @@ function makePg2Table(state, stages, positions, data) {
 
   // Line of text
   reportHTML = reportHTML + "<p class=\"pText0\">";
-  reportHTML = reportHTML + state;
-  reportHTML = reportHTML + "Rotor Position</p>";
+  reportHTML = reportHTML + state + " Clearances";
 
     for (let k=0; k<tCount; k++) {
 
@@ -229,7 +238,9 @@ function makePg2Table(state, stages, positions, data) {
             reportHTML = reportHTML + "</tr>";
         }
         reportHTML = reportHTML + "</table>";
-        reportHTML = reportHTML + "<br>";
+        if ((k != tCount-1) || (state == "Opening")) {
+            reportHTML = reportHTML + "<br>";
+        }
     }
 }
 
