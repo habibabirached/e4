@@ -214,7 +214,7 @@ $(document).ready(function(){
     listDir(cordova.file.documentsDirectory + E4PTdata.serial_number);
     }, {passive: true});
     document.getElementById("STAGE_COLLECT_BUTTON").addEventListener('click', function(){
-    collect_stage_data();
+    confirm_collect_stage_data();
     }, {passive: true});
     document.getElementById("COLLECTION_RESET_BUTTON").addEventListener('click', function(){
         confirm_reset_data_collection();
@@ -816,6 +816,30 @@ function set_threshold() {
                                                pluginMessage(msg);
                                                }, null);
     }
+}
+
+function confirm_collect_stage_data() {
+    // Here we check to see if data is in the cell that is about to be populated.
+    // If there is already data there then we confirm with the user to overwrite it.
+    let stage = current_frame_data['stage'][current_stage_index];
+    let position = current_frame_data['position'][stage][current_position_index];
+    let el_id = position + stage;
+    el_id = el_id.replace(/\s+/g, '_');
+    let cell_contents = document.getElementById(el_id).innerHTML;
+    if (cell_contents.length > 0) {
+        let msg = "Are you sure you want to overwrite stage " + stage + "-" + position + " data, " + cell_contents + "?";
+        e4PtConfirm(msg, function(buttonIndex) {
+            if (buttonIndex==1){//OK
+                collect_stage_data();
+            } else if (buttonIndex==2){//Cancel
+                return;
+            }
+        });
+    }
+    else {
+        collect_stage_data();
+    }
+    return;
 }
 
 function collect_stage_data() {
