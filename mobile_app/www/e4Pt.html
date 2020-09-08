@@ -174,67 +174,86 @@
             </div>
         </div>
         <!-- --------------- FRAME SELECT PAGE ---------------------  -->
-        <div id="SETUP_PAGE" class="OVERLAY_PARTIAL" style="top:5.9vmin">
+        <div id="SETUP_PAGE" class="OVERLAY_PARTIAL SCROLL_Y" style="top:5.9vmin">
             <div class="RELATIVE TOP0 W100 COLOR_T_BLACK" style="height:5vmin; position:sticky">
                 <div class="COL_FL FONT_WHITE FONT8 PW2">SCAN INFORMATION</div>
                 <div id="SETUP_CLOSE_BUTTON4" class="COL_FR BUTTON PW1">
                     <i class="fa fa-window-close FONT10 FONT_WHITE"></i>
                 </div>
             </div>
-            <div class="FIXED ROW W100" style="top:9vmax;">
-                <select id="FRAME_SIZE" class="SCAN_INFO_BOX">
-                    <!-- These values are overwritten by javascript -->
-                    <option value="6B">6B</option>
-                    <option value="6FA">6FA</option>
-                    <option value="7E">7E</option>
-                    <option value="7FA">7FA</option>
-                    <option value="7FA.05">7FA.05</option>
-                    <option value="9E">9E</option>
-                    <option value="LMS">LMS</option>
-                </select>
-                <p class="SCAN_INFO_TEXT">FRAME:</p>
-            </div>
-            <div class="FIXED ROW W100" style="top:16vmax;">
-                <input class="SCAN_INFO_BOX" type="text" id="SERIAL_NUMBER" value=""/>
-                <div class="SCAN_INFO_TEXT">SERIAL NUMBER:</div>
-                <br/><br/>
-            </div>
-            <div class="FIXED ROW W100" style="top:21vmax;">
-                <input class="SCAN_INFO_BOX" type="text" id="CUSTOMER" value=""/>
-                <div class="SCAN_INFO_TEXT">CUSTOMER:</div>
-            </div>
-            <div class="FIXED ROW W100" style="top:26vmax;">
-                <input class="SCAN_INFO_BOX" type="text" id="SITE" value=""/>
-                <div class="SCAN_INFO_TEXT">SITE:</div>
-            </div>
-            <div class="FIXED ROW W100" style="top:31vmax;">
-                <input class="SCAN_INFO_BOX" type="text" id="OPERATOR" value=""/>
-                <div class="SCAN_INFO_TEXT">OPERATOR:</div>
-            </div>
-            <div class="FIXED ROW W100" style="top:36vmax;">
-                <select class="SCAN_INFO_BOX" id="UNITS">
-                    <option value="In">Inches</option>
-                    <option value="MM">MM</option>
-                </select>
-                <p class="SCAN_INFO_TEXT">UNITS:</p>
-            </div>
-            <div class="FIXED ROW W100" style="top:43vmax;">
-                <select class="SCAN_INFO_BOX" id="TURBINE_STATE">
-                    <option value="OPENING">Opening</option>
-                    <option value="CLOSING">Closing</option>
-                </select>
-                <p class="SCAN_INFO_TEXT">STATE:</p>
-            </div>
-            <div class="FIXED ROW W100" style="top:50vmax;">
-                <textarea id="DESCRIPTION" class="SCAN_INFO_BOX" value="" style="height:10vh; padding:1vmin; word-wrap:break-word; word-break: break-all; white-space: normal; line-height:normal"></textarea>
-                <p class="SCAN_INFO_TEXT">DESCRIPTION:</p>
-            </div>
-            <div class="ROW ABS" style="bottom:6vmin">
-                <div class="BUTTON_GROUP">
-                    <div id="FRAME_DATA_CLEAR_BUTTON" class="IN_BLOCK BUTTON W25 OVERLAY_BUTTON">CLEAR</div>
-                    <div id="SN_SUBMIT_BUTTON" class="IN_BLOCK BUTTON W25 OVERLAY_BUTTON">NEXT</div>
+                <!-- <div class="FIXED ROW W100" style="top:9vmax;"> -->
+                <div class="ROW W100 PH1">
+                    <select id="FRAME_SIZE" class="SCAN_INFO_BOX">
+                        <!-- These values are overwritten by javascript -->
+                        <option value="6B">6B</option>
+                        <option value="6FA">6FA</option>
+                        <option value="7E">7E</option>
+                        <option value="7FA">7FA</option>
+                        <option value="7FA.05">7FA.05</option>
+                        <option value="9E">9E</option>
+                        <option value="LMS">LMS</option>
+                    </select>
+                    <p class="SCAN_INFO_TEXT">FRAME:</p>
                 </div>
-            </div>
+                <!-- <div class="FIXED ROW W100" style="top:16vmax;"> -->
+                <div class="ROW W100 PH1">
+                    <input class="SCAN_INFO_BOX" type="text" id="SERIAL_NUMBER" value=""/>
+                    <div class="SCAN_INFO_TEXT">SERIAL NUMBER:</div>
+                    <br/><br/>
+                </div>
+                <!-- <div class="FIXED ROW W100" style="top:21vmax;"> -->
+                <div class="ROW W100 PH1">
+                    <input class="SCAN_INFO_BOX" type="text" id="CUSTOMER" value=""/>
+                    <div class="SCAN_INFO_TEXT">CUSTOMER:</div>
+                </div>
+                <!-- <div class="FIXED ROW W100" style="top:26vmax;"> -->
+                <div class="ROW W100 PH1">
+                    <input class="SCAN_INFO_BOX" type="text" id="SITE" value=""/>
+                    <div class="SCAN_INFO_TEXT">SITE:</div>
+                </div>
+                <!-- <div class="FIXED ROW W100" style="top:31vmax;"> -->
+                <div class="ROW W100 PH1">
+                    <input class="SCAN_INFO_BOX" type="text" id="OPERATOR" value=""/>
+                    <div class="SCAN_INFO_TEXT">OPERATOR:</div>
+                </div>
+                <!-- <div class="FIXED ROW W100" style="top:36vmax;"> -->
+                <div class="ROW W100 PH1">
+                    <select class="SCAN_INFO_BOX" id="UNITS">
+                        <option value="In">Inches</option>
+                        <option value="MM">MM</option>
+                    </select>
+                    <p class="SCAN_INFO_TEXT">UNITS:</p>
+                </div>
+                <!-- <div class="FIXED ROW W100" style="top:43vmax;"> -->
+                <div class="ROW W100 PH1">
+                    <select class="SCAN_INFO_BOX" id="TURBINE_STATE">
+                        <option value="OPENING">Opening</option>
+                        <option value="CLOSING">Closing</option>
+                    </select>
+                    <p class="SCAN_INFO_TEXT">STATE:</p>
+                </div>
+                <!-- <div class="FIXED ROW W100" style="top:50vmax;"> -->
+                <div class="ROW W100 PH1">
+                    <textarea id="DESCRIPTION" class="SCAN_INFO_BOX" value="" style="height:10vh; padding:1vmin; word-wrap:break-word; word-break: break-all; white-space: normal; line-height:normal"></textarea>
+                    <p class="SCAN_INFO_TEXT">DESCRIPTION:</p>
+                </div>
+                <!-- <div class="FIXED ROW W100" style="top:60vmax;"> -->
+                <div class="ROW W100 PH1">
+                    <table id="CASING_THICKNESS_SUPER_TABLE" class="CT_TABLE">
+                        <tr><th class="CT_TABLE_HEADER">CASING THICKNESS</th></tr>
+                        <tr><td style="background-color:#4B4B4B;">
+                            <table id="CASING_THICKNESS_TABLE" class="CT_TABLE">
+                            </table>
+                        </td></tr>
+                    </table>
+                </div>
+                <!-- <div class="ROW ABS" style="bottom:6vmin"> -->
+                <div class="ROW W100 PH1">
+                    <div class="BUTTON_GROUP">
+                        <div id="FRAME_DATA_CLEAR_BUTTON" class="IN_BLOCK BUTTON W25 OVERLAY_BUTTON">CLEAR</div>
+                        <div id="SN_SUBMIT_BUTTON" class="IN_BLOCK BUTTON W25 OVERLAY_BUTTON">NEXT</div>
+                    </div>
+                </div>
         </div>
         <!-- --------------- SENSOR MASTERING BEFORE DATA COLLECTION PAGE --------------------- -->
         <div id="INITIALIZE_SENSOR_PAGE" class="OVERLAY_FULL SCROLL_Y" style="top:5.9vmin">

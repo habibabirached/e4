@@ -244,6 +244,16 @@ ol {
 
 .HIDE{display:none;}
 
+.LH_1_1{line-height:1.1;}
+.LH_1_2{line-height:1.2;}
+.LH_1_3{line-height:1.3;}
+.LH_1_4{line-height:1.4;}
+.LH_1_5{line-height:1.5;}
+.LH_1_6{line-height:1.6;}
+.LH_1_7{line-height:1.7;}
+.LH_1_8{line-height:1.8;}
+.LH_1_9{line-height:1.9;}
+
 #LEFT_MENU{
     width:50vmin;
 	margin-left: -50vmin;
@@ -501,6 +511,19 @@ table.LOCAL_FILE_TABLE{
     position: sticky;
     z-index: 2;
     top: 0;
+}
+
+table.CT_TABLE{
+    border-collapse:collapse!important;
+    width:90%;
+    margin-left:5%;
+    margin-right:5%;
+    background-color: var(--TRACC-darkgrey);
+}
+
+th.CT_TABLE_HEADER{
+    color: white;
+    background-color: var(--TRACC-darkgrey);
 }
 
 #DATA_DETAILS_TABLE_HEADER {

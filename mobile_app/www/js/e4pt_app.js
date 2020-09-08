@@ -110,6 +110,10 @@ $(document).ready(function(){
         $("#SETUP_PAGE").fadeIn();
         set_frame_information();
     }, {passive: true});
+    document.getElementById("FRAME_SIZE").addEventListener('change', function(){
+        console.log("FRAME_SIZE change detected.");
+        setupCasingThicknessTable();
+    }, {passive: true});
     document.getElementById("SN_SUBMIT_BUTTON").addEventListener('click', function(){
         send_scan_meta_data(); // This does sensor initialization too.
     }, {passive: true});
@@ -420,6 +424,37 @@ function clearFrameData() {
                }
            });
 }
+
+function setupCasingThicknessTable() {
+    // Get frame type
+    let frm_idx = document.getElementById("FRAME_SIZE").selectedIndex;
+    current_frame_data = frame_data[frm_idx];
+    let pos = current_frame_data.position;
+    let tbl = document.getElementById("CASING_THICKNESS_TABLE");
+    let stageText = "Stage";
+    let htmlStr = "";
+    for (let p of Object.keys(pos)) {
+        console.log("stageText:  ", stageText);
+        console.log("current_frame_data.position:  ", p);
+        htmlStr = htmlStr + "<tr>";
+        htmlStr = htmlStr + "<th class=\"CT_TABLE_HEADER\">" + stageText + "</th>";
+        stageText = "";
+        for (let j=0; j<pos[p].length; j++) {
+            htmlStr = htmlStr + "<th class=\"CT_TABLE_HEADER\">" + pos[p][j] + "</th>";
+            console.log("pos[p][j]:  ", pos[p][j]);
+        }
+        htmlStr = htmlStr + "</tr>";
+        htmlStr = htmlStr + "<tr>";
+        htmlStr = htmlStr + "<td>" + p + "</td>";
+        for (let j=0; j<pos[p].length; j++) {
+            let casingThicknes_el_id = p + "_" + pos[p][j];
+            htmlStr = htmlStr + "<td id=\"" + casingThicknes_el_id + "\"></td>";
+        }
+        htmlStr = htmlStr + "</tr>";
+    }
+    tbl.innerHTML = htmlStr;
+}
+
 
 // overrideSettings is called when the user checks the box to override.
 function overrideSettings() {
