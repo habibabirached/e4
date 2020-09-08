@@ -521,9 +521,32 @@ table.CT_TABLE{
     background-color: var(--TRACC-darkgrey);
 }
 
+tbody.CT_TBODY {
+    border-collapse:collapse!important;
+}
+
 th.CT_TABLE_HEADER{
+    border-collapse:collapse!important;
+    border: 0px;
     color: white;
     background-color: var(--TRACC-darkgrey);
+    border-bottom: 1px solid #C2C2C2;
+}
+
+tr.CT_TABLE_ROW {
+    border-collapse:collapse!important;
+    border: 0px;
+}
+
+td.CT_TABLE_CELL_1{
+    border-collapse:collapse!important;
+    border: 0px;
+    background-color:#4B4B4B;
+}
+
+td.CT_TABLE_CELL_2{
+    border-collapse:collapse!important;
+    border: solid #C2C2C2;
 }
 
 #DATA_DETAILS_TABLE_HEADER {
