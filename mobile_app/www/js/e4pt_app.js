@@ -431,9 +431,8 @@ function setupCasingThicknessTable() {
     current_frame_data = frame_data[frm_idx];
     let pos = current_frame_data.position;
     let tbl = document.getElementById("CASING_THICKNESS_TABLE");
-    let stageText = "Stage";
+    let stageText = "STAGE";
     let htmlStr = "";
-    let cell_width = 100.0/ (pos.length + 2.0);
     for (let p of Object.keys(pos)) {
         console.log("stageText:  ", stageText);
         console.log("current_frame_data.position:  ", p);
@@ -446,10 +445,10 @@ function setupCasingThicknessTable() {
         }
         htmlStr = htmlStr + "</tr>";
         htmlStr = htmlStr + "<tr class=\"CT_TABLE_ROW\">";
-        htmlStr = htmlStr + "<td class=\"CT_TABLE_CELL_2\" style=\"width:" + cell_width + "%\">" + p + "</td>";
+        htmlStr = htmlStr + "<td class=\"CT_TABLE_CELL_2\">" + p + "</td>";
         for (let j=0; j<pos[p].length; j++) {
             let casingThicknes_el_id = p + "_" + pos[p][j];
-            htmlStr = htmlStr + "<td class=\"CT_TABLE_CELL_2\" style=\"width:" + cell_width + "%\" id=\"" + casingThicknes_el_id + "\"></td>";
+            htmlStr = htmlStr + "<td class=\"CT_TABLE_CELL_2\" id=\"" + casingThicknes_el_id + "\"></td>";
         }
         htmlStr = htmlStr + "</tr>";
     }
