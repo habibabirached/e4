@@ -234,9 +234,6 @@ $(document).ready(function(){
         set_position();
         update_spacer_value();
     }, {passive: true});
-    document.getElementById("CASING_THICKNESS").addEventListener('change', function(){
-        update_spacer_value();
-    }, {passive: true});
     document.getElementById("MODE_BUTTON_PROD").addEventListener('click', function(){
         document.getElementById('MODE_BUTTON_PROD').style.display = 'none'; //hide
         document.getElementById('MODE_BUTTON_DEMO').style.display = 'block';
@@ -418,6 +415,7 @@ function clearFrameData() {
                  document.getElementById("UNITS").selectedIndex = 0;
                  document.getElementById("TURBINE_STATE").selectedIndex = 0;
                  document.getElementById("DESCRIPTION").value = "";
+                 setupCasingThicknessTable();
                }
                else {
                  console.log("Database clear was cancelled.");
@@ -522,7 +520,8 @@ function acquisitionTimePromptWithMetaDataCallback(results) {
         //    if (acquisitionTime > 0) {
                 var sn = document.getElementById("SERIAL_NUMBER").value;
                 var frame = document.getElementById("FRAME_SIZE").value;
-                var casing_thickness = document.getElementById("CASING_THICKNESS").value;
+                let ct_id = current_stage + "_" + current_position; // get element id for casing thickness
+                var casing_thickness = document.getElementById(ct_id).value;
                 if (casing_thickness.length > MAX_STR_LEN) casing_thickness = casing_thickness.substr(0,MAX_STR_LEN);
                 var spacer_thickness = document.getElementById("SPACER_THICKNESS").value;
                 if (spacer_thickness.length > MAX_STR_LEN) spacer_thickness = spacer_thickness.substr(0,MAX_STR_LEN);
@@ -704,11 +703,9 @@ function turbine_setup(reset) {
 
     var units = document.getElementById("UNITS").value;
     if (units == "In") {
-        document.getElementById("CASING_THICKNESS_LABEL").innerHTML = "Casing Thickness (in)";
         document.getElementById("SPACER_THICKNESS_LABEL").innerHTML = "Spacer Thickness (in)";
     }
     if (units == "MM") {
-        document.getElementById("CASING_THICKNESS_LABEL").innerHTML = "Casing Thickness (mm)";
         document.getElementById("SPACER_THICKNESS_LABEL").innerHTML = "Spacer Thickness (mm)";
     }
 }
@@ -939,7 +936,8 @@ function reset_data_collection() {
     current_stage = current_frame_data['stage'][current_stage_index];
     current_position_index = 0;
     current_position = current_frame_data['position'][current_stage][current_position_index];
-    document.getElementById("CASING_THICKNESS").value = "";
+    let ct_id = current_stage + "_" + current_position;
+    document.getElementById(ct_id).value = "";
     document.getElementById("CLEARANCE_ERROR").innerHTML = "";
     document.getElementById("SPACER_COLOR_LABEL").innerHTML = "";
     savedRPM = "";
@@ -1157,13 +1155,16 @@ function setup_data_collection_page(dateStr, timeStr, update_position) {
 }
 
 function get_spacer_information() {
+  var spacer = null;
   var spacers = current_frame_data['spacers'];
-  var casing_thickness = parseFloat(document.getElementById("CASING_THICKNESS").value);
+  let ct_id = current_stage + "_" + current_position;
+  let case_thick = document.getElementById(ct_id).value;
+  if (case_thick.length == 0) return spacer;
+  var casing_thickness = parseFloat(cthick);
   var positions = current_frame_data['position'];
   positions = positions[current_stage];
   var position = positions[current_position_index];
   console.log("Getting spacer information for casing_thickness = ", casing_thickness, ", and position = ", position);
-  var spacer = null;
   var spacer_found = false;
   for (var i=0; i<spacers.length; i++) {
     if (spacers[i].stage == current_stage) {
@@ -1410,7 +1411,6 @@ function createWS(){
               case "data":
                 console.log("Received Data Message");
                 setIndicatorColor("green");
-                document.getElementById("CASING_THICKNESS").value = "";
                 //console.log(msg);
                 processE4PtData(msg);
                 break;
@@ -1520,7 +1520,6 @@ function pluginMessage(msg) {
             setIndicatorColor("green");
             $("#REV_PROGRESS_BAR").hide();
             $("#STATUS_BAR").show();
-            document.getElementById("CASING_THICKNESS").value = "";
             msg.data = JSON.parse(msg.data);
             msg.intensity = JSON.parse(msg.intensity);
             msg.locs = JSON.parse(msg.locs);
@@ -3007,10 +3006,14 @@ function loadLocalData(id) {
     current_position = current_frame_data.position[current_stage][0];
 
     $("#LOCAL_DATA_PAGE").fadeOut();
+    // Have to set up the casing thickness table before setting up
+    // the data collection page because the data collection page depends
+    // on the casing thicknesses.
+    setupCasingThicknessTable();
     // Have to set up the data collection page before we can populate
     // the clearance entries in the tables.
     //var tmp = document.getElementById("FRAME_SIZE").selectedIndex;
-      setup_data_collection_page(doc.date, doc.time, true);
+    setup_data_collection_page(doc.date, doc.time, true);
 
     for (var i=0; i<doc.sets.length; i++) {
       var pos = doc.sets[i].position;
