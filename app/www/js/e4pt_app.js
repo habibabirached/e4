@@ -448,7 +448,7 @@ function setupCasingThicknessTable() {
         htmlStr = htmlStr + "<td class=\"CT_TABLE_CELL_2\">" + p + "</td>";
         for (let j=0; j<pos[p].length; j++) {
             let casingThicknes_el_id = p + "_" + pos[p][j];
-            htmlStr = htmlStr + "<td class=\"CT_TABLE_CELL_2\" id=\"" + casingThicknes_el_id + "\"></td>";
+            htmlStr = htmlStr + "<td class=\"CT_TABLE_CELL_2\"><input class=\"CT_INFO_BOX\" type=\"text\" id=\"" + casingThicknes_el_id + "\" value=\"\"/></td>";
         }
         htmlStr = htmlStr + "</tr>";
     }

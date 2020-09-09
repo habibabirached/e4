@@ -554,6 +554,16 @@ td.CT_TABLE_CELL_2{
     width:10vw;
 }
 
+.CT_INFO_BOX{
+    border-collapse:collapse!important;
+    float:right;
+    color: black;
+    caret-color: black;
+    font-size:2vmax;
+    white-space: nowrap;
+    width: 10vw;
+}
+
 #DATA_DETAILS_TABLE_HEADER {
     position: sticky;
     z-index: 2;
