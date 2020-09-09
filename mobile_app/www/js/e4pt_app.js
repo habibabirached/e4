@@ -733,6 +733,9 @@ function set_frame_information() {
       document.getElementById("FRAME_SIZE").selectedIndex = selectedIndex;
       document.getElementById("FRAME_SIZE").value = current_frame_data.frame;
     }
+    else {
+        setupCasingThicknessTable();
+    }
 }
 
 function set_position_information() {
