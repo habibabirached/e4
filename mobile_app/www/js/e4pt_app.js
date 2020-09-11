@@ -69,6 +69,7 @@ var E4PTdata = {
     "minima":[],
     "data":[],
     "quality":[],
+    "turbine_casing_thicknesses":{},
     "clearance":"",
     "max_clr":"",
     "min_clr":"",
@@ -115,6 +116,7 @@ $(document).ready(function(){
         setupCasingThicknessTable();
     }, {passive: true});
     document.getElementById("SN_SUBMIT_BUTTON").addEventListener('click', function(){
+        save_casing_thickness();
         send_scan_meta_data(); // This does sensor initialization too.
     }, {passive: true});
     document.getElementById("COLLECT_DATA_BUTTON").addEventListener('click', function(){
@@ -434,21 +436,21 @@ function setupCasingThicknessTable() {
     for (let p of Object.keys(pos)) {
         console.log("stageText:  ", stageText);
         console.log("current_frame_data.position:  ", p);
-        htmlStr = htmlStr + "<tr class=\"CT_TABLE_ROW\">";
-        htmlStr = htmlStr + "<th class=\"CT_TABLE_HEADER\">" + stageText + "</th>";
+        htmlStr = htmlStr + '<tr class="CT_TABLE_ROW">';
+        htmlStr = htmlStr + '<th class="CT_TABLE_HEADER">' + stageText + '</th>';
         stageText = "";
         for (let j=0; j<pos[p].length; j++) {
-            htmlStr = htmlStr + "<th class=\"CT_TABLE_HEADER\">" + pos[p][j] + "</th>";
+            htmlStr = htmlStr + '<th class="CT_TABLE_HEADER">' + pos[p][j] + '</th>';
             console.log("pos[p][j]:  ", pos[p][j]);
         }
-        htmlStr = htmlStr + "</tr>";
-        htmlStr = htmlStr + "<tr class=\"CT_TABLE_ROW\">";
-        htmlStr = htmlStr + "<td class=\"CT_TABLE_CELL_2\">" + p + "</td>";
+        htmlStr = htmlStr + '</tr>';
+        htmlStr = htmlStr + '<tr class="CT_TABLE_ROW">';
+        htmlStr = htmlStr + '<td class="CT_TABLE_CELL_2">' + p + '</td>';
         for (let j=0; j<pos[p].length; j++) {
-            let casingThicknes_el_id = p + "_" + pos[p][j];
-            htmlStr = htmlStr + "<td class=\"CT_TABLE_CELL_2\"><input class=\"CT_INFO_BOX\" type=\"text\" id=\"" + casingThicknes_el_id + "\" value=\"\"/></td>";
+            let casingThickness_el_id = p + '_' + pos[p][j];
+            htmlStr = htmlStr + '<td class="CT_TABLE_CELL_2"><input class="CT_INFO_BOX" type="text" id="' + casingThickness_el_id + '" value=""/></td>';
         }
-        htmlStr = htmlStr + "</tr>";
+        htmlStr = htmlStr + '</tr>';
     }
     tbl.innerHTML = htmlStr;
 }
@@ -521,7 +523,7 @@ function acquisitionTimePromptWithMetaDataCallback(results) {
                 var sn = document.getElementById("SERIAL_NUMBER").value;
                 var frame = document.getElementById("FRAME_SIZE").value;
                 let ct_id = current_stage + "_" + current_position; // get element id for casing thickness
-                var casing_thickness = document.getElementById(ct_id).value;
+                var casing_thickness = E4PTdata.turbine_casing_thicknesses[ct_id];
                 if (casing_thickness.length > MAX_STR_LEN) casing_thickness = casing_thickness.substr(0,MAX_STR_LEN);
                 var spacer_thickness = document.getElementById("SPACER_THICKNESS").value;
                 if (spacer_thickness.length > MAX_STR_LEN) spacer_thickness = spacer_thickness.substr(0,MAX_STR_LEN);
@@ -627,6 +629,22 @@ function set_connection_mode(mode) {
                                                pluginMessage(msg);
                                                }, null);
     }
+}
+
+function save_casing_thickness() {
+    let frm_idx = document.getElementById("FRAME_SIZE").selectedIndex;
+    current_frame_data = frame_data[frm_idx];
+    let pos = current_frame_data.position;
+    E4PTdata.turbine_casing_thicknesses = {}; // Clear old casing thicknesses
+    for (let p of Object.keys(pos)) {
+        for (let j=0; j<pos[p].length; j++) {
+            let casingThickness_el_id = p + '_' + pos[p][j];
+            let ct_el = document.getElementById(casingThickness_el_id);
+            let casethickness = ct_el.value;
+            E4PTdata.turbine_casing_thicknesses [casingThickness_el_id] = casethickness;
+        }
+    }
+    console.log("E4PTdata.turbine_casing_thicknesses: ", E4PTdata.turbine_casing_thicknesses);
 }
 
 function send_scan_meta_data() {
@@ -1158,9 +1176,12 @@ function get_spacer_information() {
   var spacer = null;
   var spacers = current_frame_data['spacers'];
   let ct_id = current_stage + "_" + current_position;
-  let case_thick = document.getElementById(ct_id).value;
+  let case_thick = "";
+  if (typeof E4PTdata.turbine_casing_thicknesses[ct_id] !== 'undefined') {
+      case_thick = E4PTdata.turbine_casing_thicknesses[ct_id];
+  }
   if (case_thick.length == 0) return spacer;
-  var casing_thickness = parseFloat(cthick);
+  var casing_thickness = parseFloat(case_thick);
   var positions = current_frame_data['position'];
   positions = positions[current_stage];
   var position = positions[current_position_index];
@@ -1191,7 +1212,7 @@ function update_spacer_value() {
   var spacer_value =  null;
   var spacer_color = "";
   if (spacer == null) {
-    spacer_value = "Correct casing thickness.";
+    spacer_value = "Enter casing thickness.";
     spacer = {'color':'white'};
   }
   else {
@@ -2701,6 +2722,7 @@ function addDBEntry(e4pt_data) {
     date: e4pt_data.date,
     time: e4pt_data.time,
     sets: e4pt_data.sets,
+    turbine_casing_thicknesses: e4pt_data.turbine_casing_thicknesses,
     alreadyOnLDB: e4pt_data.alreadyOnLDB
     // We don't save the locs, minima, or data elements of e4pt_data because it
     // contains dense data and could overwhelm the database & browser memory.
@@ -2998,6 +3020,9 @@ function loadLocalData(id) {
     E4PTdata.time = doc.time;
     E4PTdata.final = doc.final;
     E4PTdata.sets = doc.sets;
+    if (typeof doc.turbine_casing_thicknesses !== 'undefined') {
+        E4PTdata.turbine_casing_thicknesses = doc.turbine_casing_thicknesses;
+    }
 
     current_frame_data = frame_data[frm_idx];
     current_stage_index = 0;
@@ -3010,6 +3035,14 @@ function loadLocalData(id) {
     // the data collection page because the data collection page depends
     // on the casing thicknesses.
     setupCasingThicknessTable();
+    // Iterate over the casing thicknesses and repopulate the table
+    for (let p of Object.keys(E4PTdata.turbine_casing_thicknesses)) {
+        let ct = E4PTdata.turbine_casing_thicknesses[p];
+        if (typeof ct !== 'undefined') {
+            document.getElementById(p).value = E4PTdata.turbine_casing_thicknesses[p];
+        }
+    }
+
     // Have to set up the data collection page before we can populate
     // the clearance entries in the tables.
     //var tmp = document.getElementById("FRAME_SIZE").selectedIndex;
