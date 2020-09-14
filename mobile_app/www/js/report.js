@@ -278,23 +278,10 @@ function get_tip_clearance(state, stage, position, data) {
 }
 
 function get_casing_thickness(state, stage, position, data) {
-  for (var i=0; i<data.sets.length; i++) {
-    if ( data.sets[i].state.toUpperCase() == state.toUpperCase()) {
-      var stgStr1 = data.sets[i].stage.toString();
-      if ( stgStr1 == stage ) {
-        if (data.sets[i].position.toUpperCase() == position.toUpperCase()) {
-          if (typeof data.sets[i].case_thickness === 'string') {
-              if (data.sets[i].case_thickness.length == 0) {
-                  data.sets[i].case_thickness = 0;
-              }
-              else {
-                  data.sets[i].case_thickness = parseFloat(data.sets[i].case_thickness);
-              }
-          }
-          return data.sets[i].case_thickness.toFixed(4);
-        }
-      }
-    }
+  console.log("state: ", state, "; stage: ", stage, "; position: ", position);
+  let ct_id = stage + "_" + position; // get element id for casing thickness
+  if (data.turbine_casing_thicknesses[ct_id] !== 'undefined') {
+      return data.turbine_casing_thicknesses[ct_id];
   }
   return "";
 }
