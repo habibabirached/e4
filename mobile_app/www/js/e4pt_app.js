@@ -116,12 +116,12 @@ $(document).ready(function(){
         setupCasingThicknessTable();
     }, {passive: true});
     document.getElementById("SN_SUBMIT_BUTTON").addEventListener('click', function(){
-        save_casing_thickness();
+        record_casing_thickness();
         send_scan_meta_data(); // This does sensor initialization too.
     }, {passive: true});
     document.getElementById("COLLECT_DATA_BUTTON").addEventListener('click', function(){
         fadeOutAll();
-        turbine_setup(true);
+        confirm_new_or_continue();
     }, {passive: true});
     document.getElementById("CLEAR_DB_BUTTON").addEventListener('click', function(){
         e4PtConfirm("Are you sure you want to clear all data from this database?",
@@ -234,6 +234,9 @@ $(document).ready(function(){
     }, {passive: true});
     document.getElementById("SENSOR_POSITION").addEventListener('change', function(){
         set_position();
+        update_spacer_value();
+    }, {passive: true});
+    document.getElementById("CURR_CASE_THICKNESS").addEventListener('change', function(){
         update_spacer_value();
     }, {passive: true});
     document.getElementById("MODE_BUTTON_PROD").addEventListener('click', function(){
@@ -522,8 +525,10 @@ function acquisitionTimePromptWithMetaDataCallback(results) {
         //    if (acquisitionTime > 0) {
                 var sn = document.getElementById("SERIAL_NUMBER").value;
                 var frame = document.getElementById("FRAME_SIZE").value;
+                let casing_thickness = document.getElementById("CURR_CASE_THICKNESS").value;
                 let ct_id = current_stage + "_" + current_position; // get element id for casing thickness
-                var casing_thickness = E4PTdata.turbine_casing_thicknesses[ct_id];
+                E4PTdata.turbine_casing_thicknesses[ct_id] = casing_thickness;
+                document.getElementById(ct_id).value = casing_thickness;
                 if (casing_thickness.length > MAX_STR_LEN) casing_thickness = casing_thickness.substr(0,MAX_STR_LEN);
                 var spacer_thickness = document.getElementById("SPACER_THICKNESS").value;
                 if (spacer_thickness.length > MAX_STR_LEN) spacer_thickness = spacer_thickness.substr(0,MAX_STR_LEN);
@@ -631,7 +636,7 @@ function set_connection_mode(mode) {
     }
 }
 
-function save_casing_thickness() {
+function record_casing_thickness() {
     let frm_idx = document.getElementById("FRAME_SIZE").selectedIndex;
     current_frame_data = frame_data[frm_idx];
     let pos = current_frame_data.position;
@@ -686,6 +691,17 @@ function send_scan_meta_data() {
                                             pluginMessage(msg);
                                            }, null);
   }
+
+  // Get a timestamp in prepartion for saving.
+  let d = new Date();
+  let hh = ( '0' + d.getHours()).substr(-2);
+  let mm = ( '0' + d.getMinutes()).substr(-2);
+  let ss = ( '0' + d.getSeconds()).substr(-2);
+  let timeStr = hh + ":" + mm;
+  let dateStr = monthNames[d.getMonth()] + "-" + d.getDate() + "-" + d.getFullYear();
+  E4PTdata.date = dateStr;
+  E4PTdata.time = timeStr;
+  addDBEntry(E4PTdata); // Save to the database here so we don't lose this data.
     
   initialize_sensor();
     
@@ -694,6 +710,35 @@ function send_scan_meta_data() {
 function initialize_sensor() {
     console.log("@initialize_sensor");
     setMasterMessage2("white", "green", "Ready");
+}
+
+function confirm_new_or_continue() {
+    let msg = "Continue collecting data for a turbine, or clear data and start a new collection?"
+    try{
+        navigator.notification.confirm(
+            String(msg),            // message
+            function(idx) {
+                if (idx == 1) { // Continue
+                    turbine_setup(false);
+                }
+                else if (idx == 2) { // Start New
+                    turbine_setup(true);
+                }
+                else if (idx == 3) { // Cancel
+                    return; // Do nothing
+                }
+            }, // callback to invoke with index of button pressed
+            'Confirm',                     // title
+            ['Continue','Start New', 'Cancel']         // buttonLabels: 1=OK, 2=Cancel
+        );
+    } catch (err){
+        if(confirm(String(msg))){
+            console.log("@confirm_new_or_continue: Error caught(1): ", msg);
+        } else {
+            console.log("@confirm_new_or_continue: Error caught(2): ", msg);
+        }
+    }
+    return;
 }
 
 function turbine_setup(reset) {
@@ -721,9 +766,11 @@ function turbine_setup(reset) {
 
     var units = document.getElementById("UNITS").value;
     if (units == "In") {
+        document.getElementById("CURR_CASE_THICKNESS_LABEL").innerHTML = "Casing Thickness (in)";
         document.getElementById("SPACER_THICKNESS_LABEL").innerHTML = "Spacer Thickness (in)";
     }
     if (units == "MM") {
+        document.getElementById("CURR_CASE_THICKNESS_LABEL").innerHTML = "Casing Thickness (mm)";
         document.getElementById("SPACER_THICKNESS_LABEL").innerHTML = "Spacer Thickness (mm)";
     }
 }
@@ -733,7 +780,7 @@ function set_frame_information() {
     var frmIdx = 0;
     var frame = "";
     var selectedIndex = 0;
-    E4PTdata.pouchdb_id = "";
+    // E4PTdata.pouchdb_id = "";
     for (frmIdx = 0; frmIdx < frame_data.length; frmIdx++) {
         html_buf.push("<option value='" + frame_data[frmIdx]['frame'] + "'>" + frame_data[frmIdx]['frame'] + "</option>");
         if (current_frame_data.length != 0) {
@@ -956,6 +1003,7 @@ function reset_data_collection() {
     current_position = current_frame_data['position'][current_stage][current_position_index];
     let ct_id = current_stage + "_" + current_position;
     document.getElementById(ct_id).value = "";
+    document.getElementById("CURR_CASE_THICKNESS_LABEL").value = "";
     document.getElementById("CLEARANCE_ERROR").innerHTML = "";
     document.getElementById("SPACER_COLOR_LABEL").innerHTML = "";
     savedRPM = "";
@@ -1172,13 +1220,18 @@ function setup_data_collection_page(dateStr, timeStr, update_position) {
     update_spacer_value();
 }
 
+//
+// get_spacer_information not only gets the spacer information, but it updates
+// the casing thickness information based on any user input.
+//
 function get_spacer_information() {
   var spacer = null;
   var spacers = current_frame_data['spacers'];
   let ct_id = current_stage + "_" + current_position;
-  let case_thick = "";
+  document.getElementById(ct_id).value = document.getElementById("CURR_CASE_THICKNESS").value;
+  let case_thick = document.getElementById("CURR_CASE_THICKNESS").value;
   if (typeof E4PTdata.turbine_casing_thicknesses[ct_id] !== 'undefined') {
-      case_thick = E4PTdata.turbine_casing_thicknesses[ct_id];
+      E4PTdata.turbine_casing_thicknesses[ct_id] = case_thick;
   }
   if (case_thick.length == 0) return spacer;
   var casing_thickness = parseFloat(case_thick);
@@ -1206,6 +1259,9 @@ function get_spacer_information() {
   return spacer;
 }
 
+//
+// Updates the spacer value based on the current stage, position and casing thickness.
+//
 function update_spacer_value() {
   console.log("@update_spacer_value");
   var spacer = get_spacer_information();
@@ -1221,12 +1277,23 @@ function update_spacer_value() {
   }
 
   let imageName = 'img/spacers/Unknown.gif';
-  if (typeof spacer.image !== 'undefined') imageName = 'img/spacers/' + spacer.image + '.gif';
-    
+  if (typeof spacer.image !== 'undefined') {
+    imageName = 'img/spacers/' + spacer.image + '.gif';
+    let fullFilePath = appDir + "www/" + imageName;
+    window.rootFS.getFile(fullFilePath, { create: false },
+        function() {
+            document.getElementById("SPACER_THUMBNAIL").setAttribute("src",imageName);
+        },
+        function() {
+            imageName = 'img/spacers/Unknown.gif';
+            document.getElementById("SPACER_THUMBNAIL").setAttribute("src",imageName);
+        }
+    );
+  }
+
   document.getElementById("SPACER_THICKNESS").value = spacer_value;
   document.getElementById("SPACER_COLOR_LABEL").innerHTML = spacer_color;
   document.getElementById("SPACER_COLOR_LABEL").style.color = spacer.color;
-  document.getElementById("SPACER_THUMBNAIL").setAttribute("src",imageName);
 }
 
 function advance_position() {
@@ -1251,6 +1318,8 @@ function advance_position() {
     }
     document.getElementById("SENSOR_STAGE").selectedIndex = current_stage_index;
     document.getElementById("SENSOR_POSITION").selectedIndex = current_position_index;
+    let ct_id = current_stage + "_" + current_position;
+    document.getElementById("CURR_CASE_THICKNESS").value = E4PTdata.turbine_casing_thicknesses[ct_id];
 }
 
 function set_grid_position(position, stage) {
@@ -1269,6 +1338,8 @@ function set_grid_position(position, stage) {
     var clearance = document.getElementById(el_id).innerHTML;
     clearance = parseFloat(clearance);
     update_clearance(clearance);
+    let ct_id = current_stage + "_" + current_position;
+    document.getElementById("CURR_CASE_THICKNESS").value = E4PTdata.turbine_casing_thicknesses[ct_id];
     update_spacer_value();
 }
 
@@ -3042,6 +3113,8 @@ function loadLocalData(id) {
             document.getElementById(p).value = E4PTdata.turbine_casing_thicknesses[p];
         }
     }
+    let ct_id = current_stage + "_" + current_position;
+    document.getElementById("CURR_CASE_THICKNESS").value = E4PTdata.turbine_casing_thicknesses[ct_id];
 
     // Have to set up the data collection page before we can populate
     // the clearance entries in the tables.
