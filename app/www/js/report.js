@@ -277,9 +277,13 @@ function get_tip_clearance(state, stage, position, data) {
   return "";
 }
 
+//
+// get_casing_thickness returns the recorded casing thickness for the given
+// stage and position.  The 'state' (opening or closing) is no longer considered
+// as it is presumed the casing thickness does not change.s
+//
 function get_casing_thickness(state, stage, position, data) {
-  console.log("state: ", state, "; stage: ", stage, "; position: ", position);
-  let ct_id = stage + "_" + position; // get element id for casing thickness
+    let ct_id = stage + "_" + position; // get element id for casing thickness
   if (data.turbine_casing_thicknesses[ct_id] !== 'undefined') {
       return data.turbine_casing_thicknesses[ct_id];
   }
