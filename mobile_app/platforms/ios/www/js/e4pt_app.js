@@ -113,7 +113,7 @@ $(document).ready(function(){
     }, {passive: true});
     document.getElementById("FRAME_SIZE").addEventListener('change', function(){
         console.log("FRAME_SIZE change detected.");
-        setupCasingThicknessTable();
+        setupCasingThicknessTable(null);
     }, {passive: true});
     document.getElementById("SN_SUBMIT_BUTTON").addEventListener('click', function(){
         record_casing_thickness();
@@ -420,7 +420,7 @@ function clearFrameData() {
                  document.getElementById("UNITS").selectedIndex = 0;
                  document.getElementById("TURBINE_STATE").selectedIndex = 0;
                  document.getElementById("DESCRIPTION").value = "";
-                 setupCasingThicknessTable();
+                 setupCasingThicknessTable(null);
                }
                else {
                  console.log("Database clear was cancelled.");
@@ -428,7 +428,7 @@ function clearFrameData() {
            });
 }
 
-function setupCasingThicknessTable() {
+function setupCasingThicknessTable(callback) {
     // Get frame type
     let frm_idx = document.getElementById("FRAME_SIZE").selectedIndex;
     current_frame_data = frame_data[frm_idx];
@@ -456,6 +456,9 @@ function setupCasingThicknessTable() {
         htmlStr = htmlStr + '</tr>';
     }
     tbl.innerHTML = htmlStr;
+    if (callback != null) {
+        callback(); // execute the callback if there is one.
+    }
 }
 
 
@@ -796,7 +799,7 @@ function set_frame_information() {
       document.getElementById("FRAME_SIZE").value = current_frame_data.frame;
     }
     else {
-        setupCasingThicknessTable();
+        setupCasingThicknessTable(null);
     }
 }
 
@@ -1228,9 +1231,14 @@ function get_spacer_information() {
   var spacer = null;
   var spacers = current_frame_data['spacers'];
   let ct_id = current_stage + "_" + current_position;
-  document.getElementById(ct_id).value = document.getElementById("CURR_CASE_THICKNESS").value;
   let case_thick = document.getElementById("CURR_CASE_THICKNESS").value;
+  document.getElementById(ct_id).value = document.getElementById("CURR_CASE_THICKNESS").value;
+  if (case_thick.length == 0) {
+        // If the cell is empty, fill in in the field with what's stored in the data structure.
+        case_thick = E4PTdata.turbine_casing_thicknesses[ct_id]
+  }
   if (typeof E4PTdata.turbine_casing_thicknesses[ct_id] !== 'undefined') {
+      // If nothing is in the data structure, fill in the structuer with what's in the field.
       E4PTdata.turbine_casing_thicknesses[ct_id] = case_thick;
   }
   if (case_thick.length == 0) return spacer;
@@ -1645,17 +1653,17 @@ function pluginMessage(msg) {
             
             sensor_data.master_fixture_height = JSON.parse(msg.master_fixture_height);
             let tmpStr = sensor_data.master_fixture_height.toString(10);
-            if (tmpStr.length == 1) tmpStr = sensor_data.master_fixture_height.toFixed(2).toString(10);
+            if (tmpStr.length == 1) tmpStr = sensor_data.master_fixture_height.toFixed(4).toString(10);
             document.getElementById("MASTER_FIXTURE_HEIGHT").value = tmpStr;
             
             sensor_data.mastering_value = JSON.parse(msg.mastering_value);
             tmpStr = sensor_data.mastering_value.toString(10);
-            if (tmpStr.length == 1) tmpStr = sensor_data.mastering_value.toFixed(2).toString(10);
+            if (tmpStr.length == 1) tmpStr = sensor_data.mastering_value.toFixed(4).toString(10);
             document.getElementById("MASTERING_VALUE").value = tmpStr;
 
             sensor_data.master_offset = JSON.parse(msg.master_offset);
             tmpStr = sensor_data.master_offset.toString(10);
-            if (tmpStr.length == 1) tmpStr = sensor_data.master_offset.toFixed(2).toString(10);
+            if (tmpStr.length == 1) tmpStr = sensor_data.master_offset.toFixed(4).toString(10);
             document.getElementById("MASTER_OFFSET").value = tmpStr;
             
             break;
@@ -2364,7 +2372,7 @@ function update_clearance(clearance) {
     }
     err_id.innerHTML = err_str;
 
-    document.getElementById(el_id).innerHTML = clearance_f.toFixed(3);
+    document.getElementById(el_id).innerHTML = clearance_f.toFixed(4);
     
     clearances = [];
     for (var i=0; i<current_frame_data['position'][stage].length; i++) {
@@ -3102,17 +3110,23 @@ function loadLocalData(id) {
     current_position = current_frame_data.position[current_stage][0];
 
     $("#LOCAL_DATA_PAGE").fadeOut();
+      
     // Have to set up the casing thickness table before setting up
     // the data collection page because the data collection page depends
-    // on the casing thicknesses.
-    setupCasingThicknessTable();
-    // Iterate over the casing thicknesses and repopulate the table
-    for (let p of Object.keys(E4PTdata.turbine_casing_thicknesses)) {
-        let ct = E4PTdata.turbine_casing_thicknesses[p];
-        if (typeof ct !== 'undefined') {
-            document.getElementById(p).value = E4PTdata.turbine_casing_thicknesses[p];
-        }
-    }
+    // on the casing thicknesses.  The casing thickness are filled in in
+    // a callback in an attempt to ensure the table is there before filling
+    // it in.
+    setupCasingThicknessTable( function() {
+          // Iterate over the casing thicknesses and repopulate the table
+          for (let p of Object.keys(E4PTdata.turbine_casing_thicknesses)) {
+              let ct = E4PTdata.turbine_casing_thicknesses[p];
+              if (typeof ct !== 'undefined') {
+                  document.getElementById(p).value = E4PTdata.turbine_casing_thicknesses[p];
+              }
+          }
+      }
+    );
+
     let ct_id = current_stage + "_" + current_position;
     document.getElementById("CURR_CASE_THICKNESS").value = E4PTdata.turbine_casing_thicknesses[ct_id];
 
@@ -3148,7 +3162,7 @@ function loadLocalData(id) {
       }
       var el_id = positions[position_index] + stages[stage_index];
       el_id = el_id.replace(/\s+/g, '_');
-      document.getElementById(el_id).innerHTML = clr_f.toFixed(3);
+      document.getElementById(el_id).innerHTML = clr_f.toFixed(4);
     }
 
     turbine_setup(false);
