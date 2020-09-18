@@ -117,11 +117,11 @@ $(document).ready(function(){
     }, {passive: true});
     document.getElementById("SN_SUBMIT_BUTTON").addEventListener('click', function(){
         record_casing_thickness();
-        send_scan_meta_data(); // This does sensor initialization too.
+        confirm_new_or_continue();
     }, {passive: true});
     document.getElementById("COLLECT_DATA_BUTTON").addEventListener('click', function(){
         fadeOutAll();
-        confirm_new_or_continue();
+        turbine_setup();
     }, {passive: true});
     document.getElementById("CLEAR_DB_BUTTON").addEventListener('click', function(){
         e4PtConfirm("Are you sure you want to clear all data from this database?",
@@ -655,7 +655,7 @@ function record_casing_thickness() {
     console.log("E4PTdata.turbine_casing_thicknesses: ", E4PTdata.turbine_casing_thicknesses);
 }
 
-function send_scan_meta_data() {
+function send_scan_meta_data(reset) {
 
   // First make sure the user has input some meta-data.
   E4PTdata.serial_number = document.getElementById("SERIAL_NUMBER").value;
@@ -704,6 +704,11 @@ function send_scan_meta_data() {
   let dateStr = monthNames[d.getMonth()] + "-" + d.getDate() + "-" + d.getFullYear();
   E4PTdata.date = dateStr;
   E4PTdata.time = timeStr;
+
+  if (reset == true) {
+      E4PTdata.pouchdb_id = "";  // setting this to an empty string will cause a new DB entry to be created.
+      reset_data_collection();
+  }
   addDBEntry(E4PTdata); // Save to the database here so we don't lose this data.
     
   initialize_sensor();
@@ -717,15 +722,16 @@ function initialize_sensor() {
 
 function confirm_new_or_continue() {
     let msg = "Continue collecting data for a turbine, or clear data and start a new collection?"
+    if (E4PTdata.pouchdb_id.length > 0) {
     try{
         navigator.notification.confirm(
             String(msg),            // message
             function(idx) {
                 if (idx == 1) { // Continue
-                    turbine_setup(false);
+                    send_scan_meta_data(false);
                 }
                 else if (idx == 2) { // Start New
-                    turbine_setup(true);
+                    send_scan_meta_data(true);
                 }
                 else if (idx == 3) { // Cancel
                     return; // Do nothing
@@ -741,10 +747,14 @@ function confirm_new_or_continue() {
             console.log("@confirm_new_or_continue: Error caught(2): ", msg);
         }
     }
+    }
+    else {
+        send_scan_meta_data(true);
+    }
     return;
 }
 
-function turbine_setup(reset) {
+function turbine_setup() {
     $("#TITLE_BAR").text("DATA COLLECTION");
     $("#TURBINE_SETUP_PAGE").fadeIn();
     savedRPM = "";
@@ -752,11 +762,6 @@ function turbine_setup(reset) {
     // Get frame type
     var frm_idx = document.getElementById("FRAME_SIZE").selectedIndex;
     current_frame_data = frame_data[frm_idx];
-
-    if (reset == true) {
-      E4PTdata.pouchdb_id = "";
-      reset_data_collection();
-    }
 
     // Setup the Stage options
     set_stage_information();
@@ -776,6 +781,21 @@ function turbine_setup(reset) {
         document.getElementById("CURR_CASE_THICKNESS_LABEL").innerHTML = "Casing Thickness (mm)";
         document.getElementById("SPACER_THICKNESS_LABEL").innerHTML = "Spacer Thickness (mm)";
     }
+    let customer = document.getElementById("CUSTOMER").value;
+    let site = document.getElementById("SITE").value;
+    let dateStr = E4PTdata.date;
+    let d = new Date();
+    let hh = ( '0' + d.getHours()).substr(-2);
+    let mm = ( '0' + d.getMinutes()).substr(-2);
+    let ss = ( '0' + d.getSeconds()).substr(-2);
+    let timeStr = hh + ":" + mm;
+    if (dateStr.length == 0) {
+        dateStr = monthNames[d.getMonth()] + "-" + d.getDate() + "-" + d.getFullYear();
+    }
+    document.getElementById("HEADER_DATETIME").innerHTML = "Date: " + dateStr;
+    document.getElementById("HEADER_CUSTOMER").innerHTML = "Customer: " + customer + " - " + site;
+    document.getElementById("HEADER_FRAME").innerHTML = "Frame: " + E4PTdata.frame;
+    document.getElementById("HEADER_SERIAL").innerHTML = "S/N: " + E4PTdata.serial_number + ";  Units: " + E4PTdata.units;
 }
 
 function set_frame_information() {
@@ -1172,6 +1192,9 @@ function setup_data_collection_page(dateStr, timeStr, update_position) {
     E4PTdata.description = document.getElementById("DESCRIPTION").value;
     E4PTdata.date = dateStr;
     E4PTdata.time = timeStr;
+    E4PTdata.customer = customer;
+    E4PTdata.site = site;
+    E4PTdata.operator = document.getElementById("OPERATOR").value;
     var header = "<p>" + dateStr + "  -  " + timeStr + "</p><p>" + customer + " - " + site + "</p><p>Frame: " + E4PTdata.frame + "</p><p>S/N: " + E4PTdata.serial_number + "</p>";
     document.getElementById("HEADER_DATETIME").innerHTML = "Date: " + dateStr;
     document.getElementById("HEADER_CUSTOMER").innerHTML = "Customer: " + customer + " - " + site;
@@ -3164,6 +3187,6 @@ function loadLocalData(id) {
       document.getElementById(el_id).innerHTML = clr_f.toFixed(4);
     }
 
-    turbine_setup(false);
+    turbine_setup();
   });
 }
