@@ -1005,8 +1005,7 @@ function reset_data_collection() {
     current_position_index = 0;
     current_position = current_frame_data['position'][current_stage][current_position_index];
     let ct_id = current_stage + "_" + current_position;
-    document.getElementById(ct_id).value = "";
-    document.getElementById("CURR_CASE_THICKNESS_LABEL").value = "";
+    document.getElementById("CURR_CASE_THICKNESS").value = E4PTdata.turbine_casing_thicknesses[ct_id];
     document.getElementById("CLEARANCE_ERROR").innerHTML = "";
     document.getElementById("SPACER_COLOR_LABEL").innerHTML = "";
     savedRPM = "";
