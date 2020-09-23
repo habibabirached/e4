@@ -1038,6 +1038,8 @@ function reset_data_collection() {
           chart.series[0].remove(true);
       }
     }
+    // Don't make the polar (clearance) plot for now.
+    /*
     obj = document.getElementById("CLEARANCE_PLOT");
     var chart2 = Highcharts.charts[obj.getAttribute('data-highcharts-chart')];
     if (typeof chart2 !== 'undefined') {
@@ -1046,6 +1048,7 @@ function reset_data_collection() {
           chart2.series[0].remove(true);
       }
     }
+    */
 }
 
 function b64toBlob(b64Data, contentType, sliceSize) {
@@ -1083,30 +1086,31 @@ function generate_customer_report() {
     }
     else {
         // This method generates a PDF, then exports it.
+        let cust_rpt_fileName = "customer_report_e4Pt_" + E4PTdata.serial_number + "_" + E4PTdata.date + ".pdf";
         baseURL = appDir + "www";
         var options = {
             documentSize: 'Letter',
             type: 'base64',
-            fileName: 'customer_report.pdf',
+            fileName: cust_rpt_fileName,
             baseUrl:baseURL
         };
         if (communicationChannel == "Plugin") {
             // replace "./css/report.css" with "<%=css_file%>" for plugin
             reportHTML = reportHTML.replace("./css/report.css","<%=css_file%>");
             reportHTML = reportHTML.split("img/").join("www/img/"); // equivalent to replaceAll
-            console.log("reportHTML:\n",reportHTML);
         }
         var payload = _.template(reportHTML);
         cssFile = "www/css/report.css";
         pdf.fromData(payload({css_file:cssFile}), options)
         .then(function(base64){
-              var cust_rpt_fileName = "customer_report.pdf";
               var pdfBlob = b64toBlob(base64, "application/pdf");
-              writeToFile(E4PTdata.serial_number, cust_rpt_fileName, pdfBlob, function() {
-                                e4PtPrompt("Email or Upload File?", function(option) {
-                                     exportReport(option, base64, cust_rpt_fileName);
-                                     }, "Get File", ["Email","Upload to Box","Cancel"]);
-                            });
+              writeToFile(E4PTdata.serial_number, cust_rpt_fileName, pdfBlob,
+                function() {
+                    e4PtPrompt("Email or Upload File?",
+                        function(option) {
+                            exportReport(option, base64, cust_rpt_fileName);
+                        }, "Get File", ["Email","Upload to Box","Cancel"]);
+                });
         })
         .catch(function(err) {
             console.log("PDF Creation Error: ", err);
@@ -1781,13 +1785,13 @@ function updateSensorParameters(mfh, mval, mo) {
 
 function exportDetailsFile(option) {
     let targetFolder = "data";
-    let fileName = "data_details.csv";
+    let details_file_name = "details_e4pt.csv";
     if ((typeof E4PTdata.serial_number !== 'undefined') || ( E4PTdata.serial_number.length > 0 )) {
+        details_file_name = "details_e4pt_" + E4PTdata.serial_number + "_" + E4PTdata.date + ".csv";
         targetFolder = cordova.file.documentsDirectory + E4PTdata.serial_number;
-        fileName = E4PTdata.serial_number + "_details.csv";
     }
-    fileName = targetFolder + "/" + fileName;
-    let attachmentList = [fileName];
+    details_file_name = targetFolder + "/" + details_file_name;
+    let attachmentList = [details_file_name];
     if (option == 1) {
         console.log("Email");
         subject = "e-4Pt Tool Data";
@@ -2037,10 +2041,10 @@ function writeDetailsFile() {
                             + checkValue(E4PTdata.sets[i].std_clr,3) + "\n";
     }
     let targetFolder = "data"; // default directory
-    let fileName = "data_details.csv";
+    let fileName = "details_e4pt.csv";
     if ((typeof E4PTdata.serial_number !== 'undefined') || ( E4PTdata.serial_number.length > 0 )) {
         targetFolder = E4PTdata.serial_number;
-        fileName = E4PTdata.serial_number + "_details.csv";
+        fileName = "details_e4pt_" + E4PTdata.serial_number + "_" + E4PTdata.date + ".csv";
     }
     writeToFile(targetFolder, fileName, contents, null);
 }
@@ -2411,7 +2415,8 @@ function update_clearance(clearance) {
             clearances.push(c_f);
         }
     }
-    plot_clearances(clearances);
+    // Don't plot clearances on the polar plot for now.
+    // plot_clearances(clearances);
 }
 
 function plot_data() {
