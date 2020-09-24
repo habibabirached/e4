@@ -102,7 +102,6 @@ $(document).ready(function(){
         $("#FRD_PAGE").fadeIn();
     }, {passive: true});
     document.getElementById("FRD_VIEW_BUTTON").addEventListener('click', function(){
-        toggle_menu();
         show_FRD();
     }, {passive: true});
     document.getElementById("SETUP_BUTTON").addEventListener('click', function(){
@@ -542,18 +541,38 @@ function acquisitionTimePromptWithMetaDataCallback(results) {
 }
 
 function setupAccordian(){
-    var acc = $(".ACCORDION");
-    var i;
+    let acc = $(".ACCORDION");
+    let i;
     for (i = 0; i < acc.length; i++) {
       acc[i].onclick = function() {
         this.classList.toggle("active");
-        var PANEL = this.nextElementSibling;
+        let PANEL = this.nextElementSibling;
         if (PANEL.style.maxHeight){
           PANEL.style.maxHeight = null;
         } else {
           PANEL.style.maxHeight = PANEL.scrollHeight + "px";
         }
       };
+    }
+    setupFRDAccordion();
+}
+
+function setupFRDAccordion(){
+    let acc = $(".ACCORDION");
+    let acc2 = $(".ACCORDION_2");
+    let i;
+    for (i = 0; i < acc2.length; i++) {
+        acc2[i].onclick = function() {
+            this.classList.toggle("active");
+            let PANEL2 = this.nextElementSibling;
+            if (PANEL2.style.maxHeight){
+                PANEL2.style.maxHeight = null;
+            } else {
+                PANEL2.style.maxHeight = PANEL2.scrollHeight + "px";
+            }
+            let parentSiblingPANEL = document.getElementById("FRD_ACCORDION").nextElementSibling;
+            parentSiblingPANEL.style.maxHeight = (PANEL2.scrollHeight + parentSiblingPANEL.scrollHeight) + "px";
+        };
     }
 }
 
