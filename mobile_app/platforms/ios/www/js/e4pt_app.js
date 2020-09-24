@@ -1116,7 +1116,7 @@ function generate_customer_report() {
                     e4PtPrompt("Email or Upload File?",
                         function(option) {
                             exportReport(option, base64, cust_rpt_fileName);
-                        }, "Get File", ["Email","Upload to Box","Cancel"]);
+                        }, "Get File", ["Email","Upload to Box","View","Cancel"]);
                 });
         })
         .catch(function(err) {
@@ -1161,7 +1161,7 @@ function fileSaveCallback() {
 
 // exportReport exports a base64 string as an email attachment or a
 // Box file upload.
-// The option is 1 (email), 2 (upload) or 3 (cancel).
+// The option is 1 (email), 2 (upload), 3 (view) or 4 (cancel).
 function exportReport(option, base64, fileName) {
     console.log("@exportReport: ", option);
     if (option == 1) {
@@ -1178,6 +1178,19 @@ function exportReport(option, base64, fileName) {
         var fileFullPath = cordova.file.documentsDirectory + E4PTdata.serial_number + "/" + fileName;
         fileFullPath = fileFullPath.replace("file://","");
         uploadFileToBox(fileFullPath);
+    }
+    else if (option == 3) {
+        console.log("View");
+        var fileFullPath = cordova.file.documentsDirectory + E4PTdata.serial_number + "/" + fileName;        
+        fileviewer2.open(fileFullPath, {
+                error : function(e) {
+                    console.log('Error status: ' + e.status + ' - Error message: ' + e.message);
+                },
+                success : function () {
+                    console.log('file opened successfully');
+                }
+            }
+        );
     }
     else {
         console.log("Cancel");
