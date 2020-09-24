@@ -42,7 +42,7 @@ ol {
 }
 
 .FRD_TOP{
-counter-reset: item 4;
+counter-reset: item 5;
 padding-top: 0!important;
 padding-bottom: 0!important;
 padding-right: 0!important;
@@ -51,6 +51,7 @@ padding-left: 2vmin!important;
 .FRD_TOP_CHILD:before {
 content: counter(item) ".0 ";
 counter-increment: item
+font-weight: bold;
 }
 .FRD_SUB{
 display: block;
@@ -59,7 +60,7 @@ counter-reset: subitem
 .FRD_SUB_CHILD:before {
 content: counter(item) "." counters(subitem, ".") " ";
 counter-increment: subitem;
-font-weight: normal;
+font-weight: bold;
 }
 
 .ROW{width:100%;display:table;}
