@@ -769,7 +769,9 @@ function turbine_setup() {
     // Setup the position options
     set_position_information();
     current_position_index = 0;
-
+    current_position = current_frame_data['position'][current_stage][current_position_index];
+    highlight_cell(current_position, current_stage);
+    
     update_spacer_value();
 
     var units = document.getElementById("UNITS").value;
@@ -853,11 +855,16 @@ function set_stage() {
   current_stage_index = document.getElementById("SENSOR_STAGE").selectedIndex;
   current_stage = current_frame_data['stage'][current_stage_index];
   set_position_information();
+  current_position_index = 0;
+  current_position = current_frame_data['position'][current_stage][current_position_index];
+  document.getElementById("SENSOR_POSITION").selectedIndex = current_position_index;
+  highlight_cell(current_position, current_stage);
 }
 
 function set_position() {
   current_position_index =  document.getElementById("SENSOR_POSITION").selectedIndex;
   current_position = current_frame_data['position'][current_stage][current_position_index];
+  highlight_cell(current_position, current_stage);
 }
 
 function set_measurement_rate(idx) {
@@ -1354,6 +1361,7 @@ function advance_position() {
     document.getElementById("SENSOR_POSITION").selectedIndex = current_position_index;
     let ct_id = current_stage + "_" + current_position;
     document.getElementById("CURR_CASE_THICKNESS").value = E4PTdata.turbine_casing_thicknesses[ct_id];
+    highlight_cell(current_position, current_stage);
 }
 
 function set_grid_position(position, stage) {
@@ -1374,7 +1382,26 @@ function set_grid_position(position, stage) {
     update_clearance(clearance);
     let ct_id = current_stage + "_" + current_position;
     document.getElementById("CURR_CASE_THICKNESS").value = E4PTdata.turbine_casing_thicknesses[ct_id];
+    highlight_cell(position, stage);
     update_spacer_value();
+}
+
+function highlight_cell(hi_position, hi_stage) {
+    // first un-highlight all cells.
+    let stages = current_frame_data['stage'];
+    for (stage_index = 0; stage_index < stages.length; stage_index++) {
+        let stage = stages[stage_index];
+        let positions = current_frame_data['position'][stage];
+        for (position_index = 0; position_index < positions.length; position_index++) {
+            let el_id = positions[position_index] + stages[stage_index];
+            el_id = el_id.replace(/\s+/g, '_');
+            document.getElementById(el_id).style.backgroundColor = 'transparent';
+        }
+    }
+    // now highlight the cell of interest.
+    el_id = hi_position+hi_stage;
+    el_id = el_id.replace(/\s+/g, '_');
+    document.getElementById(el_id).style.backgroundColor = 'rgba(191,191,191,0.5)';
 }
 
 function do_dark_reference() {
