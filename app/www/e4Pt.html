@@ -216,6 +216,14 @@
                                             </div>
                                             <div class="FRD_SUB_CHILD FONT5">
                                                 The rotor will also need to be on lift oil.
+                                                <ol>
+                                                    <li class="ol_li">
+                                                        (Note that it is possible that the measurement of the rotor lift due to lift oil will be needed and the deviation will need to be included on the alignment diagram.)
+                                                    </li>
+                                                    <li class="ol_li">
+                                                        Some sites do not have lift oil; in this case, consult the MLI 0404 for that target without lift oil. (nearly every site will use lift oil, currently only a few early 7HA01 sites do not have lift oil)
+                                                    </li>
+                                                </ol>
                                             </div>
                                         </div>
                                     </div>
@@ -224,8 +232,46 @@
                             <button class="FRD_SUB_CHILD ACCORDION_2">System setup</button>
                             <div class="PANEL">
                                 <div class="FRD_SUB">
-                                    <div class="FRD_SUB_CHILD">
-                                        Something
+                                    <div class="FRD_SUB_CHILD FONT5">
+                                        Download the “e4 Point” app from the GE app store to a GE iPad or iPhone.
+                                    </div>
+                                    <div class="FRD_SUB_CHILD FONT5">
+                                        Connect the fiber optic cable to the controller. Connect the RedPark power Cable to the Redpark Power supply on the Base Station and the RedPark Serial Adapter to the controller. Connect Base station power supply cable to the Base Station and to a 120V power source.
+                                    </div>
+                                    <div class="FRD_SUB_CHILD FONT5">
+                                        Position the base station near the gas turbine compressor section. Keep in mind that the sensor cable, Redpark Cables, and Power Cables constitute a tripping hazard. Care should be made to position the base station close to the compressor casing. Additionally, the Fiber Optic cable has a 3x maximum radius and should never be kinked.
+                                    </div>
+                                    <div class="FRD_SUB_CHILD FONT5">
+                                        Power on the Base station (120/220 Vac, 50/60Hz). An adaptor may be needed. Turn the base station on by flipping the single rocker switch.
+                                    </div>
+                                    <div class="FRD_SUB_CHILD FONT5">
+                                        Connect iPad or iPhone to the armored lightning cable, and then open the e4 point App. You can confirm that the app has connected via the SERIAL indicator circle in the top right corner of the app. The indicator circle should be GREEN as shown below.
+                                    </div>
+                                    <div class="FRD_SUB_CHILD FONT5">
+                                        Sensor and controller warmup time is 30 minutes. Measurement prior to 30 minute warm up period will result in erroneous dark reference, mastering, and clearance data.
+                                        <div class="FRD_SUB">
+                                            <div class="FRD_SUB_CHILD FONT5">
+                                                Good practice is to set up and turn on the e4 point tool and then remove clearance hole plugs and note casing thicknesses. While this may not take full 30 minutes, it will reduce idle time.
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="FRD_SUB_CHILD FONT5">
+                                        Once 30 minute warm up time has elapsed open the Menu page and select “Sensor Setup” Submenu.
+                                    </div>
+                                    <div class="FRD_SUB_CHILD FONT5">
+                                        Ensure the dark refence cap is snuggly fit over the end of the sensor and then select the “Dark reference” submenu. Follow the on-screen instructions to perform dark-referencing of the sensor.
+                                    </div>
+                                    <div class="FRD_SUB_CHILD FONT5">
+                                        Remove dark reference cap from sensor. Clean the sensor mating surfaces and lens as directed above and carefully insert the sensor into the mastering fixture.
+                                    </div>
+                                    <div class="FRD_SUB_CHILD FONT5">
+                                        Select “Probe Mastering” from the submenu and follow on screen instructions for mastering the sensor. When Mastering has been completed the green “Ready Button” will transition to “Mastering Complete.”
+                                    </div>
+                                    <div class="FRD_SUB_CHILD FONT5">
+                                        Verify that sensor mastering is acceptable by navigating to the main menu and selecting the “Get Data” submenu. Collect data for a short amount of time with the probe still placed in the mastering fixture. The display should be a constant line at 15mm.
+                                    </div>
+                                    <div class="FRD_SUB_CHILD FONT5">
+                                        The sensor is now ready to use. Do not turn power off until all measurements are complete, data has been saved to GE Box, and a Customer report has been generated.
                                     </div>
                                 </div>
                             </div>

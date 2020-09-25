@@ -28,7 +28,7 @@ body{
 }
 
 ol {
-    counter-reset: item;
+    counter-reset: ol_item;
     padding-top: 0!important;
     padding-bottom: 0!important;
     padding-right: 0!important;
@@ -36,30 +36,30 @@ ol {
 }
 .ol_li{ display: block; }
 .ol_li:before {
-  content: counters(item, ".") " ";
-  counter-increment: item;
-  font-weight: normal;
+  content: counters(ol_item, ".") " ";
+  counter-increment: ol_item;
+  font-weight: bold;
 }
 
 .FRD_TOP{
-counter-reset: item 5;
+counter-reset: frd_item 5;
 padding-top: 0!important;
 padding-bottom: 0!important;
 padding-right: 0!important;
 padding-left: 2vmin!important;
 }
 .FRD_TOP_CHILD:before {
-content: counter(item) ".0 ";
-counter-increment: item
+content: counter(frd_item) ".0 ";
+counter-increment: frd_item
 font-weight: bold;
 }
 .FRD_SUB{
 display: block;
-counter-reset: subitem
+counter-reset: frd_subitem
 }
 .FRD_SUB_CHILD:before {
-content: counter(item) "." counters(subitem, ".") " ";
-counter-increment: subitem;
+content: counter(frd_item) "." counters(frd_subitem, ".") " ";
+counter-increment: frd_subitem;
 font-weight: bold;
 }
 
