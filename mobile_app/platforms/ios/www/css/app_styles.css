@@ -782,6 +782,7 @@ p.FRD_CELL_ENTRY_RIGHT{
 	border: 1px solid black;
 	z-index: 3;
 	overflow-y: scroll;
+    -webkit-overflow-scrolling: touch;
 }
 
 .PROGRESS_BAR{
@@ -998,7 +999,14 @@ p.FRD_CELL_ENTRY_RIGHT{
 	font-size: 2vmin;
 }
 
-.SCROLL_Y{overflow-y: scroll}.SCROLL_X{	overflow-x: scroll}
+.SCROLL_Y{
+    overflow-y: scroll;
+    -webkit-overflow-scrolling: touch;
+}
+.SCROLL_X{
+    overflow-x: scroll;
+    -webkit-overflow-scrolling: touch;
+}
 
 
 button.ACCORDION {
@@ -1135,6 +1143,18 @@ margin: 50px;
   margin: 0 auto;
   text-align: center;
   background-color: var(--TRACC-lightgrey);
+}
+
+figure {
+    margin: 20px; /* adjust as needed */
+}
+
+figure img {
+    vertical-align: top;
+}
+
+figure figcaption {
+    text-align: center;
 }
 
 .highcharts-container {
