@@ -1132,18 +1132,35 @@ function generate_customer_report() {
               var pdfBlob = b64toBlob(base64, "application/pdf");
               writeToFile(E4PTdata.serial_number, cust_rpt_fileName, pdfBlob,
                 function() {
-                    e4PtPrompt("Email or Upload File?",
+                    e4PtPrompt("Email/Upload/View/Send.",
                         function(option) {
                             exportReport(option, base64, cust_rpt_fileName);
-                        }, "Get File", ["Email","Upload to Box","View","Cancel"]);
+                        }, "Report Options", ["Email","Upload to Box","View","Send Final Data","Cancel"]);
                 });
         })
         .catch(function(err) {
             console.log("PDF Creation Error: ", err);
-               });
-        
+        });
     }
   return;
+}
+
+function emailJSONData(toAddress, data) {
+    // first write the data to a file...
+    json_data = JSON.stringify(data);
+    let targetFolder = "data"; // default directory
+    let fileName = "e4Pt.json";
+    let subject = "e-4Pt JSON Data";
+    if ((typeof E4PTdata.serial_number !== 'undefined') || ( E4PTdata.serial_number.length > 0 )) {
+        targetFolder = E4PTdata.serial_number;
+        fileName = "e4pt_" + E4PTdata.serial_number + "_" + E4PTdata.date + ".json";
+        subject = subject + " SN: " + E4PTdata.serial_number + " " + E4PTdata.date;
+    }
+    writeToFile(targetFolder, fileName, json_data, function() {
+        let fileURL = cordova.file.documentsDirectory + targetFolder + "/" + fileName;
+        let attachment = [fileURL];
+        sendEmailWithAttachment(toAddress, subject, attachment)
+    });
 }
 
 function writeToFile(folder, fileName, fileData, callback=null) {
@@ -1190,7 +1207,8 @@ function exportReport(option, base64, fileName) {
         // Add a prefix so the email plugin handles the attachment correctly
         var prefix = "base64:" + fileName + "//";
         base64 = prefix + base64;
-        sendEmailWithAttachment( subject ,base64);
+        let toAddress = [];
+        sendEmailWithAttachment(toAddress, subject ,base64);
     }
     else if (option == 2) {
         console.log("Upload");
@@ -1210,6 +1228,11 @@ function exportReport(option, base64, fileName) {
                 }
             }
         );
+    }
+    if (option == 4) {
+        // This is the obscure address of the e4Pt field data Box folder.
+        let toAddress = ["Field_D.c55377p707j2cweu@u.box.com"];
+        emailJSONData(toAddress, E4PTdata);
     }
     else {
         console.log("Cancel");
@@ -1854,7 +1877,8 @@ function exportDetailsFile(option) {
     if (option == 1) {
         console.log("Email");
         subject = "e-4Pt Tool Data";
-        sendEmailWithAttachment( subject , attachmentList);
+        let toAddress = [];
+        sendEmailWithAttachment(toAddress, subject , attachmentList);
     }
     else if (option == 2) {
         console.log("Upload To Box");
@@ -1888,7 +1912,8 @@ function exportFiles(option) {
     if (option == 1) {
         console.log("Email");
         subject = "e-4Pt Tool Data";
-        sendEmailWithAttachment( subject , attachmentList);
+        let toAddress = [];
+        sendEmailWithAttachment(toAddress, subject , attachmentList);
     }
     else if (option == 2) {
         console.log("Upload To Box");
@@ -1923,7 +1948,8 @@ function exportFile(option) {
         else {
             attachmentFileName = [];
         }
-        sendEmailWithAttachment( subject , attachmentFileName);
+        let toAddress = [];
+        sendEmailWithAttachment(toAddress, subject , attachmentFileName);
     }
     else if (option == 2) {
         console.log("Upload");
@@ -1939,7 +1965,7 @@ function exportFile(option) {
     }
 }
 
-function sendEmailWithAttachment(subject, attachment) {    
+function sendEmailWithAttachment(toAddress, subject, attachment) {
     // Check if email is set up on this device.  If not, alert the user.
     // If so, try to send the email.
     window.plugin.email.isAvailable('mailto', function(available) {
@@ -1948,7 +1974,7 @@ function sendEmailWithAttachment(subject, attachment) {
                                     }
                                     else {
                                     window.plugin.email.open({
-                                                             to: [],
+                                                             to: toAddress,
                                                              cc: [],
                                                              bcc: [],
                                                              attachments: attachment,
