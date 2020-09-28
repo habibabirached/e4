@@ -329,9 +329,7 @@ $(document).ready(function(){
     setTimeout(function(){
                window.requestFileSystem  = window.requestFileSystem || window.webkitRequestFileSystem;
                window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, gotFS, fsFail);
-               }, 500);
-
-    
+               }, 900);
 });
 
 function fadeOutAll() {
@@ -1112,7 +1110,13 @@ function generate_customer_report() {
     }
     else {
         // This method generates a PDF, then exports it.
-        let cust_rpt_fileName = "customer_report_e4Pt_" + E4PTdata.serial_number + "_" + E4PTdata.date + ".pdf";
+        let sn = E4PTdata.serial_number;
+        sn = sn.replace(/\s+/g, '_');
+        sn = sn.replace(/:/g, '-');
+        let fileDate = E4PTdata.date;
+        fileDate = fileDate.replace(/\s+/g, '_');
+        fileDate = fileDate.replace(/:/g, '-');
+        let cust_rpt_fileName = "customer_report_e4Pt_" + sn + "_" + fileDate + ".pdf";
         baseURL = appDir + "www";
         var options = {
             documentSize: 'Letter',
@@ -1868,8 +1872,14 @@ function updateSensorParameters(mfh, mval, mo) {
 function exportDetailsFile(option) {
     let targetFolder = "data";
     let details_file_name = "details_e4pt.csv";
+    let sn = E4PTdata.serial_number;
+    sn = sn.replace(/\s+/g, '_');
+    sn = sn.replace(/:/g, '-');
+    let fileDate = E4PTdata.date;
+    fileDate = fileDate.replace(/\s+/g, '_');
+    fileDate = fileDate.replace(/:/g, '-');
     if ((typeof E4PTdata.serial_number !== 'undefined') || ( E4PTdata.serial_number.length > 0 )) {
-        details_file_name = "details_e4pt_" + E4PTdata.serial_number + "_" + E4PTdata.date + ".csv";
+        details_file_name = "details_e4pt_" + sn + "_" + fileDate + ".csv";
         targetFolder = cordova.file.documentsDirectory + E4PTdata.serial_number;
     }
     details_file_name = targetFolder + "/" + details_file_name;
@@ -2128,8 +2138,14 @@ function writeDetailsFile() {
     let targetFolder = "data"; // default directory
     let fileName = "details_e4pt.csv";
     if ((typeof E4PTdata.serial_number !== 'undefined') || ( E4PTdata.serial_number.length > 0 )) {
+        let sn = E4PTdata.serial_number;
+        sn = sn.replace(/\s+/g, '_');
+        sn = sn.replace(/:/g, '-');
         targetFolder = E4PTdata.serial_number;
-        fileName = "details_e4pt_" + E4PTdata.serial_number + "_" + E4PTdata.date + ".csv";
+        let fileDate = E4PTdata.date;
+        fileDate = fileDate.replace(/\s+/g, '_');
+        fileDate = fileDate.replace(/:/g, '-');
+        fileName = "details_e4pt_" + sn + "_" + fileDate + ".csv";
     }
     writeToFile(targetFolder, fileName, contents, null);
 }
