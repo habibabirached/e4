@@ -1379,17 +1379,20 @@ function update_spacer_value() {
   let imageName = 'img/spacers/Unknown.gif';
   if (typeof spacer.image !== 'undefined') {
     imageName = 'img/spacers/' + spacer.image + '.gif';
-    let fullFilePath = appDir + "www/" + imageName;
-    window.rootFS.getFile(fullFilePath, { create: false },
-        function() {
+    let wwwPath = appDir + "www/";
+    window.resolveLocalFileSystemURL(wwwPath, function(dir) {
+        dir.getFile(imageName, {create:false, exclusive: false}, function(file) {
             document.getElementById("SPACER_THUMBNAIL").setAttribute("src",imageName);
-        },
-        function() {
+        }, function() {
             imageName = 'img/spacers/Unknown.gif';
             document.getElementById("SPACER_THUMBNAIL").setAttribute("src",imageName);
-        }
-    );
+        });
+    });
   }
+  else {
+      document.getElementById("SPACER_THUMBNAIL").setAttribute("src",imageName);
+  }
+
 
   document.getElementById("SPACER_THICKNESS").value = spacer_value;
   document.getElementById("SPACER_COLOR_LABEL").innerHTML = spacer_color;
