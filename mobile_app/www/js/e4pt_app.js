@@ -666,9 +666,14 @@ function record_casing_thickness() {
             let casingThickness_el_id = p + '_' + pos[p][j];
             let ct_el = document.getElementById(casingThickness_el_id);
             let casethickness = ct_el.value;
-            E4PTdata.turbine_casing_thicknesses [casingThickness_el_id] = casethickness;
+            E4PTdata.turbine_casing_thicknesses[casingThickness_el_id] = casethickness;
         }
     }
+    
+    // Clear out any old value in this existing location.
+    // This is needed to break a cycle where previous data in this element prevents
+    // new data from E4PTdata.turbine_casing_thicknesses from updating it.
+    document.getElementById("CURR_CASE_THICKNESS").value = "";
     console.log("E4PTdata.turbine_casing_thicknesses: ", E4PTdata.turbine_casing_thicknesses);
 }
 
@@ -1324,10 +1329,13 @@ function get_spacer_information() {
   var spacers = current_frame_data['spacers'];
   let ct_id = current_stage + "_" + current_position;
   let case_thick = document.getElementById("CURR_CASE_THICKNESS").value;
-  document.getElementById(ct_id).value = document.getElementById("CURR_CASE_THICKNESS").value;
+  if (case_thick.length > 0) {
+      document.getElementById(ct_id).value = document.getElementById("CURR_CASE_THICKNESS").value;
+  }
   if (case_thick.length == 0) {
-        // If the cell is empty, fill in in the field with what's stored in the data structure.
-        case_thick = E4PTdata.turbine_casing_thicknesses[ct_id]
+      // If the cell is empty, fill in in the field with what's stored in the data structure.
+      case_thick = E4PTdata.turbine_casing_thicknesses[ct_id]
+      document.getElementById("CURR_CASE_THICKNESS").value = case_thick;
   }
   if (typeof E4PTdata.turbine_casing_thicknesses[ct_id] !== 'undefined') {
       // If nothing is in the data structure, fill in the structuer with what's in the field.
