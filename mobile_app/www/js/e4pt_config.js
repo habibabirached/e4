@@ -472,7 +472,7 @@ frame_data = [
      'spacers':[
          {'stage':'6', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'4.121', 'max':'4.221', 'size':'5.192', 'color':'RED', 'image':'7HA01-R6-1'},
          {'stage':'6', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'4.3', 'max':'4.4', 'size':'5.013', 'color':'BLUE', 'image':'7HA01-R6-2'},
-         {'stage':'10', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'6.83', 'max':'6.93', 'size':'2.483', 'color':'BLACK', 'image':'7HA01-R11'},
+         {'stage':'10', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'6.83', 'max':'6.93', 'size':'2.483', 'color':'GRAY', 'image':'7HA01-R10'},
          {'stage':'14', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'4.191', 'max':'4.291', 'size':'5.122', 'color':'SILVER', 'image':'7HA01-R14-1'},
          {'stage':'14', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'6.83', 'max':'6.93', 'size':'2.483', 'color':'GOLD', 'image':'7HA01-R14-2'}
      ],
@@ -887,7 +887,7 @@ frame_data = [
      'spacers':[
          {'stage':'1', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'6.028', 'color':'RED', 'image':'9HA01-R1'},
          {'stage':'6', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'4.281', 'color':'BLUE', 'image':'9HA01-R6'},
-         {'stage':'10', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'1.533', 'color':'BLACK', 'image':'9HA01-R11'},
+         {'stage':'10', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'1.533', 'color':'BLACK', 'image':'9HA01-R10'},
          {'stage':'14', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'3.575', 'color':'GREEN', 'image':'9HA01-R14'}
      ]
     },
@@ -902,6 +902,19 @@ frame_data = [
          {'stage':'6', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'5.541', 'color':'BLUE', 'image':'9HA02-R6'},
          {'stage':'11', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'6.154', 'color':'BLACK', 'image':'9HA02-R11'},
          {'stage':'14', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'6.156', 'color':'GREEN', 'image':'9HA02-R14'}
+     ]
+    }
+    {'frame':'9HA.01-FL18',
+     'stage':['1', '6', '11', '14'],
+     'position':{'1':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
+                 '6':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
+                 '11':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
+                 '14':['TOP', 'RIGHT', 'BOTTOM', 'LEFT']},
+     'spacers':[
+         {'stage':'1', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'4.221', 'color':'RED', 'image':'9HA01-FL18-R1'},
+         {'stage':'6', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'5.541', 'color':'BLUE', 'image':'9HA01-FL18-R6'},
+         {'stage':'11', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'6.154', 'color':'BLACK', 'image':'9HA01-FL18-R11'},
+         {'stage':'14', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'6.156', 'color':'GREEN', 'image':'9HA01-FL18-R14'}
      ]
     }
 ];
