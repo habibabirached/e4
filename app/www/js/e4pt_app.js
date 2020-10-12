@@ -11,6 +11,7 @@ var serialConnected = false;
 var doDBSave = false;
 var manualOverride = false;
 var savedRPM = "";
+var mastering_tolerance = 0.003; // value is in inches.
 
 var local_db = new PouchDB('e4ptdb');
 
@@ -75,6 +76,7 @@ var E4PTdata = {
     "min_clr":"",
     "med_clr":"",
     "std_clr":"",
+    "overall_avg":"",
     "alreadyOnLDB":"false",
     "pouchdb_id": ""
 };
@@ -1748,6 +1750,7 @@ function pluginMessage(msg) {
             msg.locs = JSON.parse(msg.locs);
             msg.gaps = JSON.parse(msg.gaps);
             msg.quality = JSON.parse(msg.quality);
+            msg.overall_avg = JSON.parse(msg.overall_avg);
             processE4PtData(msg);
             break;
         case "filename":
@@ -2534,6 +2537,18 @@ function update_clearance(clearance) {
 function plot_data() {
   console.log("@e4pt_app::plot_data()");
   let subtitle = E4PTdata.date + "; Avg. Tip Dist: " + E4PTdata.clearance;
+  subtitle = subtitle + "; ";
+  // compute difference, in inches, between average and mastering value.
+  let mastering_error = E4PTdata.overall_avg - sensor_data.mastering_value;
+  let tol = mastering_tolerance * 25.4; // convert tolerance to mm
+  let sub_use_html = false;
+  if (Math.abs(mastering_error) > tol) {
+      subtitle = '<span style="color:#000000;">' + subtitle + '</span>' + '<span style="color:#ff0000;">Overall Avg: ' + E4PTdata.overall_avg + '</span>';
+      sub_use_html = true;
+  }
+  else {
+      subtitle = subtitle + "; Overall Avg: " + E4PTdata.overall_avg;
+  }
   Highcharts.chart('DATA_PLOT', {
     chart: {
       renderTo: 'DATA_PLOT',
@@ -2566,7 +2581,8 @@ function plot_data() {
       fontFamily: 'Veranda'
     },
     subtitle: {
-      text: subtitle
+      text: subtitle,
+      useHTML:sub_use_html
     },
     yAxis: {
       title: {

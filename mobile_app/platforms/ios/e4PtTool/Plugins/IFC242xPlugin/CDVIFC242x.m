@@ -234,6 +234,7 @@ enum ifc242xValue {
 @property (nonatomic) int num_sets;
 @property (nonatomic) float progress;
 @property (nonatomic) bool delayResponse;
+@property (nonatomic) float overall_average;
 
 @property (nonatomic) bool demoMode;
 @property (nonatomic) bool overrideAutoSettings;
@@ -316,6 +317,7 @@ enum ifc242xValue {
 @synthesize startTime = _startTime;
 @synthesize testTime = _testTime;
 @synthesize delayResponse = _delayResponse;
+@synthesize overall_average = _overall_average;
     
 @synthesize kernel = _kernel;
 
@@ -1896,6 +1898,7 @@ enum ifc242xValue {
     NSString* stg_min_clr = [NSString stringWithFormat:@"%f", self.stage_min_clearance];
     NSString* stg_med_clr = [NSString stringWithFormat:@"%f", self.stage_median_clearance];
     NSString* stg_clr_std = [NSString stringWithFormat:@"%f", self.stage_clearance_std];
+    NSString* overall_avg = [NSString stringWithFormat:@"%f", self.overall_average];
 
     NSDictionary* jsonDataDict = @{@"type":@"data",
                                    @"data":dispJSONString,
@@ -1910,6 +1913,7 @@ enum ifc242xValue {
                                    @"min_clr":stg_min_clr,
                                    @"med_clr":stg_med_clr,
                                    @"std_clr":stg_clr_std,
+                                   @"overall_avg":overall_avg,
                                    @"date":dateStr
                                    };
     CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDataDict];// You can send data, String, int, array, dictionary, etc.
@@ -2047,7 +2051,9 @@ enum ifc242xValue {
     [self.filtered removeAllObjects];
     [self.blade_clearances removeAllObjects];
     [self.clearance_quality removeAllObjects];
+    self.overall_average = 0.0;
     for (i=0; i<self.displacements.count; i++) {
+        self.overall_average += [[self.displacements objectAtIndex:i] floatValue];
         if (neg_crossing[i]) {
             // We've encountered a negative zero-crossing
             // so sum displacements to the next positive zero-crossing.
@@ -2156,6 +2162,9 @@ enum ifc242xValue {
             [self.filtered addObject:[NSNumber numberWithFloat:OUT_OF_RANGE]];
         }
     }
+    // Finish computing the overall average.
+    self.overall_average = (float)self.overall_average / (float)self.displacements.count;
+        
     // Now iterate over the filtered values and calibrate them to arrive at actual clearance values.
     // Old method: clearance_f = clearance_f + (SMR + SL) - spacer - casing_thickness + MO;
     // New method: clearance_f = clearance_f + (MFH - 5.0) - spacer - casing_thickness + MO;
