@@ -2329,6 +2329,10 @@ function requestE4PtDataWithMetaData(acquisitionTime, frame, sn, stage, position
             num_blades = stage_details.blade_count;
             blade_width = stage_details.blade_width;
             tip_diameter = stage_details.tip_diameter;
+            if (num_blades == 0) {
+                e4PtAlert("This stage and casing thickness do not match. Please check the casing thickness and try again.");
+                return;
+            }
         }
     }
     var message = {"args":["send_data",acquisitionTime, frame, sn, stage, position, casing_thickness, spacer_thickness, num_blades, tip_diameter, blade_width, sensor_data.master_offset]};
