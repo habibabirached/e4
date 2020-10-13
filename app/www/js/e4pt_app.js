@@ -1366,7 +1366,39 @@ function get_spacer_information() {
       }
     }
   }
+  if (spacer_found == true) {
+    // We found a spacer.  Now check to make sure it's not a confusing image
+    // and if so, warn the user.
+    let warnUser = true;
+    let stageStr = "R" + current_stage;
+    if (spacer.image.includes(stageStr)) {
+        // The image string at least contains the stage string, e.g. R1.
+        // but we need to be sure we don't mistake R1 for R17, so we reduce
+        // each part of the filename to Rx, where x is purely numeric.
+        let config_strings = spacer.image.split("-");
+        for (idx = 0; idx < config_strings.length; idx++) {
+            let config_stg = config_strings[idx].replace(/\D/g,''); // This strips all non-numerics
+            if (config_stg == current_stage) {
+                warnUser = false; // If we find the exact stage, don't warn the user.
+                break;
+            }
+        }
+    }
+    if (warnUser == true) {
+        // This function may be called in different places so only show the alert
+        // if we're on the expected screen.
+        if (!isHidden(document.getElementById("TURBINE_SETUP_PAGE"))) {
+          e4PtAlert("The image for this spacer may be misleading, but it is correct.");
+        }
+    }
+  }
   return spacer;
+}
+
+// isHidden just determines if the element passed in is visible on screen.
+function isHidden(el) {
+    var style = window.getComputedStyle(el);
+    return (style.display === 'none')
 }
 
 //
@@ -1375,6 +1407,7 @@ function get_spacer_information() {
 function update_spacer_value() {
   console.log("@update_spacer_value");
   var spacer = get_spacer_information();
+  // spacer.image contains the image name (without the filename ending).
   var spacer_value =  null;
   var spacer_color = "";
   if (spacer == null) {
