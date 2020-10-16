@@ -3245,14 +3245,21 @@ function sortTable(srtTable, n) {
   }
     
   // Add color to the header of the column by which the table is sorted.
-  let cols = ["FRAME_COL","SN_COL","CUSTOMER_COL","SITE_COL","DESC_COL","DATE_COL","TIME_COL"];
+    
+  let cols = [];
+  if (srtTable == "LOCAL_DATA_TABLE") {
+     cols = ["FRAME_COL","SN_COL","CUSTOMER_COL","SITE_COL","DESC_COL","DATE_COL","TIME_COL"];
+  }
   if (srtTable == "DATA_DETAILS_TABLE") {
     cols = ["STAGE_COL","POSITION_COL","CLEARANCE_COL","MAX_CLR_COL","MIN_CLR_COL","MED_CLR_COL","STD_CLR_COL"];
+  }
+  if (srtTable == "LOCAL_FILE_TABLE") {
+    cols = ["FNAME_COL"];
   }
   for (i=0; i<cols.length; i++) {
     document.getElementById(cols[i]).style.color = "white";
   }
-  document.getElementById(cols[n-1]).style.color = "aqua";
+  if (n > 0) document.getElementById(cols[n-1]).style.color = "aqua";
 }
 
 function loadLocalData(id) {
