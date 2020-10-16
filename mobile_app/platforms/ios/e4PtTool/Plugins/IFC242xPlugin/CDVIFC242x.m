@@ -2168,6 +2168,7 @@ enum ifc242xValue {
     // Now iterate over the filtered values and calibrate them to arrive at actual clearance values.
     // Old method: clearance_f = clearance_f + (SMR + SL) - spacer - casing_thickness + MO;
     // New method: clearance_f = clearance_f + (MFH - 5.0) - spacer - casing_thickness + MO;
+    //      In this new method, "5.0" is the Mastering value.  We determined this should be 5.0mm.
     // Filtered clearances are in mm.
     // Sensor parameters (Mastering fixture height, Spacer thickness & casing thickness) are in inches.
     //
@@ -2700,9 +2701,16 @@ enum ifc242xValue {
         [handle writeData:[dataStr dataUsingEncoding:NSUTF8StringEncoding]];
     }
     
-    //  Write the app version to the CSV file.
+    //  Write the sensor parameters and app version to the CSV file.
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    dataStr = [NSString stringWithFormat:@"\n\n\n - Sensor Parameters, Mastering Fixture Height (in):,%@,Mastering Value (mm):, %@, Master Offset (in):, %@\n",
+                                  [defaults stringForKey:@"masterFixtureHeight"],
+                                  [defaults stringForKey:@"masteringValue"],
+                                  [defaults stringForKey:@"masterOffset"]];
+    [handle writeData:[dataStr dataUsingEncoding:NSUTF8StringEncoding]];
+
     NSString* appVersion = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleShortVersionString"];
-    dataStr = [NSString stringWithFormat:@"\n\n\n - Created by e4PtTool version %@",appVersion];
+    dataStr = [NSString stringWithFormat:@" - Created by e4PtTool version %@",appVersion];
     [handle writeData:[dataStr dataUsingEncoding:NSUTF8StringEncoding]];
 
     [handle closeFile];
