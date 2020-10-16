@@ -2426,7 +2426,7 @@ function parse_data() {
     if (current_frame_data['position'] != null) {
         let clearance_f = parseFloat(E4PTdata.clearance);
         if (clearance_f < 0) {
-            e4PtAlert("The clearance is negative. This indicates a problem with the setup.\nPlease make sure the spacer is correct and the sensor and spacer are installed properly and try again.");
+            e4PtAlert("The clearance is negative. This indicates a problem with the setup (i.e. the sensor is out of range).\nPlease make sure the spacer is correct and the sensor and spacer are installed properly and try again.");
         }
         let max_clr_f = parseFloat(E4PTdata.max_clr);
         let min_clr_f = parseFloat(E4PTdata.min_clr);
