@@ -1015,7 +1015,7 @@ function collect_stage_data() {
     if (nav != null) {
         // We have plugins so we're in Cordova.  Use the Cordova notification.
         if (savedRPM == "") savedRPM = "1";
-        navigator.notification.prompt('Please enter or confirm the rotor RPM.',
+        navigator.notification.prompt('Please enter or confirm the rotor RPM.\nEstimate within +/- 1rpm if possible.',
                                       acquisitionTimePromptWithMetaDataCallback,
                                       'Enter RPM',
                                       ['Ok','Cancel'],

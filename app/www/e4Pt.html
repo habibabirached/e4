@@ -559,6 +559,8 @@ r                        </tbody>
             <div class="PANEL">
                 <p>Before collecting data be sure to master the sensor.</p>
                 <br/>
+                <p>Mastering in the mastering fixture sets the value of the target distance for the calculation of the clearance.  The mastering fixture is machined to hold the sensor so that the base surface of the fixture (target surface) is at the center of the sensor measuring range.</p>
+                <br/>
                 <p><U>Instructions:</U></p>
                 <ol style="padding:40px">
                     <li class="ol_li">Clean mating surfaces of the Probe and the Set Master.</li>
@@ -571,6 +573,9 @@ r                        </tbody>
                 <div id="master_message_2" class="W25 OVERLAY_BUTTON" style="margin:0 auto;" disabled>READY</div>
                 <br/>
             </div>
+            <br/>
+            <br/>
+            <p class="PW8">When collecting data on the next page, the user is prompted for the rotor RPM. RPM is used to optimize the data acquisition rate to ensure at least 4 points are acquired per blade tip.  It is best to estimate within +/- 1rpm if possible.</p>
             <br/>
             <br/>
             <div id="COLLECT_DATA_BUTTON" class="BUTTON W25 OVERLAY_BUTTON" style="margin:0 auto;">COLLECT DATA</div>
@@ -683,6 +688,8 @@ r                        </tbody>
             <div class="PANEL SELECTED_ROW">
                 <hr>
                 <H2><U>Set Probe Dark Reference</U></H2><br/>
+                <p>Dark referencing smooths out the signal output because it acquires the sensor brightness at this specific point in time.  It is critical the sensor be covered with a cap and in a fully dark pocket.  This step is needed every time the tool is plugged in or power cycled, or if the data is showing noise.   If the dark reference fails, it is likely the sensor or connection is contaminated.</p>
+                <br/>
                 <p>The system requires a warm-up time of approximately 30 minutes prior to setting the dark reference. Please ensure that the system has been powered on for 30 minutes to ensure it is warmed up.</p>
                 <br/>
                 <ol style="padding:40px">
@@ -698,6 +705,8 @@ r                        </tbody>
             <button class="ACCORDION">PROBE MASTERING</button>
             <div class="PANEL SELECTED_ROW">
                 <H2><U>Probe Mastering</U></H2><br/>
+                <p>Mastering in the mastering fixture sets the value of the target distance for the calculation of the clearance.  The mastering fixture is machined to hold the the sensor so that the base surface of the fixture (target surface) is at the center of the sensor measuring range.</p>
+                <br/>
                 <p><U>Instructions:</U></p>
                 <ol style="padding:40px">
                     <li class="ol_li">Clean mating surfaces of the Probe and the Set Master.</li>
