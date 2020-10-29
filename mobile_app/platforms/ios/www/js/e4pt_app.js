@@ -1143,10 +1143,10 @@ function generate_customer_report() {
               var pdfBlob = b64toBlob(base64, "application/pdf");
               writeToFile(E4PTdata.serial_number, cust_rpt_fileName, pdfBlob,
                 function() {
-                    e4PtPrompt("Email/Upload/View/Send.",
-                        function(option) {
-                            exportReport(option, base64, cust_rpt_fileName);
-                        }, "Report Options", ["Email","Upload to Box","View","Send Final Data","Cancel"]);
+                  e4PtPrompt("Email/Upload/View/Send.",
+                      function(option) {
+                          exportReport(option, base64, cust_rpt_fileName);
+                      }, "Report Options", ["Email","Upload to Box","View","Send Final Data","Cancel"]);
                 });
         })
         .catch(function(err) {
@@ -1158,16 +1158,19 @@ function generate_customer_report() {
 
 function emailJSONData(toAddress, data) {
     // first write the data to a file...
-    json_data = JSON.stringify(data);
+    let json_data = JSON.stringify(data);
+    var json_blob = new Blob( [json_data], { type: 'text/plain'} );
     let targetFolder = "data"; // default directory
     let fileName = "e4Pt.json";
     let subject = "e-4Pt JSON Data";
     if ((typeof E4PTdata.serial_number !== 'undefined') || ( E4PTdata.serial_number.length > 0 )) {
         targetFolder = E4PTdata.serial_number;
         fileName = "e4pt_" + E4PTdata.serial_number + "_" + E4PTdata.date + ".json";
+        fileName = fileName.replace(/\s+/g, '_'); // Replace spaces in file name with "_"
+        fileName = fileName.replace(/:/g, '-');   // Replace ":" in file name with "-"
         subject = subject + " SN: " + E4PTdata.serial_number + " " + E4PTdata.date;
     }
-    writeToFile(targetFolder, fileName, json_data, function() {
+    writeToFile(targetFolder, fileName, json_blob, function() {
         let fileURL = cordova.file.documentsDirectory + targetFolder + "/" + fileName;
         let attachment = [fileURL];
         sendEmailWithAttachment(toAddress, subject, attachment)
@@ -1198,6 +1201,9 @@ function writeToFile(folder, fileName, fileData, callback=null) {
                     callback();
                 }
             });
+        }, function(msg) {
+            // Error callback for dir.getFile
+            console.log("Error: ", msg)
         });
     });
 }
