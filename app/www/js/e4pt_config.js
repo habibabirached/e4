@@ -896,36 +896,36 @@ frame_data = [
            'TOP':['B', 80.0, 80.0, 4.0],
            'LEFT':['C', 170.0, 170.0, 4.0],
            'BOTTOM':['D', 260.0, 260.0, 4.0],
-           'blade_count':34,
-           'tip_diameter':87.946,
-           'blade_width':0.39
+           'blade_count':24,
+           'tip_diameter':106.454,
+           'blade_width':0.096
        },
        '6':{
            'RIGHT':['A', 10.0, 10.0, 4.0],
            'TOP':['B', 80.0, 80.0, 4.0],
            'LEFT':['C', 170.0, 170.0, 4.0],
            'BOTTOM':['D', 260.0, 260.0, 4.0],
-           'blade_count':46,
-           'tip_diameter':79.246,
-           'blade_width':0.5
+           'blade_count':72,
+           'tip_diameter':92.78,
+           'blade_width':0.072
        },
        '10':{
            'RIGHT':['A', 25.0, 25.0, 4.0],
            'TOP':['B', 115.0, 115.0, 4.0],
            'LEFT':['C', 154.0, 155.0, 4.0],
            'BOTTOM':['D', 295.0, 295.0, 4.0],
-           'blade_count':70,
-           'tip_diameter':78.558,
-           'blade_width':0.612
+           'blade_count':85,
+           'tip_diameter':86.694,
+           'blade_width':0.072
        },
        '14':{
            'RIGHT':['A', 17.0, 15.0, 4.0],
            'TOP':['B', 115.0, 115.0, 4.0],
            'LEFT':['C', 163.0, 165.0, 4.0],
            'BOTTOM':['D', 295.0, 295.0, 4.0],
-           'blade_count':64,
-           'tip_diameter':78.605,
-           'blade_width':0.367
+           'blade_count':92,
+           'tip_diameter':83.728,
+           'blade_width':0.072
        },
      },
      'turning_gear_rpm':6.0,
@@ -952,36 +952,36 @@ frame_data = [
             'TOP':['B', 80.0, 80.0, 4.0],
             'LEFT':['C', 170.0, 170.0, 4.0],
             'BOTTOM':['D', 260.0, 260.0, 4.0],
-            'blade_count':34,
-            'tip_diameter':87.946,
-            'blade_width':0.39
+            'blade_count':24,
+            'tip_diameter':114.35,
+            'blade_width':0.09
         },
         '6':{
             'RIGHT':['A', 10.0, 10.0, 4.0],
             'TOP':['B', 80.0, 80.0, 4.0],
             'LEFT':['C', 170.0, 170.0, 4.0],
             'BOTTOM':['D', 260.0, 260.0, 4.0],
-            'blade_count':46,
-            'tip_diameter':79.246,
-            'blade_width':0.5
+            'blade_count':72,
+            'tip_diameter':94.34,
+            'blade_width':0.072
         },
         '11':{
             'RIGHT':['A', 25.0, 25.0, 4.0],
             'TOP':['B', 115.0, 115.0, 4.0],
             'LEFT':['C', 154.0, 155.0, 4.0],
             'BOTTOM':['D', 295.0, 295.0, 4.0],
-            'blade_count':70,
-            'tip_diameter':78.558,
-            'blade_width':0.612
+            'blade_count':86,
+            'tip_diameter':85.378,
+            'blade_width':0.072
         },
         '14':{
             'RIGHT':['A', 17.0, 15.0, 4.0],
             'TOP':['B', 115.0, 115.0, 4.0],
             'LEFT':['C', 163.0, 165.0, 4.0],
             'BOTTOM':['D', 295.0, 295.0, 4.0],
-            'blade_count':64,
-            'tip_diameter':78.605,
-            'blade_width':0.367
+            'blade_count':92,
+            'tip_diameter':83.796,
+            'blade_width':0.072
         },
       },
      'turning_gear_rpm':6.0,
@@ -1008,36 +1008,36 @@ frame_data = [
             'TOP':['B', 80.0, 80.0, 4.0],
             'LEFT':['C', 170.0, 170.0, 4.0],
             'BOTTOM':['D', 260.0, 260.0, 4.0],
-            'blade_count':34,
-            'tip_diameter':87.946,
-            'blade_width':0.39
+            'blade_count':24,
+            'tip_diameter':106.454,
+            'blade_width':0.096
         },
         '6':{
             'RIGHT':['A', 10.0, 10.0, 4.0],
             'TOP':['B', 80.0, 80.0, 4.0],
             'LEFT':['C', 170.0, 170.0, 4.0],
             'BOTTOM':['D', 260.0, 260.0, 4.0],
-            'blade_count':46,
-            'tip_diameter':79.246,
-            'blade_width':0.5
+            'blade_count':72,
+            'tip_diameter':92.738,
+            'blade_width':0.072
         },
         '11':{
             'RIGHT':['A', 25.0, 25.0, 4.0],
             'TOP':['B', 115.0, 115.0, 4.0],
             'LEFT':['C', 154.0, 155.0, 4.0],
             'BOTTOM':['D', 295.0, 295.0, 4.0],
-            'blade_count':70,
-            'tip_diameter':78.558,
-            'blade_width':0.612
+            'blade_count':86,
+            'tip_diameter':85.376,
+            'blade_width':0.072
         },
         '14':{
             'RIGHT':['A', 17.0, 15.0, 4.0],
             'TOP':['B', 115.0, 115.0, 4.0],
             'LEFT':['C', 163.0, 165.0, 4.0],
             'BOTTOM':['D', 295.0, 295.0, 4.0],
-            'blade_count':64,
-            'tip_diameter':78.605,
-            'blade_width':0.367
+            'blade_count':92,
+            'tip_diameter':83.816,
+            'blade_width':0.072
         },
      },
     'turning_gear_rpm':6.0,
