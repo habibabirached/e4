@@ -512,6 +512,44 @@ td.SENSOR_OPTIONS_CELL{
     font-size:2vmax;
 }
 
+
+div.NOTIFICATION_STRIPE{
+    background-color: var(--TRACC-lightgrey);
+    color: white;
+    height: 75px;
+    margin-bottom: 0.5vw;
+    margin-left: 5vw;
+    margin-right: 5vw;
+    margin-top: 0.5vw;
+}
+
+span.NOTIFICATION_TITLE{
+    background-color: gold;
+    border: 1px black;
+    color: black;
+    display: inline-block;
+    font-weight: bold;
+    font-style: italic;
+    line-height: 75px;
+    padding-left: 3vw;
+    padding-right: 3vw;
+    vertical-align: middle;
+}
+
+span.NOTIFICATION_CONTENT{
+    display: inline-block;
+    vertical-align: middle;
+    width: 75vw;
+    word-wrap: break-word;
+}
+
+.EMBEDDED_TABLE{
+    display: inline-block;
+    padding-left: 0.75vw;
+    padding-right: 0.75vw;
+    vertical-align: middle;
+}
+
 th.LOCAL_DATA_HEADER {
 	background-color:#C2C2C2;
 }
