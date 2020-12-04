@@ -13,12 +13,16 @@ var manualOverride = false;
 var savedRPM = "";
 var mastering_tolerance = 0.003; // value is in inches.
 
-var local_db = new PouchDB('e4ptdb');
+var local_db = new PouchDB('e4ptdb', {revs_limit: 1, auto_compaction: true});
 
 var communicationChannel = "Plugin"; // "WebSocket" or "Plugin"
 
 // Replace with remote instance when we get to that point.
 //var remoteCouch = 'http://xxx.xxx.xxx.xxx/remote_e4ptdb';
+// include "purged": true for deleted entries
+// filter replication to ignore "purged"
+// validate_doc_update to reject "purged"
+// https://github.com/pouchdb/issues/802#issuecomment-448507342
 
 var Data_Set = function() {
     this.stage = null;
@@ -2972,7 +2976,6 @@ function syncError() {
 function addDBEntry(e4pt_data) {
 
   var entry = {
-    _id: "",
     ofs_id: e4pt_data.ofs_id,
     frame: e4pt_data.frame,
     serial_number: e4pt_data.serial_number,
@@ -3161,7 +3164,7 @@ function clearDB() {
         return;
       } else {
         console.log("Database destroyed. Creating new empty database.");
-        local_db = new PouchDB('e4ptdb');
+        local_db = new PouchDB('e4ptdb', {revs_limit: 1, auto_compaction: true});
         setTimeout(function(){listInternalFiles();}, 1000);
       }
     });
