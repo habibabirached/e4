@@ -1171,7 +1171,7 @@ function generate_customer_report() {
 function emailJSONData(toAddress, data) {
     // first write the data to a file...
     let json_data = JSON.stringify(data);
-    var json_blob = new Blob( [json_data], { type: 'text/plain'} );
+    var json_blob = new Blob( [json_data], { type: 'application/json'} );
     let targetFolder = "data"; // default directory
     let fileName = "e4Pt.json";
     let subject = "e-4Pt JSON Data";
