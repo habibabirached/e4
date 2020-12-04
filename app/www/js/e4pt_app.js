@@ -13,12 +13,16 @@ var manualOverride = false;
 var savedRPM = "";
 var mastering_tolerance = 0.003; // value is in inches.
 
-var local_db = new PouchDB('e4ptdb');
+var local_db = new PouchDB('e4ptdb', {revs_limit: 1, auto_compaction: true});
 
 var communicationChannel = "Plugin"; // "WebSocket" or "Plugin"
 
 // Replace with remote instance when we get to that point.
 //var remoteCouch = 'http://xxx.xxx.xxx.xxx/remote_e4ptdb';
+// include "purged": true for deleted entries
+// filter replication to ignore "purged"
+// validate_doc_update to reject "purged"
+// https://github.com/pouchdb/issues/802#issuecomment-448507342
 
 var Data_Set = function() {
     this.stage = null;
@@ -357,6 +361,18 @@ function gotFS(fileSystem) {
     fsRoot = window.rootFS.nativeURL;
     fsRoot = fsRoot.replace("file://","");
     console.log("@gotFS: fsRoot = ", fsRoot);
+    
+    // Attempt to load files from Inbox,
+    // because AppDelegate method fails when app has not yet been loaded
+    // so this is specifically for the case when the app starts for the first time
+    window.resolveLocalFileSystemURL(cordova.file.documentsDirectory + "Inbox", function(dirEntry) {
+        dirEntry.createReader().readEntries(function(entries) {
+            entries.forEach(function(entry) {
+                if (entry.isFile && entry.name.endsWith(".json"))
+                    this.loadJSONFile(entry);
+            }, this);
+        });
+    });
 }
 
 function fsFail(err) {
@@ -1159,7 +1175,7 @@ function generate_customer_report() {
 function emailJSONData(toAddress, data) {
     // first write the data to a file...
     let json_data = JSON.stringify(data);
-    var json_blob = new Blob( [json_data], { type: 'text/plain'} );
+    var json_blob = new Blob( [json_data], { type: 'application/json'} );
     let targetFolder = "data"; // default directory
     let fileName = "e4Pt.json";
     let subject = "e-4Pt JSON Data";
@@ -2881,76 +2897,50 @@ function plot_clearances(clearance_data) {
   });
 }
 
-function loadExternalFile(){
-    var input = $('#OPEN_EXTERNAL_FILE_BUTTON');
-
-    if (typeof window.FileReader !== 'function') {
-        e4PtAlert("The file API isn't supported on this browser yet.");
-        return;
-    }
-
-    if (!input) {
-        e4PtAlert("Couldn't find the fileinput element.");
-        return;
-    }
-    else if (!input.prop('files')) {
-        e4PtAlert("This browser doesn't seem to support the `files` property of file inputs.");
-        return;
-    }
-    else if (!input.prop('files')[0]) {
-        e4PtAlert("Please select a file before clicking 'Load'");
-        return;
-    }
-
-    if (E4PTdata.sets.length > 1) {
-        e4PtConfirm("LOADING A NEW DATA SET WILL OVERWRITE IN-MEMORY DATA\n\nProceed to load this file?", function(buttonIndex) {
-            if (buttonIndex==1){//OK
-                loadThisFile();
-            } else if (buttonIndex==2){//Cancel
-                document.getElementById("OPEN_EXTERNAL_FILE_BUTTON").value =null;
-            }
+function loadExternalFile(dir, filename){
+    window.resolveLocalFileSystemURL(dir, function (dirEntry) {
+        dirEntry.getFile(filename, {create: false, exclusive: false}, function(fileEntry) {
+            loadJSONFile(fileEntry);
         });
-    } else {
-        loadThisFile();
-    }
+    }, function(error) {
+        console.log(error);
+    });
+}
 
-
-    function loadThisFile(){
-        var file = input.prop('files')[0];
-        var freader = new FileReader();
-        freader.onload = receivedText;
-        freader.readAsText(file);
-    }
-
-    function receivedText(e) {
-        var lines = e.target.result;
-        try {
-            $.extend(E4PTdata, JSON.parse(lines));
-        } catch (err) {
-            console.log(err);
-        }
-        dataSet = E4PTdata.sets.length;
-
-        try {
-          update_scan_info(); // currently does nothing.
-          parse_data();
-          plot_data();
-          if (current_frame_data['position'] != null) {
-            plot_data_2();
-          }
-          advance_position();
-        } catch (error) {
-          console.log(error);
-        }
-
-        console.log("Data Loaded from an external file");
-        $("#FILE_LOADING_PAGE").fadeOut();
-        if ($("#TITLE_BAR").text() != "DATA"){
-            $("#TITLE_BAR").text("DATA");
-        }
-
-        $("#RESULTS_PAGE").fadeIn();
-    }
+function loadJSONFile(fileEntry){
+    fileEntry.file(function (file) {
+        var reader = new FileReader();
+        reader.onloadend = function() {
+            
+            var data = JSON.parse(this.result);
+            if (json_data_is_valid(data)) {
+                data.pouchdb_id = "";
+                addDBEntry(data);
+                fadeOutAll();
+                set_frame_information();
+                initializeFromDocument(data);
+                
+                window.resolveLocalFileSystemURL(cordova.file.documentsDirectory, function (dirEntry) {
+                    dirEntry.getDirectory(data.serial_number, {create: true}, function(subDirEntry) {
+                        
+                        fileEntry.moveTo(subDirEntry, file.name);
+                        writeDetailsFile();
+                        
+                    }, function(error) {
+                        console.log(error);
+                    });
+                }, function(error) {
+                    console.log(error);
+                });
+            } else {
+                e4PtAlert("There is a problem with the JSON file, that has prevented it from being loaded.");
+                fileEntry.remove();
+            }
+        };
+        reader.readAsText(file);
+    }, function(error) {
+        console.log(error);
+    });
 }
 
 function doSSO() {
@@ -2986,7 +2976,6 @@ function syncError() {
 function addDBEntry(e4pt_data) {
 
   var entry = {
-    _id: "",
     ofs_id: e4pt_data.ofs_id,
     frame: e4pt_data.frame,
     serial_number: e4pt_data.serial_number,
@@ -3175,7 +3164,7 @@ function clearDB() {
         return;
       } else {
         console.log("Database destroyed. Creating new empty database.");
-        local_db = new PouchDB('e4ptdb');
+        local_db = new PouchDB('e4ptdb', {revs_limit: 1, auto_compaction: true});
         setTimeout(function(){listInternalFiles();}, 1000);
       }
     });
@@ -3270,9 +3259,14 @@ function sortTable(srtTable, n) {
 
 function loadLocalData(id) {
   console.log("@loadLocalData: id = ", id);
-  E4PTdata.pouchdb_id = id;
   local_db.get(id, function(err, doc) {
-    console.log("Row: ", doc);
+      console.log("Row: ", doc);
+      initializeFromDocument(doc);
+  });
+}
+
+function initializeFromDocument(doc) {
+    E4PTdata.pouchdb_id = doc._id;
     var frm_idx = 0;
     for (frm_idx=0; frm_idx<frame_data.length; frm_idx++) {
       if (frame_data[frm_idx].frame == doc.frame) {
@@ -3374,5 +3368,14 @@ function loadLocalData(id) {
     }
 
     turbine_setup();
-  });
+}
+
+function json_data_is_valid(fileData) {
+    return Object.keys(E4PTdata).every(function(key) {
+        if (key === 'sets')
+            return fileData.sets.every(function(entry) {
+                return Object.keys(new Data_Set()).every((ds_key) => entry.hasOwnProperty(ds_key));
+            });
+        return fileData.hasOwnProperty(key);
+    });
 }
