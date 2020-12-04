@@ -357,6 +357,18 @@ function gotFS(fileSystem) {
     fsRoot = window.rootFS.nativeURL;
     fsRoot = fsRoot.replace("file://","");
     console.log("@gotFS: fsRoot = ", fsRoot);
+    
+    // Attempt to load files from Inbox,
+    // because AppDelegate method fails when app has not yet been loaded
+    // so this is specifically for the case when the app starts for the first time
+    window.resolveLocalFileSystemURL(cordova.file.documentsDirectory + "Inbox", function(dirEntry) {
+        dirEntry.createReader().readEntries(function(entries) {
+            entries.forEach(function(entry) {
+                if (entry.isFile && entry.name.endsWith(".json"))
+                    this.loadJSONFile(entry);
+            }, this);
+        });
+    });
 }
 
 function fsFail(err) {
