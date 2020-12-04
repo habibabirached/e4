@@ -2881,76 +2881,28 @@ function plot_clearances(clearance_data) {
   });
 }
 
-function loadExternalFile(){
-    var input = $('#OPEN_EXTERNAL_FILE_BUTTON');
-
-    if (typeof window.FileReader !== 'function') {
-        e4PtAlert("The file API isn't supported on this browser yet.");
-        return;
-    }
-
-    if (!input) {
-        e4PtAlert("Couldn't find the fileinput element.");
-        return;
-    }
-    else if (!input.prop('files')) {
-        e4PtAlert("This browser doesn't seem to support the `files` property of file inputs.");
-        return;
-    }
-    else if (!input.prop('files')[0]) {
-        e4PtAlert("Please select a file before clicking 'Load'");
-        return;
-    }
-
-    if (E4PTdata.sets.length > 1) {
-        e4PtConfirm("LOADING A NEW DATA SET WILL OVERWRITE IN-MEMORY DATA\n\nProceed to load this file?", function(buttonIndex) {
-            if (buttonIndex==1){//OK
-                loadThisFile();
-            } else if (buttonIndex==2){//Cancel
-                document.getElementById("OPEN_EXTERNAL_FILE_BUTTON").value =null;
-            }
+function loadExternalFile(dir, filename){
+    window.resolveLocalFileSystemURL(dir, function (dirEntry) {
+        dirEntry.getFile(filename, {create: false, exclusive: false}, function(fileEntry) {
+            loadJSONFile(fileEntry);
         });
-    } else {
-        loadThisFile();
-    }
+    }, function(error) {
+        console.log(error);
+    });
+}
 
-
-    function loadThisFile(){
-        var file = input.prop('files')[0];
-        var freader = new FileReader();
-        freader.onload = receivedText;
-        freader.readAsText(file);
-    }
-
-    function receivedText(e) {
-        var lines = e.target.result;
-        try {
-            $.extend(E4PTdata, JSON.parse(lines));
-        } catch (err) {
-            console.log(err);
-        }
-        dataSet = E4PTdata.sets.length;
-
-        try {
-          update_scan_info(); // currently does nothing.
-          parse_data();
-          plot_data();
-          if (current_frame_data['position'] != null) {
-            plot_data_2();
-          }
-          advance_position();
-        } catch (error) {
-          console.log(error);
-        }
-
-        console.log("Data Loaded from an external file");
-        $("#FILE_LOADING_PAGE").fadeOut();
-        if ($("#TITLE_BAR").text() != "DATA"){
-            $("#TITLE_BAR").text("DATA");
-        }
-
-        $("#RESULTS_PAGE").fadeIn();
-    }
+function loadJSONFile(fileEntry){
+    fileEntry.file(function (file) {
+        var reader = new FileReader();
+        reader.onloadend = function() {
+            var data = JSON.parse(this.result);
+            data.pouchdb_id = "";
+            addDBEntry(data);
+        };
+        reader.readAsText(file);
+    }, function(error) {
+        console.log(error);
+    });
 }
 
 function doSSO() {

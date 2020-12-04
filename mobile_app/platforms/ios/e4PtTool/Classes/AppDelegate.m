@@ -36,4 +36,10 @@
     return [super application:application didFinishLaunchingWithOptions:launchOptions];
 }
 
+- (BOOL)application:(UIApplication*)application openURL:(nonnull NSURL *)url options:(nonnull NSDictionary<UIApplicationOpenURLOptionsKey,id> *)options {
+    if ([[url lastPathComponent] hasSuffix:@"json"])
+        [self.viewController.commandDelegate evalJs:[NSString stringWithFormat:@"loadExternalFile('%@', '%@')", [url URLByDeletingLastPathComponent], [url lastPathComponent]]];
+    return true;
+}
+
 @end
