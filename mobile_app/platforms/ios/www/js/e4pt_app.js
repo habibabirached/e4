@@ -2898,6 +2898,9 @@ function loadJSONFile(fileEntry){
             var data = JSON.parse(this.result);
             data.pouchdb_id = "";
             addDBEntry(data);
+            fadeOutAll();
+            set_frame_information();
+            initializeFromDocument(data);
         };
         reader.readAsText(file);
     }, function(error) {
@@ -3222,9 +3225,14 @@ function sortTable(srtTable, n) {
 
 function loadLocalData(id) {
   console.log("@loadLocalData: id = ", id);
-  E4PTdata.pouchdb_id = id;
   local_db.get(id, function(err, doc) {
-    console.log("Row: ", doc);
+      console.log("Row: ", doc);
+      initializeFromDocument(doc);
+  });
+}
+
+function initializeFromDocument(doc) {
+    E4PTdata.pouchdb_id = doc._id;
     var frm_idx = 0;
     for (frm_idx=0; frm_idx<frame_data.length; frm_idx++) {
       if (frame_data[frm_idx].frame == doc.frame) {
@@ -3326,5 +3334,4 @@ function loadLocalData(id) {
     }
 
     turbine_setup();
-  });
 }
