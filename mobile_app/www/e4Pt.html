@@ -392,6 +392,21 @@
                         </div>
                     </div>
                 </div>
+                <div class="FRD_TOP" style="counter-reset: frd_item 7">
+                    <div class="FRD_TOP_CHILD FONT6">Troubleshooting
+                        <div class="FRD_SUB">
+                            <button class="FRD_SUB_CHILD ACCORDION_2">Overrides</button>
+                            <div class="PANEL">
+                                <div class="FRD_SUB" align="center">
+                                    <br/>
+                                    <img class="CENTER" border="0" alt="Table values" src="img/frd/Sampling_Rate_vs_Intensity_20201119.gif"/>
+                                    <figcaption class="FONT4 B CENTER">Valid settings for sampling rate and intensity</figcaption>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <br/>
             </div>
             <button class="ACCORDION">SENSOR CONNECTION</button>
             <div class="PANEL">
@@ -460,7 +475,34 @@
                     <br/>
                     <h4><p align="center"><p align="center" id="CALIBRATION_DATE">Last Calibration:</p></h4>
                 </div>
-                <br/><br/>
+                <div>
+                    <div class="NOTIFICATION_STRIPE">
+                        <span class="NOTIFICATION_TITLE">Note:</span>
+                        <span>The Mastering Fixture height defaults are:</span>
+                        <span class="EMBEDDED_TABLE">
+                            <span class="EMBEDDED_TABLE" align="center"><u>Short Master Fixture</u><br/>3.568&quot; +/- 0.0005in</span>
+                            <span class="EMBEDDED_TABLE" align="center"><u>Long Master Fixture</u><br/>9.463&quot; +/- 0.0005in</span>
+                        </span>
+                    </div>
+                    <div class="NOTIFICATION_STRIPE">
+                        <span class="NOTIFICATION_TITLE">Note:</span>
+                        <span class="NOTIFICATION_CONTENT">The Mastering Value is currently hard-coded in the app at 5mm, so changing it here does not result in any effect on the readings.</span>
+                    </div>
+                    <div class="NOTIFICATION_STRIPE">
+                        <span class="NOTIFICATION_TITLE">Note:</span>
+                        <span class="NOTIFICATION_CONTENT">The Master Offset is the delta calculated: (measured sensor length + 16mm) - measured mastering fixture height.  This needs to be adjusted whenever there is a change in the sensor length OR mastering fixture height OR both.</span>
+                    </div>
+                    <div class="NOTIFICATION_STRIPE">
+                        <span class="NOTIFICATION_TITLE">Note:</span>
+                        <span>The production sensor default lengths are:</span>
+                        <span class="EMBEDDED_TABLE">
+                            <span class="EMBEDDED_TABLE" align="center"><u>Short Sensor</u><br/>75.69mm +/- 0.1mm</span>
+                            <span class="EMBEDDED_TABLE" align="center"><u>Long Sensor </u><br/>224.28mm +/- 0.1mm</span>
+                        </span>
+                    </div>
+                    <br/>
+                </div>
+                <br/>
             </div>
         </div>
         <!-- --------------- FRAME SELECT PAGE ---------------------  -->
