@@ -2897,24 +2897,29 @@ function loadJSONFile(fileEntry){
         reader.onloadend = function() {
             
             var data = JSON.parse(this.result);
-            data.pouchdb_id = "";
-            addDBEntry(data);
-            fadeOutAll();
-            set_frame_information();
-            initializeFromDocument(data);
-            
-            window.resolveLocalFileSystemURL(cordova.file.documentsDirectory, function (dirEntry) {
-                dirEntry.getDirectory(data.serial_number, {create: true}, function(subDirEntry) {
-                    
-                    fileEntry.moveTo(subDirEntry, file.name);
-                    writeDetailsFile();
-                    
+            if (json_data_is_valid(data)) {
+                data.pouchdb_id = "";
+                addDBEntry(data);
+                fadeOutAll();
+                set_frame_information();
+                initializeFromDocument(data);
+                
+                window.resolveLocalFileSystemURL(cordova.file.documentsDirectory, function (dirEntry) {
+                    dirEntry.getDirectory(data.serial_number, {create: true}, function(subDirEntry) {
+                        
+                        fileEntry.moveTo(subDirEntry, file.name);
+                        writeDetailsFile();
+                        
+                    }, function(error) {
+                        console.log(error);
+                    });
                 }, function(error) {
                     console.log(error);
                 });
-            }, function(error) {
-                console.log(error);
-            });
+            } else {
+                e4PtAlert("There is a problem with the JSON file, that has prevented it from being loaded.");
+                fileEntry.remove();
+            }
         };
         reader.readAsText(file);
     }, function(error) {
@@ -3348,4 +3353,14 @@ function initializeFromDocument(doc) {
     }
 
     turbine_setup();
+}
+
+function json_data_is_valid(fileData) {
+    return Object.keys(E4PTdata).every(function(key) {
+        if (key === 'sets')
+            return fileData.sets.every(function(entry) {
+                return Object.keys(new Data_Set()).every((ds_key) => entry.hasOwnProperty(ds_key));
+            });
+        return fileData.hasOwnProperty(key);
+    });
 }
