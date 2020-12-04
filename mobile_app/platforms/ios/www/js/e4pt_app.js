@@ -2895,12 +2895,26 @@ function loadJSONFile(fileEntry){
     fileEntry.file(function (file) {
         var reader = new FileReader();
         reader.onloadend = function() {
+            
             var data = JSON.parse(this.result);
             data.pouchdb_id = "";
             addDBEntry(data);
             fadeOutAll();
             set_frame_information();
             initializeFromDocument(data);
+            
+            window.resolveLocalFileSystemURL(cordova.file.documentsDirectory, function (dirEntry) {
+                dirEntry.getDirectory(data.serial_number, {create: true}, function(subDirEntry) {
+                    
+                    fileEntry.moveTo(subDirEntry, file.name);
+                    writeDetailsFile();
+                    
+                }, function(error) {
+                    console.log(error);
+                });
+            }, function(error) {
+                console.log(error);
+            });
         };
         reader.readAsText(file);
     }, function(error) {
