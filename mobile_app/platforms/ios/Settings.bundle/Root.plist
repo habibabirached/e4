@@ -8,6 +8,30 @@
 	<array>
 		<dict>
 			<key>Type</key>
+			<string>PSMultiValueSpecifier</string>
+			<key>Title</key>
+			<string>Sensor selection</string>
+			<key>Key</key>
+			<string>sensorType</string>
+			<key>DefaultValue</key>
+			<string>PROTOTYPE</string>
+			<key>Values</key>
+			<array>
+				<string>LONG</string>
+				<string>SHORT</string>
+				<string>PROTOTYPE</string>
+				<string>CUSTOM</string>
+			</array>
+			<key>Titles</key>
+			<array>
+				<string>LONG</string>
+				<string>SHORT</string>
+				<string>PROTOTYPE</string>
+				<string>CUSTOM</string>
+			</array>
+		</dict>
+		<dict>
+			<key>Type</key>
 			<string>PSTitleValueSpecifier</string>
 			<key>Title</key>
 			<string>Mastering Value</string>
@@ -40,7 +64,7 @@
 			<key>Type</key>
 			<string>PSGroupSpecifier</string>
 			<key>Title</key>
-			<string>Settings for e-4Point Tool</string>
+			<string>Version info</string>
 		</dict>
 		<dict>
 			<key>Type</key>
