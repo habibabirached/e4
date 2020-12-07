@@ -1301,19 +1301,21 @@ enum ifc242xValue {
     }
     if ([cmd containsString:@"get_sensor_parameters"]) {
         NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+        NSString *sensor = [defaults stringForKey:@"sensorType"];
         NSString *mfh = [defaults stringForKey:@"masterFixtureHeight"];
         NSString *mval = [defaults stringForKey:@"masteringValue"];
         NSString *mo = [defaults stringForKey:@"masterOffset"];
-        if ((mfh == nil) || (mval == nil) || (mo == nil)) {
+        if ((mfh == nil) || (mval == nil) || (mo == nil) || (sensor == nil)) {
             [self registerDefaultsFromSettingsBundle];
             mfh = [defaults stringForKey:@"masterFixtureHeight"];
             mval = [defaults stringForKey:@"masteringValue"];
             mo = [defaults stringForKey:@"masterOffset"];
+            sensor = [defaults stringForKey:@"sensorType"];
         }
         self.metaData.master_fixture_height = mfh;
         self.metaData.mastering_value = mval;
         self.metaData.master_offset = mo;
-        NSDictionary* jsonDict = @{@"type":@"sensor_params", @"master_fixture_height":mfh, @"mastering_value":mval,  @"master_offset":mo};
+        NSDictionary* jsonDict = @{@"type":@"sensor_params", @"master_fixture_height":mfh, @"mastering_value":mval,  @"master_offset":mo, @"sensor_selection":sensor};
         CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];
         [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
         return;
@@ -1322,7 +1324,9 @@ enum ifc242xValue {
         NSString* mfh = [msgArray objectAtIndex:1];
         NSString* mval = [msgArray objectAtIndex:2];
         NSString* mo = [msgArray objectAtIndex:3];
+        NSString* sensor = [msgArray objectAtIndex:4];
         NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+        [defaults setValue:sensor forKey:@"sensorType"];
         [defaults setValue:mfh forKey:@"masterFixtureHeight"];
         [defaults setValue:mval forKey:@"masteringValue"];
         [defaults setValue:mo forKey:@"masterOffset"];
@@ -2703,10 +2707,11 @@ enum ifc242xValue {
     
     //  Write the sensor parameters and app version to the CSV file.
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    dataStr = [NSString stringWithFormat:@"\n\n\n - Sensor Parameters, Mastering Fixture Height (in):,%@,Mastering Value (mm):, %@, Master Offset (in):, %@\n",
-                                  [defaults stringForKey:@"masterFixtureHeight"],
-                                  [defaults stringForKey:@"masteringValue"],
-                                  [defaults stringForKey:@"masterOffset"]];
+    dataStr = [NSString stringWithFormat:@"\n\n\n - Sensor Parameters,Sensor Selection:,%@,Mastering Fixture Height (in):,%@,Mastering Value (mm):, %@, Master Offset (in):, %@\n",
+               [defaults stringForKey:@"sensorType"],
+               [defaults stringForKey:@"masterFixtureHeight"],
+               [defaults stringForKey:@"masteringValue"],
+               [defaults stringForKey:@"masterOffset"]];
     [handle writeData:[dataStr dataUsingEncoding:NSUTF8StringEncoding]];
 
     NSString* appVersion = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleShortVersionString"];

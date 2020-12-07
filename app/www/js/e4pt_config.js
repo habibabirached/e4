@@ -1,3 +1,9 @@
+sensor_types = {
+    'LONG': {'measured_length_mm': 224.28, 'measured_mastering_fixture_height_mm': 240.3602},
+    'SHORT': {'measured_length_mm': 75.69, 'measured_mastering_fixture_height_mm': 90.6272},
+    'PROTOTYPE': {'measured_length_mm': 242.79, 'measured_mastering_fixture_height_mm': 258.79},
+    'CUSTOM': {}
+};
 // Sensor parameters (in mm).
 sensor_data = {
     'master_fixture_height':0,
@@ -48,7 +54,8 @@ frame_data = [
      'max_turn_time':0,
      'rotor_mode':'rotating',
      'measure_mode':'dynamic',
-     'option':'full_turn'
+     'option':'full_turn',
+     'default_sensor':'SHORT'
     },
     {'frame':'6FA',
      'stage':['2', '6', '10', '15'],
@@ -104,7 +111,8 @@ frame_data = [
      'max_turn_time':0,
      'rotor_mode':'rotating',
      'measure_mode':'dynamic',
-     'option':'full_turn'
+     'option':'full_turn',
+     'default_sensor':'SHORT'
     },
     {'frame':'7E',
      'stage':['7', '12', '17'],
@@ -159,7 +167,8 @@ frame_data = [
      'max_turn_time':25,
      'rotor_mode':'rotating',
      'measure_mode':'dynamic',
-     'option':'quarter_turn'
+     'option':'quarter_turn',
+     'default_sensor':'SHORT'
     },
     {'frame':'7FA-Mod-Test-Rig',
      'stage':['1', '6', '11', '14'],
@@ -215,7 +224,8 @@ frame_data = [
     'max_turn_time':0,
     'rotor_mode':'rotating',
     'measure_mode':'dynamic',
-    'option':'full_turn'
+    'option':'full_turn',
+    'default_sensor':'SHORT'
     },
     {'frame':'7FA+e',
      'stage':['2', '5', '10', '17'],
@@ -343,7 +353,8 @@ frame_data = [
      'max_turn_time':0,
      'rotor_mode':'rotating',
      'measure_mode':'dynamic',
-     'option':'full_turn'
+     'option':'full_turn',
+     'default_sensor':'SHORT'
     },
     {'frame':'7FA.05',
      'stage':['1', '5', '9', '14'],
@@ -399,7 +410,8 @@ frame_data = [
      'max_turn_time':0,
      'rotor_mode':'rotating',
      'measure_mode':'dynamic',
-     'option':'full_turn'
+     'option':'full_turn',
+     'default_sensor':'SHORT'
     },
     {'frame':'7FB',
      'stage':['2', '5', '11', '16', '17'],
@@ -462,7 +474,8 @@ frame_data = [
      'max_turn_time':0,
      'rotor_mode':'rotating',
      'measure_mode':'dynamic',
-     'option':'full_turn'
+     'option':'full_turn',
+     'default_sensor':'SHORT'
     },
     {'frame':'7HA.01',
      'stage':['6', '10', '14'],
@@ -480,7 +493,8 @@ frame_data = [
      'max_turn_time':0,
      'rotor_mode':'rotating',
      'measure_mode':'dynamic',
-     'option':'full_turn'
+     'option':'full_turn',
+     'default_sensor':'LONG'
     },
     {'frame':'7HA.02-FL16',
      'stage':['1', '6', '10', '14'],
@@ -499,7 +513,8 @@ frame_data = [
     'max_turn_time':0,
     'rotor_mode':'rotating',
     'measure_mode':'dynamic',
-    'option':'full_turn'
+    'option':'full_turn',
+    'default_sensor':'LONG'
     },
     {'frame':'7HA.02-FL18',
     'stage':['1', '6', '10', '14'],
@@ -556,7 +571,8 @@ frame_data = [
     'max_turn_time':0,
     'rotor_mode':'rotating',
     'measure_mode':'dynamic',
-    'option':'full_turn'
+    'option':'full_turn',
+    'default_sensor':'LONG'
     },
     {'frame':'7HA.03',
     'stage':['1', '6', '10', '14'],
@@ -612,7 +628,8 @@ frame_data = [
     'max_turn_time':0,
     'rotor_mode':'rotating',
     'measure_mode':'dynamic',
-    'option':'full_turn'
+    'option':'full_turn',
+    'default_sensor':'LONG'
     },
     {'frame':'9E',
      'stage':['1', '2', '8', '14', '17'],
@@ -681,7 +698,8 @@ frame_data = [
      'max_turn_time':90.0,
      'rotor_mode':'rotating',
      'measure_mode':'dynamic',
-     'option':'tenth_turn'
+     'option':'tenth_turn',
+     'default_sensor':'PROTOTYPE'
     },
     {'frame':'9FA',
      'stage':['2', '5', '10', '17'],
@@ -768,7 +786,8 @@ frame_data = [
      'max_turn_time':0,
      'rotor_mode':'rotating',
      'measure_mode':'dynamic',
-     'option':'full_turn'
+     'option':'full_turn',
+     'default_sensor':'LONG'
     },
     {'frame':'9FB',
      'stage':['2', '5', '11', '16', '17'],
@@ -831,7 +850,8 @@ frame_data = [
      'max_turn_time':0,
      'rotor_mode':'rotating',
      'measure_mode':'dynamic',
-     'option':'full_turn'
+     'option':'full_turn',
+     'default_sensor':'SHORT'
     },
     {'frame':'LMS',
      'stage':['0', '3', '5'],
@@ -876,7 +896,8 @@ frame_data = [
      'max_turn_time':0,
      'rotor_mode':'rotating',
      'measure_mode':'dynamic',
-     'option':'full_turn'
+     'option':'full_turn',
+     'default_sensor':'PROTOTYPE'
    },
     {'frame':'9HA.01',
      'stage':['1', '6', '10', '14'],
@@ -932,7 +953,8 @@ frame_data = [
      'max_turn_time':0,
      'rotor_mode':'rotating',
      'measure_mode':'dynamic',
-     'option':'full_turn'
+     'option':'full_turn',
+     'default_sensor':'LONG'
     },
     {'frame':'9HA.02',
      'stage':['1', '6', '11', '14'],
@@ -988,7 +1010,8 @@ frame_data = [
      'max_turn_time':0,
      'rotor_mode':'rotating',
      'measure_mode':'dynamic',
-     'option':'full_turn'
+     'option':'full_turn',
+     'default_sensor':'LONG'
     },
     {'frame':'9HA.01-FL18',
      'stage':['1', '6', '11', '14'],
@@ -1044,6 +1067,7 @@ frame_data = [
     'max_turn_time':0,
     'rotor_mode':'rotating',
     'measure_mode':'dynamic',
-    'option':'full_turn'
+    'option':'full_turn',
+    'default_sensor':'LONG'
     }
 ];
