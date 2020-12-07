@@ -14,7 +14,7 @@
 			<key>Key</key>
 			<string>sensorType</string>
 			<key>DefaultValue</key>
-			<string>PROTOTYPE</string>
+			<string>LONG</string>
 			<key>Values</key>
 			<array>
 				<string>LONG</string>
@@ -48,7 +48,7 @@
 			<key>Key</key>
 			<string>masterOffset</string>
 			<key>DefaultValue</key>
-			<string>0.000</string>
+			<string>-0.0032</string>
 		</dict>
 		<dict>
 			<key>Type</key>
@@ -58,7 +58,7 @@
 			<key>Key</key>
 			<string>masterFixtureHeight</string>
 			<key>DefaultValue</key>
-			<string>9.5599</string>
+			<string>9.463</string>
 		</dict>
 		<dict>
 			<key>Type</key>
@@ -74,7 +74,7 @@
 			<key>Key</key>
 			<string>Version</string>
 			<key>DefaultValue</key>
-			<string>0.2.0</string>
+			<string>0.2.1</string>
 		</dict>
 		<dict>
 			<key>Type</key>
@@ -84,7 +84,7 @@
 			<key>Key</key>
 			<string>buildDate</string>
 			<key>DefaultValue</key>
-			<string>Dec 4, 2020</string>
+			<string>Dec 7, 2020</string>
 		</dict>
 	</array>
 </dict>
