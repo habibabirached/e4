@@ -3403,7 +3403,7 @@ function checkSensorSelection() {
     var expectedSensor = current_frame_data.default_sensor;
     var actualSensor = document.getElementById("SENSOR_SELECTION").value;
     if (expectedSensor != actualSensor)
-        e4PtPrompt("Current sensor settings are for '" + actualSensor + "' sensor, while " + document.getElementById("FRAME_SIZE").value + " expects to use '" + expectedSensor + "' sensor settings.  Measurements may not be accurate!",setSensorSettingsForTurbine,"Sensor settings mismatch",["Change to '" + expectedSensor + "' sensor settings", "Keep '" + actualSensor + '" sensor settings"]);
+        e4PtPrompt("Current sensor settings are for '" + actualSensor + "' sensor, while " + document.getElementById("FRAME_SIZE").value + " expects to use '" + expectedSensor + "' sensor settings.  Measurements may not be accurate!",setSensorSettingsForTurbine,"Sensor settings mismatch",["Change to '" + expectedSensor + "' sensor settings", "Keep '" + actualSensor + "' sensor settings"]);
 }
                                                           
 function setSensorSettingsForTurbine(option) {
