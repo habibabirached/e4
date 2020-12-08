@@ -70,7 +70,7 @@
 			<key>Key</key>
 			<string>Version</string>
 			<key>DefaultValue</key>
-			<string>0.2.1</string>
+			<string>0.2.2</string>
 		</dict>
 		<dict>
 			<key>Type</key>
@@ -80,7 +80,7 @@
 			<key>Key</key>
 			<string>buildDate</string>
 			<key>DefaultValue</key>
-			<string>Dec 7, 2020</string>
+			<string>Dec 8, 2020</string>
 		</dict>
 	</array>
 </dict>
