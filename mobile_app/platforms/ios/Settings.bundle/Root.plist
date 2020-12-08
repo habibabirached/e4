@@ -8,33 +8,29 @@
 	<array>
 		<dict>
 			<key>Type</key>
-			<string>PSMultiValueSpecifier</string>
+			<string>PSTitleValueSpecifier</string>
 			<key>Title</key>
 			<string>Sensor selection</string>
 			<key>Key</key>
 			<string>sensorType</string>
 			<key>DefaultValue</key>
 			<string>LONG</string>
-			<key>Values</key>
-			<array>
-				<string>LONG</string>
-				<string>SHORT</string>
-				<string>PROTOTYPE</string>
-				<string>CUSTOM</string>
-			</array>
-			<key>Titles</key>
-			<array>
-				<string>LONG</string>
-				<string>SHORT</string>
-				<string>PROTOTYPE</string>
-				<string>CUSTOM</string>
-			</array>
 		</dict>
 		<dict>
 			<key>Type</key>
 			<string>PSTitleValueSpecifier</string>
 			<key>Title</key>
-			<string>Mastering Value</string>
+			<string>Sensor Length (in)</string>
+			<key>Key</key>
+			<string>sensorLength</string>
+			<key>DefaultValue</key>
+			<string>8.8299</string>
+		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSTitleValueSpecifier</string>
+			<key>Title</key>
+			<string>Mastering Value (mm)</string>
 			<key>Key</key>
 			<string>masteringValue</string>
 			<key>DefaultValue</key>
@@ -44,7 +40,7 @@
 			<key>Type</key>
 			<string>PSTitleValueSpecifier</string>
 			<key>Title</key>
-			<string>Master Offset: </string>
+			<string>Master Offset (in)</string>
 			<key>Key</key>
 			<string>masterOffset</string>
 			<key>DefaultValue</key>
@@ -54,7 +50,7 @@
 			<key>Type</key>
 			<string>PSTitleValueSpecifier</string>
 			<key>Title</key>
-			<string>Mastering Fixture Height</string>
+			<string>Mastering Fixture Height (in)</string>
 			<key>Key</key>
 			<string>masterFixtureHeight</string>
 			<key>DefaultValue</key>
