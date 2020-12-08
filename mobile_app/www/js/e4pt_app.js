@@ -1945,8 +1945,9 @@ function getSensorParametersForSensorSelection(sensorType) {
     if (info && info.measured_mastering_fixture_height_mm) {
         document.getElementById("MASTER_FIXTURE_HEIGHT").value = (info.measured_mastering_fixture_height_mm / 25.4).toFixed(4);
         document.getElementById("MASTER_OFFSET").value = ((info.measured_length_mm+16-info.measured_mastering_fixture_height_mm) / 25.4).toFixed(4);
-    } else if (info && sensorType === 'CUSTOM')
-        enableMasteringValuesForEditing(true);
+    }
+    enableMasteringValuesForEditing(sensorType === 'CUSTOM');
+    document.getElementById("SENSOR_SELECTION").disabled = false;
 }
                                                           
 function enableMasteringValuesForEditing(enabled) {
