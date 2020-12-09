@@ -1865,10 +1865,7 @@ function pluginMessage(msg) {
             if (tmpStr.length == 1) tmpStr = sensor_data.master_offset.toFixed(4).toString(10);
             document.getElementById("MASTER_OFFSET").value = tmpStr;
             
-            if (sensor_data.sensor_selection === 'CUSTOM' || sensor_data.sensor_selection === 'PROTOTYPE') {
-                sensor_types[sensor_data.sensor_selection].measured_length_mm = sensor_data.sensor_length * 25.4;
-                sensor_types[sensor_data.sensor_selection].measured_mastering_fixture_height_mm = sensor_data.master_fixture_height * 25.4;
-            }
+            saveValuesForSensorType();
             
             enableMasteringValuesForEditing(sensor_data.sensor_selection === 'CUSTOM' || sensor_data.sensor_selection === 'PROTOTYPE');
             
@@ -1947,6 +1944,20 @@ function updateSensorParameters(mfh, mval, mo, sensor, sensor_length) {
         window.plugins.IFC242x.messageToDevice(message, function(msg) {
                                                pluginMessage(msg);
                                                }, null);
+    }
+    
+    sensor_data.sensor_selection = sensor;
+    sensor_data.sensor_length = sensor_length_f;
+    sensor_data.master_fixture_height = mfh_f;
+    sensor_data.master_offset = mo_f;
+    sensor_data.mastering_value = mstrval_f;
+    saveValuesForSensorType();
+}
+
+function saveValuesForSensorType() {
+    if (sensor_data.sensor_selection === 'CUSTOM' || sensor_data.sensor_selection === 'PROTOTYPE') {
+        sensor_types[sensor_data.sensor_selection].measured_length_mm = sensor_data.sensor_length * 25.4;
+        sensor_types[sensor_data.sensor_selection].measured_mastering_fixture_height_mm = sensor_data.master_fixture_height * 25.4;
     }
 }
 
@@ -3446,7 +3457,7 @@ function setSensorSettingsForTurbine(option) {
 
 function updateMasteringOffset() {
     var lengthInches = parseFloat(document.getElementById("SENSOR_LENGTH").value);
-    var heightInches = parseFloat(document.getElementById("MASTER_FIXTURE_HEIGHT").value;
+    var heightInches = parseFloat(document.getElementById("MASTER_FIXTURE_HEIGHT").value);
     var offsetInches = lengthInches + (16.0/25.4) - heightInches;
     document.getElementById("MASTER_OFFSET").value = offsetInches.toFixed(4);
 }
