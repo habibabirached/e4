@@ -1,14 +1,15 @@
 sensor_types = {
     'LONG': {'measured_length_mm': 224.28, 'measured_mastering_fixture_height_mm': 240.3602},
     'SHORT': {'measured_length_mm': 75.69, 'measured_mastering_fixture_height_mm': 90.6272},
-    'PROTOTYPE': {'measured_length_mm': 242.79, 'measured_mastering_fixture_height_mm': 258.79},
+    'PROTOTYPE': {'measured_length_mm': 226.79, 'measured_mastering_fixture_height_mm': 242.79},
     'CUSTOM': {}
 };
-// Sensor parameters (in mm).
 sensor_data = {
-    'master_fixture_height':0,
-    'mastering_value':0,
-    'master_offset':0
+    'sensor_selection':'',
+    'sensor_length':0, //in
+    'master_fixture_height':0, //in
+    'mastering_value':0, //mm
+    'master_offset':0 //in
 };
 frame_data = [
     {'frame':'6B',
