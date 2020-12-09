@@ -331,6 +331,12 @@ $(document).ready(function(){
     document.getElementById("SENSOR_SELECTION").addEventListener('change', function(){
         getSensorParametersForSensorSelection(document.getElementById("SENSOR_SELECTION").value);
     }, {passive: true});
+    document.getElementById("MASTER_FIXTURE_HEIGHT").addEventListener('change', function(){
+        updateMasteringOffset();
+    }, {passive: true});
+    document.getElementById("SENSOR_LENGTH").addEventListener('change', function(){
+        updateMasteringOffset();
+    }, {passive: true});
     setupAccordian();
     if (communicationChannel == "WebSocket") {
         createWS();
@@ -1859,6 +1865,8 @@ function pluginMessage(msg) {
             if (tmpStr.length == 1) tmpStr = sensor_data.master_offset.toFixed(4).toString(10);
             document.getElementById("MASTER_OFFSET").value = tmpStr;
             
+            saveValuesForSensorType();
+            
             enableMasteringValuesForEditing(sensor_data.sensor_selection === 'CUSTOM' || sensor_data.sensor_selection === 'PROTOTYPE');
             
             break;
@@ -1906,8 +1914,9 @@ function updateSensorParameters(mfh, mval, mo, sensor, sensor_length) {
     let mfh_f = parseFloat(mfh);
     let mstrval_f = parseFloat(mval);
     let mo_f = parseFloat(mo);
+    let sensor_length_f = parseFloat(sensor_length);
     // If a number is not valid, give the user a chance to try again or abort.
-    if (isNaN(mfh_f) || isNaN(mstrval_f) || isNaN(mo_f)) {
+    if (isNaN(mfh_f) || isNaN(mstrval_f) || isNaN(mo_f) || isNaN(sensor_length_f)) {
         e4PtConfirm("Please enter only floating point values.\nPlease try again.", function(buttonIndex) {
                     if (buttonIndex==1){//OK
                       return; // This changes nothing and lets the user try again.
@@ -1926,7 +1935,7 @@ function updateSensorParameters(mfh, mval, mo, sensor, sensor_length) {
                     });
         return;
     }
-    let message = {"args":["set_sensor_parameters",mfh_f.toString(10), mstrval_f.toString(10), mo_f.toString(10), sensor, sensor_length]};
+    let message = {"args":["set_sensor_parameters",mfh_f.toString(10), mstrval_f.toString(10), mo_f.toString(10), sensor, sensor_length_f.toString(10)]};
     if (communicationChannel == "WebSocket") {
         message = JSON.stringify(message);
         sendWSMessage(message);
@@ -1936,6 +1945,20 @@ function updateSensorParameters(mfh, mval, mo, sensor, sensor_length) {
                                                pluginMessage(msg);
                                                }, null);
     }
+    
+    sensor_data.sensor_selection = sensor;
+    sensor_data.sensor_length = sensor_length_f;
+    sensor_data.master_fixture_height = mfh_f;
+    sensor_data.master_offset = mo_f;
+    sensor_data.mastering_value = mstrval_f;
+    saveValuesForSensorType();
+}
+
+function saveValuesForSensorType() {
+    if (sensor_data.sensor_selection === 'CUSTOM' || sensor_data.sensor_selection === 'PROTOTYPE') {
+        sensor_types[sensor_data.sensor_selection].measured_length_mm = sensor_data.sensor_length * 25.4;
+        sensor_types[sensor_data.sensor_selection].measured_mastering_fixture_height_mm = sensor_data.master_fixture_height * 25.4;
+    }
 }
 
 function getSensorParametersForSensorSelection(sensorType) {
@@ -1943,10 +1966,9 @@ function getSensorParametersForSensorSelection(sensorType) {
     if (info && info.measured_mastering_fixture_height_mm) {
         var lengthInches = info.measured_length_mm / 25.4;
         var heightInches = info.measured_mastering_fixture_height_mm / 25.4;
-        var offsetInches = (info.measured_length_mm+16-info.measured_mastering_fixture_height_mm) / 25.4;
         document.getElementById("SENSOR_LENGTH").value = lengthInches.toFixed(4);
         document.getElementById("MASTER_FIXTURE_HEIGHT").value = heightInches.toFixed(4);
-        document.getElementById("MASTER_OFFSET").value = offsetInches.toFixed(4);
+        updateMasteringOffset();
     }
     
     if (sensorType === 'CUSTOM' || sensorType === 'PROTOTYPE') {
@@ -3431,4 +3453,11 @@ function setSensorSettingsForTurbine(option) {
                                document.getElementById("SENSOR_SELECTION").value,
                                document.getElementById("SENSOR_LENGTH").value);
     }
+}
+
+function updateMasteringOffset() {
+    var lengthInches = parseFloat(document.getElementById("SENSOR_LENGTH").value);
+    var heightInches = parseFloat(document.getElementById("MASTER_FIXTURE_HEIGHT").value);
+    var offsetInches = lengthInches + (16.0/25.4) - heightInches;
+    document.getElementById("MASTER_OFFSET").value = offsetInches.toFixed(4);
 }
