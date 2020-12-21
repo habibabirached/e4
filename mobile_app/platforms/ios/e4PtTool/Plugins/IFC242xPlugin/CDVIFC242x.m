@@ -209,6 +209,7 @@ enum ifc242xValue {
 @property (strong, nonatomic) NSMutableArray* datasetIds;
 @property (strong, nonatomic) NSMutableArray* times;
 @property (strong, nonatomic) NSMutableArray* displacements;
+@property (strong, nonatomic) NSMutableArray* avg_displacements_for_blade;
 @property (strong, nonatomic) NSMutableArray* filtered;
 @property (strong, nonatomic) NSMutableArray* blade_clearances;
 @property (strong, nonatomic) NSMutableArray* clearance_quality;
@@ -221,6 +222,7 @@ enum ifc242xValue {
 @property (nonatomic) float stage_median_clearance;
 @property (nonatomic) float stage_clearance_std;
 @property (nonatomic) float stage_position_threshold;
+@property (nonatomic) float stage_position_offset_adjustment;
 @property (nonatomic) BOOL calibratedAcquire;
 
 @property (nonatomic) NSTimeInterval startTime;
@@ -306,6 +308,7 @@ enum ifc242xValue {
 @synthesize datasetIds = _datasetIds;
 @synthesize times = _times;
 @synthesize displacements = _displacements;
+@synthesize avg_displacements_for_blade = _avg_displacements_for_blade;
 @synthesize filtered = _filtered;
 @synthesize blade_clearances = _blade_clearances;
 @synthesize stage_clearance = _stage_clearance;
@@ -346,6 +349,7 @@ enum ifc242xValue {
 @synthesize stage_median_clearance = _stage_median_clearance;
 @synthesize stage_clearance_std = _stage_clearance_std;
 @synthesize stage_position_threshold = _stage_position_threshold;
+@synthesize stage_position_offset_adjustment = _stage_position_offset_adjustment;
 @synthesize calibratedAcquire = _calibratedAcquire;
 
 @synthesize connectionMode = _connectionMode;
@@ -741,6 +745,7 @@ enum ifc242xValue {
     if (self.datasetIds == nil) self.datasetIds = [[NSMutableArray alloc] init];
     if (self.times == nil) self.times = [[NSMutableArray alloc] init];
     if (self.displacements == nil) self.displacements = [[NSMutableArray alloc] init];
+    if (self.avg_displacements_for_blade == nil) self.avg_displacements_for_blade = [[NSMutableArray alloc] init];
     if (self.filtered == nil) self.filtered = [[NSMutableArray alloc] init];
     if (self.blade_clearances == nil) self.blade_clearances = [[NSMutableArray alloc] init];
     if (self.clearance_quality == nil) self.clearance_quality = [[NSMutableArray alloc] init];
@@ -753,7 +758,8 @@ enum ifc242xValue {
     [self clearMetaData];
     [self computeKernel:KERNEL_SIGMA kernel_size:KERNEL_SIZE]; // Compute the LoG filter kernel.
     self.stage_clearance = 0;
-    self.stage_position_threshold = 0;
+    self.stage_position_threshold = 0.0;
+    self.stage_position_offset_adjustment = 0.0;
     self.controllerType = @"";
     
 #ifdef SEND_DISPLACEMENT_ONLY
@@ -1491,6 +1497,7 @@ enum ifc242xValue {
     [self.datasetIds removeAllObjects];
     [self.times removeAllObjects];
     [self.displacements removeAllObjects];
+    [self.avg_displacements_for_blade removeAllObjects];
     [self.filtered removeAllObjects];
     [self.blade_clearances removeAllObjects];
     [self.clearance_quality removeAllObjects];
@@ -1505,6 +1512,7 @@ enum ifc242xValue {
     self.stage_median_clearance = 0.0;
     self.stage_clearance_std = 0.0;
     self.stage_position_threshold = 0.0;
+    self.stage_position_offset_adjustment = 0.0;
 }
 
 // The collectData function is patterned after the e4PtTool python function
@@ -1523,7 +1531,7 @@ enum ifc242xValue {
     self.set_count = 0;
     self.data_index = 0;
     self.num_sets = num_sets;
-    NSString* tmpf = [NSString stringWithFormat:@"%.2f",casing_thicknesss];
+    NSString* tmpf = [NSString stringWithFormat:@"%.4f",casing_thicknesss];
     self.metaData.casing_thickness = tmpf;
 
     // Clear data arrays.
@@ -2073,6 +2081,7 @@ enum ifc242xValue {
     // Traverse the data averaging the displacements between the neg.
     // and pos. zero-crossings IFF the intensity is greater than zero.
     // These averages are the per-blade clearances
+    [self.avg_displacements_for_blade removeAllObjects];
     [self.filtered removeAllObjects];
     [self.blade_clearances removeAllObjects];
     [self.clearance_quality removeAllObjects];
@@ -2096,6 +2105,7 @@ enum ifc242xValue {
                     // end of the data is encountered without a matching
                     // positive zero crossing.
                     for (int j=start; j<self.displacements.count; j++) {
+                        [self.avg_displacements_for_blade addObject:[NSNumber numberWithFloat:OUT_OF_RANGE]];
                         [self.filtered addObject:[NSNumber numberWithFloat:OUT_OF_RANGE]];
                     }
                     stop = start;
@@ -2174,9 +2184,11 @@ enum ifc242xValue {
                 for (int j=start; j<=stop; j++) {
                     NSNumber* d = [self.displacements objectAtIndex:j];
                     if (([d floatValue] != OUT_OF_RANGE) && (count > 1)) {
+                        [self.avg_displacements_for_blade addObject:[NSNumber numberWithFloat:clearance]];
                         [self.filtered addObject:[NSNumber numberWithFloat:clearance]];
                     }
                     else {
+                        [self.avg_displacements_for_blade addObject:[NSNumber numberWithFloat:OUT_OF_RANGE]];
                         [self.filtered addObject:[NSNumber numberWithFloat:OUT_OF_RANGE]];
                     }
                 }
@@ -2184,6 +2196,7 @@ enum ifc242xValue {
             i = stop; // Move the start point ahead to where we stopped.
         }
         else {
+            [self.avg_displacements_for_blade addObject:[NSNumber numberWithFloat:OUT_OF_RANGE]];
             [self.filtered addObject:[NSNumber numberWithFloat:OUT_OF_RANGE]];
         }
     }
@@ -2191,28 +2204,17 @@ enum ifc242xValue {
     self.overall_average = (float)self.overall_average / (float)self.displacements.count;
         
     // Now iterate over the filtered values and calibrate them to arrive at actual clearance values.
-    // Old method: clearance_f = clearance_f + (SMR + SL) - spacer - casing_thickness + MO;
-    // New method: clearance_f = clearance_f + (MFH - 5.0) - spacer - casing_thickness + MO;
-    //      In this new method, "5.0" is the Mastering value.  We determined this should be 5.0mm.
-    // Filtered clearances are in mm.
-    // Sensor parameters (Mastering fixture height, Spacer thickness & casing thickness) are in inches.
-    //
-    // Get values into consistent units of mm. Perform calculations in mm
-    float inToMM = 25.4;
-    float mfh = [self.metaData.master_fixture_height floatValue] * inToMM;
-    float mo = [self.metaData.master_offset floatValue] * inToMM;
-    float ct = [self.metaData.casing_thickness floatValue] * inToMM;
-    float st = [self.metaData.spacer_thickness floatValue] * inToMM;
     // Calibrate the filtered values
     if (self.calibratedAcquire) {
+        self.stage_position_offset_adjustment = [self calculateOffsetAdjustment];
         for (unsigned int i = 0; i< self.filtered.count; i++) {
             if ([[self.filtered objectAtIndex:i] floatValue] == OUT_OF_RANGE) continue;  // no need to calibrate out-of-range values.
-            float clearance_f = [[self.filtered objectAtIndex:i] floatValue] + mfh - st - ct + mo - [self.metaData.mastering_value floatValue];
+            float clearance_f = [[self.filtered objectAtIndex:i] floatValue] + self.stage_position_offset_adjustment;
             [self.filtered replaceObjectAtIndex:i withObject:[NSNumber numberWithFloat:clearance_f]];
         }
             // Calibrate the blade clearances
         for (unsigned int i = 0; i< self.blade_clearances.count; i++) {
-            float clearance_f = [[self.blade_clearances objectAtIndex:i] floatValue] + mfh - st - ct + mo - [self.metaData.mastering_value floatValue];
+            float clearance_f = [[self.blade_clearances objectAtIndex:i] floatValue] + self.stage_position_offset_adjustment;
             [self.blade_clearances replaceObjectAtIndex:i withObject:[NSNumber numberWithFloat:clearance_f]];
         }
     }
@@ -2280,6 +2282,22 @@ enum ifc242xValue {
     free(hBins);
 
     NSLog(@"computeClearance Done.");
+}
+    
+-(float)calculateOffsetAdjustment {
+    // Old method: adjustment = (SMR + SL) - spacer - casing_thickness + MO;
+    // New method: adjustment = (MFH - MV) - spacer - casing_thickness + MO;
+    // mastering_value is in mm.
+    // Sensor parameters (Mastering fixture height, Spacer thickness & casing thickness) are in inches.
+    //
+    // Get values into consistent units of mm. Perform calculations in mm
+    float inToMM = 25.4;
+    float mfh = [self.metaData.master_fixture_height floatValue] * inToMM;
+    float mo = [self.metaData.master_offset floatValue] * inToMM;
+    float ct = [self.metaData.casing_thickness floatValue] * inToMM;
+    float st = [self.metaData.spacer_thickness floatValue] * inToMM;
+    
+    return mfh - st - ct + mo - [self.metaData.mastering_value floatValue];
 }
     
 // otsuSegmentation performs a segmentation of the histogram into 2 classes
@@ -2712,17 +2730,17 @@ enum ifc242xValue {
     handle = [NSFileHandle fileHandleForWritingAtPath:csvFileName];
     [handle truncateFileAtOffset:[handle seekToEndOfFile]];
     // Write the header line
-    NSString* dataStr = [NSString stringWithFormat:@"index,pt_count,dataset_id,timestamp,displacement,filtered,intensity,casing_thickness\n"];
+    NSString* dataStr = [NSString stringWithFormat:@"index,pt_count,dataset_id,timestamp,displacement,filtered,intensity,casing_thickness,avg_disp_over_blade,applied_offset\n"];
     [handle writeData:[dataStr dataUsingEncoding:NSUTF8StringEncoding]];
     
     // Write the individual data lines.
     int i=0;
     for (i=0; i<self.displacements.count; i++) {
-        dataStr =  [NSString stringWithFormat:@"%d,%@,%@,%@,%@,%@,%@,%@\n",
+        dataStr =  [NSString stringWithFormat:@"%d,%@,%@,%@,%@,%@,%@,%@,%@,%f\n",
                     i,[self.point_counts objectAtIndex:i],[self.datasetIds objectAtIndex:i],
                     [self.times objectAtIndex:i], [self.displacements objectAtIndex:i],
                     [self.filtered objectAtIndex:i], [self.intensities objectAtIndex:i],
-                    self.metaData.casing_thickness];
+                    self.metaData.casing_thickness, [self.avg_displacements_for_blade objectAtIndex:i], self.stage_position_offset_adjustment];
         [handle writeData:[dataStr dataUsingEncoding:NSUTF8StringEncoding]];
     }
     
