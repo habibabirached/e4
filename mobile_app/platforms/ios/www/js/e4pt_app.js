@@ -1838,7 +1838,7 @@ function pluginMessage(msg) {
             $("#REV_PROGRESS").css('width', msg.progress + '%');
             break;
         case "sensor_params":
-            console.log("Received sensor parameters message: ", msg.master_fixture_height, ", ", msg.mastering_value, ", ", msg.master_offset, ", ", msg.sensor_selection, ", ", msg.sensor_length);
+            console.log("Received sensor parameters message: ", msg.master_fixture_height, ", ", msg.mastering_value, ", ", msg.master_offset, ", ", msg.sensor_selection, ", ", msg.sensor_length, ", ", msg.start_measurement_range);
             setIndicatorColor("green");
             serialConnected = true;
             
@@ -1864,6 +1864,10 @@ function pluginMessage(msg) {
             tmpStr = sensor_data.master_offset.toString(10);
             if (tmpStr.length == 1) tmpStr = sensor_data.master_offset.toFixed(4).toString(10);
             document.getElementById("MASTER_OFFSET").value = tmpStr;
+            
+            sensor_data.start_measurement_range = JSON.parse(msg.start_measurement_range);
+            tmpStr = sensor_data.start_measurement_range.toString(10);
+            if (tmpStr.length == 1) tmpStr = sensor_data.start_measurement_range.toFixed(4).toString(10);
             
             saveValuesForSensorType();
             
@@ -1901,22 +1905,24 @@ function confirmPassword(results) {
                                document.getElementById("MASTERING_VALUE").value,
                                document.getElementById("MASTER_OFFSET").value,
                                document.getElementById("SENSOR_SELECTION").value,
-                               document.getElementById("SENSOR_LENGTH").value);
+                               document.getElementById("SENSOR_LENGTH").value,
+                               "11.94");
     }
     else {
         e4PtAlert("Invalid password.");
     }
 }
 
-function updateSensorParameters(mfh, mval, mo, sensor, sensor_length) {
+function updateSensorParameters(mfh, mval, mo, sensor, sensor_length, smr) {
 
     // Before updating the values, make sure the user has entered valid numbers.
     let mfh_f = parseFloat(mfh);
     let mstrval_f = parseFloat(mval);
     let mo_f = parseFloat(mo);
     let sensor_length_f = parseFloat(sensor_length);
+    let smr_f = parseFloat(smr);
     // If a number is not valid, give the user a chance to try again or abort.
-    if (isNaN(mfh_f) || isNaN(mstrval_f) || isNaN(mo_f) || isNaN(sensor_length_f)) {
+    if (isNaN(mfh_f) || isNaN(mstrval_f) || isNaN(mo_f) || isNaN(sensor_length_f) || isNaN(smr_f)) {
         e4PtConfirm("Please enter only floating point values.\nPlease try again.", function(buttonIndex) {
                     if (buttonIndex==1){//OK
                       return; // This changes nothing and lets the user try again.
@@ -1935,7 +1941,7 @@ function updateSensorParameters(mfh, mval, mo, sensor, sensor_length) {
                     });
         return;
     }
-    let message = {"args":["set_sensor_parameters",mfh_f.toString(10), mstrval_f.toString(10), mo_f.toString(10), sensor, sensor_length_f.toString(10)]};
+    let message = {"args":["set_sensor_parameters",mfh_f.toString(10), mstrval_f.toString(10), mo_f.toString(10), sensor, sensor_length_f.toString(10), smr_f.toString(10)]};
     if (communicationChannel == "WebSocket") {
         message = JSON.stringify(message);
         sendWSMessage(message);
@@ -1951,6 +1957,7 @@ function updateSensorParameters(mfh, mval, mo, sensor, sensor_length) {
     sensor_data.master_fixture_height = mfh_f;
     sensor_data.master_offset = mo_f;
     sensor_data.mastering_value = mstrval_f;
+    sensor_data.start_measurement_range = smr_f;
     saveValuesForSensorType();
 }
 
@@ -1958,6 +1965,8 @@ function saveValuesForSensorType() {
     if (sensor_data.sensor_selection === 'CUSTOM' || sensor_data.sensor_selection === 'PROTOTYPE') {
         sensor_types[sensor_data.sensor_selection].measured_length_mm = sensor_data.sensor_length * 25.4;
         sensor_types[sensor_data.sensor_selection].measured_mastering_fixture_height_mm = sensor_data.master_fixture_height * 25.4;
+        sensor_types[sensor_data.sensor_selection].measured_start_measurment_range_mm = sensor_data.start_measurement_range;
+        sensor_types[sensor_data.sensor_selection].measured_mastering_value_mm = sensor_data.mastering_value;
     }
 }
 
@@ -1979,7 +1988,8 @@ function getSensorParametersForSensorSelection(sensorType) {
                                document.getElementById("MASTERING_VALUE").value,
                                document.getElementById("MASTER_OFFSET").value,
                                document.getElementById("SENSOR_SELECTION").value,
-                               document.getElementById("SENSOR_LENGTH").value);
+                               document.getElementById("SENSOR_LENGTH").value,
+                               "11.94");
     }
 }
                                                           
@@ -3451,7 +3461,8 @@ function setSensorSettingsForTurbine(option) {
                                document.getElementById("MASTERING_VALUE").value,
                                document.getElementById("MASTER_OFFSET").value,
                                document.getElementById("SENSOR_SELECTION").value,
-                               document.getElementById("SENSOR_LENGTH").value);
+                               document.getElementById("SENSOR_LENGTH").value,
+                               "11.94");
     }
 }
 
