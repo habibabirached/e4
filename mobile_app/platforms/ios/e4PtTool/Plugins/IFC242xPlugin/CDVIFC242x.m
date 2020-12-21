@@ -2127,7 +2127,7 @@ enum ifc242xValue {
                 if (isnan(clearance)) {
                     clearance = -9.995;  // nan has happened before.
                 }
-                if (count > 0) {
+                if (count > 1) {
 #ifdef OUTPUT_MINIMUM
                     [self.blade_clearances addObject:[NSNumber numberWithFloat:min_clearance]];
 #else
@@ -2156,7 +2156,7 @@ enum ifc242xValue {
                 NSLog(@"Clearance: %f; Quality: %@", clearance, [self.clearance_quality lastObject]);
                 for (int j=start; j<=stop; j++) {
                     NSNumber* d = [self.displacements objectAtIndex:j];
-                    if (([d floatValue] != OUT_OF_RANGE) && (count > 0)) {
+                    if (([d floatValue] != OUT_OF_RANGE) && (count > 1)) {
                         [self.filtered addObject:[NSNumber numberWithFloat:clearance]];
                     }
                     else {
