@@ -220,6 +220,7 @@ enum ifc242xValue {
 @property (nonatomic) float stage_min_clearance;
 @property (nonatomic) float stage_median_clearance;
 @property (nonatomic) float stage_clearance_std;
+@property (nonatomic) float stage_position_threshold;
 @property (nonatomic) BOOL calibratedAcquire;
 
 @property (nonatomic) NSTimeInterval startTime;
@@ -344,6 +345,7 @@ enum ifc242xValue {
 @synthesize stage_min_clearance = _stage_min_clearance;
 @synthesize stage_median_clearance = _stage_median_clearance;
 @synthesize stage_clearance_std = _stage_clearance_std;
+@synthesize stage_position_threshold = _stage_position_threshold;
 @synthesize calibratedAcquire = _calibratedAcquire;
 
 @synthesize connectionMode = _connectionMode;
@@ -751,6 +753,7 @@ enum ifc242xValue {
     [self clearMetaData];
     [self computeKernel:KERNEL_SIGMA kernel_size:KERNEL_SIZE]; // Compute the LoG filter kernel.
     self.stage_clearance = 0;
+    self.stage_position_threshold = 0;
     self.controllerType = @"";
     
 #ifdef SEND_DISPLACEMENT_ONLY
@@ -1501,6 +1504,7 @@ enum ifc242xValue {
     self.stage_min_clearance = FLT_MAX;
     self.stage_median_clearance = 0.0;
     self.stage_clearance_std = 0.0;
+    self.stage_position_threshold = 0.0;
 }
 
 // The collectData function is patterned after the e4PtTool python function
@@ -1997,17 +2001,17 @@ enum ifc242xValue {
         NSLog(@" hBin[%d]: %d",i, hBins[i]);
     }
     // Use Otsu's method to get threshold
-    float threshold = [self otsuSegmentation:hBins nbins:nbins maxBin:((float)OUT_OF_RANGE)];
+    self.stage_position_threshold = [self otsuSegmentation:hBins nbins:nbins maxBin:((float)OUT_OF_RANGE)];
     
     // Force threshold here.
     // threshold = 4.5;  // FYI, the threshold of 4.5 had some problems on some positions in the test rig.
     
-    NSLog(@"Found Threshold: %f\nThresholding data...",threshold);
+    NSLog(@"Found Threshold: %f\nThresholding data...", self.stage_position_threshold);
     
     // Perform edge detection with an LoG filter
     // (Kernel computation was handled during initialization.)
     NSLog(@"Filtering...");
-    [self fir_filter:self.kernel threshold:threshold];
+    [self fir_filter:self.kernel threshold:self.stage_position_threshold];
     NSLog(@"Done.");
     
     //return; // Stop so we can just see the results of filtering
@@ -2115,10 +2119,10 @@ enum ifc242xValue {
                 for (int j=start + FILTER_EDGE_SIZE_START; j<=stop - FILTER_EDGE_SIZE_STOP; j++) {
                     NSNumber* d = [self.displacements objectAtIndex:j];
 #ifdef SEND_DISPLACEMENT_ONLY
-                    if ( [d floatValue] < threshold ) {
+                    if ( [d floatValue] < self.stage_position_threshold ) {
 #else
                     NSNumber* intnst = [self.intensities objectAtIndex:j];
-                    if ( ([intnst floatValue] > 0) && ([d floatValue] < threshold) ) {
+                    if ( ([intnst floatValue] > 0) && ([d floatValue] < self.stage_position_threshold) ) {
 #endif
                         //NSLog(@"Averaging: %f",[d floatValue]);
                         if ([d floatValue] < min_clearance) {
@@ -2724,13 +2728,15 @@ enum ifc242xValue {
     
     //  Write the sensor parameters and app version to the CSV file.
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    dataStr = [NSString stringWithFormat:@"\n - Sensor Parameters,,,,,,,\nSensor Selection,Sensor Length (in),SMR (mm),Mastering Fixture Height (in),Mastering Value (mm),Master Offset (in),,\n%@,%@,%@,%@,%@,%@,,\n",
+    dataStr = [NSString stringWithFormat:@"\n - Sensor Parameters,,,,,,,\nSensor Selection,Sensor Length (in),SMR (mm),Mastering Fixture Height (in),Mastering Value (mm),Master Offset (in),Spacer Thickness (in),Shelf Threshold (mm)\n%@,%@,%@,%@,%@,%@,%@,%f\n",
                [defaults stringForKey:@"sensorType"],
                [defaults stringForKey:@"sensorLength"],
                [defaults stringForKey:@"startMeasurementRange"],
                [defaults stringForKey:@"masterFixtureHeight"],
                [defaults stringForKey:@"masteringValue"],
-               [defaults stringForKey:@"masterOffset"]];
+               [defaults stringForKey:@"masterOffset"],
+               self.metaData.spacer_thickness,
+               self.stage_position_threshold];
     [handle writeData:[dataStr dataUsingEncoding:NSUTF8StringEncoding]];
 
     NSString* appVersion = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleShortVersionString"];
