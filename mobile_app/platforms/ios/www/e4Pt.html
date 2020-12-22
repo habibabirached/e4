@@ -440,89 +440,6 @@
                 </div>
                     <br/><br/>
             </div>
-            <button class="ACCORDION">SENSOR PARAMETERS</button>
-            <div class="PANEL">
-                <br/>
-                <table class="SENSOR_OPTIONS_TABLE">
-                    <tr class="SENSOR_OPTIONS_ROW">
-                        <td  class="SENSOR_OPTIONS_CELL" colspan="2">
-                            <div style="text-align: center">
-                                <span class="SENSOR_OPTIONS_TEXT_C">Sensor Selection:</span>
-                                <select id="SENSOR_SELECTION">
-                                    <option>LONG</option>
-                                    <option>SHORT</option>
-                                    <option>PROTOTYPE</option>
-                                    <option>CUSTOM</option>
-                                </select>
-                            </div>
-                        </td>
-                        <td  class="SENSOR_OPTIONS_CELL">
-                            <fieldset style="border:0">
-                                <legend align="center" id="SENSOR_LENGTH_LABEL" class="SENSOR_OPTIONS_TEXT_C">Sensor Length (in)</legend>
-                                <input class="SENSOR_OPTIONS_BOX" type="text" id="SENSOR_LENGTH" disabled/>
-                            </fieldset>
-                        </td>
-                    </tr>
-                    <tr class="SENSOR_OPTIONS_ROW">
-                        <td  class="SENSOR_OPTIONS_CELL">
-                            <fieldset style="border:0">
-                                <legend align="center" id="MASTER_FIXTURE_LABEL" class="SENSOR_OPTIONS_TEXT_C">Mastering Fixture Height (in)</legend>
-                                <input class="SENSOR_OPTIONS_BOX" type="text" id="MASTER_FIXTURE_HEIGHT" disabled/>
-                            </fieldset>
-                        </td>
-                        <td  class="SENSOR_OPTIONS_CELL">
-                            <fieldset style="border:0">
-                                <legend align="center" id="MASTERING_VALUE_LABEL" class="SENSOR_OPTIONS_TEXT_C">Mastering Value (mm)</legend>
-                                <input class="SENSOR_OPTIONS_BOX" type="text" id="MASTERING_VALUE" disabled/>
-                            </fieldset>
-                        </td>
-                        <td  class="SENSOR_OPTIONS_CELL">
-                            <fieldset>
-                                <legend align="center" id="MASTER_OFFSET_LABEL" class="SENSOR_OPTIONS_TEXT_C">Master Offset (in)</legend>
-                                <input class="SENSOR_OPTIONS_BOX" type="text" id="MASTER_OFFSET" disabled readonly/>
-                            </fieldset>
-                        </td>
-                    </tr>
-                </table>
-                <br/>
-                <div class="BUTTON_GROUP" hidden>
-                    <div id="SENSOR_PARAMS_UPDATE_BUTTON" class="IN_BLOCK BUTTON W15 OVERLAY_BUTTON">UPDATE</div>
-                </div>
-                <br/>
-                <div>
-                    <h4><p align="center">Only authorized users should change the sensor parameters here.</p></h4>
-                    <br/>
-                    <h4><p align="center"><p align="center" id="CALIBRATION_DATE">Last Calibration:</p></h4>
-                </div>
-                <div>
-                    <div class="NOTIFICATION_STRIPE">
-                        <span class="NOTIFICATION_TITLE">Note:</span>
-                        <span>The Mastering Fixture height defaults are:</span>
-                        <span class="EMBEDDED_TABLE">
-                            <span class="EMBEDDED_TABLE" align="center"><u>Short Master Fixture</u><br/>3.568&quot; +/- 0.0005in</span>
-                            <span class="EMBEDDED_TABLE" align="center"><u>Long Master Fixture</u><br/>9.463&quot; +/- 0.0005in</span>
-                        </span>
-                    </div>
-                    <div class="NOTIFICATION_STRIPE">
-                        <span class="NOTIFICATION_TITLE">Note:</span>
-                        <span class="NOTIFICATION_CONTENT">The Mastering Value is currently hard-coded in the app at 5mm, so changing it here does not result in any effect on the readings.</span>
-                    </div>
-                    <div class="NOTIFICATION_STRIPE">
-                        <span class="NOTIFICATION_TITLE">Note:</span>
-                        <span class="NOTIFICATION_CONTENT">The Master Offset is the delta calculated: (measured sensor length + 16mm) - measured mastering fixture height.  This needs to be adjusted whenever there is a change in the sensor length OR mastering fixture height OR both.</span>
-                    </div>
-                    <div class="NOTIFICATION_STRIPE">
-                        <span class="NOTIFICATION_TITLE">Note:</span>
-                        <span>The production sensor default lengths are:</span>
-                        <span class="EMBEDDED_TABLE">
-                            <span class="EMBEDDED_TABLE" align="center"><u>Short Sensor</u><br/>75.69mm +/- 0.1mm</span>
-                            <span class="EMBEDDED_TABLE" align="center"><u>Long Sensor </u><br/>224.28mm +/- 0.1mm</span>
-                        </span>
-                    </div>
-                    <br/>
-                </div>
-                <br/>
-            </div>
         </div>
         <!-- --------------- FRAME SELECT PAGE ---------------------  -->
         <div id="SETUP_PAGE" class="OVERLAY_PARTIAL SCROLL_Y" style="top:5.9vmin">
@@ -587,6 +504,11 @@
                 <div class="ROW W100 PH1">
                     <textarea id="DESCRIPTION" class="SCAN_INFO_BOX" value="" style="height:10vh; padding:1vmin; word-wrap:break-word; word-break: break-all; white-space: normal; line-height:normal"></textarea>
                     <p class="SCAN_INFO_TEXT">DESCRIPTION:</p>
+                </div>
+                <!-- <div class="FIXED ROW W100" style="top:31vmax;"> -->
+                <div class="ROW W100 PH1">
+                    <span class="SCAN_INFO_BOX" id="FRAME_DEFAULT_SENSOR" style="border:0"></span>
+                    <div class="SCAN_INFO_TEXT">DEFAULT SENSOR:</div>
                 </div>
                 <!-- <div class="FIXED ROW W100" style="top:60vmax;"> -->
                 <div class="ROW W100 PH1">
@@ -816,6 +738,95 @@ r                        </tbody>
                 <br/>
                 <div id="SET_THRESHOLD_BUTTON" class="BUTTON W40 OVERLAY_BUTTON" style="margin:0 auto;">SET INTENSITY THRESHOLD</div>
                 <br/>
+                <br/>
+            </div>
+            <button class="ACCORDION">SENSOR PARAMETERS</button>
+            <div class="PANEL">
+                <br/>
+                <table class="SENSOR_OPTIONS_TABLE">
+                    <tr class="SENSOR_OPTIONS_ROW">
+                        <td  class="SENSOR_OPTIONS_CELL">
+                            <div style="text-align: center">
+                                <div class="SENSOR_OPTIONS_TEXT_C">Sensor Selection:</div>
+                                <select id="SENSOR_SELECTION" style="font-size:2vmax;">
+                                    <option>LONG</option>
+                                    <option>SHORT</option>
+                                    <option>PROTOTYPE</option>
+                                    <option>CUSTOM</option>
+                                </select>
+                            </div>
+                        </td>
+                        <td  class="SENSOR_OPTIONS_CELL">
+                            <fieldset style="border:0">
+                                <legend align="center" id="SENSOR_LENGTH_LABEL" class="SENSOR_OPTIONS_TEXT_C">Measured Sensor Length <small>(in)</small></legend>
+                                <input class="SENSOR_OPTIONS_BOX" type="text" id="SENSOR_LENGTH"/>
+                            </fieldset>
+                        </td>
+                        <td  class="SENSOR_OPTIONS_CELL">
+                            <fieldset style="border:0">
+                                <legend align="center" id="SMR_LABEL" class="SENSOR_OPTIONS_TEXT_C">Start <small>of</small> Measure Range <small>(mm)</small></legend>
+                                <input class="SENSOR_OPTIONS_BOX" type="text" id="SMR"/>
+                            </fieldset>
+                        </td>
+                    </tr>
+                    <tr class="SENSOR_OPTIONS_ROW">
+                        <td  class="SENSOR_OPTIONS_CELL">
+                            <fieldset style="border:0">
+                                <legend align="center" id="MASTER_FIXTURE_LABEL" class="SENSOR_OPTIONS_TEXT_C">Mastering Fixture Height <small>(in)</small></legend>
+                                <input class="SENSOR_OPTIONS_BOX" type="text" id="MASTER_FIXTURE_HEIGHT"/>
+                            </fieldset>
+                        </td>
+                        <td  class="SENSOR_OPTIONS_CELL">
+                            <fieldset style="border:0">
+                                <legend align="center" id="MASTERING_VALUE_LABEL" class="SENSOR_OPTIONS_TEXT_C">Mastering Value <small>(mm)</small></legend>
+                                <input class="SENSOR_OPTIONS_BOX" type="text" id="MASTERING_VALUE"/>
+                            </fieldset>
+                        </td>
+                        <td  class="SENSOR_OPTIONS_CELL">
+                            <fieldset>
+                                <legend align="center" id="MASTER_OFFSET_LABEL" class="SENSOR_OPTIONS_TEXT_C">Master Offset <small>(in)</small></legend>
+                                <input class="SENSOR_OPTIONS_BOX" type="text" id="MASTER_OFFSET"/>
+                            </fieldset>
+                        </td>
+                    </tr>
+                </table>
+                <br/>
+                <div class="BUTTON_GROUP" hidden>
+                    <div id="SENSOR_PARAMS_UPDATE_BUTTON" class="IN_BLOCK BUTTON W15 OVERLAY_BUTTON">UPDATE</div>
+                </div>
+                <br/>
+                <div>
+                    <h4><p align="center">Only authorized users should change the sensor parameters here.</p></h4>
+                    <br/>
+                    <h4><p align="center"><p align="center" id="CALIBRATION_DATE">Last Calibration:</p></h4>
+                </div>
+                <div>
+                    <div class="NOTIFICATION_STRIPE">
+                        <span class="NOTIFICATION_TITLE">Note:</span>
+                        <span class="NOTIFICATION_CONTENT">When changing the Mastering Value here be certain to perform Mastering before collecting data, else clearances may be calculated incorrectly.</span>
+                    </div>
+                    <div class="NOTIFICATION_STRIPE">
+                        <span class="NOTIFICATION_TITLE">Note:</span>
+                        <span class="NOTIFICATION_CONTENT">The Master Offset is the delta calculated: (measured sensor length + SMR + Mastering Value) - measured mastering fixture height.</span>
+                    </div>
+                    <div class="NOTIFICATION_STRIPE">
+                        <span class="NOTIFICATION_TITLE">Note:</span>
+                        <span>The Mastering Fixture height defaults are:</span>
+                        <span class="EMBEDDED_TABLE">
+                            <span class="EMBEDDED_TABLE" align="center"><u>Short Master Fixture</u><br/>3.568&quot; +/- 0.0005in</span>
+                            <span class="EMBEDDED_TABLE" align="center"><u>Long Master Fixture</u><br/>9.463&quot; +/- 0.0005in</span>
+                        </span>
+                    </div>
+                    <div class="NOTIFICATION_STRIPE">
+                        <span class="NOTIFICATION_TITLE">Note:</span>
+                        <span>The production sensor default lengths are:</span>
+                        <span class="EMBEDDED_TABLE">
+                            <span class="EMBEDDED_TABLE" align="center"><u>Short Sensor</u><br/>2.979&quot; +/- 0.0005in</span>
+                            <span class="EMBEDDED_TABLE" align="center"><u>Long Sensor </u><br/>8.825&quot; +/- 0.0005in</span>
+                        </span>
+                    </div>
+                    <br/>
+                </div>
                 <br/>
             </div>
         </div>

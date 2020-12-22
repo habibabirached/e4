@@ -119,6 +119,7 @@ $(document).ready(function(){
     document.getElementById("FRAME_SIZE").addEventListener('change', function(){
         console.log("FRAME_SIZE change detected.");
         setupCasingThicknessTable(null);
+        document.getElementById("FRAME_DEFAULT_SENSOR").innerHTML = current_frame_data.default_sensor;
     }, {passive: true});
     document.getElementById("SN_SUBMIT_BUTTON").addEventListener('click', function(){
         record_casing_thickness();
@@ -333,9 +334,22 @@ $(document).ready(function(){
     }, {passive: true});
     document.getElementById("MASTER_FIXTURE_HEIGHT").addEventListener('change', function(){
         updateMasteringOffset();
+        enableMasteringValuesForEditing(true);
+    }, {passive: true});
+    document.getElementById("MASTERING_VALUE").addEventListener('change', function(){
+        updateMasteringOffset();
+        enableMasteringValuesForEditing(true);
     }, {passive: true});
     document.getElementById("SENSOR_LENGTH").addEventListener('change', function(){
         updateMasteringOffset();
+        enableMasteringValuesForEditing(true);
+    }, {passive: true});
+    document.getElementById("SMR").addEventListener('change', function(){
+        updateMasteringOffset();
+        enableMasteringValuesForEditing(true);
+    }, {passive: true});
+    document.getElementById("MASTER_OFFSET").addEventListener('change', function(){
+        enableMasteringValuesForEditing(true);
     }, {passive: true});
     setupAccordian();
     if (communicationChannel == "WebSocket") {
@@ -446,6 +460,7 @@ function clearFrameData() {
                  document.getElementById("TURBINE_STATE").selectedIndex = 0;
                  document.getElementById("DESCRIPTION").value = "";
                  setupCasingThicknessTable(null);
+                 document.getElementById("FRAME_DEFAULT_SENSOR").innerHTML = current_frame_data.default_sensor;
                }
                else {
                  console.log("Database clear was cancelled.");
@@ -812,6 +827,7 @@ function turbine_setup() {
     // Get frame type
     var frm_idx = document.getElementById("FRAME_SIZE").selectedIndex;
     current_frame_data = frame_data[frm_idx];
+    document.getElementById("FRAME_DEFAULT_SENSOR").innerHTML = current_frame_data.default_sensor;
 
     // Setup the Stage options
     set_stage_information();
@@ -873,6 +889,7 @@ function set_frame_information() {
     else {
         setupCasingThicknessTable(null);
     }
+    document.getElementById("FRAME_DEFAULT_SENSOR").innerHTML = current_frame_data.default_sensor;
 }
 
 function set_position_information() {
@@ -1868,10 +1885,11 @@ function pluginMessage(msg) {
             sensor_data.start_measurement_range = JSON.parse(msg.start_measurement_range);
             tmpStr = sensor_data.start_measurement_range.toString(10);
             if (tmpStr.length == 1) tmpStr = sensor_data.start_measurement_range.toFixed(4).toString(10);
+            document.getElementById("SMR").value = tmpStr;
             
             saveValuesForSensorType();
             
-            enableMasteringValuesForEditing(sensor_data.sensor_selection === 'CUSTOM' || sensor_data.sensor_selection === 'PROTOTYPE');
+            //enableMasteringValuesForEditing(sensor_data.sensor_selection === 'CUSTOM' || sensor_data.sensor_selection === 'PROTOTYPE');
             
             break;
         default:
@@ -1906,7 +1924,7 @@ function confirmPassword(results) {
                                document.getElementById("MASTER_OFFSET").value,
                                document.getElementById("SENSOR_SELECTION").value,
                                document.getElementById("SENSOR_LENGTH").value,
-                               "11.94");
+                               document.getElementById("SMR").value);
     }
     else {
         e4PtAlert("Invalid password.");
@@ -1962,7 +1980,7 @@ function updateSensorParameters(mfh, mval, mo, sensor, sensor_length, smr) {
 }
 
 function saveValuesForSensorType() {
-    if (sensor_data.sensor_selection === 'CUSTOM' || sensor_data.sensor_selection === 'PROTOTYPE') {
+    if (sensor_data.sensor_selection === 'CUSTOM') {
         sensor_types[sensor_data.sensor_selection].measured_length_mm = sensor_data.sensor_length * 25.4;
         sensor_types[sensor_data.sensor_selection].measured_mastering_fixture_height_mm = sensor_data.master_fixture_height * 25.4;
         sensor_types[sensor_data.sensor_selection].measured_start_measurment_range_mm = sensor_data.start_measurement_range;
@@ -1977,6 +1995,8 @@ function getSensorParametersForSensorSelection(sensorType) {
         var heightInches = info.measured_mastering_fixture_height_mm / 25.4;
         document.getElementById("SENSOR_LENGTH").value = lengthInches.toFixed(4);
         document.getElementById("MASTER_FIXTURE_HEIGHT").value = heightInches.toFixed(4);
+        document.getElementById("MASTERING_VALUE").value = info.measured_mastering_value_mm.toFixed(4);
+        document.getElementById("SMR").value = info.measured_start_measurment_range_mm.toFixed(4);
         updateMasteringOffset();
     }
     
@@ -1989,14 +2009,15 @@ function getSensorParametersForSensorSelection(sensorType) {
                                document.getElementById("MASTER_OFFSET").value,
                                document.getElementById("SENSOR_SELECTION").value,
                                document.getElementById("SENSOR_LENGTH").value,
-                               "11.94");
+                               document.getElementById("SMR").value);
     }
 }
                                                           
 function enableMasteringValuesForEditing(enabled) {
-    document.getElementById("SENSOR_LENGTH").disabled = !enabled;
-    document.getElementById("MASTER_FIXTURE_HEIGHT").disabled = !enabled;
-    document.getElementById("MASTERING_VALUE").disabled = !enabled;
+    //document.getElementById("SENSOR_LENGTH").disabled = !enabled;
+    //document.getElementById("MASTER_FIXTURE_HEIGHT").disabled = !enabled;
+    //document.getElementById("MASTERING_VALUE").disabled = !enabled;
+    //document.getElementById("SMR").disabled = !enabled;
     document.getElementById("SENSOR_PARAMS_UPDATE_BUTTON").parentNode.hidden = !enabled;
 }
 
@@ -3344,6 +3365,7 @@ function initializeFromDocument(doc) {
     document.getElementById("SITE").value = doc.site_name;
     document.getElementById("SERIAL_NUMBER").value = doc.serial_number;
     document.getElementById("DESCRIPTION").value = doc.description;
+    document.getElementById("FRAME_DEFAULT_SENSOR").innerHTML = frame_data[frm_idx].default_sensor;
     document.getElementById("OPERATOR").value = doc.operator;
     if (doc.units == "In") {
       document.getElementById("UNITS").selectedIndex = 0;
@@ -3462,13 +3484,15 @@ function setSensorSettingsForTurbine(option) {
                                document.getElementById("MASTER_OFFSET").value,
                                document.getElementById("SENSOR_SELECTION").value,
                                document.getElementById("SENSOR_LENGTH").value,
-                               "11.94");
+                               document.getElementById("SMR").value);
     }
 }
 
 function updateMasteringOffset() {
     var lengthInches = parseFloat(document.getElementById("SENSOR_LENGTH").value);
     var heightInches = parseFloat(document.getElementById("MASTER_FIXTURE_HEIGHT").value);
-    var offsetInches = lengthInches + (16.0/25.4) - heightInches;
+    var mvMM = parseFloat(document.getElementById("MASTERING_VALUE").value);
+    var smrMM = parseFloat(document.getElementById("SMR").value);
+    var offsetInches = lengthInches + ((smrMM + mvMM)/25.4) - heightInches;
     document.getElementById("MASTER_OFFSET").value = offsetInches.toFixed(4);
 }
