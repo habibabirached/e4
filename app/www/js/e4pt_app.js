@@ -119,6 +119,7 @@ $(document).ready(function(){
     document.getElementById("FRAME_SIZE").addEventListener('change', function(){
         console.log("FRAME_SIZE change detected.");
         setupCasingThicknessTable(null);
+        document.getElementById("FRAME_DEFAULT_SENSOR").innerHTML = current_frame_data.default_sensor;
     }, {passive: true});
     document.getElementById("SN_SUBMIT_BUTTON").addEventListener('click', function(){
         record_casing_thickness();
@@ -333,9 +334,22 @@ $(document).ready(function(){
     }, {passive: true});
     document.getElementById("MASTER_FIXTURE_HEIGHT").addEventListener('change', function(){
         updateMasteringOffset();
+        enableMasteringValuesForEditing(true);
+    }, {passive: true});
+    document.getElementById("MASTERING_VALUE").addEventListener('change', function(){
+        updateMasteringOffset();
+        enableMasteringValuesForEditing(true);
     }, {passive: true});
     document.getElementById("SENSOR_LENGTH").addEventListener('change', function(){
         updateMasteringOffset();
+        enableMasteringValuesForEditing(true);
+    }, {passive: true});
+    document.getElementById("SMR").addEventListener('change', function(){
+        updateMasteringOffset();
+        enableMasteringValuesForEditing(true);
+    }, {passive: true});
+    document.getElementById("MASTER_OFFSET").addEventListener('change', function(){
+        enableMasteringValuesForEditing(true);
     }, {passive: true});
     setupAccordian();
     if (communicationChannel == "WebSocket") {
@@ -446,6 +460,7 @@ function clearFrameData() {
                  document.getElementById("TURBINE_STATE").selectedIndex = 0;
                  document.getElementById("DESCRIPTION").value = "";
                  setupCasingThicknessTable(null);
+                 document.getElementById("FRAME_DEFAULT_SENSOR").innerHTML = current_frame_data.default_sensor;
                }
                else {
                  console.log("Database clear was cancelled.");
@@ -812,6 +827,7 @@ function turbine_setup() {
     // Get frame type
     var frm_idx = document.getElementById("FRAME_SIZE").selectedIndex;
     current_frame_data = frame_data[frm_idx];
+    document.getElementById("FRAME_DEFAULT_SENSOR").innerHTML = current_frame_data.default_sensor;
 
     // Setup the Stage options
     set_stage_information();
@@ -848,6 +864,29 @@ function turbine_setup() {
     document.getElementById("HEADER_CUSTOMER").innerHTML = "Customer: " + customer + " - " + site;
     document.getElementById("HEADER_FRAME").innerHTML = "Frame: " + E4PTdata.frame;
     document.getElementById("HEADER_SERIAL").innerHTML = "S/N: " + E4PTdata.serial_number + ";  Units: " + E4PTdata.units;
+    document.getElementById("SL_CONFIG_MSG").innerHTML = sensor_data.sensor_length + "&quot; SL";
+    document.getElementById("SMR_CONFIG_MSG").innerHTML = sensor_data.start_measurement_range + "mm SMR";
+    document.getElementById("MFH_CONFIG_MSG").innerHTML = sensor_data.master_fixture_height + "&quot; MFH";
+    document.getElementById("MV_CONFIG_MSG").innerHTML = sensor_data.mastering_value + "mm MV";
+    document.getElementById("MO_CONFIG_MSG").innerHTML = sensor_data.master_offset + "&quot; MO";
+    if (sensorParamsHaveBeenEdited()) {
+        document.getElementById("SENSOR_PARAMS_CONFIG_MSG").innerHTML = "Using non-standard '" + sensor_data.sensor_selection + "' sensor settings: ";
+        
+        $("#SENSOR_PARAMS_CONFIG_MSG").css('color', 'red');
+        $("#SL_CONFIG_MSG").css('color', sensorLengthHasBeenEdited()?'red':'black');
+        $("#SMR_CONFIG_MSG").css('color', smrHasBeenEdited()?'red':'black');
+        $("#MFH_CONFIG_MSG").css('color', mfhHasBeenEdited()?'red':'black');
+        $("#MV_CONFIG_MSG").css('color', mvHasBeenEdited()?'red':'black');
+        $("#MO_CONFIG_MSG").css('color', moHasBeenEdited()?'red':'black');
+    } else {
+        document.getElementById("SENSOR_PARAMS_CONFIG_MSG").innerHTML = "Using preconfigured '" + sensor_data.sensor_selection + "' sensor settings";
+        $("#SENSOR_PARAMS_CONFIG_MSG").css('color', 'green');
+        $("#SL_CONFIG_MSG").css('color', 'black');
+        $("#SMR_CONFIG_MSG").css('color', 'black');
+        $("#MFH_CONFIG_MSG").css('color', 'black');
+        $("#MV_CONFIG_MSG").css('color', 'black');
+        $("#MO_CONFIG_MSG").css('color', 'black');
+    }
 }
 
 function set_frame_information() {
@@ -873,6 +912,7 @@ function set_frame_information() {
     else {
         setupCasingThicknessTable(null);
     }
+    document.getElementById("FRAME_DEFAULT_SENSOR").innerHTML = current_frame_data.default_sensor;
 }
 
 function set_position_information() {
@@ -1309,6 +1349,29 @@ function setup_data_collection_page(dateStr, timeStr, update_position) {
     document.getElementById("HEADER_CUSTOMER").innerHTML = "Customer: " + customer + " - " + site;
     document.getElementById("HEADER_FRAME").innerHTML = "Frame: " + E4PTdata.frame;
     document.getElementById("HEADER_SERIAL").innerHTML = "S/N: " + E4PTdata.serial_number + ";  Units: " + E4PTdata.units;
+    document.getElementById("SL_CONFIG_MSG").innerHTML = sensor_data.sensor_length + "&quot; SL";
+    document.getElementById("SMR_CONFIG_MSG").innerHTML = sensor_data.start_measurement_range + "mm SMR";
+    document.getElementById("MFH_CONFIG_MSG").innerHTML = sensor_data.master_fixture_height + "&quot; MFH";
+    document.getElementById("MV_CONFIG_MSG").innerHTML = sensor_data.mastering_value + "mm MV";
+    document.getElementById("MO_CONFIG_MSG").innerHTML = sensor_data.master_offset + "&quot; MO";
+    if (sensorParamsHaveBeenEdited()) {
+        document.getElementById("SENSOR_PARAMS_CONFIG_MSG").innerHTML = "Using non-standard '" + sensor_data.sensor_selection + "' sensor settings: ";
+        
+        $("#SENSOR_PARAMS_CONFIG_MSG").css('color', 'red');
+        $("#SL_CONFIG_MSG").css('color', sensorLengthHasBeenEdited()?'red':'black');
+        $("#SMR_CONFIG_MSG").css('color', smrHasBeenEdited()?'red':'black');
+        $("#MFH_CONFIG_MSG").css('color', mfhHasBeenEdited()?'red':'black');
+        $("#MV_CONFIG_MSG").css('color', mvHasBeenEdited()?'red':'black');
+        $("#MO_CONFIG_MSG").css('color', moHasBeenEdited()?'red':'black');
+    } else {
+        document.getElementById("SENSOR_PARAMS_CONFIG_MSG").innerHTML = "Using preconfigured '" + sensor_data.sensor_selection + "' sensor settings";
+        $("#SENSOR_PARAMS_CONFIG_MSG").css('color', 'green');
+        $("#SL_CONFIG_MSG").css('color', 'black');
+        $("#SMR_CONFIG_MSG").css('color', 'black');
+        $("#MFH_CONFIG_MSG").css('color', 'black');
+        $("#MV_CONFIG_MSG").css('color', 'black');
+        $("#MO_CONFIG_MSG").css('color', 'black');
+    }
     document.getElementById("SENSOR_STAGE").selectedIndex = current_stage_index;
     document.getElementById("SENSOR_POSITION").selectedIndex = current_position_index;
     var html_buf = [];
@@ -1838,7 +1901,7 @@ function pluginMessage(msg) {
             $("#REV_PROGRESS").css('width', msg.progress + '%');
             break;
         case "sensor_params":
-            console.log("Received sensor parameters message: ", msg.master_fixture_height, ", ", msg.mastering_value, ", ", msg.master_offset, ", ", msg.sensor_selection, ", ", msg.sensor_length);
+            console.log("Received sensor parameters message: ", msg.master_fixture_height, ", ", msg.mastering_value, ", ", msg.master_offset, ", ", msg.sensor_selection, ", ", msg.sensor_length, ", ", msg.start_measurement_range);
             setIndicatorColor("green");
             serialConnected = true;
             
@@ -1865,9 +1928,14 @@ function pluginMessage(msg) {
             if (tmpStr.length == 1) tmpStr = sensor_data.master_offset.toFixed(4).toString(10);
             document.getElementById("MASTER_OFFSET").value = tmpStr;
             
+            sensor_data.start_measurement_range = JSON.parse(msg.start_measurement_range);
+            tmpStr = sensor_data.start_measurement_range.toString(10);
+            if (tmpStr.length == 1) tmpStr = sensor_data.start_measurement_range.toFixed(4).toString(10);
+            document.getElementById("SMR").value = tmpStr;
+            
             saveValuesForSensorType();
             
-            enableMasteringValuesForEditing(sensor_data.sensor_selection === 'CUSTOM' || sensor_data.sensor_selection === 'PROTOTYPE');
+            //enableMasteringValuesForEditing(sensor_data.sensor_selection === 'CUSTOM' || sensor_data.sensor_selection === 'PROTOTYPE');
             
             break;
         default:
@@ -1901,22 +1969,24 @@ function confirmPassword(results) {
                                document.getElementById("MASTERING_VALUE").value,
                                document.getElementById("MASTER_OFFSET").value,
                                document.getElementById("SENSOR_SELECTION").value,
-                               document.getElementById("SENSOR_LENGTH").value);
+                               document.getElementById("SENSOR_LENGTH").value,
+                               document.getElementById("SMR").value);
     }
     else {
         e4PtAlert("Invalid password.");
     }
 }
 
-function updateSensorParameters(mfh, mval, mo, sensor, sensor_length) {
+function updateSensorParameters(mfh, mval, mo, sensor, sensor_length, smr) {
 
     // Before updating the values, make sure the user has entered valid numbers.
     let mfh_f = parseFloat(mfh);
     let mstrval_f = parseFloat(mval);
     let mo_f = parseFloat(mo);
     let sensor_length_f = parseFloat(sensor_length);
+    let smr_f = parseFloat(smr);
     // If a number is not valid, give the user a chance to try again or abort.
-    if (isNaN(mfh_f) || isNaN(mstrval_f) || isNaN(mo_f) || isNaN(sensor_length_f)) {
+    if (isNaN(mfh_f) || isNaN(mstrval_f) || isNaN(mo_f) || isNaN(sensor_length_f) || isNaN(smr_f)) {
         e4PtConfirm("Please enter only floating point values.\nPlease try again.", function(buttonIndex) {
                     if (buttonIndex==1){//OK
                       return; // This changes nothing and lets the user try again.
@@ -1935,7 +2005,7 @@ function updateSensorParameters(mfh, mval, mo, sensor, sensor_length) {
                     });
         return;
     }
-    let message = {"args":["set_sensor_parameters",mfh_f.toString(10), mstrval_f.toString(10), mo_f.toString(10), sensor, sensor_length_f.toString(10)]};
+    let message = {"args":["set_sensor_parameters",mfh_f.toString(10), mstrval_f.toString(10), mo_f.toString(10), sensor, sensor_length_f.toString(10), smr_f.toString(10)]};
     if (communicationChannel == "WebSocket") {
         message = JSON.stringify(message);
         sendWSMessage(message);
@@ -1951,13 +2021,16 @@ function updateSensorParameters(mfh, mval, mo, sensor, sensor_length) {
     sensor_data.master_fixture_height = mfh_f;
     sensor_data.master_offset = mo_f;
     sensor_data.mastering_value = mstrval_f;
+    sensor_data.start_measurement_range = smr_f;
     saveValuesForSensorType();
 }
 
 function saveValuesForSensorType() {
-    if (sensor_data.sensor_selection === 'CUSTOM' || sensor_data.sensor_selection === 'PROTOTYPE') {
+    if (sensor_data.sensor_selection === 'CUSTOM') {
         sensor_types[sensor_data.sensor_selection].measured_length_mm = sensor_data.sensor_length * 25.4;
         sensor_types[sensor_data.sensor_selection].measured_mastering_fixture_height_mm = sensor_data.master_fixture_height * 25.4;
+        sensor_types[sensor_data.sensor_selection].measured_start_measurment_range_mm = sensor_data.start_measurement_range;
+        sensor_types[sensor_data.sensor_selection].measured_mastering_value_mm = sensor_data.mastering_value;
     }
 }
 
@@ -1968,6 +2041,8 @@ function getSensorParametersForSensorSelection(sensorType) {
         var heightInches = info.measured_mastering_fixture_height_mm / 25.4;
         document.getElementById("SENSOR_LENGTH").value = lengthInches.toFixed(4);
         document.getElementById("MASTER_FIXTURE_HEIGHT").value = heightInches.toFixed(4);
+        document.getElementById("MASTERING_VALUE").value = info.measured_mastering_value_mm.toFixed(4);
+        document.getElementById("SMR").value = info.measured_start_measurment_range_mm.toFixed(4);
         updateMasteringOffset();
     }
     
@@ -1979,14 +2054,16 @@ function getSensorParametersForSensorSelection(sensorType) {
                                document.getElementById("MASTERING_VALUE").value,
                                document.getElementById("MASTER_OFFSET").value,
                                document.getElementById("SENSOR_SELECTION").value,
-                               document.getElementById("SENSOR_LENGTH").value);
+                               document.getElementById("SENSOR_LENGTH").value,
+                               document.getElementById("SMR").value);
     }
 }
                                                           
 function enableMasteringValuesForEditing(enabled) {
-    document.getElementById("SENSOR_LENGTH").disabled = !enabled;
-    document.getElementById("MASTER_FIXTURE_HEIGHT").disabled = !enabled;
-    document.getElementById("MASTERING_VALUE").disabled = !enabled;
+    //document.getElementById("SENSOR_LENGTH").disabled = !enabled;
+    //document.getElementById("MASTER_FIXTURE_HEIGHT").disabled = !enabled;
+    //document.getElementById("MASTERING_VALUE").disabled = !enabled;
+    //document.getElementById("SMR").disabled = !enabled;
     document.getElementById("SENSOR_PARAMS_UPDATE_BUTTON").parentNode.hidden = !enabled;
 }
 
@@ -3334,6 +3411,7 @@ function initializeFromDocument(doc) {
     document.getElementById("SITE").value = doc.site_name;
     document.getElementById("SERIAL_NUMBER").value = doc.serial_number;
     document.getElementById("DESCRIPTION").value = doc.description;
+    document.getElementById("FRAME_DEFAULT_SENSOR").innerHTML = frame_data[frm_idx].default_sensor;
     document.getElementById("OPERATOR").value = doc.operator;
     if (doc.units == "In") {
       document.getElementById("UNITS").selectedIndex = 0;
@@ -3451,13 +3529,57 @@ function setSensorSettingsForTurbine(option) {
                                document.getElementById("MASTERING_VALUE").value,
                                document.getElementById("MASTER_OFFSET").value,
                                document.getElementById("SENSOR_SELECTION").value,
-                               document.getElementById("SENSOR_LENGTH").value);
+                               document.getElementById("SENSOR_LENGTH").value,
+                               document.getElementById("SMR").value);
     }
 }
 
 function updateMasteringOffset() {
-    var lengthInches = parseFloat(document.getElementById("SENSOR_LENGTH").value);
-    var heightInches = parseFloat(document.getElementById("MASTER_FIXTURE_HEIGHT").value);
-    var offsetInches = lengthInches + (16.0/25.4) - heightInches;
+    var offsetInches = calculateMasteringOffsetInches(
+                        parseFloat(document.getElementById("SENSOR_LENGTH").value),
+                        parseFloat(document.getElementById("MASTER_FIXTURE_HEIGHT").value),
+                        parseFloat(document.getElementById("MASTERING_VALUE").value)/25.4,
+                        parseFloat(document.getElementById("SMR").value)/25.4);
     document.getElementById("MASTER_OFFSET").value = offsetInches.toFixed(4);
+}
+                                       
+function calculateMasteringOffsetInches(length, height, masteringValue, smr) {
+    return (length + (smr + masteringValue)) - height;
+}
+                                       
+function sensorParamsHaveBeenEdited() {
+    if (sensor_data.sensor_selection === 'LONG' || sensor_data.sensor_selection === 'SHORT' || sensor_data.sensor_selection === 'PROTOTYPE') {
+        return sensorLengthHasBeenEdited() || smrHasBeenEdited() || mfhHasBeenEdited() || mvHasBeenEdited() || moHasBeenEdited();
+    }
+    return true;
+}
+  
+function sensorLengthHasBeenEdited() {
+    return !almostEqual(sensor_data.sensor_length, sensor_types[sensor_data.sensor_selection].measured_length_mm/25.4, 0.0005);
+}
+                        
+function smrHasBeenEdited() {
+    return !almostEqual(sensor_data.start_measurement_range, sensor_types[sensor_data.sensor_selection].measured_start_measurment_range_mm, 0.0001);
+}
+                        
+function mfhHasBeenEdited() {
+    return !almostEqual(sensor_data.master_fixture_height, sensor_types[sensor_data.sensor_selection].measured_mastering_fixture_height_mm/25.4, 0.0005);
+}
+
+function mvHasBeenEdited() {
+    return !almostEqual(sensor_data.mastering_value, sensor_types[sensor_data.sensor_selection].measured_mastering_value_mm, 0.0001);
+}
+                        
+function moHasBeenEdited() {
+    return !almostEqual(sensor_data.master_offset,
+                        calculateMasteringOffsetInches(
+                            sensor_data.sensor_length,
+                            sensor_data.master_fixture_height,
+                            sensor_data.mastering_value/25.4,
+                            sensor_data.start_measurement_range/25.4),
+                        0.0005);
+}
+                        
+function almostEqual(num1, num2, tolerance) {
+    return Math.abs(num1 - num2) < tolerance;
 }
