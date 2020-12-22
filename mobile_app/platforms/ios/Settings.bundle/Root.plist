@@ -24,7 +24,17 @@
 			<key>Key</key>
 			<string>sensorLength</string>
 			<key>DefaultValue</key>
-			<string>8.8299</string>
+			<string>8.825</string>
+		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSTitleValueSpecifier</string>
+			<key>Title</key>
+			<string>Start Measurement Range (mm)</string>
+			<key>Key</key>
+			<string>startMeasurementRange</string>
+			<key>DefaultValue</key>
+			<string>11.94</string>
 		</dict>
 		<dict>
 			<key>Type</key>
@@ -34,7 +44,7 @@
 			<key>Key</key>
 			<string>masteringValue</string>
 			<key>DefaultValue</key>
-			<string>5.0</string>
+			<string>4.2567</string>
 		</dict>
 		<dict>
 			<key>Type</key>
@@ -44,7 +54,7 @@
 			<key>Key</key>
 			<string>masterOffset</string>
 			<key>DefaultValue</key>
-			<string>-0.0032</string>
+			<string>0</string>
 		</dict>
 		<dict>
 			<key>Type</key>
@@ -70,7 +80,7 @@
 			<key>Key</key>
 			<string>Version</string>
 			<key>DefaultValue</key>
-			<string>0.2.3</string>
+			<string>0.2.4</string>
 		</dict>
 		<dict>
 			<key>Type</key>
@@ -80,7 +90,7 @@
 			<key>Key</key>
 			<string>buildDate</string>
 			<key>DefaultValue</key>
-			<string>Dec 9, 2020</string>
+			<string>Dec 22, 2020</string>
 		</dict>
 	</array>
 </dict>

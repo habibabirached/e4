@@ -1,12 +1,13 @@
 sensor_types = {
-    'LONG': {'measured_length_mm': 224.28, 'measured_mastering_fixture_height_mm': 240.3602},
-    'SHORT': {'measured_length_mm': 75.69, 'measured_mastering_fixture_height_mm': 90.6272},
-    'PROTOTYPE': {'measured_length_mm': 226.79, 'measured_mastering_fixture_height_mm': 242.79},
+    'LONG': {'measured_length_mm': 224.164, 'measured_mastering_fixture_height_mm': 240.3602, 'measured_start_measurment_range_mm': 11.94, 'measured_mastering_value_mm': 4.2567},
+    'SHORT': {'measured_length_mm': 75.667, 'measured_mastering_fixture_height_mm': 90.6272, 'measured_start_measurment_range_mm': 11.94, 'measured_mastering_value_mm': 3.0205},
+    'PROTOTYPE': {'measured_length_mm': 226.898, 'measured_mastering_fixture_height_mm': 243.0018, 'measured_start_measurment_range_mm': 10.998, 'measured_mastering_value_mm': 5.1054},
     'CUSTOM': {}
 };
 sensor_data = {
     'sensor_selection':'',
     'sensor_length':0, //in
+    'start_measurement_range':0, //mm
     'master_fixture_height':0, //in
     'mastering_value':0, //mm
     'master_offset':0 //in
