@@ -864,6 +864,29 @@ function turbine_setup() {
     document.getElementById("HEADER_CUSTOMER").innerHTML = "Customer: " + customer + " - " + site;
     document.getElementById("HEADER_FRAME").innerHTML = "Frame: " + E4PTdata.frame;
     document.getElementById("HEADER_SERIAL").innerHTML = "S/N: " + E4PTdata.serial_number + ";  Units: " + E4PTdata.units;
+    document.getElementById("SL_CONFIG_MSG").innerHTML = sensor_data.sensor_length + "&quot; SL";
+    document.getElementById("SMR_CONFIG_MSG").innerHTML = sensor_data.start_measurement_range + "mm SMR";
+    document.getElementById("MFH_CONFIG_MSG").innerHTML = sensor_data.master_fixture_height + "&quot; MFH";
+    document.getElementById("MV_CONFIG_MSG").innerHTML = sensor_data.mastering_value + "mm MV";
+    document.getElementById("MO_CONFIG_MSG").innerHTML = sensor_data.master_offset + "&quot; MO";
+    if (sensorParamsHaveBeenEdited()) {
+        document.getElementById("SENSOR_PARAMS_CONFIG_MSG").innerHTML = "Using non-standard '" + sensor_data.sensor_selection + "' sensor settings: ";
+        
+        $("#SENSOR_PARAMS_CONFIG_MSG").css('color', 'red');
+        $("#SL_CONFIG_MSG").css('color', sensorLengthHasBeenEdited()?'red':'black');
+        $("#SMR_CONFIG_MSG").css('color', smrHasBeenEdited()?'red':'black');
+        $("#MFH_CONFIG_MSG").css('color', mfhHasBeenEdited()?'red':'black');
+        $("#MV_CONFIG_MSG").css('color', mvHasBeenEdited()?'red':'black');
+        $("#MO_CONFIG_MSG").css('color', moHasBeenEdited()?'red':'black');
+    } else {
+        document.getElementById("SENSOR_PARAMS_CONFIG_MSG").innerHTML = "Using preconfigured '" + sensor_data.sensor_selection + "' sensor settings";
+        $("#SENSOR_PARAMS_CONFIG_MSG").css('color', 'green');
+        $("#SL_CONFIG_MSG").css('color', 'black');
+        $("#SMR_CONFIG_MSG").css('color', 'black');
+        $("#MFH_CONFIG_MSG").css('color', 'black');
+        $("#MV_CONFIG_MSG").css('color', 'black');
+        $("#MO_CONFIG_MSG").css('color', 'black');
+    }
 }
 
 function set_frame_information() {
@@ -1326,6 +1349,29 @@ function setup_data_collection_page(dateStr, timeStr, update_position) {
     document.getElementById("HEADER_CUSTOMER").innerHTML = "Customer: " + customer + " - " + site;
     document.getElementById("HEADER_FRAME").innerHTML = "Frame: " + E4PTdata.frame;
     document.getElementById("HEADER_SERIAL").innerHTML = "S/N: " + E4PTdata.serial_number + ";  Units: " + E4PTdata.units;
+    document.getElementById("SL_CONFIG_MSG").innerHTML = sensor_data.sensor_length + "&quot; SL";
+    document.getElementById("SMR_CONFIG_MSG").innerHTML = sensor_data.start_measurement_range + "mm SMR";
+    document.getElementById("MFH_CONFIG_MSG").innerHTML = sensor_data.master_fixture_height + "&quot; MFH";
+    document.getElementById("MV_CONFIG_MSG").innerHTML = sensor_data.mastering_value + "mm MV";
+    document.getElementById("MO_CONFIG_MSG").innerHTML = sensor_data.master_offset + "&quot; MO";
+    if (sensorParamsHaveBeenEdited()) {
+        document.getElementById("SENSOR_PARAMS_CONFIG_MSG").innerHTML = "Using non-standard '" + sensor_data.sensor_selection + "' sensor settings: ";
+        
+        $("#SENSOR_PARAMS_CONFIG_MSG").css('color', 'red');
+        $("#SL_CONFIG_MSG").css('color', sensorLengthHasBeenEdited()?'red':'black');
+        $("#SMR_CONFIG_MSG").css('color', smrHasBeenEdited()?'red':'black');
+        $("#MFH_CONFIG_MSG").css('color', mfhHasBeenEdited()?'red':'black');
+        $("#MV_CONFIG_MSG").css('color', mvHasBeenEdited()?'red':'black');
+        $("#MO_CONFIG_MSG").css('color', moHasBeenEdited()?'red':'black');
+    } else {
+        document.getElementById("SENSOR_PARAMS_CONFIG_MSG").innerHTML = "Using preconfigured '" + sensor_data.sensor_selection + "' sensor settings";
+        $("#SENSOR_PARAMS_CONFIG_MSG").css('color', 'green');
+        $("#SL_CONFIG_MSG").css('color', 'black');
+        $("#SMR_CONFIG_MSG").css('color', 'black');
+        $("#MFH_CONFIG_MSG").css('color', 'black');
+        $("#MV_CONFIG_MSG").css('color', 'black');
+        $("#MO_CONFIG_MSG").css('color', 'black');
+    }
     document.getElementById("SENSOR_STAGE").selectedIndex = current_stage_index;
     document.getElementById("SENSOR_POSITION").selectedIndex = current_position_index;
     var html_buf = [];
@@ -3489,10 +3535,51 @@ function setSensorSettingsForTurbine(option) {
 }
 
 function updateMasteringOffset() {
-    var lengthInches = parseFloat(document.getElementById("SENSOR_LENGTH").value);
-    var heightInches = parseFloat(document.getElementById("MASTER_FIXTURE_HEIGHT").value);
-    var mvMM = parseFloat(document.getElementById("MASTERING_VALUE").value);
-    var smrMM = parseFloat(document.getElementById("SMR").value);
-    var offsetInches = lengthInches + ((smrMM + mvMM)/25.4) - heightInches;
+    var offsetInches = calculateMasteringOffsetInches(
+                        parseFloat(document.getElementById("SENSOR_LENGTH").value),
+                        parseFloat(document.getElementById("MASTER_FIXTURE_HEIGHT").value),
+                        parseFloat(document.getElementById("MASTERING_VALUE").value)/25.4,
+                        parseFloat(document.getElementById("SMR").value)/25.4);
     document.getElementById("MASTER_OFFSET").value = offsetInches.toFixed(4);
+}
+                                       
+function calculateMasteringOffsetInches(length, height, masteringValue, smr) {
+    return (length + (smr + masteringValue)) - height;
+}
+                                       
+function sensorParamsHaveBeenEdited() {
+    if (sensor_data.sensor_selection === 'LONG' || sensor_data.sensor_selection === 'SHORT' || sensor_data.sensor_selection === 'PROTOTYPE') {
+        return sensorLengthHasBeenEdited() || smrHasBeenEdited() || mfhHasBeenEdited() || mvHasBeenEdited() || moHasBeenEdited();
+    }
+    return true;
+}
+  
+function sensorLengthHasBeenEdited() {
+    return !almostEqual(sensor_data.sensor_length, sensor_types[sensor_data.sensor_selection].measured_length_mm/25.4, 0.0005);
+}
+                        
+function smrHasBeenEdited() {
+    return !almostEqual(sensor_data.start_measurement_range, sensor_types[sensor_data.sensor_selection].measured_start_measurment_range_mm, 0.0001);
+}
+                        
+function mfhHasBeenEdited() {
+    return !almostEqual(sensor_data.master_fixture_height, sensor_types[sensor_data.sensor_selection].measured_mastering_fixture_height_mm/25.4, 0.0005);
+}
+
+function mvHasBeenEdited() {
+    return !almostEqual(sensor_data.mastering_value, sensor_types[sensor_data.sensor_selection].measured_mastering_value_mm, 0.0001);
+}
+                        
+function moHasBeenEdited() {
+    return !almostEqual(sensor_data.master_offset,
+                        calculateMasteringOffsetInches(
+                            sensor_data.sensor_length,
+                            sensor_data.master_fixture_height,
+                            sensor_data.mastering_value/25.4,
+                            sensor_data.start_measurement_range/25.4),
+                        0.0005);
+}
+                        
+function almostEqual(num1, num2, tolerance) {
+    return Math.abs(num1 - num2) < tolerance;
 }
