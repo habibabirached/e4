@@ -29,7 +29,7 @@
 #define DATA_PORT 1024
 #define TELNET_PORT 23
 
-#define SENSOR_MEASUREMENT_RANGE "10.0"
+#define SENSOR_MEASUREMENT_RANGE "11.0"
 
 // Hard coded values for RS232 serial cable
 // 192 = 64 * 3.  Data seems to come in 64 byte packets and data from
