@@ -930,12 +930,18 @@ r                        </tbody>
         <!-- --------------- IMPORTS ------------------------- -->
         <script src="./js/lib/highcharts/highcharts6_0_4.js"></script>
         <script src="./js/lib/highcharts/highcharts_more.js"></script>
-        <script src="./js/lib/reconnecting-ws.js"></script>
         <script src="./js/lib/pouchdb-7.1.1.min.js"></script>
         <script src="./js/lib/underscore/underscore-min.js"></script>
         <script src="./js/e4pt_config.js"></script>
-        <script src="./js/e4pt_app.js"></script>
         <script src="./js/report.js"></script>
         <script src="cordova.js"></script>
+        <script src="./js/lib/require.js"></script>
+        <script>
+            var pluginMessage, loadExternalFile;
+            require(['js/e4pt_app'], function(app){
+                pluginMessage = app.pluginMessage;
+                loadExternalFile = app.loadExternalFile;
+            });
+        </script>
     </body>
 </html>
