@@ -205,8 +205,14 @@ define(function(require, exports, module) {
         document.getElementById("START_MASTER_BUTTON").addEventListener('click', function(){
         do_mastering();
         }, {passive: true});
+        document.getElementById("RESET_MASTER_BUTTON").addEventListener('click', function(){
+        do_mastering('reset');
+        }, {passive: true});
         document.getElementById("START_MASTER_BUTTON_2").addEventListener('click', function(){
         do_mastering();
+        }, {passive: true});
+        document.getElementById("RESET_MASTER_BUTTON_2").addEventListener('click', function(){
+        do_mastering('reset');
         }, {passive: true});
         document.getElementById("START_DARK_REFERENCE_BUTTON").addEventListener('click', function(){
         do_dark_reference();
@@ -1542,12 +1548,16 @@ define(function(require, exports, module) {
         $("#REV_PROGRESS_BAR").show();
     }
 
-    function do_mastering() {
-        console.log("@do_mastering");
+    function do_mastering(reset) {
+        console.log('@do_mastering ' + reset);
         if (messaging.usesWebSocket()) {
-            setIndicatorColor("yellow");
+            setIndicatorColor('yellow');
         }
-        messaging.sendMessage({"args":["do_mastering"]});
+        var cmd = {args:['do_mastering']};
+        if (reset !== undefined) {
+            cmd.args.push(reset);
+        }
+        messaging.sendMessage(cmd);
     }
 
     function mastering_in_progress() {
