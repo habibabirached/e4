@@ -10,7 +10,7 @@
     "author": "Apache Cordova Team",
     "license": "Apache-2.0",
     "dependencies": {
-        "IFC242xPlugin": "git+ssh://git@github.build.ge.com:iacquire-grc/IFC242xPlugin.git",
+        "IFC242xPlugin": "git+ssh://git@github.build.ge.com:iacquire-grc/IFC242xPlugin.git#devTesting",
         "cordova-ios": "^4.5.5",
         "cordova-pdf-generator": "^2.0.8",
         "cordova-plugin-dialogs": "^2.0.2",

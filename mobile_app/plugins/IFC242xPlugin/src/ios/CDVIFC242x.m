@@ -30,6 +30,7 @@
 #define TELNET_PORT 23
 
 #define SENSOR_MEASUREMENT_RANGE "11.0"
+#define DEFAULT_CLEARANCE_CALCULATION_METHOD "2"
 
 // Hard coded values for RS232 serial cable
 // 192 = 64 * 3.  Data seems to come in 64 byte packets and data from
@@ -106,6 +107,7 @@ enum ifc242xValue {
 @property (strong, nonatomic) NSString* blade_width;
 @property (strong, nonatomic) NSString* tip_diameter;
 @property (strong, nonatomic) NSString* master_offset;
+@property (strong, nonatomic) NSString* clearance_calculation_method;
     
 
 -(instancetype)init;
@@ -132,6 +134,7 @@ enum ifc242xValue {
 @synthesize master_offset = _master_offset;
 @synthesize master_fixture_height = _master_fixture_height;
 @synthesize mastering_value = _mastering_value;
+@synthesize clearance_calculation_method = _clearance_calculation_method;
 
 -(instancetype)init {
     self = [super init];
@@ -142,7 +145,18 @@ enum ifc242xValue {
     self.casing_thickness = @"";
     self.spacer_thickness = @"";
     self.state = @"";
+    self.customer = @"";
+    self.site = @"";
+    self.user = @"";
+    self.units = @"";
+    self.num_blades = @"";
+    self.sensor_measurement_range = @SENSOR_MEASUREMENT_RANGE;
+    self.blade_width = @"";
+    self.tip_diameter = @"";
     self.master_offset = @"";
+    self.master_fixture_height = @"";
+    self.mastering_value = @"";
+    self.clearance_calculation_method = @DEFAULT_CLEARANCE_CALCULATION_METHOD;
     return self;
 }
 
@@ -159,6 +173,7 @@ enum ifc242xValue {
 - (void)disconnectDevice;
 - (void)doDarkReference;
 - (void)masterDevice;
+- (void)masterDeviceWithValue:(NSString*)masteringValue;
 - (void)setMeasurementRate:(NSString*)rate withAlert:(bool)tf;
 - (void)setThreshold:(NSString*)threshold;
 - (void)collectData:(int)num_sets casingThickness:(float)casing_thicknesss;
@@ -834,6 +849,10 @@ enum ifc242xValue {
 }
 
 - (void)masterDevice {
+    [self masterDeviceWithValue:self.metaData.mastering_value];
+}
+
+- (void)masterDeviceWithValue:(NSString*)masteringValue {
     NSLog(@"@masteringDevice");
     if (![self checkReady]) return;
     if (self.inputTelnetStream == nil) {
@@ -858,9 +877,11 @@ enum ifc242xValue {
         [self.telnetCmds addObject:[NSString stringWithFormat:@"OUTPUT RS422\n"]];
     }
 
-    [self.telnetCmds addObject:[NSString stringWithFormat:@"MASTERSIGNAL 01DIST1 NONE\n"]];
-    [self.telnetCmds addObject:[NSString stringWithFormat:@"MASTERSIGNAL 01DIST1 %@\n", self.metaData.mastering_value]];
-    [self.telnetCmds addObject:[NSString stringWithFormat:@"MASTER 01DIST1 SET\n"]];
+    [self.telnetCmds addObject:[NSString stringWithFormat:@"MASTER 01DIST1 RESET\n"]];
+    if (masteringValue != nil) {
+        [self.telnetCmds addObject:[NSString stringWithFormat:@"MASTERSIGNAL 01DIST1 %@\n", masteringValue]];
+        [self.telnetCmds addObject:[NSString stringWithFormat:@"MASTER 01DIST1 SET\n"]];
+    }
     [self.telnetCmds addObject:[NSString stringWithFormat:@"OUTPUT NONE\n"]];
     [self sendTelnetCommand];
 }
@@ -1056,7 +1077,7 @@ enum ifc242xValue {
         }
         if (msgArray.count > 4) {
             // Call from JavaScript:
-            // ["send_data",acquisitionTime, frame, sn, stage, position, casing_thickness, spacer_thickness];
+            // ["send_data",acquisitionTime, frame, sn, stage, position, casing_thickness, spacer_thickness, master_offset, clearance_calc_method];
             acqTime = [msgArray objectAtIndex:1];
             self.metaData.frame = [msgArray objectAtIndex:2];
             self.metaData.serial_number = [msgArray objectAtIndex:3];
@@ -1067,7 +1088,8 @@ enum ifc242xValue {
             self.metaData.num_blades = [msgArray objectAtIndex:8];
             self.metaData.tip_diameter = [msgArray objectAtIndex:9];
             self.metaData.blade_width = [msgArray objectAtIndex:10];
-            self.metaData.master_offset = [msgArray objectAtIndex:11];
+            //self.metaData.master_offset = [msgArray objectAtIndex:11];
+            self.metaData.clearance_calculation_method = [msgArray objectAtIndex:12];
             self.calibratedAcquire = true;
         }
         
@@ -1140,8 +1162,7 @@ enum ifc242xValue {
         self.metaData.customer = [msgArray objectAtIndex:3];
         self.metaData.site = [msgArray objectAtIndex:4];
         self.metaData.user = [msgArray objectAtIndex:5];
-        self.metaData.units = [msgArray objectAtIndex:6];
-        self.metaData.units = [self.metaData.units uppercaseString]; // We want units to be consistently in upper case.
+        self.metaData.units = [[msgArray objectAtIndex:6] uppercaseString]; // We want units to be consistently in upper case.
         self.metaData.state = [msgArray objectAtIndex:7];
         return;
     }
@@ -1180,8 +1201,12 @@ enum ifc242xValue {
     }
     if ([cmd containsString:@"do_mastering"]) {
         NSLog(@"Got do_mastering");
+        NSString* mv = self.metaData.mastering_value;
+        if (msgArray.count > 1 && [@"reset" caseInsensitiveCompare:msgArray[1]] == NSOrderedSame) {
+            mv = nil;
+        }
         if (!self.demoMode) {
-            [self masterDevice];
+            [self masterDeviceWithValue:mv];
         }
         else {
             NSDictionary* jsonDict = @{@"type":@"status",@"status":@"mastering_in_progress"};
@@ -1310,10 +1335,10 @@ enum ifc242xValue {
     }
     if ([cmd containsString:@"get_sensor_parameters"]) {
         NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-        NSString *sensor = [defaults stringForKey:@"sensorType"];
+        NSString *mfh = [defaults stringForKey:@"masterFixtureHeight"];
         NSString *sensorLength = [defaults stringForKey:@"sensorLength"];
         NSString *smr = [defaults stringForKey:@"startMeasurementRange"];
-        NSString *mfh = [defaults stringForKey:@"masterFixtureHeight"];
+        NSString *sensor = [defaults stringForKey:@"sensorType"];
         NSString *mval = [defaults stringForKey:@"masteringValue"];
         NSString *mo = [defaults stringForKey:@"masterOffset"];
         if ((mfh == nil) || (mval == nil) || (mo == nil) || (sensor == nil) || (sensorLength == nil) || (smr == nil)) {
@@ -1490,6 +1515,10 @@ enum ifc242xValue {
     self.metaData.units = @"";
     self.metaData.num_blades = @"";
     self.metaData.sensor_measurement_range = @SENSOR_MEASUREMENT_RANGE;
+    self.metaData.blade_width = @"";
+    self.metaData.tip_diameter = @"";
+    //self.metaData.master_offset = @"";
+    self.metaData.clearance_calculation_method = @DEFAULT_CLEARANCE_CALCULATION_METHOD;
 }
 
 // Should be self-explanitory.
@@ -2206,7 +2235,7 @@ enum ifc242xValue {
     // Now iterate over the filtered values and calibrate them to arrive at actual clearance values.
     // Calibrate the filtered values
     if (self.calibratedAcquire) {
-        self.stage_position_offset_adjustment = [self calculateOffsetAdjustment];
+        self.stage_position_offset_adjustment = [self calculateOffsetAdjustment:self.metaData.clearance_calculation_method];
         for (unsigned int i = 0; i< self.filtered.count; i++) {
             if ([[self.filtered objectAtIndex:i] floatValue] == OUT_OF_RANGE) continue;  // no need to calibrate out-of-range values.
             float clearance_f = [[self.filtered objectAtIndex:i] floatValue] + self.stage_position_offset_adjustment;
@@ -2284,9 +2313,14 @@ enum ifc242xValue {
     NSLog(@"computeClearance Done.");
 }
     
+-(float)calculateOffsetAdjustment:(NSString*) calcMethod {
+    if ([@"1" isEqualToString:calcMethod]) {
+        return [self calculateOffsetAdjustment];
+    }
+    return [self calculateOffsetAdjustment2];
+}
+    
 -(float)calculateOffsetAdjustment {
-    // Old method: adjustment = (SMR + SL) - spacer - casing_thickness + MO;
-    // New method: adjustment = (MFH - MV) - spacer - casing_thickness + MO;
     // mastering_value is in mm.
     // Sensor parameters (Mastering fixture height, Spacer thickness & casing thickness) are in inches.
     //
@@ -2296,10 +2330,23 @@ enum ifc242xValue {
     float mo = [self.metaData.master_offset floatValue] * inToMM;
     float ct = [self.metaData.casing_thickness floatValue] * inToMM;
     float st = [self.metaData.spacer_thickness floatValue] * inToMM;
-    
+
     return mfh - st - ct + mo - [self.metaData.mastering_value floatValue];
 }
-    
+
+-(float)calculateOffsetAdjustment2 {
+    // mastering_value is in mm.
+    // Sensor parameters (Mastering fixture height, Spacer thickness & casing thickness) are in inches.
+    //
+    // Get values into consistent units of mm. Perform calculations in mm
+    float inToMM = 25.4;
+    float mo = [self.metaData.master_offset floatValue] * inToMM;
+    float ct = [self.metaData.casing_thickness floatValue] * inToMM;
+    float st = [self.metaData.spacer_thickness floatValue] * inToMM;
+    float sensorLength = [[[NSUserDefaults standardUserDefaults] stringForKey:@"sensorLength"] floatValue] * inToMM;
+    return [self.metaData.mastering_value floatValue] + sensorLength - st - ct + mo;
+}
+
 // otsuSegmentation performs a segmentation of the histogram into 2 classes
 // using the Otsu method from image segmentation.
 // See: https://en.wikipedia.org/wiki/Otsu%27s_method
@@ -2747,14 +2794,14 @@ enum ifc242xValue {
     //  Write the sensor parameters and app version to the CSV file.
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     dataStr = [NSString stringWithFormat:@"\n - Sensor Parameters,,,,,,,\nSensor Selection,Sensor Length (in),SMR (mm),Mastering Fixture Height (in),Mastering Value (mm),Master Offset (in),Spacer Thickness (in),Shelf Threshold (mm)\n%@,%@,%@,%@,%@,%@,%@,%f\n",
-               [defaults stringForKey:@"sensorType"],
-               [defaults stringForKey:@"sensorLength"],
-               [defaults stringForKey:@"startMeasurementRange"],
-               [defaults stringForKey:@"masterFixtureHeight"],
-               [defaults stringForKey:@"masteringValue"],
-               [defaults stringForKey:@"masterOffset"],
-               self.metaData.spacer_thickness,
-               self.stage_position_threshold];
+                                  [defaults stringForKey:@"sensorType"],
+                                  [defaults stringForKey:@"sensorLength"],
+                                  [defaults stringForKey:@"startMeasurementRange"],
+                                  [defaults stringForKey:@"masterFixtureHeight"],
+                                  [defaults stringForKey:@"masteringValue"],
+                                  [defaults stringForKey:@"masterOffset"],
+                                  self.metaData.spacer_thickness,
+                                  self.stage_position_threshold];
     [handle writeData:[dataStr dataUsingEncoding:NSUTF8StringEncoding]];
 
     NSString* appVersion = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleShortVersionString"];

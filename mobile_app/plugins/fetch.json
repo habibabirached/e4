@@ -66,7 +66,7 @@
   "IFC242xPlugin": {
     "source": {
       "type": "registry",
-      "id": "git+ssh://git@github.build.ge.com:iacquire-grc/IFC242xPlugin.git"
+      "id": "git+ssh://git@github.build.ge.com:iacquire-grc/IFC242xPlugin.git#devTesting"
     },
     "is_top_level": true,
     "variables": {}

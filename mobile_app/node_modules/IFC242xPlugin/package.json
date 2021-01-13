@@ -1,5 +1,5 @@
 {
-  "_from": "git+ssh://git@github.build.ge.com:iacquire-grc/IFC242xPlugin.git",
+  "_from": "git+ssh://git@github.build.ge.com:iacquire-grc/IFC242xPlugin.git#devTesting",
   "_id": "IFC242xPlugin@0.1.0",
   "_inBundle": false,
   "_integrity": "",
@@ -7,18 +7,18 @@
   "_phantomChildren": {},
   "_requested": {
     "type": "git",
-    "raw": "git+ssh://git@github.build.ge.com:iacquire-grc/IFC242xPlugin.git",
-    "rawSpec": "git+ssh://git@github.build.ge.com:iacquire-grc/IFC242xPlugin.git",
-    "saveSpec": "git+ssh://git@github.build.ge.com:iacquire-grc/IFC242xPlugin.git",
+    "raw": "git+ssh://git@github.build.ge.com:iacquire-grc/IFC242xPlugin.git#devTesting",
+    "rawSpec": "git+ssh://git@github.build.ge.com:iacquire-grc/IFC242xPlugin.git#devTesting",
+    "saveSpec": "git+ssh://git@github.build.ge.com:iacquire-grc/IFC242xPlugin.git#devTesting",
     "fetchSpec": "git@github.build.ge.com:iacquire-grc/IFC242xPlugin.git",
-    "gitCommittish": null
+    "gitCommittish": "devTesting"
   },
   "_requiredBy": [
     "#USER",
     "/"
   ],
-  "_resolved": "git+ssh://git@github.build.ge.com:iacquire-grc/IFC242xPlugin.git#da96e8270f9c37aed22d7fbcf4cbd4be3c159efe",
-  "_spec": "git+ssh://git@github.build.ge.com:iacquire-grc/IFC242xPlugin.git",
+  "_resolved": "git+ssh://git@github.build.ge.com:iacquire-grc/IFC242xPlugin.git#9c642441955ec8460520644772bd1b260a56fc58",
+  "_spec": "git+ssh://git@github.build.ge.com:iacquire-grc/IFC242xPlugin.git#devTesting",
   "_where": "/Users/200005229/geGitHub/e4PtTool/mobile_app",
   "author": {
     "name": "Glen Brooksby"
