@@ -40,6 +40,7 @@
                 </div>
             </div>
             
+            <input id="CLEARANCE_CALCULATION_METHOD" hidden></input>
         </div>
         
         <!-- --------------- PLOT --------------------- -->
@@ -937,10 +938,14 @@ r                        </tbody>
         <script src="cordova.js"></script>
         <script src="./js/lib/require.js"></script>
         <script>
-            var pluginMessage, loadExternalFile;
+            var loadExternalFile, loadLocalData, pluginMessage, set_grid_position, toggleFileSelected, toggleDetailsSelected;
             require(['js/e4pt_app'], function(app){
-                pluginMessage = app.pluginMessage;
                 loadExternalFile = app.loadExternalFile;
+                loadLocalData = app.loadLocalData;
+                pluginMessage = app.pluginMessage;
+                set_grid_position = app.set_grid_position;
+                toggleFileSelected = app.toggleFileSelected;
+                toggleDetailsSelected = app.toggleDetailsSelected;
             });
         </script>
     </body>
