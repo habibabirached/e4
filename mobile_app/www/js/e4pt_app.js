@@ -218,10 +218,10 @@ define(function(require, exports, module) {
         do_dark_reference();
         }, {passive: true});
         document.getElementById("SET_MEASUREMENT_RATE_BUTTON").addEventListener('click', function(){
-        set_measurement_rate("1");
+        set_measurement_or_intensity_value('MEASUREMENT_RATE_1', 'Measurement rate', 0.1, 6.5, 'set_measuring_rate');
         }, {passive: true});
         document.getElementById("SET_THRESHOLD_BUTTON").addEventListener('click', function(){
-        set_threshold();
+        set_measurement_or_intensity_value('THRESHOLD_1', 'Intensity threshold', 0.5, 100, 'set_threshold');
         }, {passive: true});
         document.getElementById("DOWNLOAD_FILE_BUTTON_01").addEventListener('click', function(){
         toggle_menu();
@@ -511,17 +511,12 @@ define(function(require, exports, module) {
         }
     }
 
-
-    // overrideSettings is called when the user checks the box to override.
     function overrideSettings() {
-        if (manualOverride) {
-            $("#SENSOR_SETUP_PAGE").fadeOut(); // This line may not be strictly necessary.
-        } else {
-            manualOverride = true;
-            $("#SENSOR_SETUP_PAGE").fadeIn();
-        }
         manualOverride = !manualOverride;
         messaging.sendMessage({"args":["set_manual_override",manualOverride]});
+        if (manualOverride) {
+            $("#SENSOR_SETUP_PAGE").fadeIn();
+        }
     }
 
     function acquisitionTimePromptCallback(results) {
@@ -915,54 +910,45 @@ define(function(require, exports, module) {
       current_position = current_frame_data['position'][current_stage][current_position_index];
       highlight_cell(current_position, current_stage);
     }
-
-    function set_measurement_rate(idx) {
-      var el_id = "MEASUREMENT_RATE_" + idx;
-      var meas_rate_f = parseFloat(document.getElementById(el_id).value);
-      // Make sure the text is a number
-      if ( (isNaN(meas_rate_f)) || (typeof(meas_rate_f) != "number")) {
-        e4PtAlert("Measurement rate is not a number.");
-        return;
-      }
-      
-      if (meas_rate_f > 6.5) {
-          e4PtConfirm("Measurement rates over 6.5kHz are not supported. Rate will be set to 6.5kHz.",
-            function(buttonIndex) {
-                if (buttonIndex==1){//OK
-                    // Proceed
-                    if (meas_rate_f > 6.5) {
-                      meas_rate_f = 6.5;
-                      document.getElementById(el_id).value = meas_rate_f;
-                    }
-                    messaging.sendMessage({"args":["set_measuring_rate",meas_rate_f]});
-                } else if (buttonIndex==2){//Cancel
-                    document.getElementById(el_id).value = "";
-                    return;
-                }
-            });
-      } else if (meas_rate_f < 0.1) {
-        meas_rate_f = 0.1;
-        document.getElementById(el_id).value = meas_rate_f;
-      }
-      messaging.sendMessage({"args":["set_measuring_rate",meas_rate_f]});
-    }
-
-    function set_threshold() {
-        const el_id = "THRESHOLD_1";
-        var threshold_f = parseFloat(document.getElementById(el_id).value);
+    
+    function set_measurement_or_intensity_value(el_id, label, minVal, maxVal, cmd) {
+        var input_f = parseFloat(document.getElementById(el_id).value);
         // Make sure the text is a number
-        if ( (isNaN(threshold_f)) || (typeof(threshold_f) != "number")) {
-            e4PtAlert("Threshold is not a number.");
+        if ( (isNaN(input_f)) || (typeof(input_f) != 'number')) {
+            e4PtAlert(label + ' is not a number.');
             return;
         }
-        if (threshold_f < 0.5) {
-            threshold_f = 0.5;
-            document.getElementById(el_id).value = threshold_f;
-        } else if (threshold_f > 100.0) {
-            threshold_f = 100.0;
-            document.getElementById(el_id).value = threshold_f;
+        
+        document.getElementById(el_id).value = input_f.toFixed(3);
+        input_f = parseFloat(document.getElementById(el_id).value);
+        
+        if (input_f > maxVal) {
+            e4PtConfirm(label + 's over ' + maxVal + ' are not supported. Value will be set to ' + maxVal,
+              function(buttonIndex) {
+                  if (buttonIndex==1){//OK
+                      input_f = maxVal;
+                      document.getElementById(el_id).value = input_f.toFixed(3);
+                      messaging.sendMessage({args:[cmd,input_f]});
+                  } else if (buttonIndex==2){//Cancel
+                      document.getElementById(el_id).value = '';
+                      return;
+                  }
+              });
+        } else if (input_f < minVal) {
+            e4PtConfirm(label + 's below ' + minVal + ' are not supported. Value will be set to ' + minVal,
+              function(buttonIndex) {
+                  if (buttonIndex==1){//OK
+                      input_f = minVal;
+                      document.getElementById(el_id).value = input_f.toFixed(3);
+                      messaging.sendMessage({args:[cmd,input_f]});
+                  } else if (buttonIndex==2){//Cancel
+                      document.getElementById(el_id).value = '';
+                      return;
+                  }
+              });
+        } else {
+            messaging.sendMessage({args:[cmd,input_f]});
         }
-        messaging.sendMessage({"args":["set_threshold",threshold_f]});
     }
 
     function confirm_collect_stage_data() {
