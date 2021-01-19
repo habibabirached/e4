@@ -138,12 +138,20 @@ enum ifc242xValue {
 
 -(instancetype)init {
     self = [super init];
+    [self clear];
+    self.master_offset = @"";
+    self.master_fixture_height = @"";
+    self.mastering_value = @"";
+    return self;
+}
+
+- (void)clear {
     self.frame = @"";
     self.serial_number = @"";
     self.stage = @"";
     self.position = @"";
-    self.casing_thickness = @"";
     self.spacer_thickness = @"";
+    self.casing_thickness = @"";
     self.state = @"";
     self.customer = @"";
     self.site = @"";
@@ -153,11 +161,7 @@ enum ifc242xValue {
     self.sensor_measurement_range = @SENSOR_MEASUREMENT_RANGE;
     self.blade_width = @"";
     self.tip_diameter = @"";
-    self.master_offset = @"";
-    self.master_fixture_height = @"";
-    self.mastering_value = @"";
     self.clearance_calculation_method = @DEFAULT_CLEARANCE_CALCULATION_METHOD;
-    return self;
 }
 
 @end
@@ -293,7 +297,6 @@ enum ifc242xValue {
 @implementation IFCObjectiveCManager
 
 @synthesize webView = _webView;
-//@synthesize interfaceHandle = _interfaceHandle;
 @synthesize metaData = _metaData;
 @synthesize last_saved_file = _last_saved_file;
 @synthesize measurement_rate = _measurement_rate;
@@ -371,16 +374,6 @@ enum ifc242xValue {
 @synthesize networkRunLoop = _networkRunLoop;
 @synthesize networkQueue = _networkQueue;
 
-- (int)interfaceHandle {
-    static int handle = 0;
-    
-    if (handle == 0) {
-      // Create the handle if one doesn't exist.
-    }
-
-    return handle;
-}
-
 + (IFCObjectiveCManager*)staticManager {
     
     static IFCObjectiveCManager* _manager = nil;
@@ -424,6 +417,12 @@ enum ifc242xValue {
 - (void)callBackErrorWithMethodName:(NSString*)methodName andWithError:(NSString*)errorMessage {
     NSString *cmd = [NSString stringWithFormat:@"window.plugins.IFC242x.OnError('%@','%@')", methodName, errorMessage];
     [ self callBackWithCommandString:cmd ];
+}
+
+- (void)returnPluginResponse:(NSDictionary*)jsonMessage keepOpen:(BOOL)keepOpen {
+    CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonMessage];
+    result.keepCallback = [NSNumber numberWithBool:keepOpen];
+    [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
 }
 
 - (void)connectDevice:(NSString*)ip_address port:(int)port {
@@ -559,9 +558,7 @@ enum ifc242xValue {
             [self.plugin.commandDelegate evalJs:[NSString stringWithFormat:@"pluginMessage(%@);",jsonString]];
         }
         else {
-            CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];
-            result.keepCallback = [NSNumber numberWithBool:YES];
-            [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+            [self returnPluginResponse:jsonDict keepOpen:YES];
         }
     });
 }
@@ -586,10 +583,7 @@ enum ifc242xValue {
         }
         else {
             // otherwise, keep waiting...
-            NSDictionary* jsonDict = @{@"type":@"status",@"status":@"waiting"};
-            CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];
-            result.keepCallback = [NSNumber numberWithBool:YES];
-            [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+            [self returnPluginResponse:@{@"type":@"status",@"status":@"waiting"} keepOpen:YES];
         }
     }
     else {
@@ -601,18 +595,14 @@ enum ifc242xValue {
                 msg = @"Error setting measurement rate.\nTimeout.";
                 
                 NSLog(@"%@",msg);
-                NSDictionary* jsonDict = @{@"type":@"alert",@"message":msg};
-                CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];
-                result.keepCallback = [NSNumber numberWithBool:NO];
-                [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+                [self returnPluginResponse:@{@"type":@"alert",@"message":msg} keepOpen:NO];
                 self.pState = ready;
             }
             else if (self.pState == darkReferenceInProgress) {
                 // update then hide the progress bar.
                 self.progress = 1.0;
-                msg = @"Dark referencing complete.";
                 dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
-                    NSDictionary* jsonDict = @{@"type":@"alert",@"message":msg};
+                    NSDictionary* jsonDict = @{@"type":@"alert",@"message":@"Dark referencing complete."};
                     if (true) {
                         NSError* error;
                         NSData *jsonData=[NSJSONSerialization dataWithJSONObject:jsonDict options:NSJSONWritingSortedKeys error:&error];
@@ -621,9 +611,7 @@ enum ifc242xValue {
                         [self.plugin.commandDelegate evalJs:[NSString stringWithFormat:@"pluginMessage(%@);",jsonString]];
                     }
                     else {
-                        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];
-                        result.keepCallback = [NSNumber numberWithBool:YES];
-                        [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+                        [self returnPluginResponse:jsonDict keepOpen:YES];
                     }
                 });
                 if ([nextProc containsString:@"doDataCollection"]) {
@@ -654,10 +642,7 @@ enum ifc242xValue {
     }
     if ([arg containsString:@"collect_data"]) {
         [self loadCSVFile:@""];
-        NSDictionary* jsonDict = @{@"type":@"status",@"status":@"processing"};
-        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];// You can send data, String, int, array, dictionary, etc.
-        result.keepCallback = [NSNumber numberWithBool:YES];
-        [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+        [self returnPluginResponse:@{@"type":@"status",@"status":@"processing"} keepOpen:YES];
         [self computeClearance];
         [self returnData];
         [self processComplete:@"connected"];
@@ -770,7 +755,7 @@ enum ifc242xValue {
     self.measurement_rate = @"1.0";
     if (self.telnetCmds == nil) self.telnetCmds = [[NSMutableArray alloc] init];
     if (self.metaData == nil) self.metaData = [[ScanMetaData alloc] init];
-    [self clearMetaData];
+    [self.metaData clear];
     [self computeKernel:KERNEL_SIGMA kernel_size:KERNEL_SIZE]; // Compute the LoG filter kernel.
     self.stage_clearance = 0;
     self.stage_position_threshold = 0.0;
@@ -859,10 +844,7 @@ enum ifc242xValue {
         [self connectDevice:self.ipAddress port:self.telnetPort];
     }
     self.pState = masteringInProgress;
-    NSDictionary* jsonDict = @{@"type":@"status",@"status":@"mastering_in_progress"};
-    CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];// You can send data, String, int, array, dictionary, etc.
-    result.keepCallback = [NSNumber numberWithBool:YES]; // This is the magic option that lets you call a callback AGAIN!
-    [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+    [self returnPluginResponse:@{@"type":@"status",@"status":@"mastering_in_progress"} keepOpen:YES];
 
     // These next few lines are not intuitive.  Mastering is a process internal to the controller.
     // However, it can't complete unless output is being generated (apparently).  This has been shown
@@ -890,10 +872,7 @@ enum ifc242xValue {
     NSLog(@"@doDarkReference");
     if (![self checkReady]) return;
     self.pState = darkReferenceInProgress;
-    NSDictionary* jsonDict = @{@"type":@"status",@"status":@"acquiring"};
-    CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];// You can send data, String, int, array, dictionary, etc.
-    result.keepCallback = [NSNumber numberWithBool:YES]; // This is the magic option that lets you call a callback AGAIN!
-    [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+    [self returnPluginResponse:@{@"type":@"status",@"status":@"acquiring"} keepOpen:YES];
     if ([self.connectionMode containsString:@"ethernet"]) {
         if (self.inputTelnetStream == nil) {
             [self connectDevice:self.ipAddress port:self.telnetPort];
@@ -987,11 +966,7 @@ enum ifc242xValue {
 
 - (bool)checkReady {
     if (self.pState != ready) {
-        NSString* errMsg = @"Error: Device not ready. Please wait.";
-        NSDictionary* jsonDict = @{@"type":@"status",@"status":errMsg};
-        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];// You can send data, String, int, array, dictionary, etc.
-        result.keepCallback = [NSNumber numberWithBool:YES]; // This is the magic option that lets you call a callback AGAIN!
-        [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+        [self returnPluginResponse:@{@"type":@"status",@"status":@"Error: Device not ready. Please wait."} keepOpen:YES];
         return false;
     }
     return true;
@@ -1072,7 +1047,7 @@ enum ifc242xValue {
             // message = {"args":["send_data",acquisitionTime,"0.0"]};
             acqTime = [msgArray objectAtIndex:1];
             self.metaData.casing_thickness = [msgArray objectAtIndex:2];
-            [self clearMetaData];
+            [self.metaData clear];
             self.calibratedAcquire = false;
         }
         if (msgArray.count > 4) {
@@ -1105,10 +1080,7 @@ enum ifc242xValue {
             NSString* err = [timeAndRate objectAtIndex:3];
             if (err.length != 0) {
                 // Report errors.
-                NSDictionary* jsonDict = @{@"type":@"alert",@"message":err};
-                CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];// You can send data, String, int, array, dictionary, etc.
-                result.keepCallback = [NSNumber numberWithBool:YES];
-                [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+                [self returnPluginResponse:@{@"type":@"alert",@"message":err} keepOpen:YES];
                 return;
             }
             else {
@@ -1168,14 +1140,12 @@ enum ifc242xValue {
     }
     if ([cmd containsString:@"clear_meta_data"]) {
         NSLog(@"Got clear_meta_data");
-        [self clearMetaData];
+        [self.metaData clear];
         return;
     }
     if ([cmd containsString:@"get_data_file"]) {
         NSLog(@"Got get_data_file");
-        NSDictionary* jsonDict = @{@"type":@"filename",@"fname":self.last_saved_file};
-        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];// You can send data, String, int, array, dictionary, etc.
-        [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+        [self returnPluginResponse:@{@"type":@"filename",@"fname":self.last_saved_file} keepOpen:NO];
         return;
     }
     if ([cmd containsString:@"do_dark_reference"]) {
@@ -1184,16 +1154,12 @@ enum ifc242xValue {
             [self doDarkReference];
         }
         else {
-            NSDictionary* jsonDict = @{@"type":@"status",@"status":@"acquiring"};
-            CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];// You can send data, String, int, array, dictionary, etc.
-            result.keepCallback = [NSNumber numberWithBool:YES]; // This is the magic option that lets you call a callback AGAIN!
-            [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
-            NSString* demoMsg = @"dark_reference";
+            [self returnPluginResponse:@{@"type":@"status",@"status":@"acquiring"} keepOpen:YES];
             dispatch_async(dispatch_get_main_queue(), ^{
                 self.timerDemoFunctions = [ NSTimer scheduledTimerWithTimeInterval:3.0
                                                                             target:self
                                                                           selector:@selector(timeoutTimerDemoMode:)
-                                                                          userInfo:demoMsg
+                                                                          userInfo:@"dark_reference"
                                                                            repeats:NO];
             });
         }
@@ -1209,16 +1175,12 @@ enum ifc242xValue {
             [self masterDeviceWithValue:mv];
         }
         else {
-            NSDictionary* jsonDict = @{@"type":@"status",@"status":@"mastering_in_progress"};
-            CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];
-            result.keepCallback = [NSNumber numberWithBool:YES]; // This is the magic option that lets you call a callback AGAIN!
-            [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
-            NSString* demoMsg = @"mastering";
+            [self returnPluginResponse:@{@"type":@"status",@"status":@"mastering_in_progress"} keepOpen:YES];
             dispatch_async(dispatch_get_main_queue(), ^{
                 self.timerDemoFunctions = [ NSTimer scheduledTimerWithTimeInterval:3.0
                                                                             target:self
                                                                           selector:@selector(timeoutTimerDemoMode:)
-                                                                          userInfo:demoMsg
+                                                                          userInfo:@"mastering"
                                                                            repeats:NO];
             });
         }
@@ -1280,8 +1242,8 @@ enum ifc242xValue {
         return;
     }
     if ([cmd containsString:@"set_demo_mode"]) {
-        NSLog(@"Got set_demo_mode");
         NSString* mode = [msgArray objectAtIndex:1];
+        NSLog(@"Got set_demo_mode:%@", mode);
         NSString* msgStr;
         if ([mode containsString:@"true"]) {
             self.demoMode = true;
@@ -1291,10 +1253,7 @@ enum ifc242xValue {
             self.demoMode = false;
             msgStr = @"App is now in production mode.";
         }
-        NSDictionary* jsonDict = @{@"type":@"alert",@"message":msgStr};
-        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];
-        result.keepCallback = [NSNumber numberWithBool:YES];
-        [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+        [self returnPluginResponse:@{@"type":@"alert",@"message":msgStr} keepOpen:YES];
         if (!self.demoMode) {
             [self initializeSensor];
         }
@@ -1313,10 +1272,7 @@ enum ifc242xValue {
             msgStr = @"App is now using ethernet connection.";
         }
         [self initializeSensor];
-        NSDictionary* jsonDict = @{@"type":@"alert",@"message":msgStr};
-        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];
-        result.keepCallback = [NSNumber numberWithBool:YES];
-        [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+        [self returnPluginResponse:@{@"type":@"alert",@"message":msgStr} keepOpen:YES];
         return;
     }
     if ([cmd containsString:@"shutdown"]) {
@@ -1327,10 +1283,7 @@ enum ifc242xValue {
             [self initializeSensor];
         }
         NSString* appVersion = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleShortVersionString"];
-        NSDictionary* jsonDict = @{@"type":@"version",@"version":appVersion};
-        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];
-        result.keepCallback = [NSNumber numberWithBool:YES];
-        [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+        [self returnPluginResponse:@{@"type":@"version",@"version":appVersion} keepOpen:YES];
         return;
     }
     if ([cmd containsString:@"get_sensor_parameters"]) {
@@ -1354,8 +1307,7 @@ enum ifc242xValue {
         self.metaData.mastering_value = mval;
         self.metaData.master_offset = mo;
         NSDictionary* jsonDict = @{@"type":@"sensor_params", @"master_fixture_height":mfh, @"mastering_value":mval, @"master_offset":mo, @"sensor_selection":sensor, @"sensor_length":sensorLength, @"start_measurement_range":smr};
-        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];
-        [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+        [self returnPluginResponse:jsonDict keepOpen:NO];
         return;
     }
     if ([cmd containsString:@"set_sensor_parameters"]) {
@@ -1384,10 +1336,8 @@ enum ifc242xValue {
         self.metaData.master_fixture_height = mfh;
         self.metaData.mastering_value = mval;
         self.metaData.master_offset = mo;
-        NSString* msgStr = [NSString stringWithFormat:@"Sensor Parameters are Set."];
-        NSDictionary* jsonDict = @{@"type":@"alert",@"message":msgStr};
-        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];
-        [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+        
+        [self returnPluginResponse:@{@"type":@"alert",@"message":@"Sensor Parameters are Set."} keepOpen:NO];
         return;
     }
     else {
@@ -1417,8 +1367,8 @@ enum ifc242xValue {
         float ptsPerBlade = samplesPerInch * bladeWidth;
         errorMessage = [NSString stringWithFormat:@"ErrorRateHigh\n%f pts/blade. ",ptsPerBlade];
     }
-    if (measRate <= 0.1) {
-        measRate = 0.1; // Limit measurement rate on the low end.
+    if (measRate <= 100) {
+        measRate = 100; // Limit measurement rate on the low end.
         //errorMessage = [errorMessage stringByAppendingString:@"ErrorRateLow "];
     }
     if (acquisitionTime <= 0) {
@@ -1485,40 +1435,15 @@ enum ifc242xValue {
         [self collectData:num_sets casingThickness:[self.metaData.casing_thickness floatValue]];
     }
     else {
-        NSDictionary* jsonDict = @{@"type":@"status",@"status":@"acquiring"};
-        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];// You can send data, String, int, array, dictionary, etc.
-        result.keepCallback = [NSNumber numberWithBool:YES];
-        [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
-        NSString* demoMsg = @"collect_data";
+        [self returnPluginResponse:@{@"type":@"status",@"status":@"acquiring"} keepOpen:YES];
         dispatch_async(dispatch_get_main_queue(), ^{
             self.timerDemoFunctions = [ NSTimer scheduledTimerWithTimeInterval:3.0
                                                                         target:self
                                                                       selector:@selector(timeoutTimerDemoMode:)
-                                                                      userInfo:demoMsg
+                                                                      userInfo:@"collect_data"
                                                                        repeats:NO];
         });
     }
-}
-
-// Should be self-explanitory.
-- (void)clearMetaData {
-    self.metaData.frame = @"";
-    self.metaData.serial_number = @"";
-    self.metaData.stage = @"";
-    self.metaData.position = @"";
-    self.metaData.spacer_thickness = @"";
-    self.metaData.casing_thickness = @"";
-    self.metaData.state = @"";
-    self.metaData.customer = @"";
-    self.metaData.site = @"";
-    self.metaData.user = @"";
-    self.metaData.units = @"";
-    self.metaData.num_blades = @"";
-    self.metaData.sensor_measurement_range = @SENSOR_MEASUREMENT_RANGE;
-    self.metaData.blade_width = @"";
-    self.metaData.tip_diameter = @"";
-    //self.metaData.master_offset = @"";
-    self.metaData.clearance_calculation_method = @DEFAULT_CLEARANCE_CALCULATION_METHOD;
 }
 
 // Should be self-explanitory.
@@ -1549,10 +1474,7 @@ enum ifc242xValue {
 - (void)collectData:(int)num_sets casingThickness:(float)casing_thicknesss {
     NSLog(@"@collectData: num_sets = %d", num_sets);
     // Update the status in the HTML page.
-    NSDictionary* jsonDict = @{@"type":@"status",@"status":@"acquiring"};
-    CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];// You can send data, String, int, array, dictionary, etc.
-    result.keepCallback = [NSNumber numberWithBool:YES];
-    [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+    [self returnPluginResponse:@{@"type":@"status",@"status":@"acquiring"} keepOpen:YES];
 
     self.num_pts_max = 110;
     self.current_data_set_id = 0;
@@ -1730,19 +1652,19 @@ enum ifc242xValue {
                                     NSString* error_msg = @"";
                                     if (dVal > 2147483392) {
                                         error_msg = @"Error ";
-                                        if (dVal == 214743396) {
+                                        if (dVal == 2147483396) {
                                             error_msg = [error_msg stringByAppendingString:@"No Peak"];
                                         }
-                                        if (dVal == 214743397) {
+                                        if (dVal == 2147483397) {
                                             error_msg = [error_msg stringByAppendingString:@"Peak in front of MR"];
                                         }
-                                        if (dVal == 214743398) {
+                                        if (dVal == 2147483398) {
                                             error_msg = [error_msg stringByAppendingString:@"Peak in back of MR"];
                                         }
-                                        if (dVal == 214743399) {
+                                        if (dVal == 2147483399) {
                                             error_msg = [error_msg stringByAppendingString:@"Measurement cannot be calculated"];
                                         }
-                                        if (dVal == 214743400) {
+                                        if (dVal == 2147483400) {
                                             error_msg = [error_msg stringByAppendingString:@"Measurement is outside representable area"];
                                         }
                                         displacement = OUT_OF_RANGE;
@@ -1799,10 +1721,7 @@ enum ifc242xValue {
                         // At this point we should have all the data that was requested.
                         // We need to do any required processing/filtering, save to file,
                         // then bundle it up and send it back through to the javascript.
-                        NSDictionary* jsonDict = @{@"type":@"status",@"status":@"processing"};
-                        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];// You can send data, String, int, array, dictionary, etc.
-                        result.keepCallback = [NSNumber numberWithBool:YES];
-                        [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+                        [self returnPluginResponse:@{@"type":@"status",@"status":@"processing"} keepOpen:YES];
                         
                         if (self.pState != clearanceComputationInProgress) {
                             [self computeClearance];
@@ -1839,9 +1758,7 @@ enum ifc242xValue {
                         [self disconnectTelnet]; // clean things up.
                         [self connectDevice:self.ipAddress port:self.telnetPort];
                     }
-                    NSDictionary* jsonDict = @{@"type":@"status",@"status":errorMessage};
-                    CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];// You can send data, String, int, array, dictionary, etc.
-                    [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+                    [self returnPluginResponse:@{@"type":@"status",@"status":errorMessage} keepOpen:NO];
                     break;
                 }
                 case NSStreamEventEndEncountered:
@@ -1978,9 +1895,7 @@ enum ifc242xValue {
                                    @"overall_avg":overall_avg,
                                    @"date":dateStr
                                    };
-    CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDataDict];// You can send data, String, int, array, dictionary, etc.
-    result.keepCallback = [NSNumber numberWithBool:NO];
-    [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+    [self returnPluginResponse:jsonDataDict keepOpen:NO];
     [self saveCSVFile:@""];
     [self clearData];
 }
@@ -1988,24 +1903,17 @@ enum ifc242xValue {
 - (void)processComplete:(NSString*)statusMsg {
     if (self.pState == setMeasurementRateInProgress) {
         NSString* msgStr = [NSString stringWithFormat:@"Measurement rate set to %@ kHz.", self.measurement_rate];
-        NSDictionary* jsonDict = @{@"type":@"alert",@"message":msgStr};
-        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];
-        result.keepCallback = [NSNumber numberWithBool:YES];
-        [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+        [self returnPluginResponse:@{@"type":@"alert",@"message":msgStr} keepOpen:YES];
     }
     else if (self.pState == setThresholdInProgress) {
         NSString* msgStr = [NSString stringWithFormat:@"Threshold is set to %@.", self.intensityThreshold];
-        NSDictionary* jsonDict = @{@"type":@"alert",@"message":msgStr};
-        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];
-        [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+        [self returnPluginResponse:@{@"type":@"alert",@"message":msgStr} keepOpen:NO];
     }
     else if (self.pState == darkReferenceInProgress) {
         return; // Dark referencing is followed by data collection
     }
     else {
-        NSDictionary* jsonDict = @{@"type":@"status",@"status":statusMsg};
-        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];// You can send data, String, int, array, dictionary, etc.
-        [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+        [self returnPluginResponse:@{@"type":@"status",@"status":statusMsg} keepOpen:NO];
     }
     
     self.pState = ready;
@@ -2013,32 +1921,16 @@ enum ifc242xValue {
 
 - (void)computeClearance {
     self.pState = clearanceComputationInProgress;
+    
     // Displacement values will be between 0-15.
     // We create a coarse histogram to see how many peaks we find.
     float hMult = 4.0;  // This multiplier will change the size & resolution of the histogram.
     int nbins = (OUT_OF_RANGE*hMult) + 1;  // Should give 61 bins for hMult = 4.0.
-    int* hBins = (int*)malloc(nbins * sizeof(int));
-    for (int i=0; i<nbins; i++) hBins[i] = 0;
-    // Populate the histogram by converting displacements to histogram indices.
-    // Round each displacement to get the bin index.
-    NSLog(@"Populating histogram...");
-    float d=0.0;
-    int bIdx = 0;
-    for (NSNumber* n in self.displacements) {
-        // exclude OUT_OF_RANGE points.
-        if ([n floatValue] == (float)OUT_OF_RANGE) continue;
-        d = hMult * [n floatValue];  // multiply the value by hMult to get the index.
-        bIdx = (int)floor(d); // Using floor makes bin edges integers. E.g. [0-1][+1-2][+2-3]...
-        if (bIdx > nbins-1) bIdx = nbins - 1; // Don't overflow
-        if (bIdx < 0) bIdx = 0; // Don't underflow
-        hBins[bIdx]++; // Increment the histogram bin
-    }
-    NSLog(@"Histogram:\n");
-    for (int i=0; i<nbins; i++) {
-        NSLog(@" hBin[%d]: %d",i, hBins[i]);
-    }
+    int* hBins = [self createHistogramForSegmentation:nbins valueMultiplier:hMult];
+    
     // Use Otsu's method to get threshold
     self.stage_position_threshold = [self otsuSegmentation:hBins nbins:nbins maxBin:((float)OUT_OF_RANGE)];
+    free(hBins);
     
     // Force threshold here.
     // threshold = 4.5;  // FYI, the threshold of 4.5 had some problems on some positions in the test rig.
@@ -2308,9 +2200,33 @@ enum ifc242xValue {
     free(neg_crossing);
     free(pos_crossing);
     free(sig_sign);
-    free(hBins);
 
     NSLog(@"computeClearance Done.");
+}
+    
+-(int*)createHistogramForSegmentation:(int)nbins valueMultiplier:(float)multiplier{
+    
+    int* hBins = (int*)malloc(nbins * sizeof(int));
+    for (int i=0; i<nbins; i++) hBins[i] = 0;
+    // Populate the histogram by converting displacements to histogram indices.
+    // Round each displacement to get the bin index.
+    NSLog(@"Populating histogram...");
+    float d=0.0;
+    int bIdx = 0;
+    for (NSNumber* n in self.displacements) {
+        // exclude OUT_OF_RANGE points.
+        if ([n floatValue] == (float)OUT_OF_RANGE) continue;
+        d = multiplier * [n floatValue];  // multiply the value to get the index.
+        bIdx = (int)floor(d); // Using floor makes bin edges integers. E.g. [0-1][+1-2][+2-3]...
+        if (bIdx > nbins-1) bIdx = nbins - 1; // Don't overflow
+        if (bIdx < 0) bIdx = 0; // Don't underflow
+        hBins[bIdx]++; // Increment the histogram bin
+    }
+    //NSLog(@"Histogram:\n");
+    //for (int i=0; i<nbins; i++) {
+    //    NSLog(@" hBin[%d]: %d",i, hBins[i]);
+    //}
+    return hBins;
 }
     
 -(float)calculateOffsetAdjustment:(NSString*) calcMethod {
@@ -2318,6 +2234,13 @@ enum ifc242xValue {
         return [self calculateOffsetAdjustment];
     }
     return [self calculateOffsetAdjustment2];
+}
+
+-(NSString*)getOffsetAdjustmentFormula:(NSString*) calcMethod {
+    if ([@"1" isEqualToString:calcMethod]) {
+        return @"Hmf - ST - CT + MO - MV";
+    }
+    return @"MV + SL - ST - CT + MO";
 }
     
 -(float)calculateOffsetAdjustment {
@@ -2793,7 +2716,7 @@ enum ifc242xValue {
     
     //  Write the sensor parameters and app version to the CSV file.
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    dataStr = [NSString stringWithFormat:@"\n - Sensor Parameters,,,,,,,\nSensor Selection,Sensor Length (in),SMR (mm),Mastering Fixture Height (in),Mastering Value (mm),Master Offset (in),Spacer Thickness (in),Shelf Threshold (mm)\n%@,%@,%@,%@,%@,%@,%@,%f\n",
+    dataStr = [NSString stringWithFormat:@"\n - Sensor Parameters,,,,,,,,,\nSensor Selection,Sensor Length (in),SMR (mm),Mastering Fixture Height (in),Mastering Value (mm),Master Offset (in),Spacer Thickness (in),Shelf Threshold (mm),Applied Offset Formula,\n%@,%@,%@,%@,%@,%@,%@,%f,%@,\n",
                                   [defaults stringForKey:@"sensorType"],
                                   [defaults stringForKey:@"sensorLength"],
                                   [defaults stringForKey:@"startMeasurementRange"],
@@ -2801,11 +2724,12 @@ enum ifc242xValue {
                                   [defaults stringForKey:@"masteringValue"],
                                   [defaults stringForKey:@"masterOffset"],
                                   self.metaData.spacer_thickness,
-                                  self.stage_position_threshold];
+                                  self.stage_position_threshold,
+                                  [self getOffsetAdjustmentFormula:self.metaData.clearance_calculation_method]];
     [handle writeData:[dataStr dataUsingEncoding:NSUTF8StringEncoding]];
 
     NSString* appVersion = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleShortVersionString"];
-    dataStr = [NSString stringWithFormat:@"\n - Created by e4PtTool version %@,,,,,,,",appVersion];
+    dataStr = [NSString stringWithFormat:@"\n - Created by e4PtTool version %@,,,,,,,,,",appVersion];
     [handle writeData:[dataStr dataUsingEncoding:NSUTF8StringEncoding]];
 
     [handle closeFile];
@@ -3203,10 +3127,7 @@ enum ifc242xValue {
         // At this point we should have all the data that was requested.
         // We need to do any required processing/filtering, save to file,
         // then bundle it up and send it back through to the javascript.
-        NSDictionary* jsonDict = @{@"type":@"status",@"status":@"processing"};
-        CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonDict];// You can send data, String, int, array, dictionary, etc.
-        result.keepCallback = [NSNumber numberWithBool:YES];
-        [self.plugin.commandDelegate sendPluginResult:result callbackId:self.plugin.cmd.callbackId];
+        [self returnPluginResponse:@{@"type":@"status",@"status":@"processing"} keepOpen:YES];
 #ifdef SIMULATED_DATA
         [self loadCSVFile:@""];
 #endif
