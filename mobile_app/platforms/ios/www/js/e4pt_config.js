@@ -165,10 +165,10 @@ frame_data = [
                  '11':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
                  '14':['TOP', 'RIGHT', 'BOTTOM', 'LEFT']},
      'spacers':[
-         {'stage':'1', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0.0', 'max':'100.0', 'size':'7.982', 'color':'BLACK', 'image':'7FA-R5-R10'},
-         {'stage':'6', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0.0', 'max':'100.0', 'size':'7.982', 'color':'BLACK', 'image':'7FA-R5-R10'},
-         {'stage':'11', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0.0', 'max':'100.0', 'size':'7.982', 'color':'BLACK', 'image':'7FA-R5-R10'},
-         {'stage':'14', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0.0', 'max':'100.0', 'size':'7.982', 'color':'BLACK', 'image':'7FA-R5-R10'}
+         {'stage':'1', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0.0', 'max':'100.0', 'size':'8.082', 'color':'BLACK', 'image':'7FA-R5-R10'},
+         {'stage':'6', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0.0', 'max':'100.0', 'size':'8.082', 'color':'BLACK', 'image':'7FA-R5-R10'},
+         {'stage':'11', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0.0', 'max':'100.0', 'size':'8.082', 'color':'BLACK', 'image':'7FA-R5-R10'},
+         {'stage':'14', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0.0', 'max':'100.0', 'size':'8.082', 'color':'BLACK', 'image':'7FA-R5-R10'}
      ],
      'stage_info':{
          '1':{

@@ -400,7 +400,7 @@
                             <div class="PANEL">
                                 <div class="FRD_SUB" align="center">
                                     <br/>
-                                    <img class="CENTER" border="0" alt="Table values" src="img/frd/Sampling_Rate_vs_Intensity_20201119.gif"/>
+                                    <img class="CENTER" border="0" width="320" alt="Table values" src="img/frd/Sampling_Rate_vs_Intensity_20201119.gif"/>
                                     <figcaption class="FONT4 B CENTER">Valid settings for sampling rate and intensity</figcaption>
                                 </div>
                             </div>
@@ -727,13 +727,9 @@ r                        </tbody>
                 <p>The sampling rate may be set in kHz between 0.100 and 6.500. A maximum of 3 decimal places may be specified.</p>
                 <br/>
                 <H2>Measurement Rate</H2>
-                <div class="ROW W100">
-                  <div>
-                      <p class="SCAN_INFO_TEXT">kHz</p>
-                  </div>
-                  <div>
-                      <input class="BORDER_BLACK_1 W25 TXTFIELD CENTER FONT_CENTER" type="text" id="MEASUREMENT_RATE_1" value=""/>
-                  </div>
+                <div class="ROW W100 FONT_CENTER">
+                  <input class="BORDER_BLACK_1 TXTFIELD FONT_CENTER" type="text" id="MEASUREMENT_RATE_1" value=""/>
+                  <span class="SCAN_INFO_TEXT_C">kHz</span>
                 </div>
                 <br/>
                 <div id="SET_MEASUREMENT_RATE_BUTTON" class="BUTTON W40 OVERLAY_BUTTON" style="margin:0 auto;">SET MEASUREMENT RATE</div>
@@ -746,13 +742,9 @@ r                        </tbody>
                 <p>The intensity threshold is a percentage and may be set between 0.5% and 100%.</p>
                 <br/>
                 <H2>Intensity Threshold</H2>
-                <div class="ROW W100">
-                    <div>
-                        <p class="SCAN_INFO_TEXT">%</p>
-                    </div>
-                    <div>
-                        <input class="BORDER_BLACK_1 W25 TXTFIELD CENTER FONT_CENTER" type="text" id="THRESHOLD_1" value=""/>
-                    </div>
+                <div class="ROW W100 FONT_CENTER">
+                    <input class="BORDER_BLACK_1 W25 TXTFIELD FONT_CENTER" type="text" id="THRESHOLD_1" value=""/>
+                    <span class="SCAN_INFO_TEXT_C">%</span>
                 </div>
                 <br/>
                 <div id="SET_THRESHOLD_BUTTON" class="BUTTON W40 OVERLAY_BUTTON" style="margin:0 auto;">SET INTENSITY THRESHOLD</div>
