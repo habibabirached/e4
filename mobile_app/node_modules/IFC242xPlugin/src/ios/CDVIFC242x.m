@@ -1878,6 +1878,8 @@ enum ifc242xValue {
     NSString* stg_med_clr = [NSString stringWithFormat:@"%f", self.stage_median_clearance];
     NSString* stg_clr_std = [NSString stringWithFormat:@"%f", self.stage_clearance_std];
     NSString* overall_avg = [NSString stringWithFormat:@"%f", self.overall_average];
+    NSString* intThresh = self.intensityThreshold == nil ? @"100" : self.intensityThreshold;
+    NSString* measRate = self.measurement_rate == nil ? @"1.0" : self.measurement_rate;
 
     NSDictionary* jsonDataDict = @{@"type":@"data",
                                    @"data":dispJSONString,
@@ -1893,7 +1895,9 @@ enum ifc242xValue {
                                    @"med_clr":stg_med_clr,
                                    @"std_clr":stg_clr_std,
                                    @"overall_avg":overall_avg,
-                                   @"date":dateStr
+                                   @"date":dateStr,
+                                   @"intensity_threshold":intThresh,
+                                   @"measurement_rate":measRate
                                    };
     [self returnPluginResponse:jsonDataDict keepOpen:NO];
     [self saveCSVFile:@""];

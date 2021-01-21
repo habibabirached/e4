@@ -34,9 +34,12 @@ define(function(require, exports, module) {
         this.std_clr = null;
         this.quality = null;
         this.state = null;
+        this.intensity_threshold = null;
+        this.measurement_rate = null;
+        this.dateStr = null;
     };
 
-    Data_Set.prototype.add_data = function(state, stage, position, case_thickness, blade_number, pts, used_in_avg, clearance, max_clr, min_clr, med_clr, std_clr, quality) {
+    Data_Set.prototype.add_data = function(state, stage, position, case_thickness, blade_number, pts, used_in_avg, clearance, max_clr, min_clr, med_clr, std_clr, quality, intensity_threshold, measurement_rate, dateStr) {
         this.stage = stage;
         this.position = position;
         this.case_thickness = case_thickness;
@@ -48,6 +51,9 @@ define(function(require, exports, module) {
         this.std_clr = std_clr;
         this.quality = quality;
         this.state = state;
+        this.intensity_threshold = intensity_threshold;
+        this.measurement_rate = measurement_rate;
+        this.dateStr = dateStr;
     };
 
     var E4PTdata = {
@@ -2423,6 +2429,9 @@ define(function(require, exports, module) {
         set.min_clr = E4PTdata.min_clr;
         set.med_clr = E4PTdata.med_clr;
         set.std_clr = E4PTdata.std_clr;
+        set.intensity_threshold = E4PTdata.intensity_threshold;
+        set.measurement_rate = E4PTdata.measurement_rate;
+        set.dateStr = E4PTdata.date
         addOrReplaceSet(set);
         if (doDBSave) {
           addDBEntry(E4PTdata); // save the data autmatically after acquisition
@@ -2451,6 +2460,9 @@ define(function(require, exports, module) {
         priorSet.min_clr = set.min_clr;
         priorSet.med_clr = set.med_clr;
         priorSet.std_clr = set.std_clr;
+        priorSet.intensity_threshold = set.intensity_threshold;
+        priorSet.measurement_rate = set.measurement_rate;
+        priorSet.dateStr = set.dateStr;
         console.log("priorSet after:  ", priorSet);
     }
 
@@ -3318,10 +3330,10 @@ define(function(require, exports, module) {
         return Object.keys(E4PTdata).every(function(key) {
             if (key === 'sets') {
                 return fileData.sets.every(function(entry) {
-                    return Object.keys(new Data_Set()).every((ds_key) => entry.hasOwnProperty(ds_key));
+                    return Object.keys(new Data_Set()).every((ds_key) => entry.hasOwnProperty(ds_key) || key === 'intensity_threshold' || key === 'measurement_rate' || key === 'dateStr');
                 });
             }
-            return fileData.hasOwnProperty(key);
+            return fileData.hasOwnProperty(key) || key === 'intensity_threshold' || key === 'measurement_rate';
         });
     }
     
