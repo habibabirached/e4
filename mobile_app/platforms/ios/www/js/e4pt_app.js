@@ -1876,14 +1876,14 @@ define(function(require, exports, module) {
             document.getElementById("MASTERING_VALUE").value = info.measured_mastering_value_mm.toFixed(4);
             document.getElementById("SMR").value = info.measured_start_measurment_range_mm.toFixed(4);
             updateMasteringOffset();
-            sensorSettings.updateMasteringValue();
+            updateMasteringValue();
         }
         
         if (sensorType === 'CUSTOM' || sensorType === 'PROTOTYPE') {
             enableMasteringValuesForEditing(true);
         } else {
             enableMasteringValuesForEditing(false);
-            sensorSettings.updateSensorParameters(
+            updateSensorParameters(
                 document.getElementById("MASTER_FIXTURE_HEIGHT").value,
                 document.getElementById("MASTERING_VALUE").value,
                 document.getElementById("MASTER_OFFSET").value,
