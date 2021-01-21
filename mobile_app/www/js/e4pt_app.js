@@ -2550,120 +2550,64 @@ define(function(require, exports, module) {
     }
 
     function plot_data() {
-      console.log("@e4pt_app::plot_data()");
-      let subtitle = E4PTdata.date + "; Avg. Tip Dist: " + E4PTdata.clearance;
-      subtitle = subtitle + "; ";
-      // compute difference, in inches, between average and mastering value.
-      let mastering_error = E4PTdata.overall_avg - sensorSettings.get('mastering_value');
-      let tol = sensorSettings.mastering_tolerance;
-      let sub_use_html = false;
-      if (Math.abs(mastering_error) > tol) {
-          subtitle = '<span style="color:#000000;">' + subtitle + '</span>' + '<span style="color:#ff0000;">Overall Avg: ' + E4PTdata.overall_avg + '</span>';
-          sub_use_html = true;
-      }
-      else {
-          subtitle = subtitle + "; Overall Avg: " + E4PTdata.overall_avg;
-      }
-      Highcharts.chart('DATA_PLOT', {
-        chart: {
-          renderTo: 'DATA_PLOT',
-          spacingBottom: 0,
-          spacingTop: 80,
-          spacingLeft: 80,
-          spacingRight: 80,
-          marginBottom: 100,
-          marginTop: 80,
-          marginLeft: 80,
-          marginRight: 80,
-          backgroundColor: 'white',
-          animation: false,
-          zoomType: 'xy',
-          panning: true,
-          panKey: 'shift',
-          //margin: 0,
-          padding: 0
-        },
-        boost: {
-          enabled: true,
-          //seriesThreshold: 1,
-          useGPUTranslations: true,
-          allowForce: true
-        },
-        title: {
-          text: 'e-4Pt Acquired Data'
-        },
-        style: {
-          fontFamily: 'Veranda'
-        },
-        subtitle: {
-          text: subtitle,
-          useHTML:sub_use_html
-        },
-        yAxis: {
-          title: {
-            text: 'Blade Gap'
-          },
-          labels: {
-            style: {
-            color: 'black',
-            fontSize: 10
-            }
-          }
-        },
-        xAxis: {
-          title: {
-            text: 'Index'
-                },
-          labels: {
-            style: {
-            color: 'black',
-            fontSize: 10
-            }
-          }
-        },
-        legend: {
-          enabled: 'false',
-        },
-        tooltip: {
-            enabled: true,
-            valueDecimals: 2
-        },
-        pane: {
-          startAngle: 0
-        },
-        plotOptions: {
-          series: {
-            label: { connectorAllowed: false },
-                pointStart: 0
-          }
-        },
-        series: [
-          {
-            type: 'line',
-            name: 'Sensor Data',
-            data: E4PTdata.data
-            //data: E4PTdata.sets[E4PTdata.sets.length-1].pts
-          },
-          {
-            type: 'scatter',
-            name: 'Clearance Minima',
-            data: E4PTdata.minima
-          }
-        ],
-        responsive: {
-          rules: [{
-            condition: { maxWidth: 1000 }
-          }]
-        }
-      });
+      let chartConfig = createHighchartConfig(E4PTdata.data, E4PTdata.minima);
+      chartConfig.chart.backgroundColor = 'white';
+      chartConfig.chart.panning = true;
+      chartConfig.chart.panKey = 'shift';
+      chartConfig.chart.zoomType = 'xy';
+      chartConfig.subtitle.text = createChartSubtitle(E4PTdata.date, E4PTdata.clearance, E4PTdata.measurement_rate, E4PTdata.intensity_threshold, E4PTdata.overall_avg);
+      renderChart(chartConfig, 'DATA_PLOT');
     }
 
     function plot_data_2() {
-      console.log("@e4pt_app::plot_data_2()");
-      let subtitle = E4PTdata.date + "; Avg. Tip Dist: " + E4PTdata.clearance;
-      Highcharts.chart('DATA_PLOT2', {
+      let chartConfig = createHighchartConfig(E4PTdata.data, E4PTdata.minima);
+      chartConfig.tooltip.enabled = false;
+      chartConfig.series[0].name = 'Filtered ' + chartConfig.series[0].name;
+      chartConfig.subtitle.text = createChartSubtitle(E4PTdata.date, E4PTdata.clearance, E4PTdata.measurement_rate, E4PTdata.intensity_threshold);
+      renderChart(chartConfig, 'DATA_PLOT2');
+    }
+    
+    function renderChart(chartConfig, target) {
+      let html = createSavedChartHTML(chartConfig);
+      let filename = createSavedChartFilename();
+      let chart = Highcharts.chart(target, chartConfig);
+      chart.renderer.button('Save',chart.plotWidth-10,50,function(){
+            writeToFile(filename.substring(0,filename.indexOf('_')), filename, html);
+            this.attr({text: 'Saved'});
+            this.setState(3);
+      },{fill:'black',style:{color:'white'}},{},{},{fill:'gray',style:{color:'black'}}).add();
+    }
+    
+    function createSavedChartFilename() {
+      let filename = E4PTdata.date.substring(2).replace(/\s+/g, '_').replace(/:/g, '-') + '_mm.html';
+      if (current_frame_data['position'] != null) {
+          return E4PTdata.serial_number + '_' + current_stage + '_' + current_position.substring(0,1) + '_' + filename;
+      }
+      return 'data_' + filename;
+    }
+        
+    function createSavedChartHTML(chartConfig) {
+      return "<html><head><script src='https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js'></script><script src='https://code.highcharts.com/highcharts.js'></script></head><body><div style='width:100%'></div><script>$(function () {$('div').highcharts(" + JSON.stringify(chartConfig) + ");});</script></body></html>";
+    }
+    
+    function createChartSubtitle(acquisition_date, overall_clearance, measurement_rate, intensity_threshold, avg_displacement) {
+        
+      let subtitle = acquisition_date + '; Avg. Tip Dist: ' + overall_clearance;
+      if (avg_displacement) {
+        if (sensorSettings.doesMeasurementExceedTolerance(avg_displacement)) {
+            subtitle = '<span class="FONT_BLACK">' + subtitle + '; </span>' + '<span class="FONT_RED">Overall Avg: ' + avg_displacement + '</span>';
+        }
+        else {
+            subtitle += "; Overall Avg: " + avg_displacement;
+        }
+      }
+        
+      return '<span class="COL_FL FONT_TRANSPARENT">Intensity Threshold: 100%</span><span class="COL_FR"><p>Measurement Rate: ' + measurement_rate + 'kHz</p><p>Intensity Threshold: ' + intensity_threshold + '%</p></span><span>' + subtitle + '</span>';
+    }
+    
+    function createHighchartConfig(displacementsArray, clearancesArray) {
+      return {
         chart: {
-          renderTo: 'DATA_PLOT2',
           spacingBottom: 0,
           spacingTop: 80,
           spacingLeft: 80,
@@ -2674,83 +2618,63 @@ define(function(require, exports, module) {
           marginRight: 80,
           backgroundColor: 'transparent',
           animation: false,
-          //zoomType: "x",
-          //margin: 0,
           padding: 0
         },
         boost: {
           enabled: true,
-          //seriesThreshold: 1,
           useGPUTranslations: true,
           allowForce: true
         },
-        title: {
-          text: 'e-4Pt Acquired Data'
-        },
-        style: {
-          fontFamily: 'Veranda'
-        },
-        subtitle: {
-          text: subtitle
-        },
+        title: { text: 'e-4Pt Acquired Data' },
+        style: { fontFamily: 'Veranda' },
+        subtitle: { useHTML: true },
         yAxis: {
           title: {
             text: 'Blade Gap'
           },
           labels: {
             style: {
-            color: 'black',
-            fontSize: 10
+              color: 'black',
+              fontSize: 10
             }
           }
         },
         xAxis: {
           title: {
             text: 'Index'
-                },
+          },
           labels: {
             style: {
-            color: 'black',
-            fontSize: 10
+              color: 'black',
+              fontSize: 10
             }
           }
         },
-        legend: {
-          enabled: 'false',
-        },
-        tooltip: {
-          enabled: false
-        },
-        pane: {
-          startAngle: 0
-        },
+        legend: { enabled: false },
+        tooltip: { enabled: true, valueDecimals: 2 },
+        pane: { startAngle: 0 },
         plotOptions: {
           series: {
             label: { connectorAllowed: false },
-                pointStart: 0
+            pointStart: 0
           }
         },
         series: [
           {
             type: 'line',
-            name: 'Filtered Sensor Data',
-            data: E4PTdata.data
-            //data: E4PTdata.sets[E4PTdata.sets.length-1].pts
+            name: 'Sensor Data',
+            data: displacementsArray
           },
           {
             type: 'scatter',
             name: 'Clearance Minima',
-            data: E4PTdata.minima
+            data: clearancesArray
           }
         ],
         responsive: {
-          rules: [{
-            condition: { maxWidth: 1000 }
-          }]
+          rules: [ { condition: { maxWidth: 1000 } } ]
         }
-      });
-      
-      //writeToFile(E4PTdata.serial_number, "plot.html", document.getElementById("DATA_PLOT2").innerHTML, null);
+      };
     }
 
     function plot_clearances(clearance_data) {

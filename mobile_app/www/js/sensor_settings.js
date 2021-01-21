@@ -40,6 +40,10 @@ define(function(require, exports, module) {
     const getSensorType = (sensorType) => {
         return {...sensor_types[sensorType]};
     }
+    
+    const doesMeasurementExceedTolerance = (measurement) => {
+        return Math.round(Math.abs(measurement - get('mastering_value'))*10000)/10000 > mastering_tolerance;
+    }
 
     const saveValuesForSensorType = () => {
         if (sensor_data.sensor_selection === 'CUSTOM') {
@@ -108,12 +112,12 @@ define(function(require, exports, module) {
     }
         
     module.exports = {
-        mastering_tolerance: mastering_tolerance,
         toMMs: toMMs,
         toInches: toInches,
         get: get,
         set: set,
         getSensorType: getSensorType,
+        doesMeasurementExceedTolerance: doesMeasurementExceedTolerance,
         saveValuesForSensorType: saveValuesForSensorType,
         calculateMasteringOffsetInches: calculateMasteringOffsetInches,
         calculateMasteringValueMM: calculateMasteringValueMM,
