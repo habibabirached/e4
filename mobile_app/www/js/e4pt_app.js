@@ -358,6 +358,7 @@ define(function(require, exports, module) {
             enableMasteringValuesForEditing(true);
         }, {passive: true});
         document.getElementById("SMR").addEventListener('change', function(){
+            updateMasteringValue();
             updateMasteringOffset();
             enableMasteringValuesForEditing(true);
         }, {passive: true});
@@ -1856,10 +1857,10 @@ define(function(require, exports, module) {
         if (info && info.measured_mastering_fixture_height_mm) {
             document.getElementById("SENSOR_LENGTH").value = sensorSettings.toInches(info.measured_length_mm).toFixed(4);
             document.getElementById("MASTER_FIXTURE_HEIGHT").value = sensorSettings.toInches(info.measured_mastering_fixture_height_mm).toFixed(4);
-            document.getElementById("MASTERING_VALUE").value = info.measured_mastering_value_mm.toFixed(4);
+            //document.getElementById("MASTERING_VALUE").value = info.measured_mastering_value_mm.toFixed(4);
             document.getElementById("SMR").value = info.measured_start_measurment_range_mm.toFixed(4);
-            updateMasteringOffset();
             updateMasteringValue();
+            updateMasteringOffset();
         }
         
         if (sensorType === 'CUSTOM' || sensorType === 'PROTOTYPE') {
@@ -1888,15 +1889,16 @@ define(function(require, exports, module) {
         document.getElementById("MASTER_OFFSET").value = sensorSettings.calculateMasteringOffsetInches(
                             parseFloat(document.getElementById("SENSOR_LENGTH").value),
                             parseFloat(document.getElementById("MASTER_FIXTURE_HEIGHT").value),
-                            sensorSettings.toInches(parseFloat(document.getElementById("MASTERING_VALUE").value)),
-                            sensorSettings.toInches(parseFloat(document.getElementById("SMR").value)))
+                            parseFloat(document.getElementById("MASTERING_VALUE").value),
+                            parseFloat(document.getElementById("SMR").value))
         .toFixed(4);
     }
     
     function updateMasteringValue() {
         document.getElementById("MASTERING_VALUE").value = sensorSettings.calculateMasteringValueMM(
                             parseFloat(document.getElementById("SENSOR_LENGTH").value),
-                            parseFloat(document.getElementById("MASTER_FIXTURE_HEIGHT").value))
+                            parseFloat(document.getElementById("MASTER_FIXTURE_HEIGHT").value),
+                            parseFloat(document.getElementById("SMR").value))
         .toFixed(4);
     }
 
@@ -2247,6 +2249,8 @@ define(function(require, exports, module) {
       try {
         update_scan_info(); // currently does nothing
         parse_data();
+        document.getElementById('MEASUREMENT_RATE_1').value = E4PTdata.measurement_rate;
+        document.getElementById('THRESHOLD_1').value = E4PTdata.intensity_threshold;
         if (current_frame_data['position'] != null) {
           plot_calibrated_acquire();
         } else {

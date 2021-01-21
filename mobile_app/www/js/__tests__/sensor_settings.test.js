@@ -19,11 +19,11 @@ test('converts millimeters to inches', () => {
 });
 
 test('calculates mastering offset', () => {
-  expect(sensorSettings.calculateMasteringOffsetInches(9.5, 11.9, 0.2, 2.3)).toBeCloseTo(0.1, 2);
+  expect(sensorSettings.calculateMasteringOffsetInches(8.825, 9.463, 4.265, 11.94)).toBeCloseTo(0, 4);
 });
 
 test('calculates mastering value', () => {
-  expect(sensorSettings.calculateMasteringValueMM(9.5, 11.9)).toBeCloseTo(60.96, 3);
+  expect(sensorSettings.calculateMasteringValueMM(8.825, 9.463, 11.94)).toBeCloseTo(4.265, 3);
 });
 
 test('determines if measurment is within tolerance', () => {
