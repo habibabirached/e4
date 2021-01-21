@@ -54,12 +54,12 @@ define(function(require, exports, module) {
         }
     }
                                                   
-    const calculateMasteringOffsetInches = (length, height, masteringValue, smr) => {
-        return (length + (smr + masteringValue)) - height;
+    const calculateMasteringOffsetInches = (lengthIn, heightIn, masteringValueMM, smrMM) => {
+        return (lengthIn + toInches(smrMM + masteringValueMM)) - heightIn;
     }
     
-    const calculateMasteringValueMM = (length, height) => {
-        return toMMs(height - length);
+    const calculateMasteringValueMM = (lengthIn, heightIn, smrMM) => {
+        return toMMs(heightIn - lengthIn) - smrMM;
     }
                                            
     const sensorParamsHaveBeenEdited = () => {
@@ -85,7 +85,8 @@ define(function(require, exports, module) {
         return !almostEqual(sensor_data.mastering_value,
                             calculateMasteringValueMM(
                                 sensor_data.sensor_length,
-                                sensor_data.master_fixture_height),
+                                sensor_data.master_fixture_height,
+                                sensor_data.start_measurement_range),
                             0.0001);
     }
                             
@@ -94,8 +95,8 @@ define(function(require, exports, module) {
                             calculateMasteringOffsetInches(
                                 sensor_data.sensor_length,
                                 sensor_data.master_fixture_height,
-                                toInches(sensor_data.mastering_value),
-                                toInches(sensor_data.start_measurement_range)),
+                                sensor_data.mastering_value,
+                                sensor_data.start_measurement_range),
                             0.0005);
     }
                             

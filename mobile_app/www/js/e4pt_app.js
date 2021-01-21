@@ -1,6 +1,7 @@
 define(function(require, exports, module) {
     const messaging = require('./messaging');
     const sensorSettings = require('./sensor_settings');
+    const charting = require('./charting');
 
     var menu_open = false;
     var e4pt = null;
@@ -357,6 +358,7 @@ define(function(require, exports, module) {
             enableMasteringValuesForEditing(true);
         }, {passive: true});
         document.getElementById("SMR").addEventListener('change', function(){
+            updateMasteringValue();
             updateMasteringOffset();
             enableMasteringValuesForEditing(true);
         }, {passive: true});
@@ -1050,25 +1052,7 @@ define(function(require, exports, module) {
         document.getElementById("SPACER_COLOR_LABEL").innerHTML = "";
         savedRPM = "";
         setup_data_collection_page("", "", true);
-        var obj = document.getElementById("DATA_PLOT2");
-        var chart = Highcharts.charts[obj.getAttribute('data-highcharts-chart')];
-        if (typeof chart !== 'undefined') {
-          if (chart.series != null) {
-            while(chart.series.length > 0)
-              chart.series[0].remove(true);
-          }
-        }
-        // Don't make the polar (clearance) plot for now.
-        /*
-        obj = document.getElementById("CLEARANCE_PLOT");
-        var chart2 = Highcharts.charts[obj.getAttribute('data-highcharts-chart')];
-        if (typeof chart2 !== 'undefined') {
-          if (chart2.series != null) {
-            while(chart2.series.length > 0)
-              chart2.series[0].remove(true);
-          }
-        }
-        */
+        charting.clearChartData(document.getElementById("DATA_PLOT2"));
     }
 
     function b64toBlob(b64Data, contentType, sliceSize) {
@@ -1873,10 +1857,10 @@ define(function(require, exports, module) {
         if (info && info.measured_mastering_fixture_height_mm) {
             document.getElementById("SENSOR_LENGTH").value = sensorSettings.toInches(info.measured_length_mm).toFixed(4);
             document.getElementById("MASTER_FIXTURE_HEIGHT").value = sensorSettings.toInches(info.measured_mastering_fixture_height_mm).toFixed(4);
-            document.getElementById("MASTERING_VALUE").value = info.measured_mastering_value_mm.toFixed(4);
+            //document.getElementById("MASTERING_VALUE").value = info.measured_mastering_value_mm.toFixed(4);
             document.getElementById("SMR").value = info.measured_start_measurment_range_mm.toFixed(4);
-            updateMasteringOffset();
             updateMasteringValue();
+            updateMasteringOffset();
         }
         
         if (sensorType === 'CUSTOM' || sensorType === 'PROTOTYPE') {
@@ -1905,15 +1889,16 @@ define(function(require, exports, module) {
         document.getElementById("MASTER_OFFSET").value = sensorSettings.calculateMasteringOffsetInches(
                             parseFloat(document.getElementById("SENSOR_LENGTH").value),
                             parseFloat(document.getElementById("MASTER_FIXTURE_HEIGHT").value),
-                            sensorSettings.toInches(parseFloat(document.getElementById("MASTERING_VALUE").value)),
-                            sensorSettings.toInches(parseFloat(document.getElementById("SMR").value)))
+                            parseFloat(document.getElementById("MASTERING_VALUE").value),
+                            parseFloat(document.getElementById("SMR").value))
         .toFixed(4);
     }
     
     function updateMasteringValue() {
         document.getElementById("MASTERING_VALUE").value = sensorSettings.calculateMasteringValueMM(
                             parseFloat(document.getElementById("SENSOR_LENGTH").value),
-                            parseFloat(document.getElementById("MASTER_FIXTURE_HEIGHT").value))
+                            parseFloat(document.getElementById("MASTER_FIXTURE_HEIGHT").value),
+                            parseFloat(document.getElementById("SMR").value))
         .toFixed(4);
     }
 
@@ -2260,14 +2245,16 @@ define(function(require, exports, module) {
       } catch (err) {
         console.log(err);
       }
-      dataSet = E4PTdata.sets.length;
 
       try {
         update_scan_info(); // currently does nothing
         parse_data();
-        plot_data();
+        document.getElementById('MEASUREMENT_RATE_1').value = E4PTdata.measurement_rate;
+        document.getElementById('THRESHOLD_1').value = E4PTdata.intensity_threshold;
         if (current_frame_data['position'] != null) {
-          plot_data_2();
+          plot_calibrated_acquire();
+        } else {
+          plot_non_calibrated_acquire();
         }
         advance_position();
       } catch (error) {
@@ -2277,22 +2264,8 @@ define(function(require, exports, module) {
 
     function requestE4PtData(acquisitionTime) {
       console.log("Requesting " + acquisitionTime + " seconds of data");
-      var obj1 = document.getElementById("DATA_PLOT");
-      var chart1 = Highcharts.charts[obj1.getAttribute('data-highcharts-chart')];
-      var obj2 = document.getElementById("DATA_PLOT2");
-      var chart2 = Highcharts.charts[obj2.getAttribute('data-highcharts-chart')];
-      if (typeof chart1 !== 'undefined') {
-        if (chart1.series != null) {
-          while(chart1.series.length > 0)
-            chart1.series[0].remove(true);
-        }
-      }
-      if (typeof chart2 !== 'undefined') {
-        if (chart2.series != null) {
-          while(chart2.series.length > 0)
-            chart2.series[0].remove(true);
-        }
-      }
+      charting.clearChartData(document.getElementById("DATA_PLOT"));
+      charting.clearChartData(document.getElementById("DATA_PLOT2"));
         
         $("#STATUS_BAR").hide();
         $("#REV_PROGRESS_BAR").show();
@@ -2545,235 +2518,28 @@ define(function(require, exports, module) {
                 clearances.push(c_f);
             }
         }
-        // Don't plot clearances on the polar plot for now.
-        // plot_clearances(clearances);
     }
 
-    function plot_data() {
-      let chartConfig = createHighchartConfig(E4PTdata.data, E4PTdata.minima);
+    function plot_non_calibrated_acquire() {
+      let chartConfig = charting.createChartConfig(E4PTdata.data, E4PTdata.minima);
       chartConfig.chart.backgroundColor = 'white';
       chartConfig.chart.panning = true;
       chartConfig.chart.panKey = 'shift';
       chartConfig.chart.zoomType = 'xy';
-      chartConfig.subtitle.text = createChartSubtitle(E4PTdata.date, E4PTdata.clearance, E4PTdata.measurement_rate, E4PTdata.intensity_threshold, E4PTdata.overall_avg);
-      renderChart(chartConfig, 'DATA_PLOT');
+      charting.addChartSubtitle(chartConfig, E4PTdata.date, E4PTdata.clearance, E4PTdata.overall_avg);
+      charting.displayIntensityThresholdAndMeasurementRate(chartConfig, E4PTdata.measurement_rate, E4PTdata.intensity_threshold);
+      let chartFilename = charting.createSavedChartFilename(E4PTdata.date.substring(2));
+      charting.renderChart(chartConfig, 'DATA_PLOT', chartFilename, writeToFile);
     }
 
-    function plot_data_2() {
-      let chartConfig = createHighchartConfig(E4PTdata.data, E4PTdata.minima);
+    function plot_calibrated_acquire() {
+      let chartConfig = charting.createChartConfig(E4PTdata.data, E4PTdata.minima);
       chartConfig.tooltip.enabled = false;
       chartConfig.series[0].name = 'Filtered ' + chartConfig.series[0].name;
-      chartConfig.subtitle.text = createChartSubtitle(E4PTdata.date, E4PTdata.clearance, E4PTdata.measurement_rate, E4PTdata.intensity_threshold);
-      renderChart(chartConfig, 'DATA_PLOT2');
-    }
-    
-    function renderChart(chartConfig, target) {
-      let html = createSavedChartHTML(chartConfig);
-      let filename = createSavedChartFilename();
-      let chart = Highcharts.chart(target, chartConfig);
-      chart.renderer.button('Save',chart.plotWidth-10,50,function(){
-            writeToFile(filename.substring(0,filename.indexOf('_')), filename, html);
-            this.attr({text: 'Saved'});
-            this.setState(3);
-      },{fill:'black',style:{color:'white'}},{},{},{fill:'gray',style:{color:'black'}}).add();
-    }
-    
-    function createSavedChartFilename() {
-      let filename = E4PTdata.date.substring(2).replace(/\s+/g, '_').replace(/:/g, '-') + '_mm.html';
-      if (current_frame_data['position'] != null) {
-          return E4PTdata.serial_number + '_' + current_stage + '_' + current_position.substring(0,1) + '_' + filename;
-      }
-      return 'data_' + filename;
-    }
-        
-    function createSavedChartHTML(chartConfig) {
-      return "<html><head><script src='https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js'></script><script src='https://code.highcharts.com/highcharts.js'></script></head><body><div style='width:100%'></div><script>$(function () {$('div').highcharts(" + JSON.stringify(chartConfig) + ");});</script></body></html>";
-    }
-    
-    function createChartSubtitle(acquisition_date, overall_clearance, measurement_rate, intensity_threshold, avg_displacement) {
-        
-      let subtitle = acquisition_date + '; Avg. Tip Dist: ' + overall_clearance;
-      if (avg_displacement) {
-        if (sensorSettings.doesMeasurementExceedTolerance(avg_displacement)) {
-            subtitle = '<span class="FONT_BLACK">' + subtitle + '; </span>' + '<span class="FONT_RED">Overall Avg: ' + avg_displacement + '</span>';
-        }
-        else {
-            subtitle += "; Overall Avg: " + avg_displacement;
-        }
-      }
-        
-      return '<span class="COL_FL FONT_TRANSPARENT">Intensity Threshold: 100%</span><span class="COL_FR"><p>Measurement Rate: ' + measurement_rate + 'kHz</p><p>Intensity Threshold: ' + intensity_threshold + '%</p></span><span>' + subtitle + '</span>';
-    }
-    
-    function createHighchartConfig(displacementsArray, clearancesArray) {
-      return {
-        chart: {
-          spacingBottom: 0,
-          spacingTop: 80,
-          spacingLeft: 80,
-          spacingRight: 80,
-          marginBottom: 100,
-          marginTop: 80,
-          marginLeft: 80,
-          marginRight: 80,
-          backgroundColor: 'transparent',
-          animation: false,
-          padding: 0
-        },
-        boost: {
-          enabled: true,
-          useGPUTranslations: true,
-          allowForce: true
-        },
-        title: { text: 'e-4Pt Acquired Data' },
-        style: { fontFamily: 'Veranda' },
-        subtitle: { useHTML: true },
-        yAxis: {
-          title: {
-            text: 'Blade Gap'
-          },
-          labels: {
-            style: {
-              color: 'black',
-              fontSize: 10
-            }
-          }
-        },
-        xAxis: {
-          title: {
-            text: 'Index'
-          },
-          labels: {
-            style: {
-              color: 'black',
-              fontSize: 10
-            }
-          }
-        },
-        legend: { enabled: false },
-        tooltip: { enabled: true, valueDecimals: 2 },
-        pane: { startAngle: 0 },
-        plotOptions: {
-          series: {
-            label: { connectorAllowed: false },
-            pointStart: 0
-          }
-        },
-        series: [
-          {
-            type: 'line',
-            name: 'Sensor Data',
-            data: displacementsArray
-          },
-          {
-            type: 'scatter',
-            name: 'Clearance Minima',
-            data: clearancesArray
-          }
-        ],
-        responsive: {
-          rules: [ { condition: { maxWidth: 1000 } } ]
-        }
-      };
-    }
-
-    function plot_clearances(clearance_data) {
-      console.log("@e4pt_app::plot_clearances()");
-      var pt_interval = 360.0/clearance_data.length;
-      Highcharts.chart('CLEARANCE_PLOT', {
-        chart: {
-          renderTo: 'CLEARANCE_PLOT',
-          spacingBottom: 0,
-          spacingTop: 80,
-          spacingLeft: 80,
-          spacingRight: 80,
-          marginBottom: 100,
-          marginTop: 80,
-          marginLeft: 80,
-          marginRight: 80,
-          backgroundColor: 'transparent',
-          animation: false,
-          //zoomType: "x",
-          //margin: 0,
-          padding: 0,
-          polar: true
-        },
-        boost: {
-          enabled: true,
-          //seriesThreshold: 1,
-          useGPUTranslations: true,
-          allowForce: true
-        },
-        title: {
-          text: 'e-4Pt Clearance Data'
-        },
-        style: {
-          fontFamily: 'Veranda'
-        },
-        subtitle: {
-          text: E4PTdata.date
-        },
-        yAxis: {
-          min: 0,
-          title: {
-            text: 'Clearance'
-          },
-          labels: {
-            style: {
-            color: 'black',
-            fontSize: 10
-            }
-          }
-        },
-          xAxis: {
-          tickInterval: pt_interval,
-          min: 0,
-          max: 360,
-          title: {
-            text: 'Position'
-                },
-          labels: {
-            style: {
-            color: 'black',
-            fontSize: 10
-            },
-            format: '{value}°'
-          }
-        },
-        legend: {
-          enabled: 'false',
-        },
-        tooltip: {
-          enabled: false
-        },
-        pane: {
-          startAngle: 0,
-          endAngle: 360
-        },
-        plotOptions: {
-          series: {
-            label: { connectorAllowed: false },
-              pointStart: 0,
-              pointInterval: pt_interval
-          },
-          column: {
-              pointPadding: 0,
-              groupPadding: 0
-          }
-        },
-        series: [
-          {
-            type: 'line',
-            name: 'Clearances',
-            data: clearance_data
-          },
-        ],
-        responsive: {
-          rules: [{
-            condition: { maxWidth: 1000 }
-          }]
-        }
-      });
+      charting.addChartSubtitle(chartConfig, E4PTdata.date, E4PTdata.clearance);
+      charting.displayIntensityThresholdAndMeasurementRate(chartConfig, E4PTdata.measurement_rate, E4PTdata.intensity_threshold);
+      let chartFilename = charting.createSavedChartFilename(E4PTdata.date.substring(2), E4PTdata.serial_number, current_stage, current_position.substring(0,1));
+      charting.renderChart(chartConfig, 'DATA_PLOT2', chartFilename, writeToFile);
     }
 
     function loadExternalFile(dir, filename){

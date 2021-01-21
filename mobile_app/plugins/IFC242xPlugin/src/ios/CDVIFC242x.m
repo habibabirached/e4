@@ -2011,8 +2011,12 @@ enum ifc242xValue {
     [self.blade_clearances removeAllObjects];
     [self.clearance_quality removeAllObjects];
     self.overall_average = 0.0;
+    int overall_count = 0;
     for (i=0; i<self.displacements.count; i++) {
-        self.overall_average += [[self.displacements objectAtIndex:i] floatValue];
+        if ([self.displacements[i] floatValue] < OUT_OF_RANGE) {
+            self.overall_average += [self.displacements[i] floatValue];
+            overall_count++;
+        }
         if (neg_crossing[i]) {
             // We've encountered a negative zero-crossing
             // so sum displacements to the next positive zero-crossing.
@@ -2074,7 +2078,7 @@ enum ifc242xValue {
                     clearance = -9.996;
                 }
                 else {
-                    clearance = clearance / count; // Average clearance for this blade.
+                    clearance /= count; // Average clearance for this blade.
                 }
                 if (isnan(clearance)) {
                     clearance = -9.995;  // nan has happened before.
@@ -2126,7 +2130,7 @@ enum ifc242xValue {
         }
     }
     // Finish computing the overall average.
-    self.overall_average = (float)self.overall_average / (float)self.displacements.count;
+    self.overall_average = (float)self.overall_average / (float)overall_count;
         
     // Now iterate over the filtered values and calibrate them to arrive at actual clearance values.
     // Calibrate the filtered values
