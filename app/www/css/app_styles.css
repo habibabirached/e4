@@ -238,6 +238,7 @@ font-weight: bold;
 .FONT_GREEN{color: var(--TRACC-green)}
 .FONT_RED{color: var(--TRACC-red)}
 .FONT_ORANGE{color: rgb(255, 196, 0)}
+.FONT_TRANSPARENT{color: rgba(0, 0, 0, 0)}
 
 .COLOR_WHITE{background-color:rgba(255, 255, 255, 1)}
 .COLOR_T_DARKGREY{background-color:var(--TRACC-darkgrey)}
@@ -1243,6 +1244,11 @@ figure figcaption {
     transform: scale(2.5, 2.5);
     opacity: 0;
   }
+}
+
+.highcharts-subtitle {
+    text-align: center;
+    width: 100%;
 }
 
 

@@ -10,10 +10,6 @@ beforeEach(() => {
   sensorSettings.set('master_offset', 0);
 });
 
-test('mastering tolerance is 0.003 inches', () => {
-  expect(sensorSettings.mastering_tolerance).toBeCloseTo(0.003 * 25.4, 5);
-});
-
 test('converts inches to millimeters', () => {
   expect(sensorSettings.toMMs(1)).toBeCloseTo(25.4, 2);
 });
@@ -28,6 +24,18 @@ test('calculates mastering offset', () => {
 
 test('calculates mastering value', () => {
   expect(sensorSettings.calculateMasteringValueMM(9.5, 11.9)).toBeCloseTo(60.96, 3);
+});
+
+test('determines if measurment is within tolerance', () => {
+  expect(sensorSettings.doesMeasurementExceedTolerance(0.07624)).toBeFalsy();
+  expect(sensorSettings.doesMeasurementExceedTolerance(-0.07624)).toBeFalsy();
+  expect(sensorSettings.doesMeasurementExceedTolerance(0.07625)).toBeTruthy();
+  expect(sensorSettings.doesMeasurementExceedTolerance(-0.07625)).toBeTruthy();
+  sensorSettings.set('mastering_value', 5);
+  expect(sensorSettings.doesMeasurementExceedTolerance(5.07624)).toBeFalsy();
+  expect(sensorSettings.doesMeasurementExceedTolerance(4.92376)).toBeFalsy();
+  expect(sensorSettings.doesMeasurementExceedTolerance(5.0762501)).toBeTruthy();
+  expect(sensorSettings.doesMeasurementExceedTolerance(4.9237499)).toBeTruthy();
 });
 
 test('parametersHaveBeenEdited returns true for CUSTOM', () => {
