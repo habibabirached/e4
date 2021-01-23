@@ -39,7 +39,66 @@ test('determines if measurment is within tolerance', () => {
 });
 
 test('parametersHaveBeenEdited returns true for CUSTOM', () => {
-  expect(sensorSettings.sensorParamsHaveBeenEdited('CUSTOM')).toBeTruthy();
+  sensorSettings.set('sensor_selection', 'CUSTOM');
+  expect(sensorSettings.sensorParamsHaveBeenEdited()).toBeTruthy();
+});
+
+test('*BeenEdited returns false when no sensor has been selected yet', () => {
+  expect(sensorSettings.sensorParamsHaveBeenEdited()).toBeFalsy();
+  expect(sensorSettings.sensorLengthHasBeenEdited()).toBeFalsy();
+  expect(sensorSettings.smrHasBeenEdited()).toBeFalsy();
+  expect(sensorSettings.mfhHasBeenEdited()).toBeFalsy();
+  expect(sensorSettings.mvHasBeenEdited()).toBeFalsy();
+  expect(sensorSettings.moHasBeenEdited()).toBeFalsy();
+});
+
+test('*BeenEdited returns false if value is close to type definition value', () => {
+  sensorSettings.set('sensor_selection', 'LONG');
+  sensorSettings.set('sensor_length', 8.8258);
+  sensorSettings.set('start_measurement_range', 11.94009);
+  sensorSettings.set('master_fixture_height', 9.4635);
+  sensorSettings.set('mastering_value', 4.2574);
+  sensorSettings.set('master_offset', -0.0005);
+    
+  expect(sensorSettings.sensorParamsHaveBeenEdited()).toBeFalsy();
+  expect(sensorSettings.sensorLengthHasBeenEdited()).toBeFalsy();
+  expect(sensorSettings.smrHasBeenEdited()).toBeFalsy();
+  expect(sensorSettings.mfhHasBeenEdited()).toBeFalsy();
+  expect(sensorSettings.mvHasBeenEdited()).toBeFalsy();
+  expect(sensorSettings.moHasBeenEdited()).toBeFalsy();
+});
+
+test('*BeenEdited returns true if value is not close to type definition value', () => {
+  sensorSettings.set('sensor_selection', 'LONG');
+  sensorSettings.set('sensor_length', 8.825);
+  sensorSettings.set('start_measurement_range', 11.94);
+  sensorSettings.set('master_fixture_height', 9.463);
+  sensorSettings.set('mastering_value', 4.2652);
+  sensorSettings.set('master_offset', 0);
+    
+  sensorSettings.set('sensor_length', 8.8259);
+  expect(sensorSettings.sensorParamsHaveBeenEdited()).toBeTruthy();
+  expect(sensorSettings.sensorLengthHasBeenEdited()).toBeTruthy();
+    
+  sensorSettings.set('sensor_length', 8.825);
+  sensorSettings.set('start_measurement_range', 11.94011);
+  expect(sensorSettings.sensorParamsHaveBeenEdited()).toBeTruthy();
+  expect(sensorSettings.smrHasBeenEdited()).toBeTruthy();
+    
+  sensorSettings.set('start_measurement_range', 11.94);
+  sensorSettings.set('master_fixture_height', 9.4636);
+  expect(sensorSettings.sensorParamsHaveBeenEdited()).toBeTruthy();
+  expect(sensorSettings.mfhHasBeenEdited()).toBeTruthy();
+    
+  sensorSettings.set('master_fixture_height', 9.463);
+  sensorSettings.set('mastering_value', 4.265);
+  expect(sensorSettings.sensorParamsHaveBeenEdited()).toBeTruthy();
+  expect(sensorSettings.mvHasBeenEdited()).toBeTruthy();
+    
+  sensorSettings.set('mastering_value', 4.2652);
+  sensorSettings.set('master_offset', 0.0005);
+  expect(sensorSettings.sensorParamsHaveBeenEdited()).toBeTruthy();
+  expect(sensorSettings.moHasBeenEdited()).toBeTruthy();
 });
 
 test('saves type settings for CUSTOM type', () => {

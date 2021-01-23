@@ -411,8 +411,8 @@ define(function(require, exports, module) {
             dirEntry.createReader().readEntries(function(entries) {
                 entries.forEach(function(entry) {
                     if (entry.isFile && entry.name.endsWith(".json"))
-                        this.loadJSONFile(entry);
-                }, this);
+                        this(entry);
+                }, loadJSONFile);
             });
         });
     }
@@ -2172,13 +2172,9 @@ define(function(require, exports, module) {
         let targetFolder = "data"; // default directory
         let fileName = "details_e4pt.csv";
         if ((typeof E4PTdata.serial_number !== 'undefined') || ( E4PTdata.serial_number.length > 0 )) {
-            let sn = E4PTdata.serial_number;
-            sn = sn.replace(/\s+/g, '_');
-            sn = sn.replace(/:/g, '-');
-            targetFolder = E4PTdata.serial_number;
-            let fileDate = E4PTdata.date;
-            fileDate = fileDate.replace(/\s+/g, '_');
-            fileDate = fileDate.replace(/:/g, '-');
+            let sn = E4PTdata.serial_number.replace(/\s+/g, '_').replace(/:/g, '-');
+            targetFolder = sn;
+            let fileDate = E4PTdata.date.replace(/\s+/g, '_').replace(/:/g, '-');
             fileName = "details_e4pt_" + sn + "_" + fileDate + ".csv";
         }
         writeToFile(targetFolder, fileName, contents, null);
@@ -2562,15 +2558,16 @@ define(function(require, exports, module) {
                 var data = JSON.parse(this.result);
                 if (json_data_is_valid(data)) {
                     data.pouchdb_id = "";
-                    addDBEntry(data);
-                    fadeOutAll();
-                    set_frame_information();
-                    initializeFromDocument(data);
                     
                     window.resolveLocalFileSystemURL(cordova.file.documentsDirectory, function (dirEntry) {
                         dirEntry.getDirectory(data.serial_number, {create: true}, function(subDirEntry) {
                             
+                            addDBEntry(data);
                             fileEntry.moveTo(subDirEntry, file.name);
+                            
+                            fadeOutAll();
+                            set_frame_information();
+                            initializeFromDocument(data);
                             writeDetailsFile();
                             
                         }, function(error) {
@@ -2913,7 +2910,11 @@ define(function(require, exports, module) {
     }
 
     function initializeFromDocument(doc) {
-        E4PTdata.pouchdb_id = doc._id;
+        if (doc._id)
+            E4PTdata.pouchdb_id = doc._id;
+        else if (doc.pouchdb_id)
+            E4PTdata.pouchdb_id = doc.pouchdb_id;
+            
         var frm_idx = 0;
         for (frm_idx=0; frm_idx<frame_data.length; frm_idx++) {
           if (frame_data[frm_idx].frame == doc.frame) {
