@@ -372,6 +372,7 @@ define(function(require, exports, module) {
         } else {
             createWebSocket();
         }
+        messaging.sendMessage({"args":["get_version"]});
         
         // Wait (0.5s) for the page load to complete, then get the file system.
         setTimeout(function(){
@@ -1676,10 +1677,12 @@ define(function(require, exports, module) {
                                              // Web Socket is connected, send data using send()
                                              console.log("Connected to server");
                                              setIndicatorColor("green");
+                                             serialConnected = true;
                                             },
                                    onclose: function(){
                                               console.log("DISCONNECTED");
                                               setIndicatorColor("white");
+                                              serialConnected = false;
                                             },
                                    onerror: function(evt) {
                                               console.log("e4PtSocket error: ",evt);
@@ -1727,8 +1730,7 @@ define(function(require, exports, module) {
                     setIndicatorColor("yellow");
                 }
                 if (msg.status.includes("Error:")) {
-                    var alertMsg = msg.status;
-                    e4PtAlert(alertMsg);
+                    e4PtAlert(msg.status);
                 }
                 break;
             case "data":
