@@ -1522,6 +1522,8 @@ define(function(require, exports, module) {
         $("#DATA_PLOT").fadeIn();
         $("#STATUS_BAR").hide();
         $("#REV_PROGRESS_BAR").show();
+        charting.clearChartData(document.getElementById("DATA_PLOT"));
+        current_frame_data = [];
     }
 
     function do_mastering(reset) {
