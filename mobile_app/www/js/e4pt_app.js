@@ -803,12 +803,11 @@ define(function(require, exports, module) {
         
         update_spacer_value();
 
-        var units = document.getElementById("UNITS").value;
-        if (units == "In") {
+        var units = document.getElementById("UNITS").value.toUpperCase();
+        if (units.includes('IN')) {
             document.getElementById("CURR_CASE_THICKNESS_LABEL").innerHTML = "Casing Thickness (in)";
             document.getElementById("SPACER_THICKNESS_LABEL").innerHTML = "Spacer Thickness (in)";
-        }
-        if (units == "MM") {
+        } else if (units.includes('MM')) {
             document.getElementById("CURR_CASE_THICKNESS_LABEL").innerHTML = "Casing Thickness (mm)";
             document.getElementById("SPACER_THICKNESS_LABEL").innerHTML = "Spacer Thickness (mm)";
         }
@@ -2370,22 +2369,13 @@ define(function(require, exports, module) {
             if (clearance_f < 0) {
                 e4PtAlert("The clearance is negative. This indicates a problem with the setup (i.e. the sensor is out of range).\nPlease make sure the spacer is correct and the sensor and spacer are installed properly and try again.");
             }
-            let max_clr_f = parseFloat(E4PTdata.max_clr);
-            let min_clr_f = parseFloat(E4PTdata.min_clr);
-            let med_clr_f = parseFloat(E4PTdata.med_clr);
-            let std_clr_f = parseFloat(E4PTdata.std_clr);
-            let units = E4PTdata.units.toUpperCase();
-            if (units.includes("IN")) {
-                clearance_f = clearance_f / 25.4; // Clearances come back in mm. Convert to inches if needed.
-                max_clr_f = max_clr_f / 25.4;
-                min_clr_f = min_clr_f / 25.4;
-                med_clr_f = med_clr_f / 25.4;
-                std_clr_f = std_clr_f / 25.4;
+            if (E4PTdata.units.toUpperCase().includes("IN")) {
+                clearance_f = sensorSettings.toInches(clearance_f);
                 E4PTdata.clearance = clearance_f.toString(10);
-                E4PTdata.max_clr = max_clr_f.toString(10);
-                E4PTdata.min_clr = min_clr_f.toString(10);
-                E4PTdata.med_clr = med_clr_f.toString(10);
-                E4PTdata.std_clr = std_clr_f.toString(10);
+                E4PTdata.max_clr = sensorSettings.toInches(parseFloat(E4PTdata.max_clr)).toString(10);
+                E4PTdata.min_clr = sensorSettings.toInches(parseFloat(E4PTdata.min_clr)).toString(10);
+                E4PTdata.med_clr = sensorSettings.toInches(parseFloat(E4PTdata.med_clr)).toString(10);
+                E4PTdata.std_clr = sensorSettings.toInches(parseFloat(E4PTdata.std_clr)).toString(10);
             }
           update_clearance(clearance_f);
         }
@@ -2502,22 +2492,6 @@ define(function(require, exports, module) {
         err_id.innerHTML = err_str;
 
         document.getElementById(el_id).innerHTML = clearance_f.toFixed(4);
-        
-        clearances = [];
-        for (var i=0; i<current_frame_data['position'][stage].length; i++) {
-            var p = current_frame_data['position'][stage][i];
-            var angle = position_angle[p];
-            el_id = p + stage;
-            el_id = el_id.replace(/\s+/g, '_');
-            var c = document.getElementById(el_id).innerHTML;
-            var c_f = parseFloat(c);
-            if (isNaN(c_f)) {
-                clearances.push("");
-            }
-            else {
-                clearances.push(c_f);
-            }
-        }
     }
 
     function plot_non_calibrated_acquire() {
