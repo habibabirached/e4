@@ -10,6 +10,7 @@
 #if !TARGET_IPHONE_SIMULATOR
 
 #import "CDVIFC242x.h"
+#import "PostProcess.h"
 #import <AVFoundation/AVFoundation.h>
 #include "math.h"
 #include <Accelerate/Accelerate.h>
@@ -29,8 +30,8 @@
 #define DATA_PORT 1024
 #define TELNET_PORT 23
 
-#define SENSOR_MEASUREMENT_RANGE "11.0"
-#define DEFAULT_CLEARANCE_CALCULATION_METHOD "2"
+#define SENSOR_MEASUREMENT_RANGE "10.0"
+#define DEFAULT_CLEARANCE_CALCULATION_METHOD "1"
 
 // Hard coded values for RS232 serial cable
 // 192 = 64 * 3.  Data seems to come in 64 byte packets and data from
@@ -39,11 +40,7 @@
 #define RX_FORWARD_COUNT 64
 
 // Some defines for the signal processing
-#define KERNEL_SIZE 13
-#define KERNEL_SIGMA 2.8
 #define OUT_OF_RANGE 15.0
-#define FILTER_EDGE_SIZE_START 1
-#define FILTER_EDGE_SIZE_STOP 1
 
 // Define SERIAL_SEND_TIMESTAMP if you want to have the timestamp
 // sent over the serial cable.  This takes more bits over the
@@ -190,7 +187,9 @@ enum ifc242xValue {
 
 @end
 
-@interface IFCObjectiveCManager ()
+@interface IFCObjectiveCManager () {
+    PostProcess* postProcess;
+}
 
 // TCP/IP connection variables
 @property (nonatomic) int dataPort;
@@ -390,6 +389,7 @@ enum ifc242xValue {
 #else
         _manager.demoMode = false;
 #endif
+        _manager->postProcess = [PostProcess new];
         [_manager initializeSensor];
 
     }
@@ -756,7 +756,6 @@ enum ifc242xValue {
     if (self.telnetCmds == nil) self.telnetCmds = [[NSMutableArray alloc] init];
     if (self.metaData == nil) self.metaData = [[ScanMetaData alloc] init];
     [self.metaData clear];
-    [self computeKernel:KERNEL_SIGMA kernel_size:KERNEL_SIZE]; // Compute the LoG filter kernel.
     self.stage_clearance = 0;
     self.stage_position_threshold = 0.0;
     self.stage_position_offset_adjustment = 0.0;
@@ -1925,318 +1924,32 @@ enum ifc242xValue {
 
 - (void)computeClearance {
     self.pState = clearanceComputationInProgress;
+    MeasurementData* measurementData = [MeasurementData new];
+    [measurementData.displacements setArray:self.displacements];
+    [measurementData.intensities setArray:self.intensities];
+    self->postProcess.outOfRange = OUT_OF_RANGE;
     
-    // Displacement values will be between 0-15.
-    // We create a coarse histogram to see how many peaks we find.
-    float hMult = 4.0;  // This multiplier will change the size & resolution of the histogram.
-    int nbins = (OUT_OF_RANGE*hMult) + 1;  // Should give 61 bins for hMult = 4.0.
-    int* hBins = [self createHistogramForSegmentation:nbins valueMultiplier:hMult];
-    
-    // Use Otsu's method to get threshold
-    self.stage_position_threshold = [self otsuSegmentation:hBins nbins:nbins maxBin:((float)OUT_OF_RANGE)];
-    free(hBins);
-    
-    // Force threshold here.
-    // threshold = 4.5;  // FYI, the threshold of 4.5 had some problems on some positions in the test rig.
-    
-    NSLog(@"Found Threshold: %f\nThresholding data...", self.stage_position_threshold);
-    
-    // Perform edge detection with an LoG filter
-    // (Kernel computation was handled during initialization.)
-    NSLog(@"Filtering...");
-    [self fir_filter:self.kernel threshold:self.stage_position_threshold];
-    NSLog(@"Done.");
-    
-    //return; // Stop so we can just see the results of filtering
-    
-    // Fill sig_sign buffer with just 1 or -1 indicating the sign
-    // of the filtered signal.
-    int* sig_sign = (int*)malloc(self.filtered.count * sizeof(int));
-    int i=0;
-    for (NSNumber* n in self.filtered) {
-        if ([n floatValue] >= 0) {
-            sig_sign[i] = 1;
-        }
-        else {
-            sig_sign[i] = -1;
-        }
-        i++;
-    }
-    
-    // Fill these buffers with indications for positive or
-    // negative zero crossings.  These are the blade boundaries.
-    // Blades tip go from a negative zc to a positiv zc.
-    bool* pos_crossing = (bool*)malloc(self.filtered.count * sizeof(bool));
-    bool* neg_crossing = (bool*)malloc(self.filtered.count * sizeof(bool));
-    for (i=0; i<self.filtered.count; i++) {
-        if (i==0) {
-            // Skip first value
-            pos_crossing[i] = false;
-            neg_crossing[i] = false;
-            continue;
-        }
-        if ( (sig_sign[i] - sig_sign[i-1]) < 0 ) {
-            // Negative zero-crossing
-            pos_crossing[i] = false;
-            neg_crossing[i] = true;
-        }
-        else if ( (sig_sign[i] - sig_sign[i-1]) > 0 ) {
-            // Positive zero-crossing
-            pos_crossing[i] = true;
-            neg_crossing[i] = false;
-        }
-        else {
-            pos_crossing[i] = false;
-            neg_crossing[i] = false;
-        }
-    }
-
-// This debug stanza allows one to see where the zero-crossings occur.
-#if 0
-    [self.filtered removeAllObjects];
-    float f = 1.0;
-    for (i=0; i<self.displacements.count; i++) {
-        if (neg_crossing[i]) f = 0.0;
-        if (pos_crossing[i]) f = 1.0;
-        [self.filtered addObject:[NSNumber numberWithFloat:f]];
-    }
-    return;
-#endif
-    
-    // Traverse the data averaging the displacements between the neg.
-    // and pos. zero-crossings IFF the intensity is greater than zero.
-    // These averages are the per-blade clearances
-    [self.avg_displacements_for_blade removeAllObjects];
-    [self.filtered removeAllObjects];
-    [self.blade_clearances removeAllObjects];
-    [self.clearance_quality removeAllObjects];
-    self.overall_average = 0.0;
-    int overall_count = 0;
-    for (i=0; i<self.displacements.count; i++) {
-        if ([self.displacements[i] floatValue] < OUT_OF_RANGE) {
-            self.overall_average += [self.displacements[i] floatValue];
-            overall_count++;
-        }
-        if (neg_crossing[i]) {
-            // We've encountered a negative zero-crossing
-            // so sum displacements to the next positive zero-crossing.
-            int start = i;
-            int stop = start;
-            // This next loop determines the corresponding stoping point
-            // point for this blade, if any.
-            for (; stop < self.displacements.count; stop++) {
-                if (pos_crossing[stop]) {
-                    //NSLog(@"Start: %d; Stop: %d", start, stop);
-                    break;
-                }
-                else if (stop == self.displacements.count -1) {
-                    //NSLog(@"No stop found for start: %d", start);
-                    // end of the data is encountered without a matching
-                    // positive zero crossing.
-                    for (int j=start; j<self.displacements.count; j++) {
-                        [self.avg_displacements_for_blade addObject:[NSNumber numberWithFloat:OUT_OF_RANGE]];
-                        [self.filtered addObject:[NSNumber numberWithFloat:OUT_OF_RANGE]];
-                    }
-                    stop = start;
-                    break;
-                }
-            }
-            //NSLog(@"Blade: %d - %d", start, stop);
-            float clearance = 0;
-            float min_clearance = OUT_OF_RANGE;
-            float min_loc = 0;
-            int count = 0;
-// This debug stanza puts a dot on the start and stop points.
-#if 0
-            [self.min_locs addObject:[NSNumber numberWithInt:start]];
-            [self.blade_clearances addObject:[self.displacements objectAtIndex:start]];
-            [self.min_locs addObject:[NSNumber numberWithInt:stop]];
-            [self.blade_clearances addObject:[self.displacements objectAtIndex:stop]];
-#endif
-            if (stop > start) {
-                // FILTER_EDGE_SIZE_* allows us to shave down the number of points used
-                for (int j=start + FILTER_EDGE_SIZE_START; j<=stop - FILTER_EDGE_SIZE_STOP; j++) {
-                    NSNumber* d = [self.displacements objectAtIndex:j];
-#ifdef SEND_DISPLACEMENT_ONLY
-                    if ( [d floatValue] < self.stage_position_threshold ) {
-#else
-                    NSNumber* intnst = [self.intensities objectAtIndex:j];
-                    if ( ([intnst floatValue] > 0) && ([d floatValue] < self.stage_position_threshold) ) {
-#endif
-                        //NSLog(@"Averaging: %f",[d floatValue]);
-                        if ([d floatValue] < min_clearance) {
-                            min_clearance = [d floatValue];
-                            min_loc = j;
-                        }
-                        clearance += [d floatValue];
-                        count++;
-                    }
-                }
-                //NSLog(@"Sum: %f; count: %d", clearance, count);
-                // Protect against divide-by-zero...
-                if (count == 0) {
-                    clearance = -9.996;
-                }
-                else {
-                    clearance /= count; // Average clearance for this blade.
-                }
-                if (isnan(clearance)) {
-                    clearance = -9.995;  // nan has happened before.
-                }
-                if (count > 1) {
-#ifdef OUTPUT_MINIMUM
-                    [self.blade_clearances addObject:[NSNumber numberWithFloat:min_clearance]];
-#else
-                    [self.blade_clearances addObject:[NSNumber numberWithFloat:clearance]];
-                    // Check if minimum clearance is >0.001" (0.0254mm) from average clearance.  If so we consider it an outlier.
-                    // Quality is the fraction of points whose values are <= 0.001" from the mean.
-                    float quality = (float)count;
-                    if (fabs(clearance - min_clearance) > 0.0254) {
-                        for (int j=start + FILTER_EDGE_SIZE_START; j<=stop - FILTER_EDGE_SIZE_STOP; j++) {
-                            NSNumber* d = [self.displacements objectAtIndex:j];
-                            NSNumber* intnst = [self.intensities objectAtIndex:j];
-                            if ((fabs(clearance - [d floatValue]) > 0.0254) && ([intnst floatValue] > 0)) {
-                                quality -= 1.0;
-                            }
-                            if (quality <= 0.0) {
-                                NSLog(@"Bad Quality: q = %f at index %d; displacement = %f; clearance = %f; int = %f", quality, j, [d floatValue], clearance, [intnst floatValue]);
-                            }
-                        }
-                    }
-                    quality = quality / (float)count;
-                    [self.clearance_quality addObject:[NSNumber numberWithFloat:quality]];
-                    min_loc = ((float)start + (float)stop) / 2.0;
-#endif
-                    [self.min_locs addObject:[NSNumber numberWithFloat:min_loc]];
-                }
-                NSLog(@"Clearance: %f; Quality: %@", clearance, [self.clearance_quality lastObject]);
-                for (int j=start; j<=stop; j++) {
-                    NSNumber* d = [self.displacements objectAtIndex:j];
-                    if (([d floatValue] != OUT_OF_RANGE) && (count > 1)) {
-                        [self.avg_displacements_for_blade addObject:[NSNumber numberWithFloat:clearance]];
-                        [self.filtered addObject:[NSNumber numberWithFloat:clearance]];
-                    }
-                    else {
-                        [self.avg_displacements_for_blade addObject:[NSNumber numberWithFloat:OUT_OF_RANGE]];
-                        [self.filtered addObject:[NSNumber numberWithFloat:OUT_OF_RANGE]];
-                    }
-                }
-            }
-            i = stop; // Move the start point ahead to where we stopped.
-        }
-        else {
-            [self.avg_displacements_for_blade addObject:[NSNumber numberWithFloat:OUT_OF_RANGE]];
-            [self.filtered addObject:[NSNumber numberWithFloat:OUT_OF_RANGE]];
-        }
-    }
-    // Finish computing the overall average.
-    self.overall_average = (float)self.overall_average / (float)overall_count;
-        
-    // Now iterate over the filtered values and calibrate them to arrive at actual clearance values.
-    // Calibrate the filtered values
-    if (self.calibratedAcquire) {
+    self.stage_position_offset_adjustment = 0.0;
+    if (self.calibratedAcquire)
         self.stage_position_offset_adjustment = [self calculateOffsetAdjustment:self.metaData.clearance_calculation_method];
-        for (unsigned int i = 0; i< self.filtered.count; i++) {
-            if ([[self.filtered objectAtIndex:i] floatValue] == OUT_OF_RANGE) continue;  // no need to calibrate out-of-range values.
-            float clearance_f = [[self.filtered objectAtIndex:i] floatValue] + self.stage_position_offset_adjustment;
-            [self.filtered replaceObjectAtIndex:i withObject:[NSNumber numberWithFloat:clearance_f]];
-        }
-            // Calibrate the blade clearances
-        for (unsigned int i = 0; i< self.blade_clearances.count; i++) {
-            float clearance_f = [[self.blade_clearances objectAtIndex:i] floatValue] + self.stage_position_offset_adjustment;
-            [self.blade_clearances replaceObjectAtIndex:i withObject:[NSNumber numberWithFloat:clearance_f]];
-        }
-    }
-        
-    // Now iterate over the blade_clearances to get the average clearance for the stage,
-    // as well as max, min, median, and stdev.
-    self.stage_clearance = 0.0;
-    self.stage_max_clearance = 0.0;
-    self.stage_min_clearance = FLT_MAX;
-    self.stage_median_clearance = 0.0;
-    self.stage_clearance_std = 0;
-    NSMutableArray* statsBuff = [[NSMutableArray alloc] init];
-    int stage_num_blades = (int)[self.metaData.num_blades integerValue];
-    if (stage_num_blades > 0) {
-        // This clause is used when the number of blades has been specified.
-        // Use only the number of specified blades so that no blades are counted twice.
-        for (i=0; i<stage_num_blades; i++) {
-            // Make sure we don't try to go beyond the bounds of the array of clearances.
-            if (i < self.blade_clearances.count) {
-                NSNumber* c = [self.blade_clearances objectAtIndex:i];
-                if ([c floatValue] > self.stage_max_clearance) self.stage_max_clearance = [c floatValue];
-                if ([c floatValue] < self.stage_min_clearance) self.stage_min_clearance = [c floatValue];
-                [statsBuff addObject:c];
-                self.stage_clearance += [c floatValue];
-            }
-        }
-        int divisor = (self.blade_clearances.count < stage_num_blades) ? (int)self.blade_clearances.count : stage_num_blades;
-        if (divisor != 0) {
-            self.stage_clearance /= (float)divisor;
-        }
-        else {
-            self.stage_clearance = -9.994; // divide-by-zero protection.
-        }
-    }
-    else {
-        // This clause is used when no number of blades has been specified.
-        if (self.blade_clearances.count > 0 ) {
-            for (i=0; i<self.blade_clearances.count; i++) {
-                NSNumber* c = [self.blade_clearances objectAtIndex:i];
-                self.stage_clearance += [c floatValue];
-                if ([c floatValue] > self.stage_max_clearance) self.stage_max_clearance = [c floatValue];
-                if ([c floatValue] < self.stage_min_clearance) self.stage_min_clearance = [c floatValue];
-                [statsBuff addObject:c];
-            }
-            int divisor = (int)self.blade_clearances.count;
-            if (divisor != 0) {
-                self.stage_clearance /= (float)divisor;
-            }
-            else {
-                self.stage_clearance = -9.994; // divide-by-zero protection.
-            }
-        }
-    }
-    // Now find the median clearance value for this stage...
-    if (statsBuff.count > 1) {
-        NSArray* sortedBuff = [statsBuff sortedArrayUsingSelector:@selector(compare:)];
-        NSUInteger middle = [sortedBuff count] / 2;
-        self.stage_median_clearance = [[sortedBuff objectAtIndex:middle] floatValue];
-        self.stage_clearance_std = [[self standardDeviationOf:statsBuff] floatValue];
-    }
-
-    free(neg_crossing);
-    free(pos_crossing);
-    free(sig_sign);
-
-    NSLog(@"computeClearance Done.");
+    ClearanceData* clearanceData = [self->postProcess computeClearance:measurementData bladeCount:[self.metaData.num_blades intValue] usingAdjustmentFactor:self.stage_position_offset_adjustment];
+    measurementData = nil;
+    
+    self.filtered = clearanceData.clearances;
+    [self.avg_displacements_for_blade setArray:clearanceData.filtered];
+    self.blade_clearances = clearanceData.bladeClearances;
+    self.stage_clearance = clearanceData.clearance;
+    self.stage_max_clearance = clearanceData.max;
+    self.stage_min_clearance = clearanceData.min;
+    self.stage_median_clearance = clearanceData.median;
+    self.stage_clearance_std = clearanceData.std;
+    self.min_locs = clearanceData.locations;
+    self.clearance_quality = clearanceData.quality;
+    self.stage_position_threshold = clearanceData.shelfThreshold;
+    self.overall_average = clearanceData.averageDisplacement;
+    clearanceData = nil;
 }
-    
--(int*)createHistogramForSegmentation:(int)nbins valueMultiplier:(float)multiplier{
-    
-    int* hBins = (int*)malloc(nbins * sizeof(int));
-    for (int i=0; i<nbins; i++) hBins[i] = 0;
-    // Populate the histogram by converting displacements to histogram indices.
-    // Round each displacement to get the bin index.
-    NSLog(@"Populating histogram...");
-    float d=0.0;
-    int bIdx = 0;
-    for (NSNumber* n in self.displacements) {
-        // exclude OUT_OF_RANGE points.
-        if ([n floatValue] == (float)OUT_OF_RANGE) continue;
-        d = multiplier * [n floatValue];  // multiply the value to get the index.
-        bIdx = (int)floor(d); // Using floor makes bin edges integers. E.g. [0-1][+1-2][+2-3]...
-        if (bIdx > nbins-1) bIdx = nbins - 1; // Don't overflow
-        if (bIdx < 0) bIdx = 0; // Don't underflow
-        hBins[bIdx]++; // Increment the histogram bin
-    }
-    //NSLog(@"Histogram:\n");
-    //for (int i=0; i<nbins; i++) {
-    //    NSLog(@" hBin[%d]: %d",i, hBins[i]);
-    //}
-    return hBins;
-}
-    
+
 -(float)calculateOffsetAdjustment:(NSString*) calcMethod {
     if ([@"1" isEqualToString:calcMethod]) {
         return [self calculateOffsetAdjustment];
@@ -2276,291 +1989,6 @@ enum ifc242xValue {
     float st = [self.metaData.spacer_thickness floatValue] * inToMM;
     float sensorLength = [[[NSUserDefaults standardUserDefaults] stringForKey:@"sensorLength"] floatValue] * inToMM;
     return [self.metaData.mastering_value floatValue] + sensorLength - st - ct + mo;
-}
-
-// otsuSegmentation performs a segmentation of the histogram into 2 classes
-// using the Otsu method from image segmentation.
-// See: https://en.wikipedia.org/wiki/Otsu%27s_method
-// If the 2 classes are seen as too close to one another, then there is
-// likely only a single class.
--(float)otsuSegmentation:(int*)hist nbins:(int)nbins maxBin:(float)maxBin {
-    float w0, w1;
-    float u0, u1;
-    float sigma2;
-    float maxSigma = 0.0;
-    float threshold1 = 0.0;
-    int threshold_idx = 0;
-    // I found that iterating in different directions gives different answers.
-    // Since the threshold seems to live on the edge of one of the classes,
-    // I'll iterate both directions and take the average of the two thresholds.
-    for (int k=nbins-1; k >= 0; k--) {
-        // lower & upper bounds for classes
-        w0 = 0.0; w1 = 0.0;
-        u0 = 0.0; u1 = 0.0;
-        // class 1 goes from 0 to k-1
-        for (int i=0; i < k; i++) {
-            w0 += hist[i];
-            u0 += hist[i] * ((float)(i+1) * (float)maxBin / nbins);
-        }
-        u0 = u0 / w0;
-        // class 2 goes from k to nbins-1
-        for (int i=k; i < nbins; i++) {
-            w1 += hist[i];
-            u1 += hist[i] * ((float)(i+1) * (float)maxBin / nbins);
-        }
-        u1 = u1 / w1;
-        sigma2 = w0*w1*(u0-u1)*(u0-u1);
-        
-        // Get the threshold by finding the max sigma2
-        if (sigma2 > maxSigma) {
-            maxSigma = sigma2;
-            threshold_idx = k;
-            threshold1 = ((float)(k+1) * (float)maxBin / nbins);
-        }
-    }
-    maxSigma = 0.0;
-    float threshold2 = 0.0;
-    threshold_idx = 0;
-    // Iterate the other direction.
-    for (int k=0; k < nbins; k++) {
-        // lower & upper bounds for classes
-        w0 = 0.0; w1 = 0.0;
-        u0 = 0.0; u1 = 0.0;
-        // class 1 goes from 0 to k-1
-        for (int i=0; i < k; i++) {
-            w0 += hist[i];
-            u0 += hist[i] * ((float)(i+1) * (float)maxBin / nbins);
-        }
-        u0 = u0 / w0;
-        // class 2 goes from k to nbins-1
-        for (int i=k; i < nbins; i++) {
-            w1 += hist[i];
-            u1 += hist[i] * ((float)(i+1) * (float)maxBin / nbins);
-        }
-        u1 = u1 / w1;
-        sigma2 = w0*w1*(u0-u1)*(u0-u1);
-        
-        // Get the threshold by finding the max sigma2
-        if (sigma2 > maxSigma) {
-            maxSigma = sigma2;
-            threshold_idx = k;
-            threshold2 = ((float)(k+1) * (float)maxBin / nbins);
-        }
-    }
-
-    // Calculate the two cluster means based on the calculated threshold.
-    w0 = 0.0; w1 = 0.0;
-    u0 = 0.0; u1 = 0.0;
-    for (int i=0; i<nbins; i++) {
-        float p = ((float)(i+1) * (float)maxBin / nbins);
-        if (i <= threshold_idx) {
-            w0 += hist[i];
-            u0 += hist[i] * p;
-        }
-        if (i >  threshold_idx) {
-            w1 += hist[i];
-            u1 += hist[i] * p;
-        }
-    }
-    // We need divide-by-zero protection.  If one of the w values is zero
-    // this is probably a unimodal distribution.
-    if (w0 == 0) {
-        u1 = u1 / w1;
-        u0 = u1;
-    }
-    else if (w1 == 0) {
-        u0 = u0 / w0;
-        u1 = u0;
-    }
-    else {
-        u0 = u0 / w0;
-        u1 = u1 / w1;
-    }
-    
-    // Check to see if the two cluster means are too close to each other.
-    // We use the criteria of 1mm separation as "too close".
-    if (fabsf(u1-u0) < 1.0 ) {
-        // These means are too close.  This is probably a unimodal distribution.
-        // I.e. NOT squealer tips.  The threshold becomes the average of the
-        // distance between the OUT_OF_RANGE value and the average of the two
-        // "otsu" means.
-        threshold1 = ((float)OUT_OF_RANGE + ((u0+u1)/2.0)) / 2.0;
-    }
-    else {
-        // The means are adequately separated here so we probably have two classes.
-        // However the Otsu threshold seems to live on the edge of one of the two classes
-        // (depending on which way we traversed the historgram).  So the final threshold
-        // is taken as the average of thresholds calculated going each direction.
-        threshold1 = (threshold1+threshold2) / 2.0;
-    }
-
-    return threshold1;
-}
-
-- (NSNumber *)meanOf:(NSArray *)array {
-    double runningTotal = 0.0;
-    for(NSNumber *number in array) {
-        runningTotal += [number doubleValue];
-    }
-    return [NSNumber numberWithDouble:(runningTotal / [array count])];
-}
-    
-- (NSNumber *)standardDeviationOf:(NSArray *)array  {
-    if(![array count]) return nil;
-        
-    double mean = [[self meanOf:array] doubleValue];
-    double sumOfSquaredDifferences = 0.0;
-        
-    for(NSNumber *number in array) {
-        double valueOfNumber = [number doubleValue];
-        double difference = valueOfNumber - mean;
-        sumOfSquaredDifferences += difference * difference;
-    }
-        
-    return [NSNumber numberWithDouble:sqrt(sumOfSquaredDifferences / [array count])];
-}
-
-// convertToInches converts all the output values to inches prior to output.
-// Currently this function is not used.
-- (void)convertToInches {
-    //[self.kernel replaceObjectAtIndex:idx withObject:[NSNumber numberWithFloat:k_val]];
-    NSNumber* tmp = [NSNumber numberWithInt:0];
-    for (unsigned int i=0; i< self.displacements.count; i++) {
-        tmp = [NSNumber numberWithFloat:([[self.displacements objectAtIndex:i] floatValue] / 25.4)];
-        [self.displacements replaceObjectAtIndex:i withObject:tmp];
-    }
-    for (unsigned int i=0; i< self.filtered.count; i++) {
-        tmp = [NSNumber numberWithFloat:([[self.filtered objectAtIndex:i] floatValue] / 25.4)];
-        [self.filtered replaceObjectAtIndex:i withObject:tmp];
-    }
-    for (unsigned int i=0; i< self.blade_clearances.count; i++) {
-        tmp = [NSNumber numberWithFloat:([[self.blade_clearances objectAtIndex:i] floatValue] / 25.4)];
-        [self.blade_clearances replaceObjectAtIndex:i withObject:tmp];
-    }
-    self.stage_max_clearance /= 25.4;
-    self.stage_min_clearance /= 25.4;
-    self.stage_median_clearance /= 25.4;
-    self.stage_clearance_std /= 25.4;
-}
-
-// computeKernel computes a normalized Laplacian-of-Gaussian kernel for
-// edge detection.
-// kernel_size should be an odd number.  This is a quick & dirty
-// implementation and there is no check for this.
-- (void)computeKernel:(float)sigma kernel_size:(int)kernel_size {
-    if (self.kernel == nil) self.kernel = [[NSMutableArray alloc] init];
-    [self.kernel removeAllObjects];
-    double f1 = -(1.0 / (M_PI * pow(sigma, 4)));
-    double hi = floor(kernel_size/2.0);
-    double lo = -hi;
-    double k_sum = 0;
-    for (int x=lo; x<hi+1; x++) {
-        double f2 = 1.0 - (pow(x,2)/(2.0*pow(sigma,2)));
-        double f3 = exp(-(pow(x,2)/(2.0*pow(sigma,2))));
-        double k = f1 * f2 * f3;
-        k_sum += k;
-        [self.kernel addObject:[NSNumber numberWithDouble:k]];
-    }
-    // Now normalize the kernel
-    for (int idx=0; idx<self.kernel.count; idx++) {
-        NSNumber* num = [self.kernel objectAtIndex:idx];
-        float k_val = (float)[num doubleValue] / k_sum;
-        [self.kernel replaceObjectAtIndex:idx withObject:[NSNumber numberWithFloat:k_val]];
-    }
-}
-
-//
-// fir_filter is taken (almost) lock, stock and barrel from:
-// http://hamiltonkibbe.com/finite-impulse-response-filters-using-apples-accelerate-framework-part-ii/
-//
-- (void)fir_filter:(NSMutableArray*)kernel threshold:(float)threshold {
-
-    // Get the kernal into a float array
-    int h_length = (int)kernel.count;
-    float* h = (float*)malloc(h_length * sizeof(float));
-    int idx = 0;
-    for (NSNumber* f in kernel) {
-        h[idx] = [f floatValue];
-        idx++;
-    }
-    
-    // Get the data into a float array, thresholding as we go.
-    unsigned x_length = (unsigned)self.displacements.count;
-    float* x = (float*)malloc(x_length * sizeof(float));
-    idx = 0;
-    for (NSNumber* f in self.displacements) {
-        x[idx] = [f floatValue] < threshold ? [f floatValue] : threshold;
-        idx++;
-    }
-    
-    // Create buffer to store overflow across calls
-    //static float overflow[KERNEL_SIZE - 1] = {0.0};
-    
-    // The length of the result from linear convolution is one less than the
-    // sum of the lengths of the two inputs.
-    unsigned result_length = x_length + h_length - 1;
-    //unsigned overlap_length = result_length - x_length;
-    
-    // Create a temporary buffer to store the entire convolution result
-    float* temp_buffer = (float*)malloc(result_length * sizeof(float));
-    
-    // Pointer to end of filter for use with vDSP_conv
-    float    *h_end = h + (h_length - 1);
-    
-    // Length of signal passed to vDSP_conv
-    unsigned signal_length = (h_length + result_length);
-    
-    // Create an array to store the signal passed to vDSP_conv, padded with zeros
-    float* padded = (float*)malloc(signal_length * sizeof(float));
-    
-    // fill padded buffer with zeros
-    float zero = 0.0;
-    vDSP_vfill(&zero, padded, 1, signal_length);
-    
-    // Copy input into padded buffer
-    cblas_scopy(x_length, x, 1, padded, 1);
-    
-    // use the Accelerate convolution function
-    vDSP_conv(padded, 1, h_end, -1, temp_buffer, 1, result_length, h_length);
-    
-    //
-    // In the GE Case we don't need to worry about adding results from
-    // previous runs.  However, I'm leaving this code here in case I
-    // ever want to refer to it for re-use.
-    //
-    // Add the overlap from the previous run
-    // use vDSP_vadd instead of loop
-    // vDSP_vadd(temp_buffer, overflow, buffer, overlap_length);
-    //
-    // Copy overlap into overlap buffer
-    // use BLAS copy instead of loop
-    // cblas_scopy(overlap_length, temp_buffer + x_length, 1, overflow, 1);
-    //
-    
-    //
-    // In the GE Case we want everything in a different array, so we just
-    // put it there rather than doing the cblas copy to the output and
-    // then having to copy it all again.  This saves time and memory.
-    //s
-    // write the final result to the output. use BLAS copy instead of loop
-    // cblas_scopy(x_length, temp_buffer, 1, output, 1);
-    
-    // Filtered data here is offset by 1/2 of the kernel
-    // length, so we offset the data when we write it back out.
-    int offset = (int)round((float)kernel.count / 2.0);
-    [self.filtered removeAllObjects];
-    for (int i=0; i<offset; i++) [self.filtered addObject:[NSNumber numberWithFloat:0]]; // offset
-    for (int i=0; i<x_length; i++) {
-        float tmpf = temp_buffer[i] - threshold;
-        tmpf = roundf(tmpf * 1e5)/1e5;  // round to 5 decimal places
-        tmpf = (tmpf == 0.0) ? 0.0 : tmpf; // This avoids problems that have happened where -0 is generated, causing a sign change.
-        [self.filtered addObject:[NSNumber numberWithFloat:tmpf]];
-    }
-    
-    free(padded);
-    free(temp_buffer);
-    free(x);
-    free(h);
 }
 
 // loadCSVFile should never be used in the field, but is here to allow

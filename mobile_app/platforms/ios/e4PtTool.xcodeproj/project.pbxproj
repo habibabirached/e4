@@ -21,6 +21,9 @@
 		31CC20E6B4664B23A3C55619 /* LSFileViewer2.m in Sources */ = {isa = PBXBuildFile; fileRef = A87BABD164284DB399612DE4 /* LSFileViewer2.m */; };
 		325F01D33B3C44F8B5BC6CB7 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 27C8AE50A7134DBBB4D8437E /* AudioToolbox.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
 		362CDC05EA68449D8DABBA3B /* LSPreviewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 195F8A0E2F524956AE4BFF27 /* LSPreviewController.m */; };
+		480670C325C0B80C00F2029A /* ClearanceData.m in Sources */ = {isa = PBXBuildFile; fileRef = 480670BE25BF52E800F2029A /* ClearanceData.m */; };
+		480670C425C0B80C00F2029A /* MeasurementData.m in Sources */ = {isa = PBXBuildFile; fileRef = 480670C025BF52E800F2029A /* MeasurementData.m */; };
+		48254C6D25C37CDE00AD67EF /* PostProcess.m in Sources */ = {isa = PBXBuildFile; fileRef = 480670DD25C1EFE900F2029A /* PostProcess.m */; };
 		4EAFAC365C2440FCAF8A946A /* CDVLocalFilesystem.m in Sources */ = {isa = PBXBuildFile; fileRef = 300DBDE79B6643A08EBC896B /* CDVLocalFilesystem.m */; };
 		5667AFFF249BC3340086E54D /* ExternalAccessory.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5667AFFD249BC3330086E54D /* ExternalAccessory.framework */; };
 		56BD91B924323B69008117BD /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 56BD91B824323B69008117BD /* Settings.bundle */; };
@@ -99,6 +102,12 @@
 		3A182F81613343D59E8E8562 /* CDVInAppBrowserOptions.h */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.c.h; name = CDVInAppBrowserOptions.h; path = "cordova-plugin-inappbrowser/CDVInAppBrowserOptions.h"; sourceTree = "<group>"; };
 		3DD394F9D31A439ABD46EB3D /* CDVIFC242x.h */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.c.h; name = CDVIFC242x.h; path = IFC242xPlugin/CDVIFC242x.h; sourceTree = "<group>"; };
 		41722477FB2D4F1C90BAEE42 /* CDVInAppBrowserNavigationController.m */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.c.objc; name = CDVInAppBrowserNavigationController.m; path = "cordova-plugin-inappbrowser/CDVInAppBrowserNavigationController.m"; sourceTree = "<group>"; };
+		480670BC25BF52E800F2029A /* ClearanceData.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = ClearanceData.h; path = IFC242xPlugin/ClearanceData.h; sourceTree = "<group>"; };
+		480670BE25BF52E800F2029A /* ClearanceData.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = ClearanceData.m; path = IFC242xPlugin/ClearanceData.m; sourceTree = "<group>"; };
+		480670BF25BF52E800F2029A /* MeasurementData.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = MeasurementData.h; path = IFC242xPlugin/MeasurementData.h; sourceTree = "<group>"; };
+		480670C025BF52E800F2029A /* MeasurementData.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = MeasurementData.m; path = IFC242xPlugin/MeasurementData.m; sourceTree = "<group>"; };
+		480670C125BF52E800F2029A /* PostProcess.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = PostProcess.h; path = IFC242xPlugin/PostProcess.h; sourceTree = "<group>"; };
+		480670DD25C1EFE900F2029A /* PostProcess.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = PostProcess.m; path = IFC242xPlugin/PostProcess.m; sourceTree = "<group>"; };
 		5667AFFD249BC3330086E54D /* ExternalAccessory.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ExternalAccessory.framework; path = System/Library/Frameworks/ExternalAccessory.framework; sourceTree = SDKROOT; };
 		56BD91B824323B69008117BD /* Settings.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = Settings.bundle; sourceTree = "<group>"; };
 		56C8BA499AC34BA1A23C72AD /* CDVIFC242x.m */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.c.objc; name = CDVIFC242x.m; path = IFC242xPlugin/CDVIFC242x.m; sourceTree = "<group>"; };
@@ -255,6 +264,12 @@
 		307C750510C5A3420062BCA9 /* Plugins */ = {
 			isa = PBXGroup;
 			children = (
+				480670DD25C1EFE900F2029A /* PostProcess.m */,
+				480670BC25BF52E800F2029A /* ClearanceData.h */,
+				480670BE25BF52E800F2029A /* ClearanceData.m */,
+				480670BF25BF52E800F2029A /* MeasurementData.h */,
+				480670C025BF52E800F2029A /* MeasurementData.m */,
+				480670C125BF52E800F2029A /* PostProcess.h */,
 				E208835430374DD59669992A /* CDVSplashScreen.m */,
 				7D07F741581B4BC4950B8517 /* CDVViewController+SplashScreen.m */,
 				BAF009F1E03C4EB0975F8B73 /* CDVSplashScreen.h */,
@@ -454,6 +469,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				48254C6D25C37CDE00AD67EF /* PostProcess.m in Sources */,
+				480670C325C0B80C00F2029A /* ClearanceData.m in Sources */,
+				480670C425C0B80C00F2029A /* MeasurementData.m in Sources */,
 				1D60589B0D05DD56006BFB54 /* main.m in Sources */,
 				1D3623260D0F684500981E51 /* AppDelegate.m in Sources */,
 				302D95F114D2391D003F00A1 /* MainViewController.m in Sources */,
@@ -548,6 +566,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
+					"\"$(SRCROOT)/e4PtTool/Plugins/../../../../../../IFC242xPlugin/src/ios/redpark/lib\"",
 					"\"$(SRCROOT)/e4PtTool/Plugins/IFC242xPlugin\"",
 				);
 				MARKETING_VERSION = 0.2.4.2;
