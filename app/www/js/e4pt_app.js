@@ -258,42 +258,15 @@ define(function(require, exports, module) {
             update_spacer_value();
         }, {passive: true});
         document.getElementById("MODE_BUTTON_PROD").addEventListener('click', function(){
-            document.getElementById('MODE_BUTTON_PROD').style.display = 'none'; //hide
-            document.getElementById('MODE_BUTTON_DEMO').style.display = 'block';
-            $("#MODE_INDICATOR").css("color", "red");
-            $("#MODE_NAME").text('DEMO');
-            $("#CUR_MODE").text('Current Mode: DEMO');
-            document.getElementById('MODE_NAME').style.fontSize = "2vmin";
-            document.getElementById('MODE_NAME').style.display = 'block';
-            document.getElementById('MODE_INDICATOR').style.display = 'block';
-            set_demo_mode("true");
+            set_demo_mode(true);
         }, {passive: true});
         document.getElementById("MODE_BUTTON_DEMO").addEventListener('click', function(){
-            document.getElementById('MODE_BUTTON_DEMO').style.display = 'none'; //hide
-            document.getElementById('MODE_BUTTON_PROD').style.display = 'block';
-            $("#MODE_INDICATOR").css("color", "limeGreen");
-            $("#MODE_NAME").text('PROD');
-            $("#CUR_MODE").text('Current Mode: PRODUCTION');
-            document.getElementById('MODE_NAME').style.display = 'none';
-            document.getElementById('MODE_INDICATOR').style.display = 'none';
-            set_demo_mode("false");
+            set_demo_mode(false);
         }, {passive: true});
         document.getElementById("CONN_BUTTON_ETHERNET").addEventListener('click', function(){
-            document.getElementById('CONN_BUTTON_ETHERNET').style.display = 'none'; //hide
-            document.getElementById('CONN_BUTTON_SERIAL').style.display = 'block';
-            $("#CONNECTION_NAME").text('ETHERNET');
-            $("#CUR_CONN").text('Current Connection: ETHERNET');
-            document.getElementById('CONNECTION_NAME').style.fontSize = "2vmin";
-            document.getElementById('CONNECTION_NAME').style.display = 'block';
             set_connection_mode("ethernet");
         }, {passive: true});
         document.getElementById("CONN_BUTTON_SERIAL").addEventListener('click', function(){
-            document.getElementById('CONN_BUTTON_SERIAL').style.display = 'none'; //hide
-            document.getElementById('CONN_BUTTON_ETHERNET').style.display = 'block';
-            $("#CONNECTION_NAME").text('SERIAL');
-            $("#CUR_CONN").text('Current Connection: SERIAL');
-            document.getElementById('CONNECTION_NAME').style.fontSize = "2vmin";
-            document.getElementById('CONNECTION_NAME').style.display = 'block';
             set_connection_mode("serial");
         }, {passive: true});
         document.getElementById("SETUP_CLOSE_BUTTON").addEventListener('click', function(){
@@ -662,15 +635,31 @@ define(function(require, exports, module) {
     }
 
     function get_sensor_parameters() {
-        messaging.sendMessage({"args":["get_sensor_parameters"]});
+        messaging.sendMessage({args:['get_sensor_parameters']});
     }
 
     function set_demo_mode(tf) {
-        messaging.sendMessage({"args":["set_demo_mode",tf]});
+        document.getElementById('MODE_BUTTON_PROD').style.display = tf ? 'none' : 'block';
+        document.getElementById('MODE_BUTTON_DEMO').style.display = tf ? 'block' : 'none';
+        $('#CUR_MODE').text('Current Mode: ' + (tf ? 'Demo' : 'Production'));
+        $('#CONNECTION_NAME').text((tf ? 'DEMO' : $('#CUR_CONN').text().substring(20)));
+        
+        if (!tf) {
+            setIndicatorColor('white');
+            serialConnected = false;
+        }
+        messaging.sendMessage({args:['set_demo_mode',tf.toString()]});
     }
 
     function set_connection_mode(mode) {
-        messaging.sendMessage({"args":["set_connection_mode",mode]});
+        var upperMode = mode.toUpperCase();
+        var otherMode = upperMode === 'ETHERNET' ? 'SERIAL' : 'ETHERNET';
+        document.getElementById('CONN_BUTTON_' + upperMode).style.display = 'none'; //hide
+        document.getElementById('CONN_BUTTON_' + otherMode).style.display = 'block';
+        $('#CUR_CONN').text('Current Connection: ' + upperMode);
+        if ($('#CONNECTION_NAME').text() !== 'DEMO') $('#CONNECTION_NAME').text(upperMode);
+        
+        messaging.sendMessage({args:['set_connection_mode',mode]});
     }
 
     function record_casing_thickness() {
@@ -1766,8 +1755,8 @@ define(function(require, exports, module) {
                 break;
             case "sensor_params":
                 console.log("Received sensor parameters message: ", msg.master_fixture_height, ", ", msg.mastering_value, ", ", msg.master_offset, ", ", msg.sensor_selection, ", ", msg.sensor_length, ", ", msg.start_measurement_range);
-                setIndicatorColor("green");
-                serialConnected = true;
+                //setIndicatorColor("green");
+                //serialConnected = true;
                 
                 sensorSettings.set('sensor_selection', msg.sensor_selection);
                 document.getElementById("SENSOR_SELECTION").value = sensorSettings.get('sensor_selection');
@@ -2219,7 +2208,7 @@ define(function(require, exports, module) {
             let cell = tbl.rows[i].cells[0]; // There's only one cell per row in the file lists.
         }
     }
-
+    
     function setIndicatorColor( color ) {
         document.getElementById("indicator-pulse").style.background = color;
         document.getElementById("indicator-solid").style.background = color;
