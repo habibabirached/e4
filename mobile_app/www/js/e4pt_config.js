@@ -567,7 +567,7 @@ frame_data = [
     'position':{'1':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
     '6':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
     '10':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
-    '14':['TOP RIGHT', 'TOM LEFT', 'BOTTOM RIGHT', 'BOTTOM LEFT']},
+    '14':['TOP RIGHT', 'TOP LEFT', 'BOTTOM RIGHT', 'BOTTOM LEFT']},
     'spacers':[
         {'stage':'1', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'3.933', 'color':'GOLD', 'image':'7HA03-R1'},
         {'stage':'6', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'6.680', 'color':'VIOLET', 'image':'7HA03-R6'},

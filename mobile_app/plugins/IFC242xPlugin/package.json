@@ -1,6 +1,6 @@
 {
   "_from": "git+ssh://git@github.build.ge.com:iacquire-grc/IFC242xPlugin.git#devTesting",
-  "_id": "IFC242xPlugin@0.1.0",
+  "_id": "IFC242xPlugin@1.0.0",
   "_inBundle": false,
   "_integrity": "",
   "_location": "/IFC242xPlugin",
@@ -25,7 +25,7 @@
   },
   "bundleDependencies": false,
   "cordova": {
-    "id": "IFC242xPlugin@0.1.0",
+    "id": "IFC242xPlugin@1.0.0",
     "platforms": [
       "ios"
     ]
@@ -49,5 +49,5 @@
     "type": "git",
     "url": "git@github.build.ge.com:iacquire-grc/IFC242xPlugin.git"
   },
-  "version": "0.1.0"
+  "version": "1.0.0"
 }

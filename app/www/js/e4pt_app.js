@@ -258,42 +258,15 @@ define(function(require, exports, module) {
             update_spacer_value();
         }, {passive: true});
         document.getElementById("MODE_BUTTON_PROD").addEventListener('click', function(){
-            document.getElementById('MODE_BUTTON_PROD').style.display = 'none'; //hide
-            document.getElementById('MODE_BUTTON_DEMO').style.display = 'block';
-            $("#MODE_INDICATOR").css("color", "red");
-            $("#MODE_NAME").text('DEMO');
-            $("#CUR_MODE").text('Current Mode: DEMO');
-            document.getElementById('MODE_NAME').style.fontSize = "2vmin";
-            document.getElementById('MODE_NAME').style.display = 'block';
-            document.getElementById('MODE_INDICATOR').style.display = 'block';
-            set_demo_mode("true");
+            set_demo_mode(true);
         }, {passive: true});
         document.getElementById("MODE_BUTTON_DEMO").addEventListener('click', function(){
-            document.getElementById('MODE_BUTTON_DEMO').style.display = 'none'; //hide
-            document.getElementById('MODE_BUTTON_PROD').style.display = 'block';
-            $("#MODE_INDICATOR").css("color", "limeGreen");
-            $("#MODE_NAME").text('PROD');
-            $("#CUR_MODE").text('Current Mode: PRODUCTION');
-            document.getElementById('MODE_NAME').style.display = 'none';
-            document.getElementById('MODE_INDICATOR').style.display = 'none';
-            set_demo_mode("false");
+            set_demo_mode(false);
         }, {passive: true});
         document.getElementById("CONN_BUTTON_ETHERNET").addEventListener('click', function(){
-            document.getElementById('CONN_BUTTON_ETHERNET').style.display = 'none'; //hide
-            document.getElementById('CONN_BUTTON_SERIAL').style.display = 'block';
-            $("#CONNECTION_NAME").text('ETHERNET');
-            $("#CUR_CONN").text('Current Connection: ETHERNET');
-            document.getElementById('CONNECTION_NAME').style.fontSize = "2vmin";
-            document.getElementById('CONNECTION_NAME').style.display = 'block';
             set_connection_mode("ethernet");
         }, {passive: true});
         document.getElementById("CONN_BUTTON_SERIAL").addEventListener('click', function(){
-            document.getElementById('CONN_BUTTON_SERIAL').style.display = 'none'; //hide
-            document.getElementById('CONN_BUTTON_ETHERNET').style.display = 'block';
-            $("#CONNECTION_NAME").text('SERIAL');
-            $("#CUR_CONN").text('Current Connection: SERIAL');
-            document.getElementById('CONNECTION_NAME').style.fontSize = "2vmin";
-            document.getElementById('CONNECTION_NAME').style.display = 'block';
             set_connection_mode("serial");
         }, {passive: true});
         document.getElementById("SETUP_CLOSE_BUTTON").addEventListener('click', function(){
@@ -372,6 +345,7 @@ define(function(require, exports, module) {
         } else {
             createWebSocket();
         }
+        messaging.sendMessage({"args":["get_version"]});
         
         // Wait (0.5s) for the page load to complete, then get the file system.
         setTimeout(function(){
@@ -411,8 +385,8 @@ define(function(require, exports, module) {
             dirEntry.createReader().readEntries(function(entries) {
                 entries.forEach(function(entry) {
                     if (entry.isFile && entry.name.endsWith(".json"))
-                        this.loadJSONFile(entry);
-                }, this);
+                        this(entry);
+                }, loadJSONFile);
             });
         });
     }
@@ -661,15 +635,31 @@ define(function(require, exports, module) {
     }
 
     function get_sensor_parameters() {
-        messaging.sendMessage({"args":["get_sensor_parameters"]});
+        messaging.sendMessage({args:['get_sensor_parameters']});
     }
 
     function set_demo_mode(tf) {
-        messaging.sendMessage({"args":["set_demo_mode",tf]});
+        document.getElementById('MODE_BUTTON_PROD').style.display = tf ? 'none' : 'block';
+        document.getElementById('MODE_BUTTON_DEMO').style.display = tf ? 'block' : 'none';
+        $('#CUR_MODE').text('Current Mode: ' + (tf ? 'Demo' : 'Production'));
+        $('#CONNECTION_NAME').text((tf ? 'DEMO' : $('#CUR_CONN').text().substring(20)));
+        
+        if (!tf) {
+            setIndicatorColor('white');
+            serialConnected = false;
+        }
+        messaging.sendMessage({args:['set_demo_mode',tf.toString()]});
     }
 
     function set_connection_mode(mode) {
-        messaging.sendMessage({"args":["set_connection_mode",mode]});
+        var upperMode = mode.toUpperCase();
+        var otherMode = upperMode === 'ETHERNET' ? 'SERIAL' : 'ETHERNET';
+        document.getElementById('CONN_BUTTON_' + upperMode).style.display = 'none'; //hide
+        document.getElementById('CONN_BUTTON_' + otherMode).style.display = 'block';
+        $('#CUR_CONN').text('Current Connection: ' + upperMode);
+        if ($('#CONNECTION_NAME').text() !== 'DEMO') $('#CONNECTION_NAME').text(upperMode);
+        
+        messaging.sendMessage({args:['set_connection_mode',mode]});
     }
 
     function record_casing_thickness() {
@@ -802,12 +792,11 @@ define(function(require, exports, module) {
         
         update_spacer_value();
 
-        var units = document.getElementById("UNITS").value;
-        if (units == "In") {
+        var units = document.getElementById("UNITS").value.toUpperCase();
+        if (units.includes('IN')) {
             document.getElementById("CURR_CASE_THICKNESS_LABEL").innerHTML = "Casing Thickness (in)";
             document.getElementById("SPACER_THICKNESS_LABEL").innerHTML = "Spacer Thickness (in)";
-        }
-        if (units == "MM") {
+        } else if (units.includes('MM')) {
             document.getElementById("CURR_CASE_THICKNESS_LABEL").innerHTML = "Casing Thickness (mm)";
             document.getElementById("SPACER_THICKNESS_LABEL").innerHTML = "Spacer Thickness (mm)";
         }
@@ -1522,6 +1511,8 @@ define(function(require, exports, module) {
         $("#DATA_PLOT").fadeIn();
         $("#STATUS_BAR").hide();
         $("#REV_PROGRESS_BAR").show();
+        charting.clearChartData(document.getElementById("DATA_PLOT"));
+        current_frame_data = [];
     }
 
     function do_mastering(reset) {
@@ -1674,10 +1665,12 @@ define(function(require, exports, module) {
                                              // Web Socket is connected, send data using send()
                                              console.log("Connected to server");
                                              setIndicatorColor("green");
+                                             serialConnected = true;
                                             },
                                    onclose: function(){
                                               console.log("DISCONNECTED");
                                               setIndicatorColor("white");
+                                              serialConnected = false;
                                             },
                                    onerror: function(evt) {
                                               console.log("e4PtSocket error: ",evt);
@@ -1725,8 +1718,7 @@ define(function(require, exports, module) {
                     setIndicatorColor("yellow");
                 }
                 if (msg.status.includes("Error:")) {
-                    var alertMsg = msg.status;
-                    e4PtAlert(alertMsg);
+                    e4PtAlert(msg.status);
                 }
                 break;
             case "data":
@@ -1763,8 +1755,8 @@ define(function(require, exports, module) {
                 break;
             case "sensor_params":
                 console.log("Received sensor parameters message: ", msg.master_fixture_height, ", ", msg.mastering_value, ", ", msg.master_offset, ", ", msg.sensor_selection, ", ", msg.sensor_length, ", ", msg.start_measurement_range);
-                setIndicatorColor("green");
-                serialConnected = true;
+                //setIndicatorColor("green");
+                //serialConnected = true;
                 
                 sensorSettings.set('sensor_selection', msg.sensor_selection);
                 document.getElementById("SENSOR_SELECTION").value = sensorSettings.get('sensor_selection');
@@ -2170,13 +2162,9 @@ define(function(require, exports, module) {
         let targetFolder = "data"; // default directory
         let fileName = "details_e4pt.csv";
         if ((typeof E4PTdata.serial_number !== 'undefined') || ( E4PTdata.serial_number.length > 0 )) {
-            let sn = E4PTdata.serial_number;
-            sn = sn.replace(/\s+/g, '_');
-            sn = sn.replace(/:/g, '-');
-            targetFolder = E4PTdata.serial_number;
-            let fileDate = E4PTdata.date;
-            fileDate = fileDate.replace(/\s+/g, '_');
-            fileDate = fileDate.replace(/:/g, '-');
+            let sn = E4PTdata.serial_number.replace(/\s+/g, '_').replace(/:/g, '-');
+            targetFolder = sn;
+            let fileDate = E4PTdata.date.replace(/\s+/g, '_').replace(/:/g, '-');
             fileName = "details_e4pt_" + sn + "_" + fileDate + ".csv";
         }
         writeToFile(targetFolder, fileName, contents, null);
@@ -2220,7 +2208,7 @@ define(function(require, exports, module) {
             let cell = tbl.rows[i].cells[0]; // There's only one cell per row in the file lists.
         }
     }
-
+    
     function setIndicatorColor( color ) {
         document.getElementById("indicator-pulse").style.background = color;
         document.getElementById("indicator-solid").style.background = color;
@@ -2370,22 +2358,13 @@ define(function(require, exports, module) {
             if (clearance_f < 0) {
                 e4PtAlert("The clearance is negative. This indicates a problem with the setup (i.e. the sensor is out of range).\nPlease make sure the spacer is correct and the sensor and spacer are installed properly and try again.");
             }
-            let max_clr_f = parseFloat(E4PTdata.max_clr);
-            let min_clr_f = parseFloat(E4PTdata.min_clr);
-            let med_clr_f = parseFloat(E4PTdata.med_clr);
-            let std_clr_f = parseFloat(E4PTdata.std_clr);
-            let units = E4PTdata.units.toUpperCase();
-            if (units.includes("IN")) {
-                clearance_f = clearance_f / 25.4; // Clearances come back in mm. Convert to inches if needed.
-                max_clr_f = max_clr_f / 25.4;
-                min_clr_f = min_clr_f / 25.4;
-                med_clr_f = med_clr_f / 25.4;
-                std_clr_f = std_clr_f / 25.4;
+            if (E4PTdata.units.toUpperCase().includes("IN")) {
+                clearance_f = sensorSettings.toInches(clearance_f);
                 E4PTdata.clearance = clearance_f.toString(10);
-                E4PTdata.max_clr = max_clr_f.toString(10);
-                E4PTdata.min_clr = min_clr_f.toString(10);
-                E4PTdata.med_clr = med_clr_f.toString(10);
-                E4PTdata.std_clr = std_clr_f.toString(10);
+                E4PTdata.max_clr = sensorSettings.toInches(parseFloat(E4PTdata.max_clr)).toString(10);
+                E4PTdata.min_clr = sensorSettings.toInches(parseFloat(E4PTdata.min_clr)).toString(10);
+                E4PTdata.med_clr = sensorSettings.toInches(parseFloat(E4PTdata.med_clr)).toString(10);
+                E4PTdata.std_clr = sensorSettings.toInches(parseFloat(E4PTdata.std_clr)).toString(10);
             }
           update_clearance(clearance_f);
         }
@@ -2502,22 +2481,6 @@ define(function(require, exports, module) {
         err_id.innerHTML = err_str;
 
         document.getElementById(el_id).innerHTML = clearance_f.toFixed(4);
-        
-        clearances = [];
-        for (var i=0; i<current_frame_data['position'][stage].length; i++) {
-            var p = current_frame_data['position'][stage][i];
-            var angle = position_angle[p];
-            el_id = p + stage;
-            el_id = el_id.replace(/\s+/g, '_');
-            var c = document.getElementById(el_id).innerHTML;
-            var c_f = parseFloat(c);
-            if (isNaN(c_f)) {
-                clearances.push("");
-            }
-            else {
-                clearances.push(c_f);
-            }
-        }
     }
 
     function plot_non_calibrated_acquire() {
@@ -2560,15 +2523,16 @@ define(function(require, exports, module) {
                 var data = JSON.parse(this.result);
                 if (json_data_is_valid(data)) {
                     data.pouchdb_id = "";
-                    addDBEntry(data);
-                    fadeOutAll();
-                    set_frame_information();
-                    initializeFromDocument(data);
                     
                     window.resolveLocalFileSystemURL(cordova.file.documentsDirectory, function (dirEntry) {
                         dirEntry.getDirectory(data.serial_number, {create: true}, function(subDirEntry) {
                             
+                            addDBEntry(data);
                             fileEntry.moveTo(subDirEntry, file.name);
+                            
+                            fadeOutAll();
+                            set_frame_information();
+                            initializeFromDocument(data);
                             writeDetailsFile();
                             
                         }, function(error) {
@@ -2911,7 +2875,11 @@ define(function(require, exports, module) {
     }
 
     function initializeFromDocument(doc) {
-        E4PTdata.pouchdb_id = doc._id;
+        if (doc._id)
+            E4PTdata.pouchdb_id = doc._id;
+        else if (doc.pouchdb_id)
+            E4PTdata.pouchdb_id = doc.pouchdb_id;
+            
         var frm_idx = 0;
         for (frm_idx=0; frm_idx<frame_data.length; frm_idx++) {
           if (frame_data[frm_idx].frame == doc.frame) {

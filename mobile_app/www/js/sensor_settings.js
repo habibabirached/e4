@@ -66,23 +66,23 @@ define(function(require, exports, module) {
         if (sensor_data.sensor_selection === 'LONG' || sensor_data.sensor_selection === 'SHORT' || sensor_data.sensor_selection === 'PROTOTYPE') {
             return sensorLengthHasBeenEdited() || smrHasBeenEdited() || mfhHasBeenEdited() || mvHasBeenEdited() || moHasBeenEdited();
         }
-        return true;
+        return sensor_data.sensor_selection === 'CUSTOM';
     }
       
     const sensorLengthHasBeenEdited = () => {
-        return !almostEqual(sensor_data.sensor_length, toInches(sensor_types[sensor_data.sensor_selection].measured_length_mm), 0.0005);
+        return sensor_data.sensor_selection != '' && !almostEqual(sensor_data.sensor_length, toInches(sensor_types[sensor_data.sensor_selection].measured_length_mm), 0.0005);
     }
                             
     const smrHasBeenEdited = () => {
-        return !almostEqual(sensor_data.start_measurement_range, sensor_types[sensor_data.sensor_selection].measured_start_measurment_range_mm, 0.0001);
+        return sensor_data.sensor_selection != '' && !almostEqual(sensor_data.start_measurement_range, sensor_types[sensor_data.sensor_selection].measured_start_measurment_range_mm, 0.0001);
     }
                             
     const mfhHasBeenEdited = () => {
-        return !almostEqual(sensor_data.master_fixture_height, toInches(sensor_types[sensor_data.sensor_selection].measured_mastering_fixture_height_mm), 0.0005);
+        return sensor_data.sensor_selection != '' && !almostEqual(sensor_data.master_fixture_height, toInches(sensor_types[sensor_data.sensor_selection].measured_mastering_fixture_height_mm), 0.0005);
     }
 
     const mvHasBeenEdited = () => {
-        return !almostEqual(sensor_data.mastering_value,
+        return sensor_data.sensor_selection != '' && !almostEqual(sensor_data.mastering_value,
                             calculateMasteringValueMM(
                                 sensor_data.sensor_length,
                                 sensor_data.master_fixture_height,
@@ -91,7 +91,7 @@ define(function(require, exports, module) {
     }
                             
     const moHasBeenEdited = () => {
-        return !almostEqual(sensor_data.master_offset,
+        return sensor_data.sensor_selection != '' && !almostEqual(sensor_data.master_offset,
                             calculateMasteringOffsetInches(
                                 sensor_data.sensor_length,
                                 sensor_data.master_fixture_height,
