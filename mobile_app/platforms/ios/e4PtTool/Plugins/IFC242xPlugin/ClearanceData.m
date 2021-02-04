@@ -31,8 +31,9 @@
 @synthesize shelfThreshold = _shelfThreshold;
 
 -(instancetype)init {
-    self = [super init];
-    self.min = FLT_MAX;
+    if (self = [super init]) {
+        self.min = FLT_MAX;
+    }
     return self;
 }
 

@@ -480,7 +480,7 @@ enum ifc242xValue {
         // Below are two ways to report progress back to the UI.  The later seems to cause a crash
         // when collecting data via ethernet. I'm leaving the code for now, but will use the more
         // direct method that does not crash.
-        if (true) {
+        if (/* DISABLES CODE */ (true)) {
             NSError* error;
             NSData *jsonData=[NSJSONSerialization dataWithJSONObject:jsonDict options:NSJSONWritingSortedKeys error:&error];
             NSString *jsonString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
@@ -532,7 +532,7 @@ enum ifc242xValue {
                 self.progress = 1.0;
                 dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
                     NSDictionary* jsonDict = @{@"type":@"alert",@"message":@"Dark referencing complete."};
-                    if (true) {
+                    if (/* DISABLES CODE */ (true)) {
                         NSError* error;
                         NSData *jsonData=[NSJSONSerialization dataWithJSONObject:jsonDict options:NSJSONWritingSortedKeys error:&error];
                         NSString *jsonString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
@@ -968,7 +968,6 @@ enum ifc242xValue {
             // Call from JavaScript:
             // ["send_data",acquisitionTime, frame, sn, stage, position, casing_thickness, spacer_thickness, master_offset, clearance_calc_method];
             acqTime = [msgArray objectAtIndex:1];
-            //self.metaData.frame = [msgArray objectAtIndex:2];
             self.metaData.serial_number = [msgArray objectAtIndex:3];
             self.metaData.stage = [msgArray objectAtIndex:4];
             self.metaData.position = [msgArray objectAtIndex:5];
@@ -977,7 +976,6 @@ enum ifc242xValue {
             self.metaData.num_blades = [msgArray objectAtIndex:8];
             self.metaData.tip_diameter = [msgArray objectAtIndex:9];
             self.metaData.blade_width = [msgArray objectAtIndex:10];
-            //self.metaData.master_offset = [msgArray objectAtIndex:11];
             controllerSettings.sensor.offsetSelector = [msgArray objectAtIndex:12];
             self.calibratedAcquire = true;
         }
@@ -996,8 +994,7 @@ enum ifc242xValue {
                 }
                 NSLog(@"Using auto-settings: Found measurement rate: %f; intensity threshold: %f", [controllerSettings measurementRate], [controllerSettings intensityThreshold]);
                 [self setMeasurementRateAndIntensityThreshold];
-            }
-            else {
+            } else {
                 NSLog(@"Overriding auto-settings.");
             }
             self.startTime = [[NSDate date] timeIntervalSince1970]; // start timeout timer
@@ -1189,8 +1186,6 @@ enum ifc242xValue {
                 }
             }
         }
-        //TODO must figure out how to safely set the MR
-        //float sensor_mr = controllerSettings.sensor.mr;
         controllerSettings.sensor = [[SensorSettings alloc] initWithName:sensor lengthInches:[sensorLength floatValue] measurementRangeMM:[mr floatValue] startOfMeasurementRangeMM:[smr floatValue] masterFixtureHeightInches:[mfh floatValue] masteringValueMM:[mval floatValue] masteringOffsetInches:[mo floatValue]];
         
         [self returnPluginResponse:@{@"type":@"alert",@"message":@"Sensor Parameters are Set."} keepOpen:NO];
