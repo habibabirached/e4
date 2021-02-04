@@ -1669,14 +1669,18 @@ enum ifc242xValue {
 
     NSDateFormatter *dateFormatter=[[NSDateFormatter alloc] init];
     [dateFormatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
-    NSString* dateStr = [dateFormatter stringFromDate:[NSDate date]];
+    NSDate* date = [NSDate date];
+    NSString* dateStr = [dateFormatter stringFromDate:date];
     NSString* clearance = [NSString stringWithFormat:@"%f", clearanceData.clearance];
     NSString* stg_max_clr = [NSString stringWithFormat:@"%f", clearanceData.max];
     NSString* stg_min_clr = [NSString stringWithFormat:@"%f", clearanceData.min];
     NSString* stg_med_clr = [NSString stringWithFormat:@"%f", clearanceData.median];
     NSString* stg_clr_std = [NSString stringWithFormat:@"%f", clearanceData.std];
     NSString* overall_avg = [NSString stringWithFormat:@"%f", clearanceData.averageDisplacement];
-
+    
+    [self saveCSVFile:date clearanceData:clearanceData];
+    NSArray* savedFilepath = [self.last_saved_file pathComponents];
+    NSRange endRange = NSMakeRange(savedFilepath.count - 2, 2);
     NSDictionary* jsonDataDict = @{@"type":@"data",
                                    @"data":dispJSONString,
                                    @"intensity":intensJSONString,
@@ -1693,10 +1697,9 @@ enum ifc242xValue {
                                    @"overall_avg":overall_avg,
                                    @"date":dateStr,
                                    @"intensity_threshold":[NSString stringWithFormat:@"%f", controllerSettings.intensityThreshold],
-                                   @"measurement_rate":[NSString stringWithFormat:@"%f", controllerSettings.measurementRate
-                                   ]};
+                                   @"measurement_rate":[NSString stringWithFormat:@"%f", controllerSettings.measurementRate],
+                                   @"filename":[[savedFilepath subarrayWithRange:endRange] componentsJoinedByString:@"/"]};
     [self returnPluginResponse:jsonDataDict keepOpen:NO];
-    [self saveCSVFile:@"" clearanceData:clearanceData];
     [self clearData];
 }
 
@@ -1793,14 +1796,13 @@ enum ifc242xValue {
     return true;
 }
 
-- (void)saveCSVFile:(NSString*)fileName clearanceData:(ClearanceData*)clearanceData {
+- (void)saveCSVFile:(NSDate*)date clearanceData:(ClearanceData*)clearanceData {
     // If called with no displacements, don't write a file, just return;
     if (self.displacements.count == 0) return;
     // Get the date & time for the filename.
     NSDateFormatter *dateFormatter=[[NSDateFormatter alloc] init];
     [dateFormatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
-    NSString* dateStr = [dateFormatter stringFromDate:[NSDate date]];
-    dateStr = [dateStr substringFromIndex:2]; // Remove char 0-1, to get a shortened 2-digit year.
+    NSString* dateStr = [[dateFormatter stringFromDate:date] substringFromIndex:2]; // Remove char 0-1, to get a shortened 2-digit year.
     // Get path to documents directory
     NSString* docPath;
     NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
@@ -1830,25 +1832,19 @@ enum ifc242xValue {
     // Create a file name as sn_stage_pos_state_datetime.csv.
     // If there is no serial number, just save to the data folder.
     NSString* csvFileName = [[NSString alloc] init];
-    if (fileName.length == 0) {
-        if (self.metaData.serial_number.length == 0) {
-            csvFileName = [NSString stringWithFormat:@"%@/%@",
-                           dataDir,
-                           [NSString stringWithFormat:@"data_%@_mm.csv",dateStr]];
-        }
-        else {
-            NSString* fName = [NSString stringWithFormat:@"%@_%@_%@_%@_mm.csv",
-                               self.metaData.serial_number, self.metaData.stage,
-                               pos, dateStr];
-            csvFileName = [NSString stringWithFormat:@"%@/%@", turbineDir, fName];
-        }
-        // Change the data-time string format in the filename.
-        csvFileName = [csvFileName stringByReplacingOccurrencesOfString:@" " withString:@"_"];
-        csvFileName = [csvFileName stringByReplacingOccurrencesOfString:@":" withString:@"-"];
+    if (self.metaData.serial_number.length == 0) {
+        csvFileName = [NSString stringWithFormat:@"%@/%@",
+                       dataDir,
+                       [NSString stringWithFormat:@"data_%@_mm.csv",dateStr]];
+    } else {
+        NSString* fName = [NSString stringWithFormat:@"%@_%@_%@_%@_mm.csv",
+                           self.metaData.serial_number, self.metaData.stage,
+                           pos, dateStr];
+        csvFileName = [NSString stringWithFormat:@"%@/%@", turbineDir, fName];
     }
-    else {
-        csvFileName = [NSString stringWithFormat:@"%@/%@", docPath, fileName];
-    }
+    // Change the data-time string format in the filename.
+    csvFileName = [csvFileName stringByReplacingOccurrencesOfString:@" " withString:@"_"];
+    csvFileName = [csvFileName stringByReplacingOccurrencesOfString:@":" withString:@"-"];
     self.last_saved_file = csvFileName;
     // Now write the file...
     // Open the output file.

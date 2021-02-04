@@ -38,9 +38,10 @@ define(function(require, exports, module) {
         this.intensity_threshold = null;
         this.measurement_rate = null;
         this.dateStr = null;
+        this.filename = null;
     };
 
-    Data_Set.prototype.add_data = function(state, stage, position, case_thickness, blade_number, pts, used_in_avg, clearance, max_clr, min_clr, med_clr, std_clr, quality, intensity_threshold, measurement_rate, dateStr) {
+    Data_Set.prototype.add_data = function(state, stage, position, case_thickness, blade_number, pts, used_in_avg, clearance, max_clr, min_clr, med_clr, std_clr, quality, intensity_threshold, measurement_rate, dateStr, filename) {
         this.stage = stage;
         this.position = position;
         this.case_thickness = case_thickness;
@@ -55,6 +56,7 @@ define(function(require, exports, module) {
         this.intensity_threshold = intensity_threshold;
         this.measurement_rate = measurement_rate;
         this.dateStr = dateStr;
+        this.filename = filename;
     };
 
     var E4PTdata = {
@@ -2400,6 +2402,7 @@ define(function(require, exports, module) {
         set.intensity_threshold = E4PTdata.intensity_threshold;
         set.measurement_rate = E4PTdata.measurement_rate;
         set.dateStr = E4PTdata.date
+        set.filename = E4PTdata.filename
         addOrReplaceSet(set);
         if (doDBSave) {
           addDBEntry(E4PTdata); // save the data autmatically after acquisition
@@ -2431,6 +2434,7 @@ define(function(require, exports, module) {
         priorSet.intensity_threshold = set.intensity_threshold;
         priorSet.measurement_rate = set.measurement_rate;
         priorSet.dateStr = set.dateStr;
+        priorSet.filename = set.filename;
         console.log("priorSet after:  ", priorSet);
     }
 
@@ -3004,10 +3008,10 @@ define(function(require, exports, module) {
         return Object.keys(E4PTdata).every(function(key) {
             if (key === 'sets') {
                 return fileData.sets.every(function(entry) {
-                    return Object.keys(new Data_Set()).every((ds_key) => entry.hasOwnProperty(ds_key) || key === 'intensity_threshold' || key === 'measurement_rate' || key === 'dateStr');
+                    return Object.keys(new Data_Set()).every((ds_key) => entry.hasOwnProperty(ds_key) || key === 'intensity_threshold' || key === 'measurement_rate' || key === 'dateStr' || key === 'filename');
                 });
             }
-            return fileData.hasOwnProperty(key) || key === 'intensity_threshold' || key === 'measurement_rate';
+            return fileData.hasOwnProperty(key) || key === 'intensity_threshold' || key === 'measurement_rate' || key === 'filename';
         });
     }
     
