@@ -121,7 +121,6 @@
 		48257ABB25C616AE00B1A505 /* EthernetController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EthernetController.h; sourceTree = "<group>"; };
 		48257ABC25C616AE00B1A505 /* DemoController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DemoController.h; sourceTree = "<group>"; };
 		48257ABD25C616AE00B1A505 /* SerialController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SerialController.m; sourceTree = "<group>"; };
-		48257ABE25C616AE00B1A505 /* libRscMgrUniv.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libRscMgrUniv.a; sourceTree = "<group>"; };
 		48257ABF25C616AE00B1A505 /* ClearanceData.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ClearanceData.h; sourceTree = "<group>"; };
 		48257AC025C616AE00B1A505 /* PostProcess.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PostProcess.h; sourceTree = "<group>"; };
 		48257AC125C616AE00B1A505 /* redparkSerial.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = redparkSerial.h; sourceTree = "<group>"; };
@@ -335,7 +334,6 @@
 				48257AAE25C616AE00B1A505 /* MeasurementData.h */,
 				48257AAF25C616AE00B1A505 /* CDVIFC242x.h */,
 				48257AB025C616AE00B1A505 /* Controller */,
-				48257ABE25C616AE00B1A505 /* libRscMgrUniv.a */,
 				48257ABF25C616AE00B1A505 /* ClearanceData.h */,
 				48257AC025C616AE00B1A505 /* PostProcess.h */,
 				48257AC125C616AE00B1A505 /* redparkSerial.h */,
