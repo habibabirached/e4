@@ -579,6 +579,7 @@ r                        </tbody>
                         <span id="SENSOR_PARAMS_CONFIG_MSG"></span>
                         <span id="SL_CONFIG_MSG"></span>,
                         <span id="SMR_CONFIG_MSG"></span>,
+                        <span id="MR_CONFIG_MSG"></span>,
                         <span id="MFH_CONFIG_MSG"></span>,
                         <span id="MV_CONFIG_MSG"></span>,
                         <span id="MO_CONFIG_MSG"></span>
@@ -739,7 +740,7 @@ r                        </tbody>
                 <br/>
                 <table class="SENSOR_OPTIONS_TABLE">
                     <tr class="SENSOR_OPTIONS_ROW">
-                        <td  class="SENSOR_OPTIONS_CELL">
+                        <td class="SENSOR_OPTIONS_CELL" colspan="3">
                             <div style="text-align: center">
                                 <div class="SENSOR_OPTIONS_TEXT_C">Sensor Selection:</div>
                                 <select id="SENSOR_SELECTION" style="font-size:2vmax;">
@@ -750,33 +751,41 @@ r                        </tbody>
                                 </select>
                             </div>
                         </td>
-                        <td  class="SENSOR_OPTIONS_CELL">
+                    </tr>
+                    <tr class="SENSOR_OPTIONS_ROW">
+                        <td class="SENSOR_OPTIONS_CELL">
                             <fieldset style="border:0">
                                 <legend align="center" id="SENSOR_LENGTH_LABEL" class="SENSOR_OPTIONS_TEXT_C">Measured Sensor Length <small>(in)</small></legend>
                                 <input class="SENSOR_OPTIONS_BOX" type="text" id="SENSOR_LENGTH"/>
                             </fieldset>
                         </td>
-                        <td  class="SENSOR_OPTIONS_CELL">
+                        <td class="SENSOR_OPTIONS_CELL">
                             <fieldset style="border:0">
                                 <legend align="center" id="SMR_LABEL" class="SENSOR_OPTIONS_TEXT_C">Start <small>of</small> Measure Range <small>(mm)</small></legend>
                                 <input class="SENSOR_OPTIONS_BOX" type="text" id="SMR"/>
                             </fieldset>
                         </td>
+                        <td class="SENSOR_OPTIONS_CELL">
+                            <fieldset style="border:0">
+                                <legend align="center" id="SENSOR_MR_LABEL" class="SENSOR_OPTIONS_TEXT_C">Measurement Range <small>(mm)</small></legend>
+                                <input class="SENSOR_OPTIONS_BOX" type="text" id="SENSOR_MR"/>
+                            </fieldset>
+                        </td>
                     </tr>
                     <tr class="SENSOR_OPTIONS_ROW">
-                        <td  class="SENSOR_OPTIONS_CELL">
+                        <td class="SENSOR_OPTIONS_CELL">
                             <fieldset style="border:0">
                                 <legend align="center" id="MASTER_FIXTURE_LABEL" class="SENSOR_OPTIONS_TEXT_C">Mastering Fixture Height <small>(in)</small></legend>
                                 <input class="SENSOR_OPTIONS_BOX" type="text" id="MASTER_FIXTURE_HEIGHT"/>
                             </fieldset>
                         </td>
-                        <td  class="SENSOR_OPTIONS_CELL">
+                        <td class="SENSOR_OPTIONS_CELL">
                             <fieldset style="border:0">
                                 <legend align="center" id="MASTERING_VALUE_LABEL" class="SENSOR_OPTIONS_TEXT_C">Mastering Value <small>(mm)</small></legend>
                                 <input class="SENSOR_OPTIONS_BOX" type="text" id="MASTERING_VALUE"/>
                             </fieldset>
                         </td>
-                        <td  class="SENSOR_OPTIONS_CELL">
+                        <td class="SENSOR_OPTIONS_CELL">
                             <fieldset>
                                 <legend align="center" id="MASTER_OFFSET_LABEL" class="SENSOR_OPTIONS_TEXT_C">Master Offset <small>(in)</small></legend>
                                 <input class="SENSOR_OPTIONS_BOX" type="text" id="MASTER_OFFSET"/>

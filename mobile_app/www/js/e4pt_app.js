@@ -335,6 +335,9 @@ define(function(require, exports, module) {
             updateMasteringOffset();
             enableMasteringValuesForEditing(true);
         }, {passive: true});
+        document.getElementById("SENSOR_MR").addEventListener('change', function(){
+            enableMasteringValuesForEditing(true);
+        }, {passive: true});
         document.getElementById("MASTER_OFFSET").addEventListener('change', function(){
             enableMasteringValuesForEditing(true);
         }, {passive: true});
@@ -817,6 +820,7 @@ define(function(require, exports, module) {
         document.getElementById("HEADER_SERIAL").innerHTML = "S/N: " + E4PTdata.serial_number + ";  Units: " + E4PTdata.units;
         document.getElementById("SL_CONFIG_MSG").innerHTML = sensorSettings.get('sensor_length') + "&quot; SL";
         document.getElementById("SMR_CONFIG_MSG").innerHTML = sensorSettings.get('start_measurement_range') + "mm SMR";
+        document.getElementById("MR_CONFIG_MSG").innerHTML = sensorSettings.get('sensor_mr') + "mm MR";
         document.getElementById("MFH_CONFIG_MSG").innerHTML = sensorSettings.get('master_fixture_height') + "&quot; MFH";
         document.getElementById("MV_CONFIG_MSG").innerHTML = sensorSettings.get('mastering_value') + "mm MV";
         document.getElementById("MO_CONFIG_MSG").innerHTML = sensorSettings.get('master_offset') + "&quot; MO";
@@ -826,6 +830,7 @@ define(function(require, exports, module) {
             $("#SENSOR_PARAMS_CONFIG_MSG").css('color', 'red');
             $("#SL_CONFIG_MSG").css('color', sensorSettings.sensorLengthHasBeenEdited()?'red':'black');
             $("#SMR_CONFIG_MSG").css('color', sensorSettings.smrHasBeenEdited()?'red':'black');
+            $("#MR_CONFIG_MSG").css('color', sensorSettings.mrHasBeenEdited()?'red':'black');
             $("#MFH_CONFIG_MSG").css('color', sensorSettings.mfhHasBeenEdited()?'red':'black');
             $("#MV_CONFIG_MSG").css('color', sensorSettings.mvHasBeenEdited()?'red':'black');
             $("#MO_CONFIG_MSG").css('color', sensorSettings.moHasBeenEdited()?'red':'black');
@@ -834,6 +839,7 @@ define(function(require, exports, module) {
             $("#SENSOR_PARAMS_CONFIG_MSG").css('color', 'green');
             $("#SL_CONFIG_MSG").css('color', 'black');
             $("#SMR_CONFIG_MSG").css('color', 'black');
+            $("#MR_CONFIG_MSG").css('color', 'black');
             $("#MFH_CONFIG_MSG").css('color', 'black');
             $("#MV_CONFIG_MSG").css('color', 'black');
             $("#MO_CONFIG_MSG").css('color', 'black');
@@ -1247,6 +1253,7 @@ define(function(require, exports, module) {
         document.getElementById("HEADER_SERIAL").innerHTML = "S/N: " + E4PTdata.serial_number + ";  Units: " + E4PTdata.units;
         document.getElementById("SL_CONFIG_MSG").innerHTML = sensorSettings.get('sensor_length') + "&quot; SL";
         document.getElementById("SMR_CONFIG_MSG").innerHTML = sensorSettings.get('start_measurement_range') + "mm SMR";
+        document.getElementById("MR_CONFIG_MSG").innerHTML = sensorSettings.get('sensor_mr') + "mm MR";
         document.getElementById("MFH_CONFIG_MSG").innerHTML = sensorSettings.get('master_fixture_height') + "&quot; MFH";
         document.getElementById("MV_CONFIG_MSG").innerHTML = sensorSettings.get('mastering_value') + "mm MV";
         document.getElementById("MO_CONFIG_MSG").innerHTML = sensorSettings.get('master_offset') + "&quot; MO";
@@ -1256,6 +1263,7 @@ define(function(require, exports, module) {
             $("#SENSOR_PARAMS_CONFIG_MSG").css('color', 'red');
             $("#SL_CONFIG_MSG").css('color', sensorSettings.sensorLengthHasBeenEdited()?'red':'black');
             $("#SMR_CONFIG_MSG").css('color', sensorSettings.smrHasBeenEdited()?'red':'black');
+            $("#MR_CONFIG_MSG").css('color', sensorSettings.mrHasBeenEdited()?'red':'black');
             $("#MFH_CONFIG_MSG").css('color', sensorSettings.mfhHasBeenEdited()?'red':'black');
             $("#MV_CONFIG_MSG").css('color', sensorSettings.mvHasBeenEdited()?'red':'black');
             $("#MO_CONFIG_MSG").css('color', sensorSettings.moHasBeenEdited()?'red':'black');
@@ -1264,6 +1272,7 @@ define(function(require, exports, module) {
             $("#SENSOR_PARAMS_CONFIG_MSG").css('color', 'green');
             $("#SL_CONFIG_MSG").css('color', 'black');
             $("#SMR_CONFIG_MSG").css('color', 'black');
+            $("#MR_CONFIG_MSG").css('color', 'black');
             $("#MFH_CONFIG_MSG").css('color', 'black');
             $("#MV_CONFIG_MSG").css('color', 'black');
             $("#MO_CONFIG_MSG").css('color', 'black');
@@ -1754,7 +1763,7 @@ define(function(require, exports, module) {
                 $("#REV_PROGRESS").css('width', msg.progress + '%');
                 break;
             case "sensor_params":
-                console.log("Received sensor parameters message: ", msg.master_fixture_height, ", ", msg.mastering_value, ", ", msg.master_offset, ", ", msg.sensor_selection, ", ", msg.sensor_length, ", ", msg.start_measurement_range);
+                console.log("Received sensor parameters message: ", msg.master_fixture_height, ", ", msg.mastering_value, ", ", msg.master_offset, ", ", msg.sensor_selection, ", ", msg.sensor_length, ", ", msg.start_measurement_range, ", ", msg.sensor_measurement_range);
                 //setIndicatorColor("green");
                 //serialConnected = true;
                 
@@ -1770,6 +1779,8 @@ define(function(require, exports, module) {
                 document.getElementById("MASTER_OFFSET").value = sensorSettings.parseAndSetSensorValue('master_offset', msg.master_offset);
                 
                 document.getElementById("SMR").value = sensorSettings.parseAndSetSensorValue('start_measurement_range', msg.start_measurement_range);
+                
+                document.getElementById("SENSOR_MR").value = sensorSettings.parseAndSetSensorValue('sensor_mr', msg.sensor_measurement_range);
                 
                 sensorSettings.saveValuesForSensorType();
                 
@@ -1808,14 +1819,15 @@ define(function(require, exports, module) {
                                    document.getElementById("MASTER_OFFSET").value,
                                    document.getElementById("SENSOR_SELECTION").value,
                                    document.getElementById("SENSOR_LENGTH").value,
-                                   document.getElementById("SMR").value);
+                                   document.getElementById("SMR").value,
+                                   document.getElementById("SENSOR_MR").value);
         }
         else {
             e4PtAlert("Invalid password.");
         }
     }
 
-    function updateSensorParameters(mfh, mval, mo, sensor, sensor_length, smr) {
+    function updateSensorParameters(mfh, mval, mo, sensor, sensor_length, smr, mr) {
 
         // Before updating the values, make sure the user has entered valid numbers.
         let mfh_f = parseFloat(mfh);
@@ -1823,8 +1835,9 @@ define(function(require, exports, module) {
         let mo_f = parseFloat(mo);
         let sensor_length_f = parseFloat(sensor_length);
         let smr_f = parseFloat(smr);
+        let mr_f = parseFloat(mr);
         // If a number is not valid, give the user a chance to try again or abort.
-        if (isNaN(mfh_f) || isNaN(mstrval_f) || isNaN(mo_f) || isNaN(sensor_length_f) || isNaN(smr_f)) {
+        if (isNaN(mfh_f) || isNaN(mstrval_f) || isNaN(mo_f) || isNaN(sensor_length_f) || isNaN(smr_f) || isNaN(mr_f)) {
             e4PtConfirm("Please enter only floating point values.\nPlease try again.", function(buttonIndex) {
                     if (buttonIndex==2) {//Cancel - This cancels and gets the previous values back.
                         get_sensor_parameters();
@@ -1833,7 +1846,7 @@ define(function(require, exports, module) {
             );
             return;
         }
-        messaging.sendMessage({"args":["set_sensor_parameters",mfh_f.toString(10), mstrval_f.toString(10), mo_f.toString(10), sensor, sensor_length_f.toString(10), smr_f.toString(10)]});
+        messaging.sendMessage({"args":["set_sensor_parameters",mfh_f.toString(10), mstrval_f.toString(10), mo_f.toString(10), sensor, sensor_length_f.toString(10), smr_f.toString(10), mr_f.toString(10)]});
         
         sensorSettings.set('sensor_selection', sensor);
         sensorSettings.set('sensor_length', sensor_length_f);
@@ -1841,6 +1854,7 @@ define(function(require, exports, module) {
         sensorSettings.set('master_offset', mo_f);
         sensorSettings.set('mastering_value', mstrval_f);
         sensorSettings.set('start_measurement_range', smr_f);
+        sensorSettings.set('sensor_mr', mr_f);
         sensorSettings.saveValuesForSensorType();
     }
 
@@ -1850,7 +1864,8 @@ define(function(require, exports, module) {
             document.getElementById("SENSOR_LENGTH").value = sensorSettings.toInches(info.measured_length_mm).toFixed(4);
             document.getElementById("MASTER_FIXTURE_HEIGHT").value = sensorSettings.toInches(info.measured_mastering_fixture_height_mm).toFixed(4);
             //document.getElementById("MASTERING_VALUE").value = info.measured_mastering_value_mm.toFixed(4);
-            document.getElementById("SMR").value = info.measured_start_measurment_range_mm.toFixed(4);
+            document.getElementById("SMR").value = info.measured_start_measurement_range_mm.toFixed(4);
+            //document.getElementById("SENSOR_MR").value = info.measurement_range_mm.toFixed(4);
             updateMasteringValue();
             updateMasteringOffset();
         }
@@ -1865,7 +1880,8 @@ define(function(require, exports, module) {
                 document.getElementById("MASTER_OFFSET").value,
                 document.getElementById("SENSOR_SELECTION").value,
                 document.getElementById("SENSOR_LENGTH").value,
-                document.getElementById("SMR").value);
+                document.getElementById("SMR").value,
+                document.getElementById("SENSOR_MR").value);
         }
     }
                                                               
@@ -3012,7 +3028,8 @@ define(function(require, exports, module) {
                                    document.getElementById("MASTER_OFFSET").value,
                                    document.getElementById("SENSOR_SELECTION").value,
                                    document.getElementById("SENSOR_LENGTH").value,
-                                   document.getElementById("SMR").value);
+                                   document.getElementById("SMR").value,
+                                   document.getElementById("SENSOR_MR").value);
         }
     }
     
