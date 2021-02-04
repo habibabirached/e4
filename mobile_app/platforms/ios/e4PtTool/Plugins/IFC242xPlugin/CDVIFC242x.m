@@ -1190,8 +1190,8 @@ enum ifc242xValue {
             }
         }
         //TODO must figure out how to safely set the MR
-        float sensor_mr = controllerSettings.sensor.mr;
-        controllerSettings.sensor = [[SensorSettings alloc] initWithName:sensor lengthInches:[sensorLength floatValue] measurementRangeMM:sensor_mr startOfMeasurementRangeMM:[smr floatValue] masterFixtureHeightInches:[mfh floatValue] masteringValueMM:[mval floatValue] masteringOffsetInches:[mo floatValue]];
+        //float sensor_mr = controllerSettings.sensor.mr;
+        controllerSettings.sensor = [[SensorSettings alloc] initWithName:sensor lengthInches:[sensorLength floatValue] measurementRangeMM:[mr floatValue] startOfMeasurementRangeMM:[smr floatValue] masterFixtureHeightInches:[mfh floatValue] masteringValueMM:[mval floatValue] masteringOffsetInches:[mo floatValue]];
         
         [self returnPluginResponse:@{@"type":@"alert",@"message":@"Sensor Parameters are Set."} keepOpen:NO];
         return;

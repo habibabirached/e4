@@ -10,14 +10,15 @@ define(function(require, exports, module) {
         sensor_selection: '',
         sensor_length: 0, //in
         start_measurement_range: 0, //mm
+        sensor_mr: 0, //mm
         master_fixture_height: 0, //in
         mastering_value: 0, //mm
         master_offset: 0 //in
     };
     const sensor_types = {
-        'LONG': {'measured_length_mm': 224.164, 'measured_mastering_fixture_height_mm': 240.3602, 'measured_start_measurment_range_mm': 11.94, 'measured_mastering_value_mm': 4.2567},
-        'SHORT': {'measured_length_mm': 75.667, 'measured_mastering_fixture_height_mm': 90.6272, 'measured_start_measurment_range_mm': 11.94, 'measured_mastering_value_mm': 3.0205},
-        'PROTOTYPE': {'measured_length_mm': 226.898, 'measured_mastering_fixture_height_mm': 243.0018, 'measured_start_measurment_range_mm': 10.998, 'measured_mastering_value_mm': 5.1054},
+        'LONG': {'measured_length_mm': 224.164, 'measured_mastering_fixture_height_mm': 240.3602, 'measured_start_measurement_range_mm': 11.94, 'measured_mastering_value_mm': 4.2567, 'measurement_range_mm': 11.0},
+        'SHORT': {'measured_length_mm': 75.667, 'measured_mastering_fixture_height_mm': 90.6272, 'measured_start_measurement_range_mm': 11.94, 'measured_mastering_value_mm': 3.0205, 'measurement_range_mm': 11.0},
+        'PROTOTYPE': {'measured_length_mm': 226.898, 'measured_mastering_fixture_height_mm': 243.0018, 'measured_start_measurement_range_mm': 10.998, 'measured_mastering_value_mm': 5.1054, 'measurement_range_mm': 10.0},
         'CUSTOM': {}
     };
     
@@ -49,7 +50,8 @@ define(function(require, exports, module) {
         if (sensor_data.sensor_selection === 'CUSTOM') {
             sensor_types[sensor_data.sensor_selection].measured_length_mm = toMMs(sensor_data.sensor_length);
             sensor_types[sensor_data.sensor_selection].measured_mastering_fixture_height_mm = toMMs(sensor_data.master_fixture_height);
-            sensor_types[sensor_data.sensor_selection].measured_start_measurment_range_mm = sensor_data.start_measurement_range;
+            sensor_types[sensor_data.sensor_selection].measured_start_measurement_range_mm = sensor_data.start_measurement_range;
+            sensor_types[sensor_data.sensor_selection].measurement_range_mm = sensor_data.sensor_mr;
             sensor_types[sensor_data.sensor_selection].measured_mastering_value_mm = sensor_data.mastering_value;
         }
     }
@@ -64,7 +66,7 @@ define(function(require, exports, module) {
                                            
     const sensorParamsHaveBeenEdited = () => {
         if (sensor_data.sensor_selection === 'LONG' || sensor_data.sensor_selection === 'SHORT' || sensor_data.sensor_selection === 'PROTOTYPE') {
-            return sensorLengthHasBeenEdited() || smrHasBeenEdited() || mfhHasBeenEdited() || mvHasBeenEdited() || moHasBeenEdited();
+            return sensorLengthHasBeenEdited() || smrHasBeenEdited() || mrHasBeenEdited() || mfhHasBeenEdited() || mvHasBeenEdited() || moHasBeenEdited();
         }
         return sensor_data.sensor_selection === 'CUSTOM';
     }
@@ -74,7 +76,11 @@ define(function(require, exports, module) {
     }
                             
     const smrHasBeenEdited = () => {
-        return sensor_data.sensor_selection != '' && !almostEqual(sensor_data.start_measurement_range, sensor_types[sensor_data.sensor_selection].measured_start_measurment_range_mm, 0.0001);
+        return sensor_data.sensor_selection != '' && !almostEqual(sensor_data.start_measurement_range, sensor_types[sensor_data.sensor_selection].measured_start_measurement_range_mm, 0.0001);
+    }
+    
+    const mrHasBeenEdited = () => {
+        return sensor_data.sensor_selection != '' && !almostEqual(sensor_data.sensor_mr, sensor_types[sensor_data.sensor_selection].measurement_range_mm, 0.0001);
     }
                             
     const mfhHasBeenEdited = () => {
@@ -106,10 +112,7 @@ define(function(require, exports, module) {
     
     const parseAndSetSensorValue = (varName, value) => {
         sensor_data[varName] = JSON.parse(value);
-        tmpStr = sensor_data[varName].toString(10);
-        if (tmpStr.length == 1)
-            tmpStr = sensor_data[varName].toFixed(4).toString(10);
-        return tmpStr;
+        return sensor_data[varName].toFixed(4).toString(10);
     }
         
     module.exports = {
@@ -125,6 +128,7 @@ define(function(require, exports, module) {
         sensorParamsHaveBeenEdited: sensorParamsHaveBeenEdited,
         sensorLengthHasBeenEdited: sensorLengthHasBeenEdited,
         smrHasBeenEdited: smrHasBeenEdited,
+        mrHasBeenEdited: mrHasBeenEdited,
         mfhHasBeenEdited: mfhHasBeenEdited,
         mvHasBeenEdited: mvHasBeenEdited,
         moHasBeenEdited: moHasBeenEdited,
