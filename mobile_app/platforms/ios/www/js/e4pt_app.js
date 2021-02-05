@@ -819,6 +819,10 @@ define(function(require, exports, module) {
         document.getElementById("HEADER_CUSTOMER").innerHTML = "Customer: " + customer + " - " + site;
         document.getElementById("HEADER_FRAME").innerHTML = "Frame: " + E4PTdata.frame;
         document.getElementById("HEADER_SERIAL").innerHTML = "S/N: " + E4PTdata.serial_number + ";  Units: " + E4PTdata.units;
+        updateSensorHeaderMessage();
+    }
+    
+    function updateSensorHeaderMessage() {
         document.getElementById("SL_CONFIG_MSG").innerHTML = sensorSettings.get('sensor_length') + "&quot; SL";
         document.getElementById("SMR_CONFIG_MSG").innerHTML = sensorSettings.get('start_measurement_range') + "mm SMR";
         document.getElementById("MR_CONFIG_MSG").innerHTML = sensorSettings.get('sensor_mr') + "mm MR";
@@ -1252,32 +1256,7 @@ define(function(require, exports, module) {
         document.getElementById("HEADER_CUSTOMER").innerHTML = "Customer: " + customer + " - " + site;
         document.getElementById("HEADER_FRAME").innerHTML = "Frame: " + E4PTdata.frame;
         document.getElementById("HEADER_SERIAL").innerHTML = "S/N: " + E4PTdata.serial_number + ";  Units: " + E4PTdata.units;
-        document.getElementById("SL_CONFIG_MSG").innerHTML = sensorSettings.get('sensor_length') + "&quot; SL";
-        document.getElementById("SMR_CONFIG_MSG").innerHTML = sensorSettings.get('start_measurement_range') + "mm SMR";
-        document.getElementById("MR_CONFIG_MSG").innerHTML = sensorSettings.get('sensor_mr') + "mm MR";
-        document.getElementById("MFH_CONFIG_MSG").innerHTML = sensorSettings.get('master_fixture_height') + "&quot; MFH";
-        document.getElementById("MV_CONFIG_MSG").innerHTML = sensorSettings.get('mastering_value') + "mm MV";
-        document.getElementById("MO_CONFIG_MSG").innerHTML = sensorSettings.get('master_offset') + "&quot; MO";
-        if (sensorSettings.sensorParamsHaveBeenEdited()) {
-            document.getElementById("SENSOR_PARAMS_CONFIG_MSG").innerHTML = "Using non-standard '" + sensorSettings.get('sensor_selection') + "' sensor settings: ";
-            
-            $("#SENSOR_PARAMS_CONFIG_MSG").css('color', 'red');
-            $("#SL_CONFIG_MSG").css('color', sensorSettings.sensorLengthHasBeenEdited()?'red':'black');
-            $("#SMR_CONFIG_MSG").css('color', sensorSettings.smrHasBeenEdited()?'red':'black');
-            $("#MR_CONFIG_MSG").css('color', sensorSettings.mrHasBeenEdited()?'red':'black');
-            $("#MFH_CONFIG_MSG").css('color', sensorSettings.mfhHasBeenEdited()?'red':'black');
-            $("#MV_CONFIG_MSG").css('color', sensorSettings.mvHasBeenEdited()?'red':'black');
-            $("#MO_CONFIG_MSG").css('color', sensorSettings.moHasBeenEdited()?'red':'black');
-        } else {
-            document.getElementById("SENSOR_PARAMS_CONFIG_MSG").innerHTML = "Using preconfigured '" + sensorSettings.get('sensor_selection') + "' sensor settings";
-            $("#SENSOR_PARAMS_CONFIG_MSG").css('color', 'green');
-            $("#SL_CONFIG_MSG").css('color', 'black');
-            $("#SMR_CONFIG_MSG").css('color', 'black');
-            $("#MR_CONFIG_MSG").css('color', 'black');
-            $("#MFH_CONFIG_MSG").css('color', 'black');
-            $("#MV_CONFIG_MSG").css('color', 'black');
-            $("#MO_CONFIG_MSG").css('color', 'black');
-        }
+        updateSensorHeaderMessage();
         document.getElementById("SENSOR_STAGE").selectedIndex = current_stage_index;
         document.getElementById("SENSOR_POSITION").selectedIndex = current_position_index;
         var html_buf = [];
@@ -1857,6 +1836,7 @@ define(function(require, exports, module) {
         sensorSettings.set('start_measurement_range', smr_f);
         sensorSettings.set('sensor_mr', mr_f);
         sensorSettings.saveValuesForSensorType();
+        updateSensorHeaderMessage();
     }
 
     function getSensorParametersForSensorSelection(sensorType) {
