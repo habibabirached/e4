@@ -1676,7 +1676,7 @@ enum ifc242xValue {
     NSString* stg_min_clr = [NSString stringWithFormat:@"%f", clearanceData.min];
     NSString* stg_med_clr = [NSString stringWithFormat:@"%f", clearanceData.median];
     NSString* stg_clr_std = [NSString stringWithFormat:@"%f", clearanceData.std];
-    NSString* overall_avg = [NSString stringWithFormat:@"%f", clearanceData.averageDisplacement];
+    NSString* overall_avg = isnan(clearanceData.averageDisplacement) ? @"--" : [NSString stringWithFormat:@"%f", clearanceData.averageDisplacement];
     
     [self saveCSVFile:date clearanceData:clearanceData];
     NSArray* savedFilepath = [self.last_saved_file pathComponents];
