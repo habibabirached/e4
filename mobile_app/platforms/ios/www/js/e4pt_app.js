@@ -1052,7 +1052,7 @@ define(function(require, exports, module) {
         document.getElementById("SPACER_COLOR_LABEL").innerHTML = "";
         savedRPM = "";
         setup_data_collection_page("", "", true);
-        charting.clearChartData(document.getElementById("DATA_PLOT2"));
+        charting.clearChartData(document.getElementById('DATA_PLOT2'));
     }
 
     function b64toBlob(b64Data, contentType, sliceSize) {
@@ -1500,7 +1500,7 @@ define(function(require, exports, module) {
         $("#DATA_PLOT").fadeIn();
         $("#STATUS_BAR").hide();
         $("#REV_PROGRESS_BAR").show();
-        charting.clearChartData(document.getElementById("DATA_PLOT"));
+        charting.clearChartData(document.getElementById('DATA_PLOT'));
         current_frame_data = [];
     }
 
@@ -2249,8 +2249,7 @@ define(function(require, exports, module) {
 
     function requestE4PtData(acquisitionTime) {
       console.log("Requesting " + acquisitionTime + " seconds of data");
-      charting.clearChartData(document.getElementById("DATA_PLOT"));
-      charting.clearChartData(document.getElementById("DATA_PLOT2"));
+      charting.clearChartData(document.getElementById('DATA_PLOT'));
         
         $("#STATUS_BAR").hide();
         $("#REV_PROGRESS_BAR").show();
@@ -2287,6 +2286,7 @@ define(function(require, exports, module) {
                 }
             }
         }
+        charting.clearChartData(document.getElementById('DATA_PLOT2'));
         if (messaging.usesWebSocket()) {
             setIndicatorColor("yellow");
         }
