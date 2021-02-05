@@ -242,7 +242,9 @@ enum ifc242xValue {
 
 @end
 
-@implementation IFCObjectiveCManager
+@implementation IFCObjectiveCManager {
+    NSRegularExpression *mrRegex;
+}
 
 @synthesize webView = _webView;
 @synthesize metaData = _metaData;
@@ -319,6 +321,7 @@ enum ifc242xValue {
 #else
         _manager.demoMode = false;
 #endif
+        _manager->mrRegex = [NSRegularExpression regularExpressionWithPattern:@"\\s(\\d+\\.\\d+)mm" options:NSRegularExpressionCaseInsensitive error:nil];
         _manager->postProcess = [PostProcess new];
         _manager->controllerSettings = [ControllerSettings new];
         [_manager initializeSensor];
@@ -1593,16 +1596,17 @@ enum ifc242xValue {
         self.controllerType = @"IFC2422";
         [self.telnetCmds addObject:@"SENSORINFO_CH01\n"];
         [self sendTelnetCommand];
-    }
-    if ([rxData containsString:@"IFC2421"]) {
+    } else if ([rxData containsString:@"IFC2421"]) {
         NSLog(@"Controller is IFC2421");
         self.controllerType = @"IFC2421";
         [self.telnetCmds addObject:@"SENSORINFO\n"];
         [self sendTelnetCommand];
-    }
-    if ([rxData containsString:@"Measurement range:"]) {
-        NSString* measurementRange = [[rxData componentsSeparatedByString:@"\r\n"][3] substringFromIndex:18];
-        controllerSettings.sensor.mr = [[measurementRange substringToIndex:[measurementRange length]-2] floatValue];
+    } else {
+        [self->mrRegex enumerateMatchesInString:rxData options:0 range:NSMakeRange(0, rxData.length) usingBlock:^(NSTextCheckingResult *match, NSMatchingFlags flags, BOOL *stop) {
+            if ([match numberOfRanges] > 1) {
+                controllerSettings.sensor.mr = [[rxData substringWithRange:[match rangeAtIndex:1]] floatValue];
+            }
+        }];
         NSLog(@"Sensor Measurement Range is %f", controllerSettings.sensor.mr);
     }
     if ([prompt containsString:@"->"]) {
