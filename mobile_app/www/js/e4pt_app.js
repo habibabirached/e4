@@ -649,10 +649,9 @@ define(function(require, exports, module) {
         $('#CUR_MODE').text('Current Mode: ' + (tf ? 'Demo' : 'Production'));
         $('#CONNECTION_NAME').text((tf ? 'DEMO' : $('#CUR_CONN').text().substring(20)));
         
-        if (!tf) {
-            setIndicatorColor('white');
-            serialConnected = false;
-        }
+        setIndicatorColor(tf ? 'green' : 'white');
+        serialConnected = tf;
+        
         messaging.sendMessage({args:['set_demo_mode',tf.toString()]});
     }
 
