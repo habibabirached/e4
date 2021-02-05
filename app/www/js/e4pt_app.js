@@ -134,7 +134,6 @@ define(function(require, exports, module) {
         }, {passive: true});
         document.getElementById("COLLECT_DATA_BUTTON").addEventListener('click', function(){
             fadeOutAll();
-            checkSensorSelection();
             turbine_setup();
         }, {passive: true});
         document.getElementById("CLEAR_DB_BUTTON").addEventListener('click', function(){
@@ -820,6 +819,7 @@ define(function(require, exports, module) {
         document.getElementById("HEADER_FRAME").innerHTML = "Frame: " + E4PTdata.frame;
         document.getElementById("HEADER_SERIAL").innerHTML = "S/N: " + E4PTdata.serial_number + ";  Units: " + E4PTdata.units;
         updateSensorHeaderMessage();
+        checkSensorSelection();
     }
     
     function updateSensorHeaderMessage() {
