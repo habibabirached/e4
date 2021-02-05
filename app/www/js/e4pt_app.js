@@ -3025,7 +3025,7 @@ define(function(require, exports, module) {
     function setSensorSettingsForTurbine(option) {
         if (option === 2) {
             document.getElementById("SENSOR_SELECTION").value = current_frame_data.default_sensor;
-            sensorSettings.getSensorParametersForSensorSelection(current_frame_data.default_sensor);
+            getSensorParametersForSensorSelection(current_frame_data.default_sensor);
             updateSensorParameters(document.getElementById("MASTER_FIXTURE_HEIGHT").value,
                                    document.getElementById("MASTERING_VALUE").value,
                                    document.getElementById("MASTER_OFFSET").value,
