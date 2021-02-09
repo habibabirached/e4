@@ -1166,7 +1166,7 @@ enum ifc242xValue {
     }
     if ([cmd containsString:@"get_sensor_parameters"]) {
         NSDictionary* jsonDict = @{@"type":@"sensor_params", @"master_fixture_height":[NSString stringWithFormat:@"%f", controllerSettings.sensor.hmf], @"mastering_value":[NSString stringWithFormat:@"%f", controllerSettings.sensor.mv], @"master_offset":[NSString stringWithFormat:@"%f", controllerSettings.sensor.mo], @"sensor_selection":controllerSettings.sensor.name, @"sensor_length":[NSString stringWithFormat:@"%f", controllerSettings.sensor.length], @"start_measurement_range":[NSString stringWithFormat:@"%f", controllerSettings.sensor.smr], @"sensor_measurement_range":[NSString stringWithFormat:@"%f", controllerSettings.sensor.mr]};
-        [self returnPluginResponse:jsonDict keepOpen:NO];
+        [self returnPluginResponse:jsonDict keepOpen:YES];
         return;
     }
     if ([cmd containsString:@"set_sensor_parameters"]) {
