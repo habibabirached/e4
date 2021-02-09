@@ -10,6 +10,7 @@
 #if !TARGET_IPHONE_SIMULATOR
 
 #import "CDVIFC242x.h"
+#import "Controller/ControllerSettings.h"
 #import "PostProcess.h"
 #import <AVFoundation/AVFoundation.h>
 #include "math.h"
@@ -29,9 +30,6 @@
 #define IFC_ADDR "192.168.168.150"
 #define DATA_PORT 1024
 #define TELNET_PORT 23
-
-#define SENSOR_MEASUREMENT_RANGE "10.0"
-#define DEFAULT_CLEARANCE_CALCULATION_METHOD "1"
 
 // Hard coded values for RS232 serial cable
 // 192 = 64 * 3.  Data seems to come in 64 byte packets and data from
@@ -86,25 +84,14 @@ enum ifc242xValue {
 
 
 @interface ScanMetaData : NSObject
-@property (strong, nonatomic) NSString* frame;
 @property (strong, nonatomic) NSString* serial_number;
 @property (strong, nonatomic) NSString* stage;
 @property (strong, nonatomic) NSString* position;
 @property (strong, nonatomic) NSString* casing_thickness;
 @property (strong, nonatomic) NSString* spacer_thickness;
-@property (strong, nonatomic) NSString* state;
-@property (strong, nonatomic) NSString* customer;
-@property (strong, nonatomic) NSString* site;
-@property (strong, nonatomic) NSString* user;
-@property (strong, nonatomic) NSString* units;
 @property (strong, nonatomic) NSString* num_blades;
-@property (strong, nonatomic) NSString* sensor_measurement_range;
-@property (strong, nonatomic) NSString* mastering_value;
-@property (strong, nonatomic) NSString* master_fixture_height;
 @property (strong, nonatomic) NSString* blade_width;
 @property (strong, nonatomic) NSString* tip_diameter;
-@property (strong, nonatomic) NSString* master_offset;
-@property (strong, nonatomic) NSString* clearance_calculation_method;
     
 
 -(instancetype)init;
@@ -113,52 +100,30 @@ enum ifc242xValue {
 
 @implementation ScanMetaData
 
-@synthesize frame = _frame;
 @synthesize serial_number = _serial_number;
 @synthesize stage = _stage;
 @synthesize position = _position;
 @synthesize casing_thickness = _casing_thickness;
 @synthesize spacer_thickness = _spacer_thickness;
-@synthesize state = _state;
-@synthesize customer = _customer;
-@synthesize site = _site;
-@synthesize user = _user;
-@synthesize units = _units;
 @synthesize num_blades = _num_blades;
-@synthesize sensor_measurement_range = _sensor_measurement_range;
 @synthesize blade_width = _blade_width;
 @synthesize tip_diameter = _tip_diameter;
-@synthesize master_offset = _master_offset;
-@synthesize master_fixture_height = _master_fixture_height;
-@synthesize mastering_value = _mastering_value;
-@synthesize clearance_calculation_method = _clearance_calculation_method;
 
 -(instancetype)init {
     self = [super init];
     [self clear];
-    self.master_offset = @"";
-    self.master_fixture_height = @"";
-    self.mastering_value = @"";
     return self;
 }
 
 - (void)clear {
-    self.frame = @"";
     self.serial_number = @"";
     self.stage = @"";
     self.position = @"";
     self.spacer_thickness = @"";
     self.casing_thickness = @"";
-    self.state = @"";
-    self.customer = @"";
-    self.site = @"";
-    self.user = @"";
-    self.units = @"";
     self.num_blades = @"";
-    self.sensor_measurement_range = @SENSOR_MEASUREMENT_RANGE;
     self.blade_width = @"";
     self.tip_diameter = @"";
-    self.clearance_calculation_method = @DEFAULT_CLEARANCE_CALCULATION_METHOD;
 }
 
 @end
@@ -178,7 +143,7 @@ enum ifc242xValue {
 - (void)setMeasurementRate:(NSString*)rate withAlert:(bool)tf;
 - (void)setThreshold:(NSString*)threshold;
 - (void)collectData:(int)num_sets casingThickness:(float)casing_thicknesss;
-- (void)doDataCollection:(NSString*)acqTime;
+- (void)doDataCollection;
 
 // IP Connection Commands
 - (void)sendTelnetCommand;
@@ -189,6 +154,7 @@ enum ifc242xValue {
 
 @interface IFCObjectiveCManager () {
     PostProcess* postProcess;
+    ControllerSettings* controllerSettings;
 }
 
 // TCP/IP connection variables
@@ -209,38 +175,22 @@ enum ifc242xValue {
 @property (nonatomic, retain) NSTimer* timerDemoFunctions;
 @property (nonatomic, retain) NSTimer* timerProgress;
 @property (nonatomic, retain) NSTimer* timerWaiting;
-@property (strong, nonatomic) NSMutableArray* kernel;
 @property (strong, nonatomic) NSRunLoop* networkRunLoop;
 @property (strong, nonatomic) dispatch_queue_t networkQueue;
 
 // Variables needed for data collection.
 @property (nonatomic) int tmpCounter;
-//@property (nonatomic) enum pluginState pState;
 @property (nonatomic) int pState;
 @property (strong, nonatomic) NSMutableArray* telnetCmds;
 @property (strong, nonatomic) NSString* mode; // "ethernet" or "serial"
 @property (strong, nonatomic) ScanMetaData* metaData;
 @property (strong, nonatomic) NSString* last_saved_file;
-@property (strong, nonatomic) NSString* measurement_rate;
-@property (strong, nonatomic) NSString* intensityThreshold;
 
 @property (strong, nonatomic) NSMutableArray* datasetIds;
 @property (strong, nonatomic) NSMutableArray* times;
 @property (strong, nonatomic) NSMutableArray* displacements;
-@property (strong, nonatomic) NSMutableArray* avg_displacements_for_blade;
-@property (strong, nonatomic) NSMutableArray* filtered;
-@property (strong, nonatomic) NSMutableArray* blade_clearances;
-@property (strong, nonatomic) NSMutableArray* clearance_quality;
 @property (strong, nonatomic) NSMutableArray* point_counts;
 @property (strong, nonatomic) NSMutableArray* intensities;
-@property (strong, nonatomic) NSMutableArray* min_locs;
-@property (nonatomic) float stage_clearance;
-@property (nonatomic) float stage_max_clearance;
-@property (nonatomic) float stage_min_clearance;
-@property (nonatomic) float stage_median_clearance;
-@property (nonatomic) float stage_clearance_std;
-@property (nonatomic) float stage_position_threshold;
-@property (nonatomic) float stage_position_offset_adjustment;
 @property (nonatomic) BOOL calibratedAcquire;
 
 @property (nonatomic) NSTimeInterval startTime;
@@ -258,7 +208,6 @@ enum ifc242xValue {
 @property (nonatomic) float overall_average;
 
 @property (nonatomic) bool demoMode;
-@property (nonatomic) bool overrideAutoSettings;
 @property (strong, nonatomic) NSString* controllerType;
 
 @property (strong, nonatomic) CDVIFC242x* plugin;
@@ -293,13 +242,13 @@ enum ifc242xValue {
 
 @end
 
-@implementation IFCObjectiveCManager
+@implementation IFCObjectiveCManager {
+    NSRegularExpression *mrRegex;
+}
 
 @synthesize webView = _webView;
 @synthesize metaData = _metaData;
 @synthesize last_saved_file = _last_saved_file;
-@synthesize measurement_rate = _measurement_rate;
-@synthesize intensityThreshold = _intensityThreshold;
 
 @synthesize dataStreamIsOpen = _dataStreamIsOpen;
 @synthesize telnetStreamIsOpen = _telnetStreamIsOpen;
@@ -325,22 +274,13 @@ enum ifc242xValue {
 @synthesize datasetIds = _datasetIds;
 @synthesize times = _times;
 @synthesize displacements = _displacements;
-@synthesize avg_displacements_for_blade = _avg_displacements_for_blade;
-@synthesize filtered = _filtered;
-@synthesize blade_clearances = _blade_clearances;
-@synthesize stage_clearance = _stage_clearance;
-@synthesize clearance_quality = _clearance_quality;
 @synthesize point_counts = _point_counts;
 @synthesize intensities = _intensities;
-@synthesize min_locs = _min_locs;
 @synthesize demoMode = _demoMode;
-@synthesize overrideAutoSettings = _overrideAutoSettings;
 @synthesize startTime = _startTime;
 @synthesize testTime = _testTime;
 @synthesize delayResponse = _delayResponse;
 @synthesize overall_average = _overall_average;
-    
-@synthesize kernel = _kernel;
 
 @synthesize commThread = _commThread;
 @synthesize rscMgr = _rscMgr;
@@ -361,12 +301,6 @@ enum ifc242xValue {
 @synthesize nextIFCValue = _nextIFCValue;
 @synthesize leftoverBytes = _leftoverBytes;
 
-@synthesize stage_max_clearance = _stage_max_clearance;
-@synthesize stage_min_clearance = _stage_min_clearance;
-@synthesize stage_median_clearance = _stage_median_clearance;
-@synthesize stage_clearance_std = _stage_clearance_std;
-@synthesize stage_position_threshold = _stage_position_threshold;
-@synthesize stage_position_offset_adjustment = _stage_position_offset_adjustment;
 @synthesize calibratedAcquire = _calibratedAcquire;
 
 @synthesize connectionMode = _connectionMode;
@@ -380,18 +314,17 @@ enum ifc242xValue {
     if (_manager==nil) {
         _manager = [[IFCObjectiveCManager alloc] init];
         _manager.connectionMode = @"serial"; // default connection mode.
-        _manager.measurement_rate = @"1.0";
         _manager.last_saved_file = @"";
         _manager.networkRunLoop = nil;
-        _manager.overrideAutoSettings = false;
 #ifdef SIMULATED_DATA
         _manager.demoMode = true;
 #else
         _manager.demoMode = false;
 #endif
+        _manager->mrRegex = [NSRegularExpression regularExpressionWithPattern:@"\\s(\\d+\\.\\d+)mm" options:NSRegularExpressionCaseInsensitive error:nil];
         _manager->postProcess = [PostProcess new];
+        _manager->controllerSettings = [ControllerSettings new];
         [_manager initializeSensor];
-
     }
     
     dispatch_async(dispatch_get_main_queue(), ^{
@@ -550,7 +483,7 @@ enum ifc242xValue {
         // Below are two ways to report progress back to the UI.  The later seems to cause a crash
         // when collecting data via ethernet. I'm leaving the code for now, but will use the more
         // direct method that does not crash.
-        if (true) {
+        if (/* DISABLES CODE */ (true)) {
             NSError* error;
             NSData *jsonData=[NSJSONSerialization dataWithJSONObject:jsonDict options:NSJSONWritingSortedKeys error:&error];
             NSString *jsonString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
@@ -573,8 +506,7 @@ enum ifc242xValue {
             [timer invalidate];  // Everything is good. Turn off the timer and do the next thing.
             if ([nextProc containsString:@"doDataCollection"]) {
                 NSLog(@"No timeout. Do data collection");
-                NSString* acqTime = [info valueForKey:@"acqTime"];
-                [self doDataCollection:acqTime];
+                [self doDataCollection];
             }
         }
         else if (self.pState == darkReferenceInProgress) {
@@ -603,7 +535,7 @@ enum ifc242xValue {
                 self.progress = 1.0;
                 dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
                     NSDictionary* jsonDict = @{@"type":@"alert",@"message":@"Dark referencing complete."};
-                    if (true) {
+                    if (/* DISABLES CODE */ (true)) {
                         NSError* error;
                         NSData *jsonData=[NSJSONSerialization dataWithJSONObject:jsonDict options:NSJSONWritingSortedKeys error:&error];
                         NSString *jsonString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
@@ -615,9 +547,8 @@ enum ifc242xValue {
                     }
                 });
                 if ([nextProc containsString:@"doDataCollection"]) {
-                    NSString* acqTime = [info valueForKey:@"acqTime"];
-                    NSLog(@"Dark reference complete. Do data collection. %@s",acqTime);
-                    [self doDataCollection:acqTime];
+                    NSLog(@"Dark reference complete. Do data collection. %fs", controllerSettings.acquisitionTime);
+                    [self doDataCollection];
                 }
             }
         }
@@ -643,8 +574,7 @@ enum ifc242xValue {
     if ([arg containsString:@"collect_data"]) {
         [self loadCSVFile:@""];
         [self returnPluginResponse:@{@"type":@"status",@"status":@"processing"} keepOpen:YES];
-        [self computeClearance];
-        [self returnData];
+        [self returnData:[self computeClearance]];
         [self processComplete:@"connected"];
     }
 }
@@ -745,20 +675,11 @@ enum ifc242xValue {
     if (self.datasetIds == nil) self.datasetIds = [[NSMutableArray alloc] init];
     if (self.times == nil) self.times = [[NSMutableArray alloc] init];
     if (self.displacements == nil) self.displacements = [[NSMutableArray alloc] init];
-    if (self.avg_displacements_for_blade == nil) self.avg_displacements_for_blade = [[NSMutableArray alloc] init];
-    if (self.filtered == nil) self.filtered = [[NSMutableArray alloc] init];
-    if (self.blade_clearances == nil) self.blade_clearances = [[NSMutableArray alloc] init];
-    if (self.clearance_quality == nil) self.clearance_quality = [[NSMutableArray alloc] init];
     if (self.point_counts == nil) self.point_counts = [[NSMutableArray alloc] init];
     if (self.intensities == nil) self.intensities = [[NSMutableArray alloc] init];
-    if (self.min_locs == nil) self.min_locs = [[NSMutableArray alloc] init];
-    self.measurement_rate = @"1.0";
     if (self.telnetCmds == nil) self.telnetCmds = [[NSMutableArray alloc] init];
     if (self.metaData == nil) self.metaData = [[ScanMetaData alloc] init];
     [self.metaData clear];
-    self.stage_clearance = 0;
-    self.stage_position_threshold = 0.0;
-    self.stage_position_offset_adjustment = 0.0;
     self.controllerType = @"";
     
 #ifdef SEND_DISPLACEMENT_ONLY
@@ -833,7 +754,7 @@ enum ifc242xValue {
 }
 
 - (void)masterDevice {
-    [self masterDeviceWithValue:self.metaData.mastering_value];
+    [self masterDeviceWithValue:[NSString stringWithFormat:@"%f", controllerSettings.sensor.mv]];
 }
 
 - (void)masterDeviceWithValue:(NSString*)masteringValue {
@@ -891,14 +812,13 @@ enum ifc242xValue {
     }
     // This timer just updates progress information every second assuming each channel takes ~22s.
     // After the dark correction, it collects 3 seconds of data.
+    controllerSettings.acquisitionTime = 3.0;
     self.progress = 0.0;
     self.startTime = [[NSDate date] timeIntervalSince1970]; // start time timestamp in whole seconds.
     dispatch_async(dispatch_get_main_queue(), ^{
         NSDictionary* info = [[NSDictionary alloc] initWithObjectsAndKeys:
                               [NSNumber numberWithFloat:processTime], @"timeout",
-                              @"doDataCollection", @"nextProcess",
-                              @"3.0", @"acqTime",
-                              nil];
+                              @"doDataCollection", @"nextProcess", nil];
         self.timerWaiting = [ NSTimer scheduledTimerWithTimeInterval:1.0
                                                               target:self
                                                             selector:@selector(timeoutWaitTimer:)
@@ -919,25 +839,23 @@ enum ifc242xValue {
 - (void)setMeasurementRate:(NSString*)rate withAlert:(bool)tf {
     if (![self checkReady]) return;
     self.pState = setMeasurementRateInProgress;
-    self.measurement_rate = rate;
-    [self.telnetCmds addObject:[NSString stringWithFormat:@"MEASRATE %@\n", rate]];
+    controllerSettings.measurementRate = [rate floatValue];
+    [self.telnetCmds addObject:[NSString stringWithFormat:@"MEASRATE %.3f\n", controllerSettings.measurementRate]];
     [self sendTelnetCommand];
 }
 
-- (void)setMeasurementRateAndIntensityThreshold:(NSString*)rate threshold:(NSString*)threshold {
+- (void)setMeasurementRateAndIntensityThreshold{
     NSLog(@"setMeasurementRateAndIntensityThreshold");
     if (![self checkReady]) return;
     if (self.demoMode) return;
     self.pState = setMeasurementRateInProgress;
-    self.measurement_rate = rate;
-    [self.telnetCmds addObject:[NSString stringWithFormat:@"MEASRATE %@\n", rate]];
-    self.intensityThreshold = threshold;
+    [self.telnetCmds addObject:[NSString stringWithFormat:@"MEASRATE %.3f\n", controllerSettings.measurementRate]];
     if ([self.controllerType containsString:@"IFC2422"]) {
-        [self.telnetCmds addObject:[NSString stringWithFormat:@"MIN_THRESHOLD_CH01 %@\n", threshold]];
-        [self.telnetCmds addObject:[NSString stringWithFormat:@"MIN_THRESHOLD_CH02 %@\n", threshold]];
+        [self.telnetCmds addObject:[NSString stringWithFormat:@"MIN_THRESHOLD_CH01 %.3f\n", controllerSettings.intensityThreshold]];
+        [self.telnetCmds addObject:[NSString stringWithFormat:@"MIN_THRESHOLD_CH02 %.3f\n", controllerSettings.intensityThreshold]];
     }
     else if ([self.controllerType containsString:@"IFC2421"]) {
-        [self.telnetCmds addObject:[NSString stringWithFormat:@"MIN_THRESHOLD %@\n", threshold]];
+        [self.telnetCmds addObject:[NSString stringWithFormat:@"MIN_THRESHOLD %.3f\n", controllerSettings.intensityThreshold]];
     }
     else {
         return; // Shouldn't get here.
@@ -948,13 +866,13 @@ enum ifc242xValue {
 - (void)setThreshold:(NSString*)threshold {
     if (![self checkReady]) return;
     self.pState = setThresholdInProgress;
-    self.intensityThreshold = threshold;
+    controllerSettings.intensityThreshold = [threshold floatValue];
     if ([self.controllerType containsString:@"IFC2422"]) {
-        [self.telnetCmds addObject:[NSString stringWithFormat:@"MIN_THRESHOLD_CH01 %@\n", threshold]];
-        [self.telnetCmds addObject:[NSString stringWithFormat:@"MIN_THRESHOLD_CH02 %@\n", threshold]];
+        [self.telnetCmds addObject:[NSString stringWithFormat:@"MIN_THRESHOLD_CH01 %.3f\n", controllerSettings.intensityThreshold]];
+        [self.telnetCmds addObject:[NSString stringWithFormat:@"MIN_THRESHOLD_CH02 %.3f\n", controllerSettings.intensityThreshold]];
     }
     else if ([self.controllerType containsString:@"IFC2421"]) {
-        [self.telnetCmds addObject:[NSString stringWithFormat:@"MIN_THRESHOLD %@\n", threshold]];
+        [self.telnetCmds addObject:[NSString stringWithFormat:@"MIN_THRESHOLD %.3f\n", controllerSettings.intensityThreshold]];
     }
     else {
         return; // Shouldn't get here.
@@ -1053,7 +971,6 @@ enum ifc242xValue {
             // Call from JavaScript:
             // ["send_data",acquisitionTime, frame, sn, stage, position, casing_thickness, spacer_thickness, master_offset, clearance_calc_method];
             acqTime = [msgArray objectAtIndex:1];
-            self.metaData.frame = [msgArray objectAtIndex:2];
             self.metaData.serial_number = [msgArray objectAtIndex:3];
             self.metaData.stage = [msgArray objectAtIndex:4];
             self.metaData.position = [msgArray objectAtIndex:5];
@@ -1062,84 +979,50 @@ enum ifc242xValue {
             self.metaData.num_blades = [msgArray objectAtIndex:8];
             self.metaData.tip_diameter = [msgArray objectAtIndex:9];
             self.metaData.blade_width = [msgArray objectAtIndex:10];
-            //self.metaData.master_offset = [msgArray objectAtIndex:11];
-            self.metaData.clearance_calculation_method = [msgArray objectAtIndex:12];
+            controllerSettings.sensor.offsetSelector = [msgArray objectAtIndex:12];
             self.calibratedAcquire = true;
         }
         
         // Check if the value is specified in rpm.  If so, extract the rpm value.
-        bool isRPM = false;
-        float rpm = 0.0;
-        if ([acqTime containsString:@"rpm"] || [acqTime containsString:@"RPM"]) {
-            isRPM = true;
-            acqTime = [acqTime substringToIndex:acqTime.length-3]; // crop off the "rpm"
-            rpm = [acqTime floatValue];
-            NSArray* timeAndRate = [self acquisitionTimeAndRate:rpm];
-            // timeAndRate: (0) acquisitionTime; (1) measurementRate; (2) intensityThreshold; (3) Errors.
-            NSString* err = [timeAndRate objectAtIndex:3];
-            if (err.length != 0) {
-                // Report errors.
-                [self returnPluginResponse:@{@"type":@"alert",@"message":err} keepOpen:YES];
-                return;
+        if ([[acqTime lowercaseString] hasSuffix:@"rpm"]) {
+            float interval = 1.0;
+            if (![controllerSettings overrideRateAndIntensity]) {
+                // Set new measurement rate
+                interval = 3.0; // Give it more time to set things up.
+                NSString* err = [controllerSettings calculateAcquisitionTimeAndSamplingFrequencyAndIntensityThresholdFromRPM:[[acqTime substringToIndex:acqTime.length-3] floatValue] forBladeWidth:[self.metaData.blade_width floatValue] forTipDiameter:[self.metaData.tip_diameter floatValue]];
+                if (err.length != 0) {
+                    // Report errors.
+                    [self returnPluginResponse:@{@"type":@"alert",@"message":err} keepOpen:YES];
+                    return;
+                }
+                NSLog(@"Using auto-settings: Found measurement rate: %f; intensity threshold: %f", [controllerSettings measurementRate], [controllerSettings intensityThreshold]);
+                [self setMeasurementRateAndIntensityThreshold];
+            } else {
+                NSLog(@"Overriding auto-settings.");
+            }
+            self.startTime = [[NSDate date] timeIntervalSince1970]; // start timeout timer
+            // The timeoutWaitTimer callback will start data acquisition after the measurement
+            // rate is set.  If the timeout expires, the user just gets an error message.
+            if (!self.demoMode) {
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    NSDictionary* info = [[NSDictionary alloc] initWithObjectsAndKeys:
+                                          [NSNumber numberWithFloat:7.0], @"timeout",
+                                          @"doDataCollection", @"nextProcess", nil];
+                    self.timerWaiting = [ NSTimer scheduledTimerWithTimeInterval:interval
+                                                                          target:self
+                                                                        selector:@selector(timeoutWaitTimer:)
+                                                                        userInfo:info
+                                                                         repeats:YES];
+                });
             }
             else {
-                acqTime = [NSString stringWithFormat:@"%@",[timeAndRate objectAtIndex:0]];
-                // Set new measurement rate
-                self.startTime = [[NSDate date] timeIntervalSince1970]; // start timeout timer
-                NSNumber* tmpNum = [timeAndRate objectAtIndex:1];
-                NSString* mRate = [NSString stringWithFormat:@"%.3f", [tmpNum floatValue]];
-                tmpNum = [timeAndRate objectAtIndex:2];
-                NSString* intThresh = [NSString stringWithFormat:@"%.3f", [tmpNum floatValue]];
-                float interval = 1.0;
-                if (!self.overrideAutoSettings) {
-                    interval = 3.0; // Give it more time to set things up.
-                    NSLog(@"Using auto-settings: Found measurement rate: %@; intensity threshold: %@", mRate, intThresh);
-                    [self setMeasurementRateAndIntensityThreshold:mRate threshold:intThresh];
-                }
-                else {
-                    NSLog(@"Overriding auto-settings.");
-                }
-                // The timeoutWaitTimer callback will start data acquisition after the measurement
-                // rate is set.  If the timeout expires, the user just gets an error message.
-                if (!self.demoMode) {
-                    dispatch_async(dispatch_get_main_queue(), ^{
-                        NSDictionary* info = [[NSDictionary alloc] initWithObjectsAndKeys:
-                                              [NSNumber numberWithFloat:7.0], @"timeout",
-                                              @"doDataCollection", @"nextProcess",
-                                              acqTime, @"acqTime", nil];
-                        self.timerWaiting = [ NSTimer scheduledTimerWithTimeInterval:interval
-                                                                              target:self
-                                                                            selector:@selector(timeoutWaitTimer:)
-                                                                            userInfo:info
-                                                                             repeats:YES];
-                    });
-                }
-                else {
-                    [self doDataCollection:acqTime];
-                }
+                [self doDataCollection];
             }
         }
         else {
-            [self doDataCollection:acqTime];
+            controllerSettings.acquisitionTime = [acqTime floatValue];
+            [self doDataCollection];
         }
-        return;
-    }
-    if ([cmd containsString:@"scan_meta_data"]) {
-        NSLog(@"Got scan_meta_data");
-        // Call from JavaScript:
-        //{"args":["scan_meta_data", E4PTdata.frame, E4PTdata.serial_number, E4PTdata.customer, E4PTdata.site_name, E4PTdata.operator, E4PTdata.units, E4PTdata.state]};
-        self.metaData.frame = [msgArray objectAtIndex:1];
-        self.metaData.serial_number = [msgArray objectAtIndex:2];
-        self.metaData.customer = [msgArray objectAtIndex:3];
-        self.metaData.site = [msgArray objectAtIndex:4];
-        self.metaData.user = [msgArray objectAtIndex:5];
-        self.metaData.units = [[msgArray objectAtIndex:6] uppercaseString]; // We want units to be consistently in upper case.
-        self.metaData.state = [msgArray objectAtIndex:7];
-        return;
-    }
-    if ([cmd containsString:@"clear_meta_data"]) {
-        NSLog(@"Got clear_meta_data");
-        [self.metaData clear];
         return;
     }
     if ([cmd containsString:@"get_data_file"]) {
@@ -1166,7 +1049,7 @@ enum ifc242xValue {
     }
     if ([cmd containsString:@"do_mastering"]) {
         NSLog(@"Got do_mastering");
-        NSString* mv = self.metaData.mastering_value;
+        NSString* mv = [NSString stringWithFormat:@"%f", controllerSettings.sensor.mv];
         if (msgArray.count > 1 && [@"reset" caseInsensitiveCompare:msgArray[1]] == NSOrderedSame) {
             mv = nil;
         }
@@ -1201,6 +1084,7 @@ enum ifc242xValue {
             });
         }
         else {
+            controllerSettings.measurementRate = [[msgArray objectAtIndex:1] floatValue];
             NSString* demoMsg = @"measurement_rate";
             dispatch_async(dispatch_get_main_queue(), ^{
                 self.timerDemoFunctions = [ NSTimer scheduledTimerWithTimeInterval:3.0
@@ -1218,6 +1102,7 @@ enum ifc242xValue {
             [self setThreshold:[msgArray objectAtIndex:1]];
         }
         else {
+            controllerSettings.intensityThreshold = [[msgArray objectAtIndex:1] floatValue];
             NSString* demoMsg = @"threshold";
             dispatch_async(dispatch_get_main_queue(), ^{
                 self.timerDemoFunctions = [ NSTimer scheduledTimerWithTimeInterval:3.0
@@ -1230,14 +1115,8 @@ enum ifc242xValue {
         return;
     }
     if ([cmd containsString:@"set_manual_override"]) {
-        NSLog(@"Got set_manual_override");
-        NSString* mode = [msgArray objectAtIndex:1];
-        if ([mode containsString:@"true"]) {
-            self.overrideAutoSettings = true;
-        }
-        else if ([mode containsString:@"false"]) {
-            self.overrideAutoSettings = false;
-        }
+        controllerSettings.overrideRateAndIntensity = [[msgArray objectAtIndex:1] containsString:@"true"];
+        NSLog(@"Got set_manual_override %@", controllerSettings.overrideRateAndIntensity ? @"YES" : @"NO");
         return;
     }
     if ([cmd containsString:@"set_demo_mode"]) {
@@ -1286,27 +1165,8 @@ enum ifc242xValue {
         return;
     }
     if ([cmd containsString:@"get_sensor_parameters"]) {
-        NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-        NSString *mfh = [defaults stringForKey:@"masterFixtureHeight"];
-        NSString *sensorLength = [defaults stringForKey:@"sensorLength"];
-        NSString *smr = [defaults stringForKey:@"startMeasurementRange"];
-        NSString *sensor = [defaults stringForKey:@"sensorType"];
-        NSString *mval = [defaults stringForKey:@"masteringValue"];
-        NSString *mo = [defaults stringForKey:@"masterOffset"];
-        if ((mfh == nil) || (mval == nil) || (mo == nil) || (sensor == nil) || (sensorLength == nil) || (smr == nil)) {
-            [self registerDefaultsFromSettingsBundle];
-            mfh = [defaults stringForKey:@"masterFixtureHeight"];
-            mval = [defaults stringForKey:@"masteringValue"];
-            mo = [defaults stringForKey:@"masterOffset"];
-            sensor = [defaults stringForKey:@"sensorType"];
-            sensorLength = [defaults stringForKey:@"sensorLength"];
-            smr = [defaults stringForKey:@"startMeasurementRange"];
-        }
-        self.metaData.master_fixture_height = mfh;
-        self.metaData.mastering_value = mval;
-        self.metaData.master_offset = mo;
-        NSDictionary* jsonDict = @{@"type":@"sensor_params", @"master_fixture_height":mfh, @"mastering_value":mval, @"master_offset":mo, @"sensor_selection":sensor, @"sensor_length":sensorLength, @"start_measurement_range":smr};
-        [self returnPluginResponse:jsonDict keepOpen:NO];
+        NSDictionary* jsonDict = @{@"type":@"sensor_params", @"master_fixture_height":[NSString stringWithFormat:@"%f", controllerSettings.sensor.hmf], @"mastering_value":[NSString stringWithFormat:@"%f", controllerSettings.sensor.mv], @"master_offset":[NSString stringWithFormat:@"%f", controllerSettings.sensor.mo], @"sensor_selection":controllerSettings.sensor.name, @"sensor_length":[NSString stringWithFormat:@"%f", controllerSettings.sensor.length], @"start_measurement_range":[NSString stringWithFormat:@"%f", controllerSettings.sensor.smr], @"sensor_measurement_range":[NSString stringWithFormat:@"%f", controllerSettings.sensor.mr]};
+        [self returnPluginResponse:jsonDict keepOpen:YES];
         return;
     }
     if ([cmd containsString:@"set_sensor_parameters"]) {
@@ -1316,25 +1176,20 @@ enum ifc242xValue {
         NSString* sensor;
         NSString* sensorLength;
         NSString* smr;
+        NSString* mr;
         if ([msgArray count] > 4) {
             sensor = [msgArray objectAtIndex:4];
             if ([msgArray count] > 5) {
                 sensorLength = [msgArray objectAtIndex:5];
                 if ([msgArray count] > 6) {
                     smr = [msgArray objectAtIndex:6];
+                    if ([msgArray count] > 7) {
+                        mr = [msgArray objectAtIndex:7];
+                    }
                 }
             }
         }
-        NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-        [defaults setValue:sensor forKey:@"sensorType"];
-        [defaults setValue:sensorLength forKey:@"sensorLength"];
-        [defaults setValue:mfh forKey:@"masterFixtureHeight"];
-        [defaults setValue:mval forKey:@"masteringValue"];
-        [defaults setValue:mo forKey:@"masterOffset"];
-        [defaults setValue:smr forKey:@"startMeasurementRange"];
-        self.metaData.master_fixture_height = mfh;
-        self.metaData.mastering_value = mval;
-        self.metaData.master_offset = mo;
+        controllerSettings.sensor = [[SensorSettings alloc] initWithName:sensor lengthInches:[sensorLength floatValue] measurementRangeMM:[mr floatValue] startOfMeasurementRangeMM:[smr floatValue] masterFixtureHeightInches:[mfh floatValue] masteringValueMM:[mval floatValue] masteringOffsetInches:[mo floatValue]];
         
         [self returnPluginResponse:@{@"type":@"alert",@"message":@"Sensor Parameters are Set."} keepOpen:NO];
         return;
@@ -1344,64 +1199,14 @@ enum ifc242xValue {
     }
 }
 
-// acquisitionTimeAndRate calculates the needed acquisition time and measurement rate
-// to get 1.05 rotations with ~5 pts/blade tip.  This function returns an array with
-// 3 elements. (1) acquisition time; (2) measurement rate; (3) error messages, if any.
-- (NSArray*)acquisitionTimeAndRate:(float)RPM {
-    float bladeWidth = [self.metaData.blade_width floatValue];
-    float circumference = M_PI * [self.metaData.tip_diameter floatValue];
-    float inchesPerSecond = circumference * RPM / 60.0;
-    float acquisitionTime =  1.10 * (circumference)/ inchesPerSecond;
-    float samplesPerInch = DESIRED_POINTS_PER_BLADE / bladeWidth;
-    float measRate = inchesPerSecond * samplesPerInch; // measRate in Hz.
-    // Round measurement rate to the next highest 100 Hz.
-    measRate /= 100.0;
-    measRate = ceilf(measRate);
-    measRate *= 100.0;
-    
-    NSString* errorMessage = @"";
-    if (measRate > 6500.0) {
-        measRate = 6500.0;
-        samplesPerInch = measRate / inchesPerSecond;
-        float ptsPerBlade = samplesPerInch * bladeWidth;
-        errorMessage = [NSString stringWithFormat:@"ErrorRateHigh\n%f pts/blade. ",ptsPerBlade];
-    }
-    if (measRate <= 100) {
-        measRate = 100; // Limit measurement rate on the low end.
-        //errorMessage = [errorMessage stringByAppendingString:@"ErrorRateLow "];
-    }
-    if (acquisitionTime <= 0) {
-        errorMessage = [errorMessage stringByAppendingString:@"ErrorTimeHigh "];
-    }
-    if (acquisitionTime > 1800) {
-        errorMessage = [errorMessage stringByAppendingString:@"ErrorTimeLow "];
-    }
-    // Convert measurement rate to kHz. for output
-    measRate /= 1000.0;
-    
-    // Get Intensity threshold for this sampling rate.
-    // This formula was calculated from empirical tests run by Carlos Alfonso-Diaz.
-    float intensityThreshold = 0;
-    if (measRate <= 0.4) intensityThreshold = 3.2;
-    if ((measRate > 0.4) && (measRate < 1.9)) intensityThreshold = 0.0498 * expf(-1.141 * measRate);
-    if (measRate >= 1.9) intensityThreshold = 0.5;
-    intensityThreshold *= 100.0;
-    
-    return [NSArray arrayWithObjects:
-            [NSNumber numberWithFloat:acquisitionTime],
-            [NSNumber numberWithFloat:measRate],
-            [NSNumber numberWithFloat:intensityThreshold],
-            errorMessage, nil];
-}
-
-- (void)doDataCollection:(NSString*)acqTime {
+- (void)doDataCollection {
     self.startTime = [[NSDate date] timeIntervalSince1970]; // start time timestamp in whole seconds.
     int num_sets = 0;
     float nSets = 0.0;
-    float meas_rate = [self.measurement_rate floatValue] * 1000; // measurement_rate is in kHz.
+    float meas_rate = controllerSettings.measurementRate * 1000; // measurement_rate is in kHz.
     if ([self.connectionMode containsString:@"ethernet"]) {
         // 100 samples/frame, "* 1000" converts the measurement rate from kHz to Hz.
-        nSets = meas_rate * [acqTime floatValue] / 100.0;
+        nSets = meas_rate * controllerSettings.acquisitionTime / 100.0;
     }
     if ([self.connectionMode containsString:@"serial"]) {
         // "* 1000" converts the measurement rate from kHz to Hz.
@@ -1413,7 +1218,7 @@ enum ifc242xValue {
         float bytesPerDataSet = 6.0;  // (3 bytes each, Inten., Disp.)
 #endif
         float dataSetsPerFrame = (float)RX_FORWARD_COUNT/bytesPerDataSet; // 64 bytes/Rx frame
-        nSets = meas_rate * [acqTime floatValue] / dataSetsPerFrame;
+        nSets = meas_rate * controllerSettings.acquisitionTime / dataSetsPerFrame;
     }
     num_sets = ceil(nSets); // Round up.
     self.progress = 0.0;
@@ -1450,22 +1255,11 @@ enum ifc242xValue {
     [self.datasetIds removeAllObjects];
     [self.times removeAllObjects];
     [self.displacements removeAllObjects];
-    [self.avg_displacements_for_blade removeAllObjects];
-    [self.filtered removeAllObjects];
-    [self.blade_clearances removeAllObjects];
-    [self.clearance_quality removeAllObjects];
     [self.point_counts removeAllObjects];
     [self.intensities removeAllObjects];
-    [self.min_locs removeAllObjects];
     if (self.byteBuffer != nil) {
         for (int i=0; i<BYTE_BUFFER_SIZE; i++) self.byteBuffer[i] = 0;
     }
-    self.stage_max_clearance = 0.0;
-    self.stage_min_clearance = FLT_MAX;
-    self.stage_median_clearance = 0.0;
-    self.stage_clearance_std = 0.0;
-    self.stage_position_threshold = 0.0;
-    self.stage_position_offset_adjustment = 0.0;
 }
 
 // The collectData function is patterned after the e4PtTool python function
@@ -1723,8 +1517,7 @@ enum ifc242xValue {
                         [self returnPluginResponse:@{@"type":@"status",@"status":@"processing"} keepOpen:YES];
                         
                         if (self.pState != clearanceComputationInProgress) {
-                            [self computeClearance];
-                            [self returnData];
+                            [self returnData:[self computeClearance]];
                         }
                         [self.telnetCmds addObject:@"OUTPUT NONE\n"];
                         [self sendTelnetCommand];
@@ -1801,10 +1594,20 @@ enum ifc242xValue {
     if ([rxData containsString:@"IFC2422"]) {
         NSLog(@"Controller is IFC2422");
         self.controllerType = @"IFC2422";
-    }
-    if ([rxData containsString:@"IFC2421"]) {
+        [self.telnetCmds addObject:@"SENSORINFO_CH01\n"];
+        [self sendTelnetCommand];
+    } else if ([rxData containsString:@"IFC2421"]) {
         NSLog(@"Controller is IFC2421");
         self.controllerType = @"IFC2421";
+        [self.telnetCmds addObject:@"SENSORINFO\n"];
+        [self sendTelnetCommand];
+    } else {
+        [self->mrRegex enumerateMatchesInString:rxData options:0 range:NSMakeRange(0, rxData.length) usingBlock:^(NSTextCheckingResult *match, NSMatchingFlags flags, BOOL *stop) {
+            if ([match numberOfRanges] > 1) {
+                controllerSettings.sensor.mr = [[rxData substringWithRange:[match rangeAtIndex:1]] floatValue];
+            }
+        }];
+        NSLog(@"Sensor Measurement Range is %f", controllerSettings.sensor.mr);
     }
     if ([prompt containsString:@"->"]) {
         NSLog(@"Got telnet prompt: telnetCmds.count = %lu",(unsigned long)self.telnetCmds.count);
@@ -1847,13 +1650,13 @@ enum ifc242xValue {
     NSLog(@"Returning from processResponse");
 }
 
-- (void)returnData {
+- (void)returnData:(ClearanceData*)clearanceData {
     NSError* error;
     NSData* jsonData;
     // If we've done a calibrated acquisition we pass back the filtered, calibrated data.
     // If we've done an uncalibrated acquisition we pass back the raw, uncalibrated data.
     if (self.calibratedAcquire) {
-        jsonData = [NSJSONSerialization dataWithJSONObject:self.filtered options:NSJSONWritingSortedKeys error:&error];
+        jsonData = [NSJSONSerialization dataWithJSONObject:clearanceData.filtered options:NSJSONWritingSortedKeys error:&error];
     }
     else {
         jsonData = [NSJSONSerialization dataWithJSONObject:self.displacements options:NSJSONWritingSortedKeys error:&error];
@@ -1861,25 +1664,27 @@ enum ifc242xValue {
     NSString *dispJSONString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
     jsonData = [NSJSONSerialization dataWithJSONObject:self.intensities options:NSJSONWritingSortedKeys error:&error];
     NSString *intensJSONString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
-    jsonData = [NSJSONSerialization dataWithJSONObject:self.min_locs options:NSJSONWritingSortedKeys error:&error];
+    jsonData = [NSJSONSerialization dataWithJSONObject:clearanceData.locations options:NSJSONWritingSortedKeys error:&error];
     NSString *minLocsJSONString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
-    jsonData = [NSJSONSerialization dataWithJSONObject:self.blade_clearances options:NSJSONWritingSortedKeys error:&error];
+    jsonData = [NSJSONSerialization dataWithJSONObject:clearanceData.bladeClearances options:NSJSONWritingSortedKeys error:&error];
     NSString *bladeClrsJSONString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
-    jsonData = [NSJSONSerialization dataWithJSONObject:self.clearance_quality options:NSJSONWritingSortedKeys error:&error];
+    jsonData = [NSJSONSerialization dataWithJSONObject:clearanceData.quality options:NSJSONWritingSortedKeys error:&error];
     NSString *clrQualityJSONString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
 
     NSDateFormatter *dateFormatter=[[NSDateFormatter alloc] init];
     [dateFormatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
-    NSString* dateStr = [dateFormatter stringFromDate:[NSDate date]];
-    NSString* clearance = [NSString stringWithFormat:@"%f",self.stage_clearance];
-    NSString* stg_max_clr = [NSString stringWithFormat:@"%f", self.stage_max_clearance];
-    NSString* stg_min_clr = [NSString stringWithFormat:@"%f", self.stage_min_clearance];
-    NSString* stg_med_clr = [NSString stringWithFormat:@"%f", self.stage_median_clearance];
-    NSString* stg_clr_std = [NSString stringWithFormat:@"%f", self.stage_clearance_std];
-    NSString* overall_avg = [NSString stringWithFormat:@"%f", self.overall_average];
-    NSString* intThresh = self.intensityThreshold == nil ? @"100" : self.intensityThreshold;
-    NSString* measRate = self.measurement_rate == nil ? @"1.0" : self.measurement_rate;
-
+    NSDate* date = [NSDate date];
+    NSString* dateStr = [dateFormatter stringFromDate:date];
+    NSString* clearance = [NSString stringWithFormat:@"%f", clearanceData.clearance];
+    NSString* stg_max_clr = [NSString stringWithFormat:@"%f", clearanceData.max];
+    NSString* stg_min_clr = [NSString stringWithFormat:@"%f", clearanceData.min];
+    NSString* stg_med_clr = [NSString stringWithFormat:@"%f", clearanceData.median];
+    NSString* stg_clr_std = [NSString stringWithFormat:@"%f", clearanceData.std];
+    NSString* overall_avg = isnan(clearanceData.averageDisplacement) ? @"--" : [NSString stringWithFormat:@"%f", clearanceData.averageDisplacement];
+    
+    [self saveCSVFile:date clearanceData:clearanceData];
+    NSArray* savedFilepath = [self.last_saved_file pathComponents];
+    NSRange endRange = NSMakeRange(savedFilepath.count - 2, 2);
     NSDictionary* jsonDataDict = @{@"type":@"data",
                                    @"data":dispJSONString,
                                    @"intensity":intensJSONString,
@@ -1895,21 +1700,20 @@ enum ifc242xValue {
                                    @"std_clr":stg_clr_std,
                                    @"overall_avg":overall_avg,
                                    @"date":dateStr,
-                                   @"intensity_threshold":intThresh,
-                                   @"measurement_rate":measRate
-                                   };
+                                   @"intensity_threshold":[NSString stringWithFormat:@"%f", controllerSettings.intensityThreshold],
+                                   @"measurement_rate":[NSString stringWithFormat:@"%f", controllerSettings.measurementRate],
+                                   @"filename":[[savedFilepath subarrayWithRange:endRange] componentsJoinedByString:@"/"]};
     [self returnPluginResponse:jsonDataDict keepOpen:NO];
-    [self saveCSVFile:@""];
     [self clearData];
 }
 
 - (void)processComplete:(NSString*)statusMsg {
     if (self.pState == setMeasurementRateInProgress) {
-        NSString* msgStr = [NSString stringWithFormat:@"Measurement rate set to %@ kHz.", self.measurement_rate];
+        NSString* msgStr = [NSString stringWithFormat:@"Measurement rate set to %.3f kHz.", controllerSettings.measurementRate];
         [self returnPluginResponse:@{@"type":@"alert",@"message":msgStr} keepOpen:YES];
     }
     else if (self.pState == setThresholdInProgress) {
-        NSString* msgStr = [NSString stringWithFormat:@"Threshold is set to %@.", self.intensityThreshold];
+        NSString* msgStr = [NSString stringWithFormat:@"Threshold is set to %.3f.", controllerSettings.intensityThreshold];
         [self returnPluginResponse:@{@"type":@"alert",@"message":msgStr} keepOpen:NO];
     }
     else if (self.pState == darkReferenceInProgress) {
@@ -1922,73 +1726,18 @@ enum ifc242xValue {
     self.pState = ready;
 }
 
-- (void)computeClearance {
+- (ClearanceData*)computeClearance {
     self.pState = clearanceComputationInProgress;
+    
     MeasurementData* measurementData = [MeasurementData new];
     [measurementData.displacements setArray:self.displacements];
     [measurementData.intensities setArray:self.intensities];
     self->postProcess.outOfRange = OUT_OF_RANGE;
     
-    self.stage_position_offset_adjustment = 0.0;
+    float offsetAdjustment = 0.0;
     if (self.calibratedAcquire)
-        self.stage_position_offset_adjustment = [self calculateOffsetAdjustment:self.metaData.clearance_calculation_method];
-    ClearanceData* clearanceData = [self->postProcess computeClearance:measurementData bladeCount:[self.metaData.num_blades intValue] usingAdjustmentFactor:self.stage_position_offset_adjustment];
-    measurementData = nil;
-    
-    self.filtered = clearanceData.clearances;
-    [self.avg_displacements_for_blade setArray:clearanceData.filtered];
-    self.blade_clearances = clearanceData.bladeClearances;
-    self.stage_clearance = clearanceData.clearance;
-    self.stage_max_clearance = clearanceData.max;
-    self.stage_min_clearance = clearanceData.min;
-    self.stage_median_clearance = clearanceData.median;
-    self.stage_clearance_std = clearanceData.std;
-    self.min_locs = clearanceData.locations;
-    self.clearance_quality = clearanceData.quality;
-    self.stage_position_threshold = clearanceData.shelfThreshold;
-    self.overall_average = clearanceData.averageDisplacement;
-    clearanceData = nil;
-}
-
--(float)calculateOffsetAdjustment:(NSString*) calcMethod {
-    if ([@"1" isEqualToString:calcMethod]) {
-        return [self calculateOffsetAdjustment];
-    }
-    return [self calculateOffsetAdjustment2];
-}
-
--(NSString*)getOffsetAdjustmentFormula:(NSString*) calcMethod {
-    if ([@"1" isEqualToString:calcMethod]) {
-        return @"Hmf - ST - CT + MO - MV";
-    }
-    return @"MV + SL - ST - CT + MO";
-}
-    
--(float)calculateOffsetAdjustment {
-    // mastering_value is in mm.
-    // Sensor parameters (Mastering fixture height, Spacer thickness & casing thickness) are in inches.
-    //
-    // Get values into consistent units of mm. Perform calculations in mm
-    float inToMM = 25.4;
-    float mfh = [self.metaData.master_fixture_height floatValue] * inToMM;
-    float mo = [self.metaData.master_offset floatValue] * inToMM;
-    float ct = [self.metaData.casing_thickness floatValue] * inToMM;
-    float st = [self.metaData.spacer_thickness floatValue] * inToMM;
-
-    return mfh - st - ct + mo - [self.metaData.mastering_value floatValue];
-}
-
--(float)calculateOffsetAdjustment2 {
-    // mastering_value is in mm.
-    // Sensor parameters (Mastering fixture height, Spacer thickness & casing thickness) are in inches.
-    //
-    // Get values into consistent units of mm. Perform calculations in mm
-    float inToMM = 25.4;
-    float mo = [self.metaData.master_offset floatValue] * inToMM;
-    float ct = [self.metaData.casing_thickness floatValue] * inToMM;
-    float st = [self.metaData.spacer_thickness floatValue] * inToMM;
-    float sensorLength = [[[NSUserDefaults standardUserDefaults] stringForKey:@"sensorLength"] floatValue] * inToMM;
-    return [self.metaData.mastering_value floatValue] + sensorLength - st - ct + mo;
+        offsetAdjustment = [controllerSettings.sensor calculateOffsetAdjustment:[self.metaData.spacer_thickness floatValue] casingThickness:[self.metaData.casing_thickness floatValue]];
+    return [self->postProcess computeClearance:measurementData bladeCount:[self.metaData.num_blades intValue] usingAdjustmentFactor:offsetAdjustment];
 }
 
 // loadCSVFile should never be used in the field, but is here to allow
@@ -2036,8 +1785,6 @@ enum ifc242xValue {
         }
         NSString* tmp = [lineArray objectAtIndex:4];
         [self.displacements addObject:[NSNumber numberWithFloat:[tmp floatValue]]];
-        tmp = [lineArray objectAtIndex:5];
-        [self.filtered addObject:[NSNumber numberWithFloat:[tmp floatValue]]];
         tmp = [lineArray objectAtIndex:2];
         [self.datasetIds addObject:[NSNumber numberWithInteger:[tmp intValue]]];
         tmp = [lineArray objectAtIndex:3];
@@ -2053,14 +1800,13 @@ enum ifc242xValue {
     return true;
 }
 
-- (void)saveCSVFile:(NSString*)fileName {
+- (void)saveCSVFile:(NSDate*)date clearanceData:(ClearanceData*)clearanceData {
     // If called with no displacements, don't write a file, just return;
     if (self.displacements.count == 0) return;
     // Get the date & time for the filename.
     NSDateFormatter *dateFormatter=[[NSDateFormatter alloc] init];
     [dateFormatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
-    NSString* dateStr = [dateFormatter stringFromDate:[NSDate date]];
-    dateStr = [dateStr substringFromIndex:2]; // Remove char 0-1, to get a shortened 2-digit year.
+    NSString* dateStr = [[dateFormatter stringFromDate:date] substringFromIndex:2]; // Remove char 0-1, to get a shortened 2-digit year.
     // Get path to documents directory
     NSString* docPath;
     NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
@@ -2090,25 +1836,19 @@ enum ifc242xValue {
     // Create a file name as sn_stage_pos_state_datetime.csv.
     // If there is no serial number, just save to the data folder.
     NSString* csvFileName = [[NSString alloc] init];
-    if (fileName.length == 0) {
-        if (self.metaData.serial_number.length == 0) {
-            csvFileName = [NSString stringWithFormat:@"%@/%@",
-                           dataDir,
-                           [NSString stringWithFormat:@"data_%@_mm.csv",dateStr]];
-        }
-        else {
-            NSString* fName = [NSString stringWithFormat:@"%@_%@_%@_%@_mm.csv",
-                               self.metaData.serial_number, self.metaData.stage,
-                               pos, dateStr];
-            csvFileName = [NSString stringWithFormat:@"%@/%@", turbineDir, fName];
-        }
-        // Change the data-time string format in the filename.
-        csvFileName = [csvFileName stringByReplacingOccurrencesOfString:@" " withString:@"_"];
-        csvFileName = [csvFileName stringByReplacingOccurrencesOfString:@":" withString:@"-"];
+    if (self.metaData.serial_number.length == 0) {
+        csvFileName = [NSString stringWithFormat:@"%@/%@",
+                       dataDir,
+                       [NSString stringWithFormat:@"data_%@_mm.csv",dateStr]];
+    } else {
+        NSString* fName = [NSString stringWithFormat:@"%@_%@_%@_%@_mm.csv",
+                           self.metaData.serial_number, self.metaData.stage,
+                           pos, dateStr];
+        csvFileName = [NSString stringWithFormat:@"%@/%@", turbineDir, fName];
     }
-    else {
-        csvFileName = [NSString stringWithFormat:@"%@/%@", docPath, fileName];
-    }
+    // Change the data-time string format in the filename.
+    csvFileName = [csvFileName stringByReplacingOccurrencesOfString:@" " withString:@"_"];
+    csvFileName = [csvFileName stringByReplacingOccurrencesOfString:@":" withString:@"-"];
     self.last_saved_file = csvFileName;
     // Now write the file...
     // Open the output file.
@@ -2140,28 +1880,28 @@ enum ifc242xValue {
     [handle writeData:[dataStr dataUsingEncoding:NSUTF8StringEncoding]];
     
     // Write the individual data lines.
-    int i=0;
-    for (i=0; i<self.displacements.count; i++) {
+    float adjustmentFactor = self.calibratedAcquire ? [controllerSettings.sensor calculateOffsetAdjustment:[self.metaData.spacer_thickness floatValue] casingThickness:[self.metaData.casing_thickness floatValue]] : 0.0;
+    for (int i=0; i<self.displacements.count; i++) {
         dataStr =  [NSString stringWithFormat:@"%d,%@,%@,%@,%@,%@,%@,%@,%@,%f\n",
                     i,[self.point_counts objectAtIndex:i],[self.datasetIds objectAtIndex:i],
                     [self.times objectAtIndex:i], [self.displacements objectAtIndex:i],
-                    [self.filtered objectAtIndex:i], [self.intensities objectAtIndex:i],
-                    self.metaData.casing_thickness, [self.avg_displacements_for_blade objectAtIndex:i], self.stage_position_offset_adjustment];
+                    [clearanceData.clearances objectAtIndex:i], [self.intensities objectAtIndex:i],
+                    self.metaData.casing_thickness, [clearanceData.filtered objectAtIndex:i], adjustmentFactor];
         [handle writeData:[dataStr dataUsingEncoding:NSUTF8StringEncoding]];
     }
     
     //  Write the sensor parameters and app version to the CSV file.
-    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    dataStr = [NSString stringWithFormat:@"\n - Sensor Parameters,,,,,,,,,\nSensor Selection,Sensor Length (in),SMR (mm),Mastering Fixture Height (in),Mastering Value (mm),Master Offset (in),Spacer Thickness (in),Shelf Threshold (mm),Applied Offset Formula,\n%@,%@,%@,%@,%@,%@,%@,%f,%@,\n",
-                                  [defaults stringForKey:@"sensorType"],
-                                  [defaults stringForKey:@"sensorLength"],
-                                  [defaults stringForKey:@"startMeasurementRange"],
-                                  [defaults stringForKey:@"masterFixtureHeight"],
-                                  [defaults stringForKey:@"masteringValue"],
-                                  [defaults stringForKey:@"masterOffset"],
-                                  self.metaData.spacer_thickness,
-                                  self.stage_position_threshold,
-                                  [self getOffsetAdjustmentFormula:self.metaData.clearance_calculation_method]];
+    dataStr = [NSString stringWithFormat:@"\n - Sensor Parameters,,,,,,,,,\nSensor Selection,Sensor Length (in),MR (mm),SMR (mm),Mastering Fixture Height (in),Mastering Value (mm),Master Offset (in),Spacer Thickness (in),Shelf Threshold (mm),Applied Offset Formula\n%@,%f,%f,%f,%f,%f,%f,%@,%f,%@\n",
+               controllerSettings.sensor.name,
+               controllerSettings.sensor.length,
+               controllerSettings.sensor.mr,
+               controllerSettings.sensor.smr,
+               controllerSettings.sensor.hmf,
+               controllerSettings.sensor.mv,
+               controllerSettings.sensor.mo,
+               self.metaData.spacer_thickness,
+               clearanceData.shelfThreshold,
+               controllerSettings.sensor.offsetAdjustmentFormula];
     [handle writeData:[dataStr dataUsingEncoding:NSUTF8StringEncoding]];
 
     NSString* appVersion = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleShortVersionString"];
@@ -2463,7 +2203,7 @@ enum ifc242xValue {
                     displacement = OUT_OF_RANGE;
                 }
                 else {
-                    displacement = ((float)dval - 98232.0) * [self.metaData.sensor_measurement_range floatValue] / 65536.0;
+                    displacement = ((float)dval - 98232.0) * controllerSettings.sensor.mr / 65536.0;
                 }
                 NSString* log = [NSString stringWithFormat:@"D:%f: ", displacement];
                 logStr = [logStr stringByAppendingString:log];
@@ -2568,9 +2308,8 @@ enum ifc242xValue {
         [self loadCSVFile:@""];
 #endif
         NSLog(@"Calling compute clearance...");
-        [self computeClearance]; // computeClearance changes pState to clearanceComputationInProgress
+        [self returnData:[self computeClearance]];
         NSLog(@"Calling returnData");
-        [self returnData];
         NSLog(@"Checking delayResponse");
         self.pState = ready;
         if (self.delayResponse) {
@@ -2693,32 +2432,6 @@ enum ifc242xValue {
 
     [[NSUserDefaults standardUserDefaults] registerDefaults:defaultsToRegister];
 }
-    
-- (void)codeTest {
-    // test files
-    NSArray* files = @[@"299662_10_BOTTOM_2020-07-11_14-20-51.csv", @"299662_10_LEFT_2020-07-11_14-24-07.csv", @"299662_10_RIGHT_2020-07-11_14-44-10.csv", @"299662_10_TOP_2020-07-11_14-39-49.csv", @"299662_14_BOTTOM_2020-07-11_15-09-58.csv", @"299662_14_LEFT_2020-07-11_15-06-10.csv", @"299662_14_RIGHT_2020-07-11_14-48-37.csv", @"299662_14_TOP_2020-07-11_15-01-49.csv", @"299662_1_BOTTOM_2020-07-11_15-34-38.csv", @"299662_1_LEFT_2020-07-11_15-15-17.csv", @"299662_1_RIGHT_2020-07-11_15-30-18.csv", @"299662_1_TOP_2020-07-11_15-17-02.csv", @"299662_6_BOTTOM_2020-07-11_14-17-14.csv", @"299662_6_LEFT_2020-07-11_15-37-08.csv", @"299662_6_RIGHT_2020-07-11_14-06-09.csv", @"299662_6_TOP_2020-07-11_14-03-02.csv"];
-    //NSArray* files = @[@"299662_10_LEFT_2020-07-11_14-24-07.csv"];
-    NSString* docPath;
-    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
-    if (paths.count > 0) {
-        docPath = [paths objectAtIndex:0];
-    }
-    // The files should all be loaded in a folder named "test" in the documents folder.
-    for (NSString* file in files) {
-        NSLog(@"Now testing %@",file);
-        NSString* filePath = [NSString stringWithFormat:@"%@/%@",docPath,file];
-        if (![self loadCSVFile:filePath]) {
-            continue;
-        }
-        if ([file containsString:@"R10"]) self.metaData.num_blades = @"85";
-        if ([file containsString:@"R14"]) self.metaData.num_blades = @"92";
-        if ([file containsString:@"R1_"]) self.metaData.num_blades = @"24";
-        if ([file containsString:@"R6"]) self.metaData.num_blades = @"72";
-        [self computeClearance];
-        NSString* outFile = [file stringByReplacingOccurrencesOfString:@".csv" withString:@"-test-out.csv"];
-        [self saveCSVFile:outFile];
-    }
-}
 
 @end
 
@@ -2827,11 +2540,15 @@ enum ifc242xValue {
   [self.commandDelegate runInBackground:^{
       NSLog(@"@CDVIFC242x.m::collectData");
       NSString* acqTime = [command.arguments objectAtIndex:0];
+      //TODO need to figure out how to do this properly
+      //self.manager->controllerSettings.acquisitionTime = [acqTime floatValue];
       // 100 samples/frame, measurement rate is in kHz.
-      float nSets = [self.manager.measurement_rate floatValue] * 1000.0 * [acqTime floatValue] / 100.0;
-      int num_sets = ceil(nSets); // Round up.
-      NSString* csThckns = [command.arguments objectAtIndex:1];
-      [self.manager collectData:num_sets casingThickness:[csThckns floatValue]]; // num_sets, casing thickness.
+      self.manager.calibratedAcquire = false;
+      //float nSets = self.manager->controllerSettings.measurementRate * 1000.0 * [acqTime floatValue] / 100.0;
+      //int num_sets = ceil(nSets); // Round up.
+      //NSString* csThckns = [command.arguments objectAtIndex:1];
+      //[self.manager collectData:num_sets casingThickness:[csThckns floatValue]]; // num_sets, casing thickness.
+      [self.manager doDataCollection];
   }];
 }
 

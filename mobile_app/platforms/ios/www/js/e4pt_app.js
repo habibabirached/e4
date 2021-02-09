@@ -38,9 +38,10 @@ define(function(require, exports, module) {
         this.intensity_threshold = null;
         this.measurement_rate = null;
         this.dateStr = null;
+        this.filename = null;
     };
 
-    Data_Set.prototype.add_data = function(state, stage, position, case_thickness, blade_number, pts, used_in_avg, clearance, max_clr, min_clr, med_clr, std_clr, quality, intensity_threshold, measurement_rate, dateStr) {
+    Data_Set.prototype.add_data = function(state, stage, position, case_thickness, blade_number, pts, used_in_avg, clearance, max_clr, min_clr, med_clr, std_clr, quality, intensity_threshold, measurement_rate, dateStr, filename) {
         this.stage = stage;
         this.position = position;
         this.case_thickness = case_thickness;
@@ -55,6 +56,7 @@ define(function(require, exports, module) {
         this.intensity_threshold = intensity_threshold;
         this.measurement_rate = measurement_rate;
         this.dateStr = dateStr;
+        this.filename = filename;
     };
 
     var E4PTdata = {
@@ -132,7 +134,6 @@ define(function(require, exports, module) {
         }, {passive: true});
         document.getElementById("COLLECT_DATA_BUTTON").addEventListener('click', function(){
             fadeOutAll();
-            checkSensorSelection();
             turbine_setup();
         }, {passive: true});
         document.getElementById("CLEAR_DB_BUTTON").addEventListener('click', function(){
@@ -647,10 +648,9 @@ define(function(require, exports, module) {
         $('#CUR_MODE').text('Current Mode: ' + (tf ? 'Demo' : 'Production'));
         $('#CONNECTION_NAME').text((tf ? 'DEMO' : $('#CUR_CONN').text().substring(20)));
         
-        if (!tf) {
-            setIndicatorColor('white');
-            serialConnected = false;
-        }
+        setIndicatorColor(tf ? 'green' : 'white');
+        serialConnected = tf;
+        
         messaging.sendMessage({args:['set_demo_mode',tf.toString()]});
     }
 
@@ -818,6 +818,11 @@ define(function(require, exports, module) {
         document.getElementById("HEADER_CUSTOMER").innerHTML = "Customer: " + customer + " - " + site;
         document.getElementById("HEADER_FRAME").innerHTML = "Frame: " + E4PTdata.frame;
         document.getElementById("HEADER_SERIAL").innerHTML = "S/N: " + E4PTdata.serial_number + ";  Units: " + E4PTdata.units;
+        updateSensorHeaderMessage();
+        checkSensorSelection();
+    }
+    
+    function updateSensorHeaderMessage() {
         document.getElementById("SL_CONFIG_MSG").innerHTML = sensorSettings.get('sensor_length') + "&quot; SL";
         document.getElementById("SMR_CONFIG_MSG").innerHTML = sensorSettings.get('start_measurement_range') + "mm SMR";
         document.getElementById("MR_CONFIG_MSG").innerHTML = sensorSettings.get('sensor_mr') + "mm MR";
@@ -1047,7 +1052,7 @@ define(function(require, exports, module) {
         document.getElementById("SPACER_COLOR_LABEL").innerHTML = "";
         savedRPM = "";
         setup_data_collection_page("", "", true);
-        charting.clearChartData(document.getElementById("DATA_PLOT2"));
+        charting.clearChartData(document.getElementById('DATA_PLOT2'));
     }
 
     function b64toBlob(b64Data, contentType, sliceSize) {
@@ -1251,32 +1256,7 @@ define(function(require, exports, module) {
         document.getElementById("HEADER_CUSTOMER").innerHTML = "Customer: " + customer + " - " + site;
         document.getElementById("HEADER_FRAME").innerHTML = "Frame: " + E4PTdata.frame;
         document.getElementById("HEADER_SERIAL").innerHTML = "S/N: " + E4PTdata.serial_number + ";  Units: " + E4PTdata.units;
-        document.getElementById("SL_CONFIG_MSG").innerHTML = sensorSettings.get('sensor_length') + "&quot; SL";
-        document.getElementById("SMR_CONFIG_MSG").innerHTML = sensorSettings.get('start_measurement_range') + "mm SMR";
-        document.getElementById("MR_CONFIG_MSG").innerHTML = sensorSettings.get('sensor_mr') + "mm MR";
-        document.getElementById("MFH_CONFIG_MSG").innerHTML = sensorSettings.get('master_fixture_height') + "&quot; MFH";
-        document.getElementById("MV_CONFIG_MSG").innerHTML = sensorSettings.get('mastering_value') + "mm MV";
-        document.getElementById("MO_CONFIG_MSG").innerHTML = sensorSettings.get('master_offset') + "&quot; MO";
-        if (sensorSettings.sensorParamsHaveBeenEdited()) {
-            document.getElementById("SENSOR_PARAMS_CONFIG_MSG").innerHTML = "Using non-standard '" + sensorSettings.get('sensor_selection') + "' sensor settings: ";
-            
-            $("#SENSOR_PARAMS_CONFIG_MSG").css('color', 'red');
-            $("#SL_CONFIG_MSG").css('color', sensorSettings.sensorLengthHasBeenEdited()?'red':'black');
-            $("#SMR_CONFIG_MSG").css('color', sensorSettings.smrHasBeenEdited()?'red':'black');
-            $("#MR_CONFIG_MSG").css('color', sensorSettings.mrHasBeenEdited()?'red':'black');
-            $("#MFH_CONFIG_MSG").css('color', sensorSettings.mfhHasBeenEdited()?'red':'black');
-            $("#MV_CONFIG_MSG").css('color', sensorSettings.mvHasBeenEdited()?'red':'black');
-            $("#MO_CONFIG_MSG").css('color', sensorSettings.moHasBeenEdited()?'red':'black');
-        } else {
-            document.getElementById("SENSOR_PARAMS_CONFIG_MSG").innerHTML = "Using preconfigured '" + sensorSettings.get('sensor_selection') + "' sensor settings";
-            $("#SENSOR_PARAMS_CONFIG_MSG").css('color', 'green');
-            $("#SL_CONFIG_MSG").css('color', 'black');
-            $("#SMR_CONFIG_MSG").css('color', 'black');
-            $("#MR_CONFIG_MSG").css('color', 'black');
-            $("#MFH_CONFIG_MSG").css('color', 'black');
-            $("#MV_CONFIG_MSG").css('color', 'black');
-            $("#MO_CONFIG_MSG").css('color', 'black');
-        }
+        updateSensorHeaderMessage();
         document.getElementById("SENSOR_STAGE").selectedIndex = current_stage_index;
         document.getElementById("SENSOR_POSITION").selectedIndex = current_position_index;
         var html_buf = [];
@@ -1520,7 +1500,7 @@ define(function(require, exports, module) {
         $("#DATA_PLOT").fadeIn();
         $("#STATUS_BAR").hide();
         $("#REV_PROGRESS_BAR").show();
-        charting.clearChartData(document.getElementById("DATA_PLOT"));
+        charting.clearChartData(document.getElementById('DATA_PLOT'));
         current_frame_data = [];
     }
 
@@ -1856,6 +1836,7 @@ define(function(require, exports, module) {
         sensorSettings.set('start_measurement_range', smr_f);
         sensorSettings.set('sensor_mr', mr_f);
         sensorSettings.saveValuesForSensorType();
+        updateSensorHeaderMessage();
     }
 
     function getSensorParametersForSensorSelection(sensorType) {
@@ -2268,8 +2249,7 @@ define(function(require, exports, module) {
 
     function requestE4PtData(acquisitionTime) {
       console.log("Requesting " + acquisitionTime + " seconds of data");
-      charting.clearChartData(document.getElementById("DATA_PLOT"));
-      charting.clearChartData(document.getElementById("DATA_PLOT2"));
+      charting.clearChartData(document.getElementById('DATA_PLOT'));
         
         $("#STATUS_BAR").hide();
         $("#REV_PROGRESS_BAR").show();
@@ -2306,6 +2286,7 @@ define(function(require, exports, module) {
                 }
             }
         }
+        charting.clearChartData(document.getElementById('DATA_PLOT2'));
         if (messaging.usesWebSocket()) {
             setIndicatorColor("yellow");
         }
@@ -2400,6 +2381,7 @@ define(function(require, exports, module) {
         set.intensity_threshold = E4PTdata.intensity_threshold;
         set.measurement_rate = E4PTdata.measurement_rate;
         set.dateStr = E4PTdata.date
+        set.filename = E4PTdata.filename
         addOrReplaceSet(set);
         if (doDBSave) {
           addDBEntry(E4PTdata); // save the data autmatically after acquisition
@@ -2431,6 +2413,7 @@ define(function(require, exports, module) {
         priorSet.intensity_threshold = set.intensity_threshold;
         priorSet.measurement_rate = set.measurement_rate;
         priorSet.dateStr = set.dateStr;
+        priorSet.filename = set.filename;
         console.log("priorSet after:  ", priorSet);
     }
 
@@ -3004,10 +2987,10 @@ define(function(require, exports, module) {
         return Object.keys(E4PTdata).every(function(key) {
             if (key === 'sets') {
                 return fileData.sets.every(function(entry) {
-                    return Object.keys(new Data_Set()).every((ds_key) => entry.hasOwnProperty(ds_key) || key === 'intensity_threshold' || key === 'measurement_rate' || key === 'dateStr');
+                    return Object.keys(new Data_Set()).every((ds_key) => entry.hasOwnProperty(ds_key) || key === 'intensity_threshold' || key === 'measurement_rate' || key === 'dateStr' || key === 'filename');
                 });
             }
-            return fileData.hasOwnProperty(key) || key === 'intensity_threshold' || key === 'measurement_rate';
+            return fileData.hasOwnProperty(key) || key === 'intensity_threshold' || key === 'measurement_rate' || key === 'filename';
         });
     }
     
@@ -3022,7 +3005,7 @@ define(function(require, exports, module) {
     function setSensorSettingsForTurbine(option) {
         if (option === 2) {
             document.getElementById("SENSOR_SELECTION").value = current_frame_data.default_sensor;
-            sensorSettings.getSensorParametersForSensorSelection(current_frame_data.default_sensor);
+            getSensorParametersForSensorSelection(current_frame_data.default_sensor);
             updateSensorParameters(document.getElementById("MASTER_FIXTURE_HEIGHT").value,
                                    document.getElementById("MASTERING_VALUE").value,
                                    document.getElementById("MASTER_OFFSET").value,

@@ -242,7 +242,9 @@ enum ifc242xValue {
 
 @end
 
-@implementation IFCObjectiveCManager
+@implementation IFCObjectiveCManager {
+    NSRegularExpression *mrRegex;
+}
 
 @synthesize webView = _webView;
 @synthesize metaData = _metaData;
@@ -319,6 +321,7 @@ enum ifc242xValue {
 #else
         _manager.demoMode = false;
 #endif
+        _manager->mrRegex = [NSRegularExpression regularExpressionWithPattern:@"\\s(\\d+\\.\\d+)mm" options:NSRegularExpressionCaseInsensitive error:nil];
         _manager->postProcess = [PostProcess new];
         _manager->controllerSettings = [ControllerSettings new];
         [_manager initializeSensor];
@@ -480,7 +483,7 @@ enum ifc242xValue {
         // Below are two ways to report progress back to the UI.  The later seems to cause a crash
         // when collecting data via ethernet. I'm leaving the code for now, but will use the more
         // direct method that does not crash.
-        if (true) {
+        if (/* DISABLES CODE */ (true)) {
             NSError* error;
             NSData *jsonData=[NSJSONSerialization dataWithJSONObject:jsonDict options:NSJSONWritingSortedKeys error:&error];
             NSString *jsonString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
@@ -532,7 +535,7 @@ enum ifc242xValue {
                 self.progress = 1.0;
                 dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
                     NSDictionary* jsonDict = @{@"type":@"alert",@"message":@"Dark referencing complete."};
-                    if (true) {
+                    if (/* DISABLES CODE */ (true)) {
                         NSError* error;
                         NSData *jsonData=[NSJSONSerialization dataWithJSONObject:jsonDict options:NSJSONWritingSortedKeys error:&error];
                         NSString *jsonString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
@@ -968,7 +971,6 @@ enum ifc242xValue {
             // Call from JavaScript:
             // ["send_data",acquisitionTime, frame, sn, stage, position, casing_thickness, spacer_thickness, master_offset, clearance_calc_method];
             acqTime = [msgArray objectAtIndex:1];
-            //self.metaData.frame = [msgArray objectAtIndex:2];
             self.metaData.serial_number = [msgArray objectAtIndex:3];
             self.metaData.stage = [msgArray objectAtIndex:4];
             self.metaData.position = [msgArray objectAtIndex:5];
@@ -977,7 +979,6 @@ enum ifc242xValue {
             self.metaData.num_blades = [msgArray objectAtIndex:8];
             self.metaData.tip_diameter = [msgArray objectAtIndex:9];
             self.metaData.blade_width = [msgArray objectAtIndex:10];
-            //self.metaData.master_offset = [msgArray objectAtIndex:11];
             controllerSettings.sensor.offsetSelector = [msgArray objectAtIndex:12];
             self.calibratedAcquire = true;
         }
@@ -996,8 +997,7 @@ enum ifc242xValue {
                 }
                 NSLog(@"Using auto-settings: Found measurement rate: %f; intensity threshold: %f", [controllerSettings measurementRate], [controllerSettings intensityThreshold]);
                 [self setMeasurementRateAndIntensityThreshold];
-            }
-            else {
+            } else {
                 NSLog(@"Overriding auto-settings.");
             }
             self.startTime = [[NSDate date] timeIntervalSince1970]; // start timeout timer
@@ -1166,7 +1166,7 @@ enum ifc242xValue {
     }
     if ([cmd containsString:@"get_sensor_parameters"]) {
         NSDictionary* jsonDict = @{@"type":@"sensor_params", @"master_fixture_height":[NSString stringWithFormat:@"%f", controllerSettings.sensor.hmf], @"mastering_value":[NSString stringWithFormat:@"%f", controllerSettings.sensor.mv], @"master_offset":[NSString stringWithFormat:@"%f", controllerSettings.sensor.mo], @"sensor_selection":controllerSettings.sensor.name, @"sensor_length":[NSString stringWithFormat:@"%f", controllerSettings.sensor.length], @"start_measurement_range":[NSString stringWithFormat:@"%f", controllerSettings.sensor.smr], @"sensor_measurement_range":[NSString stringWithFormat:@"%f", controllerSettings.sensor.mr]};
-        [self returnPluginResponse:jsonDict keepOpen:NO];
+        [self returnPluginResponse:jsonDict keepOpen:YES];
         return;
     }
     if ([cmd containsString:@"set_sensor_parameters"]) {
@@ -1189,8 +1189,6 @@ enum ifc242xValue {
                 }
             }
         }
-        //TODO must figure out how to safely set the MR
-        //float sensor_mr = controllerSettings.sensor.mr;
         controllerSettings.sensor = [[SensorSettings alloc] initWithName:sensor lengthInches:[sensorLength floatValue] measurementRangeMM:[mr floatValue] startOfMeasurementRangeMM:[smr floatValue] masterFixtureHeightInches:[mfh floatValue] masteringValueMM:[mval floatValue] masteringOffsetInches:[mo floatValue]];
         
         [self returnPluginResponse:@{@"type":@"alert",@"message":@"Sensor Parameters are Set."} keepOpen:NO];
@@ -1598,16 +1596,17 @@ enum ifc242xValue {
         self.controllerType = @"IFC2422";
         [self.telnetCmds addObject:@"SENSORINFO_CH01\n"];
         [self sendTelnetCommand];
-    }
-    if ([rxData containsString:@"IFC2421"]) {
+    } else if ([rxData containsString:@"IFC2421"]) {
         NSLog(@"Controller is IFC2421");
         self.controllerType = @"IFC2421";
         [self.telnetCmds addObject:@"SENSORINFO\n"];
         [self sendTelnetCommand];
-    }
-    if ([rxData containsString:@"Measurement range:"]) {
-        NSString* measurementRange = [[rxData componentsSeparatedByString:@"\r\n"][3] substringFromIndex:18];
-        controllerSettings.sensor.mr = [[measurementRange substringToIndex:[measurementRange length]-2] floatValue];
+    } else {
+        [self->mrRegex enumerateMatchesInString:rxData options:0 range:NSMakeRange(0, rxData.length) usingBlock:^(NSTextCheckingResult *match, NSMatchingFlags flags, BOOL *stop) {
+            if ([match numberOfRanges] > 1) {
+                controllerSettings.sensor.mr = [[rxData substringWithRange:[match rangeAtIndex:1]] floatValue];
+            }
+        }];
         NSLog(@"Sensor Measurement Range is %f", controllerSettings.sensor.mr);
     }
     if ([prompt containsString:@"->"]) {
@@ -1674,14 +1673,18 @@ enum ifc242xValue {
 
     NSDateFormatter *dateFormatter=[[NSDateFormatter alloc] init];
     [dateFormatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
-    NSString* dateStr = [dateFormatter stringFromDate:[NSDate date]];
+    NSDate* date = [NSDate date];
+    NSString* dateStr = [dateFormatter stringFromDate:date];
     NSString* clearance = [NSString stringWithFormat:@"%f", clearanceData.clearance];
     NSString* stg_max_clr = [NSString stringWithFormat:@"%f", clearanceData.max];
     NSString* stg_min_clr = [NSString stringWithFormat:@"%f", clearanceData.min];
     NSString* stg_med_clr = [NSString stringWithFormat:@"%f", clearanceData.median];
     NSString* stg_clr_std = [NSString stringWithFormat:@"%f", clearanceData.std];
-    NSString* overall_avg = [NSString stringWithFormat:@"%f", clearanceData.averageDisplacement];
-
+    NSString* overall_avg = isnan(clearanceData.averageDisplacement) ? @"--" : [NSString stringWithFormat:@"%f", clearanceData.averageDisplacement];
+    
+    [self saveCSVFile:date clearanceData:clearanceData];
+    NSArray* savedFilepath = [self.last_saved_file pathComponents];
+    NSRange endRange = NSMakeRange(savedFilepath.count - 2, 2);
     NSDictionary* jsonDataDict = @{@"type":@"data",
                                    @"data":dispJSONString,
                                    @"intensity":intensJSONString,
@@ -1698,10 +1701,9 @@ enum ifc242xValue {
                                    @"overall_avg":overall_avg,
                                    @"date":dateStr,
                                    @"intensity_threshold":[NSString stringWithFormat:@"%f", controllerSettings.intensityThreshold],
-                                   @"measurement_rate":[NSString stringWithFormat:@"%f", controllerSettings.measurementRate
-                                   ]};
+                                   @"measurement_rate":[NSString stringWithFormat:@"%f", controllerSettings.measurementRate],
+                                   @"filename":[[savedFilepath subarrayWithRange:endRange] componentsJoinedByString:@"/"]};
     [self returnPluginResponse:jsonDataDict keepOpen:NO];
-    [self saveCSVFile:@"" clearanceData:clearanceData];
     [self clearData];
 }
 
@@ -1798,14 +1800,13 @@ enum ifc242xValue {
     return true;
 }
 
-- (void)saveCSVFile:(NSString*)fileName clearanceData:(ClearanceData*)clearanceData {
+- (void)saveCSVFile:(NSDate*)date clearanceData:(ClearanceData*)clearanceData {
     // If called with no displacements, don't write a file, just return;
     if (self.displacements.count == 0) return;
     // Get the date & time for the filename.
     NSDateFormatter *dateFormatter=[[NSDateFormatter alloc] init];
     [dateFormatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
-    NSString* dateStr = [dateFormatter stringFromDate:[NSDate date]];
-    dateStr = [dateStr substringFromIndex:2]; // Remove char 0-1, to get a shortened 2-digit year.
+    NSString* dateStr = [[dateFormatter stringFromDate:date] substringFromIndex:2]; // Remove char 0-1, to get a shortened 2-digit year.
     // Get path to documents directory
     NSString* docPath;
     NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
@@ -1835,25 +1836,19 @@ enum ifc242xValue {
     // Create a file name as sn_stage_pos_state_datetime.csv.
     // If there is no serial number, just save to the data folder.
     NSString* csvFileName = [[NSString alloc] init];
-    if (fileName.length == 0) {
-        if (self.metaData.serial_number.length == 0) {
-            csvFileName = [NSString stringWithFormat:@"%@/%@",
-                           dataDir,
-                           [NSString stringWithFormat:@"data_%@_mm.csv",dateStr]];
-        }
-        else {
-            NSString* fName = [NSString stringWithFormat:@"%@_%@_%@_%@_mm.csv",
-                               self.metaData.serial_number, self.metaData.stage,
-                               pos, dateStr];
-            csvFileName = [NSString stringWithFormat:@"%@/%@", turbineDir, fName];
-        }
-        // Change the data-time string format in the filename.
-        csvFileName = [csvFileName stringByReplacingOccurrencesOfString:@" " withString:@"_"];
-        csvFileName = [csvFileName stringByReplacingOccurrencesOfString:@":" withString:@"-"];
+    if (self.metaData.serial_number.length == 0) {
+        csvFileName = [NSString stringWithFormat:@"%@/%@",
+                       dataDir,
+                       [NSString stringWithFormat:@"data_%@_mm.csv",dateStr]];
+    } else {
+        NSString* fName = [NSString stringWithFormat:@"%@_%@_%@_%@_mm.csv",
+                           self.metaData.serial_number, self.metaData.stage,
+                           pos, dateStr];
+        csvFileName = [NSString stringWithFormat:@"%@/%@", turbineDir, fName];
     }
-    else {
-        csvFileName = [NSString stringWithFormat:@"%@/%@", docPath, fileName];
-    }
+    // Change the data-time string format in the filename.
+    csvFileName = [csvFileName stringByReplacingOccurrencesOfString:@" " withString:@"_"];
+    csvFileName = [csvFileName stringByReplacingOccurrencesOfString:@":" withString:@"-"];
     self.last_saved_file = csvFileName;
     // Now write the file...
     // Open the output file.
@@ -1896,9 +1891,10 @@ enum ifc242xValue {
     }
     
     //  Write the sensor parameters and app version to the CSV file.
-    dataStr = [NSString stringWithFormat:@"\n - Sensor Parameters,,,,,,,,,\nSensor Selection,Sensor Length (in),SMR (mm),Mastering Fixture Height (in),Mastering Value (mm),Master Offset (in),Spacer Thickness (in),Shelf Threshold (mm),Applied Offset Formula,\n%@,%f,%f,%f,%f,%f,%@,%f,%@,\n",
+    dataStr = [NSString stringWithFormat:@"\n - Sensor Parameters,,,,,,,,,\nSensor Selection,Sensor Length (in),MR (mm),SMR (mm),Mastering Fixture Height (in),Mastering Value (mm),Master Offset (in),Spacer Thickness (in),Shelf Threshold (mm),Applied Offset Formula\n%@,%f,%f,%f,%f,%f,%f,%@,%f,%@\n",
                controllerSettings.sensor.name,
                controllerSettings.sensor.length,
+               controllerSettings.sensor.mr,
                controllerSettings.sensor.smr,
                controllerSettings.sensor.hmf,
                controllerSettings.sensor.mv,
