@@ -1891,9 +1891,10 @@ enum ifc242xValue {
     }
     
     //  Write the sensor parameters and app version to the CSV file.
-    dataStr = [NSString stringWithFormat:@"\n - Sensor Parameters,,,,,,,,,\nSensor Selection,Sensor Length (in),SMR (mm),Mastering Fixture Height (in),Mastering Value (mm),Master Offset (in),Spacer Thickness (in),Shelf Threshold (mm),Applied Offset Formula,\n%@,%f,%f,%f,%f,%f,%@,%f,%@,\n",
+    dataStr = [NSString stringWithFormat:@"\n - Sensor Parameters,,,,,,,,,\nSensor Selection,Sensor Length (in),MR (mm),SMR (mm),Mastering Fixture Height (in),Mastering Value (mm),Master Offset (in),Spacer Thickness (in),Shelf Threshold (mm),Applied Offset Formula\n%@,%f,%f,%f,%f,%f,%f,%@,%f,%@\n",
                controllerSettings.sensor.name,
                controllerSettings.sensor.length,
+               controllerSettings.sensor.mr,
                controllerSettings.sensor.smr,
                controllerSettings.sensor.hmf,
                controllerSettings.sensor.mv,
