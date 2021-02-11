@@ -559,9 +559,6 @@ enum ifc242xValue {
 
 - (void)timeoutTimerDemoMode:(NSTimer*)timer {
     NSString* arg = timer.userInfo;
-    if ([arg containsString:@"dark_reference"]) {
-        [self processComplete:@"connected"];
-    }
     if ([arg containsString:@"mastering"]) {
         [self processComplete:@"done_mastering"];
     }
@@ -1041,7 +1038,7 @@ enum ifc242xValue {
                 self.timerDemoFunctions = [ NSTimer scheduledTimerWithTimeInterval:3.0
                                                                             target:self
                                                                           selector:@selector(timeoutTimerDemoMode:)
-                                                                          userInfo:@"dark_reference"
+                                                                          userInfo:@"collect_data"
                                                                            repeats:NO];
             });
         }
