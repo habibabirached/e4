@@ -1201,8 +1201,8 @@ figure figcaption {
 }
 
 #container {
-      width: 50px;
-      height: 50px;
+      width: 6vmin;
+      height: 6vmin;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -1213,8 +1213,8 @@ figure figcaption {
 .circle-pulse {
       border-radius: 50%;
       background-color: white;
-      width: 30px;
-      height: 30px;
+      width: 6vmin;
+      height: 6vmin;
       position: absolute;
       opacity: 0;
       animation: scaleIn 1s infinite cubic-bezier(0.36, 0.11, 0.89, 0.32);
@@ -1223,8 +1223,8 @@ figure figcaption {
 .dot {
       border-radius: 50%;
       background-color: white;
-      width: 15px;
-      height: 15px;
+      width: 3vmin;
+      height: 3vmin;
       position: absolute;
       opacity: 1;
     }
