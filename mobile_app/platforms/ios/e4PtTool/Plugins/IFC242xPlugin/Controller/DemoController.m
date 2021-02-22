@@ -7,19 +7,26 @@
 //
 
 #import "DemoController.h"
-#import "../IFC242xManager.h"
 
+
+@interface DemoController ()
+@property (nonatomic) enum CONTROLLER_STATE state;
+@end
 
 @implementation DemoController
 
+@dynamic state;
 
 - (void)initialize {
+    self.state = initializationInProgress;
+    self->controllerType = @"IFC2422";
     self->telnetIsReady = YES;
     
     dispatch_async(dispatch_get_main_queue(), ^{
         [self->timerSendTelnetCommand invalidate];
     });
     [self->telnetCmds removeAllObjects];
+    [self->telnetCmds addObject:@"dummy connect"];
     [self sendTelnetCommand];
 }
 
@@ -28,23 +35,23 @@
 }
 
 - (void)sendCommand:(NSString*)command {
-    [self processResponse:@"->\r\n"];
+    [self processResponse:@"->"];
 }
 
 - (void)selectOppositeOutput {}
 
-- (void)connectTelnetPortIfNecessary:(NSStream*)streamToCheck {}
-
 - (void)disconnectData {}
 
-- (void)connectDevice:(NSString*)ip_address port:(int)port {}
+- (int)calculateNumberOfDatasetsToAcquireForTime:(float)acqTime atRateInHertz:(float)rate {return 0;}
 
-//TODO is casing thickness needed as an input here?
-- (void)doDataCollection {
+- (void)collectDataSets {
+    self->delegate.progress = 0.5;
+    [self->delegate startProgressReporting];
     [self loadCSVFile:@""];
     [self->delegate returnPluginResponse:@{@"type":@"status",@"status":@"processing"} keepOpen:YES];
-    [self->delegate computeClearance];
-    [self->delegate returnData];
+    self.state = halted;
+    self->delegate.progress = 1.0;
+    [self sendCommand:@""];
 }
 
 -(NSString*)getPathToDataFile:(NSString*)relativePath {

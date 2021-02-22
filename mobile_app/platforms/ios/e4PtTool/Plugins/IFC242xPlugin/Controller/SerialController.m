@@ -8,12 +8,13 @@
 
 #import "SerialController.h"
 #import "redparkSerial.h"
-#import "RscMgr.h"
-#import "../IFC242xManager.h"
 
+@interface SerialController ()
+@property (nonatomic) enum CONTROLLER_STATE state;
+@end
 
 @implementation SerialController {
-    BOOL dataStreamIsSynchronized, delayResponse;
+    BOOL dataStreamIsSynchronized;
     NSThread* commThread;   // thread for communications tasks
     RscMgr* rscMgr;         // Redpark serial communications
     uint8_t* byteBuffer, *writePtr, *readPtr;
@@ -23,6 +24,18 @@
     StopBitsType stopBitsType;
     int baudRate, dataBits, parity, stopBits, rts, cts, leftoverBytes;
     NSTimeInterval testTime;
+}
+
+@dynamic state;
+
+- (void) cableConnected:(NSString *)protocol{
+    NSLog(@"SerialController:cableConnected:%@",protocol);
+}
+- (void) cableDisconnected{
+    NSLog(@"SerialController:cableDisconnected");
+}
+- (void) portStatusChanged{
+    NSLog(@"SerialController:portStatusChanged");
 }
 
 - (void)sendEmptyCommand {
@@ -47,6 +60,12 @@
 #endif
 }
 
+
+- (void)initialize {
+    [super initialize];
+    [self clearByteBuffer];
+}
+
 - (void)selectOppositeOutput {
     [self->telnetCmds addObject:@"OUTPUT RS422\n"];
 }
@@ -54,6 +73,7 @@
 - (void)disconnectData {
     NSLog(@"@disconnectData.");
     [self sendCommand:@"OUTPUT NONE\n"];
+    [self resetSerialParams];
 }
 
 - (int)calculateNumberOfDatasetsToAcquireForTime:(float)acqTime atRateInHertz:(float)rate {
@@ -68,8 +88,8 @@
     return ceil(rate * acqTime / dataSetsPerFrame);
 }
 
-//TODO is casing thickness needed as an input here?
 - (void)collectDataSets {
+    [self clearByteBuffer];
     self->testTime = 0.0;
     [self->telnetCmds addObject:@"OUTPUT RS422\n"];
     [self sendTelnetCommand];
@@ -80,9 +100,15 @@
 // RS232 Serial Cable additions
 //
 
+- (void)clearByteBuffer {
+    self->leftoverBytes = 0;
+    if (self->byteBuffer != nil)
+        for (int i=0; i<BYTE_BUFFER_SIZE; i++) self->byteBuffer[i] = 0;
+}
+
 // For IFC242x controller user 8N1 configuration.
-- (void)setupSerialCableAndCommThread {
-    NSLog(@"@setupSerialCableAndCommThread");
+- (void)setupSerialCable {
+    NSLog(@"@setupSerialCable");
     
     if (self->byteBuffer == nil) {
         self->byteBuffer = (uint8_t *) malloc(BYTE_BUFFER_SIZE);
@@ -101,7 +127,7 @@
     self->cts = RXFLOW_NONE;
 
     self->baudRate = 460800; // Slower cables only do 115200
-
+    
     // set baud rate, data bits, parity, and stop bits
     [self->rscMgr setBaud:self->baudRate];
     [self->rscMgr setDataSize:self->dataSizeType];
@@ -116,33 +142,18 @@
     portCfg.rxForwardCount = RX_FORWARD_COUNT;
     portCfg.rxForwardingTimeout = 50; // default = 100;
     [self->rscMgr setPortConfig:&portCfg requestStatus: NO];
-        
-    // Create and start the comm thread.  We'll use this thread to manage the rscMgr so
-    // we don't tie up the UI thread.
-    self->networkQueue = dispatch_queue_create("global_network_queue", DISPATCH_QUEUE_SERIAL); // Not DISPATCH_QUEUE_CONCURRENT
-    dispatch_async(self->networkQueue, ^{
-        [self startCommThread:nil];
-    });
 }
 
 // start the communication thread
-- (void) startCommThread:(id)object {
-    NSLog(@"@startCommThread");
-
+- (void) startCommThread {
     // initialize RscMgr on this thread
     // so it schedules delegate callbacks for this thread
     if (self->rscMgr == nil) {
         self->rscMgr = [[RscMgr alloc] init];
         [self->rscMgr setDelegate:self];
     }
-    
-    // run the run loop
-    if (self->networkRunLoop == nil) {
-        NSLog(@"Setting up network runloop");
-        self->networkRunLoop = [NSRunLoop currentRunLoop];
-        [self->networkRunLoop run];
-    }
-    //[[NSRunLoop currentRunLoop] run];
+    [self setupSerialCable];
+    [super startCommThread];
 }
 
 - (void)resetSerialParams {
@@ -158,10 +169,7 @@
     self->writePtr = self->byteBuffer;
     self->set_count = 0;
     self->num_sets = 0;
-    self->leftoverBytes = 0;
-    if (self->byteBuffer != nil) {
-        for (int i=0; i<BYTE_BUFFER_SIZE; i++) self->byteBuffer[i] = 0;
-    }
+    [self clearByteBuffer];
 }
 
 // bytes are available to be read (user calls read:)
@@ -183,20 +191,13 @@
         (self.state == setThresholdInProgress)) {
         NSString* response = [[NSString alloc] initWithData:data encoding:NSASCIIStringEncoding];
         NSLog(@"parseSerial: Got: %@",response);
-        [super processResponse:response];
+        [self processResponse:response];
         return;
     } else if (self.state != collectingDataInProgress) {
         if (data.length >= 4) {
             NSString* response = [[NSString alloc] initWithData:data encoding:NSASCIIStringEncoding];
-            if (response != nil) {
-                if ([response containsString:@"->"]) {
-                    if ((self.state == halted) || (self.state == clearanceComputationInProgress)) {
-                        self->delayResponse = true;
-                    } else {
-                        [super processResponse:response];
-                    }
-                }
-            }
+            if ([response containsString:@"->"] && self.state != halted && self.state != clearanceComputationInProgress)
+                [self processResponse:response];
         }
         return;  // if we're not collecting data, return.
     }
@@ -357,7 +358,7 @@
                     displacement = self.settings.outOfRange;
                 }
                 else {
-                    displacement = ((float)dval - 98232.0) * super.settings.sensor.mr / 65536.0;
+                    displacement = ((float)dval - 98232.0) * self.settings.sensor.mr / 65536.0;
                 }
                 NSString* log = [NSString stringWithFormat:@"D:%f: ", displacement];
                 logStr = [logStr stringByAppendingString:log];
@@ -368,7 +369,7 @@
 #elif defined(SEND_DISPLACEMENT_ONLY)
                     self->nextIFCValue = IFCDisplacement; // Only do displacement.
                     // Create a timestamp and record it.
-                    unixTStamp = ([[NSDate date] timeIntervalSince1970] - self.startTime) * 1000000; // microseconds since start.
+                    unixTStamp = [self getElapsedTime] * 1000000; // microseconds since start.
                     tval = (uint32_t)floor(unixTStamp);
                     [self.measurementData.timestamps addObject:[NSNumber numberWithInt:(int)tval]];
                     [self.measurementData.intensities addObject:[NSNumber numberWithFloat:1.0]];
@@ -377,7 +378,7 @@
 #else
                     self->nextIFCValue = IFCIntensity; // Skip timestamp to increase throughput.
                     // Create a timestamp and record it.
-                    unixTStamp = ([[NSDate date] timeIntervalSince1970] - self->startTime) * 1000000; // microseconds since start.
+                    unixTStamp = [self getElapsedTime] * 1000000; // microseconds since start.
                     tval = (uint32_t)floor(unixTStamp);
                     [self.measurementData.timestamps addObject:[NSNumber numberWithInt:(int)tval]];
                     [self.measurementData.pointCounts addObject:[NSNumber numberWithInt:pt_count]];
@@ -431,7 +432,6 @@
         // complete.
         //
         [self disconnectData];
-        [self resetSerialParams];
         NSLog(@"set_count >= num_sets: pState = %d", self.state);
         NSTimeInterval stop = ([[NSDate date] timeIntervalSince1970]) * 1000000;
         NSLog(@"Data collection stop time: %f",stop);
@@ -452,17 +452,8 @@
 #ifdef SIMULATED_DATA
         [self loadCSVFile:@""];
 #endif
-        NSLog(@"Calling compute clearance...");
-        [self->delegate computeClearance]; // computeClearance changes pState to clearanceComputationInProgress
-        NSLog(@"Calling returnData");
-        [self->delegate returnData];
-        NSLog(@"Checking delayResponse");
-        self.state = ready;
-        if (self->delayResponse) {
-            NSLog(@"Calling delayed processResponse ->");
-            [super processResponse:@"->"];
-            self->delayResponse = false;
-        }
+        NSLog(@"Compute clearance and return data...");
+        [self processResponse:@"->"];
     }
 }
 

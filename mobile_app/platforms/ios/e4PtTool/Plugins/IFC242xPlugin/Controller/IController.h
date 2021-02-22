@@ -6,11 +6,11 @@
 //
 //
 
-#import "ControllerSettings.h"
+#import "../IFC242xManager.h"
 #import "../MeasurementData.h"
-@class IFC242xManager;
+#import "ControllerSettings.h"
 
-@interface IController : NSObject
+@protocol IController
 
 @property (readonly, strong, nonatomic) ControllerSettings* settings;
 @property (readonly, strong, nonatomic) MeasurementData* measurementData;
@@ -19,11 +19,13 @@
 -(instancetype)initWithDelegate:(IFC242xManager*)delegate;
 -(instancetype)initWithDelegate:(IFC242xManager*)delegate andSettings:(ControllerSettings*)settings;
 
+- (void)abortDataCollection;
 - (void)disconnectDevice;
 - (void)doDarkReference;
 - (void)doDataCollection;
 - (void)initialize;
 - (void)masterDevice:(NSString*)masteringValue;
+- (void)queueDataCollection:(float)timeoutSecondsForPrep;
 - (void)setIntensityThreshold:(float)threshold;
 - (void)setIntensityThreshold:(float)threshold sendImmediately:(bool)send;
 - (void)setMeasurementRate:(float)rate;

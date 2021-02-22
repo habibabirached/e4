@@ -7,6 +7,7 @@
 //
 
 #import "BaseController.h"
+#import "RscMgr.h"
 
 // Hard coded values for RS232 serial cable
 // 192 = 64 * 3.  Data seems to come in 64 byte packets and data from
@@ -22,5 +23,5 @@
 // displacement value to maximize bandwidth.
 //#define SEND_DISPLACEMENT_ONLY
 
-@interface SerialController : BaseController
+@interface SerialController : BaseController<RscMgrDelegate>
 @end
