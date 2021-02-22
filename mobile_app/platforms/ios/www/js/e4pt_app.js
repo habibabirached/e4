@@ -349,13 +349,13 @@ define(function(require, exports, module) {
         } else {
             createWebSocket();
         }
-        messaging.sendMessage({"args":["get_version"]});
+        messaging.sendMessage({args:['get_version']});
         
         // Wait (0.5s) for the page load to complete, then get the file system.
         setTimeout(function(){
-                   window.requestFileSystem  = window.requestFileSystem || window.webkitRequestFileSystem;
-                   window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, gotFS, fsFail);
-                   }, 900);
+            window.requestFileSystem  = window.requestFileSystem || window.webkitRequestFileSystem;
+            window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, gotFS, fsFail);
+        }, 900);
     });
 
     function fadeOutAll() {
@@ -648,9 +648,7 @@ define(function(require, exports, module) {
         $('#CUR_MODE').text('Current Mode: ' + (tf ? 'Demo' : 'Production'));
         $('#CONNECTION_NAME').text((tf ? 'DEMO' : $('#CUR_CONN').text().substring(20)));
         
-        setIndicatorColor(tf ? 'green' : 'white');
-        serialConnected = tf;
-        
+        pluginMessage({type:'status',status:'disconnected',noAlert:true});
         messaging.sendMessage({args:['set_demo_mode',tf.toString()]});
     }
 
@@ -1682,7 +1680,7 @@ define(function(require, exports, module) {
                     setIndicatorColor("white");
                     document.getElementById("STATUS_DISPLAY").innerHTML = "Disconnected"
                     serialConnected = false;
-                    e4PtAlert("Controller was disconnected.\nToggle side menu to reconnect.");
+                    if (!msg.noAlert) e4PtAlert("Controller was disconnected.\nToggle side menu to reconnect.");
                 }
                 if (msg.status == "acquiring") {
                     setIndicatorColor("red");

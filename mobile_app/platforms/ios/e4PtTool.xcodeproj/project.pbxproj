@@ -26,6 +26,12 @@
 		48257AC725C6176800B1A505 /* SensorSettings.m in Sources */ = {isa = PBXBuildFile; fileRef = 48257AB825C616AE00B1A505 /* SensorSettings.m */; };
 		48257AC825C6176800B1A505 /* CDVIFC242x.m in Sources */ = {isa = PBXBuildFile; fileRef = 48257AC225C616AE00B1A505 /* CDVIFC242x.m */; };
 		48257AC925C6176800B1A505 /* MeasurementData.m in Sources */ = {isa = PBXBuildFile; fileRef = 48257AC325C616AE00B1A505 /* MeasurementData.m */; };
+		4859644525E062BE00B6988A /* BaseController.m in Sources */ = {isa = PBXBuildFile; fileRef = 48257AB125C616AE00B1A505 /* BaseController.m */; };
+		4859644625E062BE00B6988A /* EthernetController.m in Sources */ = {isa = PBXBuildFile; fileRef = 48257AB425C616AE00B1A505 /* EthernetController.m */; };
+		4859644725E062BE00B6988A /* DemoController.m in Sources */ = {isa = PBXBuildFile; fileRef = 48257AB725C616AE00B1A505 /* DemoController.m */; };
+		4859644825E062BE00B6988A /* SerialController.m in Sources */ = {isa = PBXBuildFile; fileRef = 48257ABD25C616AE00B1A505 /* SerialController.m */; };
+		4859644E25E062F500B6988A /* IFC242xManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 4859644B25E062F400B6988A /* IFC242xManager.m */; };
+		4859644F25E062F500B6988A /* ScanMetaData.m in Sources */ = {isa = PBXBuildFile; fileRef = 4859644D25E062F500B6988A /* ScanMetaData.m */; };
 		4EAFAC365C2440FCAF8A946A /* CDVLocalFilesystem.m in Sources */ = {isa = PBXBuildFile; fileRef = 300DBDE79B6643A08EBC896B /* CDVLocalFilesystem.m */; };
 		5667AFFF249BC3340086E54D /* ExternalAccessory.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5667AFFD249BC3330086E54D /* ExternalAccessory.framework */; };
 		56BD91B924323B69008117BD /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 56BD91B824323B69008117BD /* Settings.bundle */; };
@@ -126,6 +132,10 @@
 		48257AC125C616AE00B1A505 /* redparkSerial.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = redparkSerial.h; sourceTree = "<group>"; };
 		48257AC225C616AE00B1A505 /* CDVIFC242x.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CDVIFC242x.m; sourceTree = "<group>"; };
 		48257AC325C616AE00B1A505 /* MeasurementData.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MeasurementData.m; sourceTree = "<group>"; };
+		4859644A25E062F400B6988A /* ScanMetaData.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ScanMetaData.h; path = ../../../../../../../IFC242xPlugin/src/ios/ScanMetaData.h; sourceTree = "<group>"; };
+		4859644B25E062F400B6988A /* IFC242xManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = IFC242xManager.m; path = ../../../../../../../IFC242xPlugin/src/ios/IFC242xManager.m; sourceTree = "<group>"; };
+		4859644C25E062F500B6988A /* IFC242xManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = IFC242xManager.h; path = ../../../../../../../IFC242xPlugin/src/ios/IFC242xManager.h; sourceTree = "<group>"; };
+		4859644D25E062F500B6988A /* ScanMetaData.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = ScanMetaData.m; path = ../../../../../../../IFC242xPlugin/src/ios/ScanMetaData.m; sourceTree = "<group>"; };
 		5667AFFD249BC3330086E54D /* ExternalAccessory.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ExternalAccessory.framework; path = System/Library/Frameworks/ExternalAccessory.framework; sourceTree = SDKROOT; };
 		56BD91B824323B69008117BD /* Settings.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = Settings.bundle; sourceTree = "<group>"; };
 		56EFBB45243E527A007A00D7 /* test_data.csv */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = test_data.csv; path = ../../data/test_data.csv; sourceTree = "<group>"; };
@@ -328,6 +338,10 @@
 		48257AAA25C616AE00B1A505 /* IFC242xPlugin */ = {
 			isa = PBXGroup;
 			children = (
+				4859644C25E062F500B6988A /* IFC242xManager.h */,
+				4859644B25E062F400B6988A /* IFC242xManager.m */,
+				4859644A25E062F400B6988A /* ScanMetaData.h */,
+				4859644D25E062F500B6988A /* ScanMetaData.m */,
 				48257AAB25C616AE00B1A505 /* PostProcess.m */,
 				48257AAC25C616AE00B1A505 /* ClearanceData.m */,
 				48257AAD25C616AE00B1A505 /* RscMgr.h */,
@@ -513,12 +527,17 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4859644525E062BE00B6988A /* BaseController.m in Sources */,
+				4859644625E062BE00B6988A /* EthernetController.m in Sources */,
+				4859644725E062BE00B6988A /* DemoController.m in Sources */,
+				4859644825E062BE00B6988A /* SerialController.m in Sources */,
 				48257AC425C6176800B1A505 /* PostProcess.m in Sources */,
 				48257AC525C6176800B1A505 /* ClearanceData.m in Sources */,
 				48257AC625C6176800B1A505 /* ControllerSettings.m in Sources */,
 				48257AC725C6176800B1A505 /* SensorSettings.m in Sources */,
 				48257AC825C6176800B1A505 /* CDVIFC242x.m in Sources */,
 				48257AC925C6176800B1A505 /* MeasurementData.m in Sources */,
+				4859644E25E062F500B6988A /* IFC242xManager.m in Sources */,
 				1D60589B0D05DD56006BFB54 /* main.m in Sources */,
 				1D3623260D0F684500981E51 /* AppDelegate.m in Sources */,
 				302D95F114D2391D003F00A1 /* MainViewController.m in Sources */,
@@ -536,6 +555,7 @@
 				E02822E856E4435A81090064 /* CDVFile.m in Sources */,
 				4EAFAC365C2440FCAF8A946A /* CDVLocalFilesystem.m in Sources */,
 				B2E791A5CE924817ABCAD8BF /* CDVAssetLibraryFilesystem.m in Sources */,
+				4859644F25E062F500B6988A /* ScanMetaData.m in Sources */,
 				165206AEB7E543BA9345D8A4 /* CDVInAppBrowserOptions.m in Sources */,
 				0C5A79C56C3147D9B0806371 /* CDVInAppBrowserNavigationController.m in Sources */,
 				29AB18C4E73D442BA105BE75 /* CDVWKInAppBrowser.m in Sources */,
