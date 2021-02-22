@@ -12,13 +12,14 @@
 @property (readonly, strong, nonatomic) NSMutableArray* bladeClearances;
 @property (readonly, strong, nonatomic) NSMutableArray* locations;
 @property (readonly, strong, nonatomic) NSMutableArray* quality;
-@property (readonly) float clearance;
-@property (readonly) float max;
-@property (readonly) float min;
-@property (readonly) float median;
-@property (readonly) float std;
-@property float averageDisplacement;
-@property float shelfThreshold;
+@property (readonly, nonatomic) float clearance;
+@property (readonly, nonatomic) float max;
+@property (readonly, nonatomic) float min;
+@property (readonly, nonatomic) float median;
+@property (readonly, nonatomic) float std;
+@property (readonly, nonatomic) float offsetAdjustmentFactor;
+@property (nonatomic) float averageDisplacement;
+@property (nonatomic) float shelfThreshold;
 
 -(void)applyAdjustment:(float)adjustment threshold:(float)threshold;
 -(void)calculateStatistics;

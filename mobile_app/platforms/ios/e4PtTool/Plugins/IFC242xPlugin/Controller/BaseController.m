@@ -7,20 +7,20 @@
 //
 
 #import "BaseController.h"
-#import "../IFC242xManager.h"
 
 @interface BaseController ()
 @property (strong, nonatomic) ControllerSettings* settings;
-@property (nonatomic) enum CONTROLLER_STATE state;
 @end
 
 @implementation BaseController {
     NSTimeInterval startTime;
+    NSTimer* dataCollectionWaiting;
+    NSRegularExpression *mrRegex;
 }
 
 @synthesize measurementData = _measurementData;
 @synthesize settings = _settings;
-@synthesize state = _state;
+@dynamic state;
 
 -(instancetype)initWithDelegate:(IFC242xManager*)delegate {
     return [self initWithDelegate:delegate andSettings:[ControllerSettings new]];
@@ -29,10 +29,11 @@
 -(instancetype)initWithDelegate:(IFC242xManager*)delegate andSettings:(ControllerSettings*)settings {
     
     if (self = [super init]) {
-        self->telnetCmds = [NSMutableArray new];
-        self.state = notReady;
         self->delegate = delegate;
         self.settings = settings;
+        self.state = notReady;
+        self->telnetCmds = [NSMutableArray new];
+        self->mrRegex = [NSRegularExpression regularExpressionWithPattern:@"\\s(\\d+\\.\\d+)mm" options:NSRegularExpressionCaseInsensitive error:nil];
         [self initialize];
     }
     return self;
@@ -50,74 +51,22 @@
     return _measurementData;
 }
 
-- (NSMutableArray *) telnetCmds
+- (enum CONTROLLER_STATE) state
 {
-    if (!telnetCmds) telnetCmds = [NSMutableArray new];
-    return telnetCmds;
+    return _state;
 }
 
-- (void)connectDevice:(NSString*)ip_address port:(int)port {
+- (void) setState:(enum CONTROLLER_STATE)state
+{
+    _state = state;
+}
 
-    dispatch_async(self->networkQueue, ^{
-        NSLog(@"@connectDevice: %@:%d", ip_address, port);
-        if (port == self->dataPort) self->dataStreamIsOpen = false;
-        if (port == self->telnetPort) self->telnetStreamIsOpen = false;
-        
-        if (port == DATA_PORT) {
-            if (self->inputDataStream != nil) {
-                CFStreamStatus chkStream;
-                CFReadStreamRef cfinputstream = (__bridge CFReadStreamRef )self->inputDataStream;
-                chkStream = CFReadStreamGetStatus(cfinputstream);
-                if(chkStream == (CFStreamStatus) kCFStreamStatusOpen){
-                    NSLog(@"This device is already connected for data.");
-                    return;
-                }
-            }
-            if(self->outputDataStream != nil){
-                NSLog(@"  Already Connected - Data");
-                return;
-            }
-        }
-        else if (port == TELNET_PORT) {
-            if (self->inputTelnetStream != nil) {
-                CFStreamStatus chkStream;
-                CFReadStreamRef cfinputstream = (__bridge CFReadStreamRef )self->inputTelnetStream;
-                chkStream = CFReadStreamGetStatus(cfinputstream);
-                if(chkStream == (CFStreamStatus) kCFStreamStatusOpen){
-                    NSLog(@"This device is already connected for telnet.");
-                    return;
-                }
-            }
-            if(self->outputTelnetStream != nil){
-                NSLog(@"  Already Connected - Telnet");
-                return;
-            }
-        }
-        
-        CFReadStreamRef readStream;
-        CFWriteStreamRef writeStream;
-        CFStreamCreatePairWithSocketToHost(NULL, (__bridge CFStringRef)ip_address, port, &readStream, &writeStream);
-        
-        NSInputStream* inputStream = (__bridge NSInputStream *)readStream;
-        NSOutputStream* outputStream = (__bridge NSOutputStream *)writeStream;
-        [inputStream setDelegate:self];
-        [outputStream setDelegate:self];
-        [inputStream scheduleInRunLoop:self->networkRunLoop forMode:NSDefaultRunLoopMode];
-        [outputStream scheduleInRunLoop:self->networkRunLoop forMode:NSDefaultRunLoopMode];
-        //[inputStream scheduleInRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
-        //[outputStream scheduleInRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
-        [inputStream open];
-        [outputStream open];
-        
-        if (port == DATA_PORT) {
-            self->outputDataStream = outputStream;
-            self->inputDataStream = inputStream;
-            [NSTimer scheduledTimerWithTimeInterval:0.75 target:self selector:@selector(timeoutTimerDataStreamOpening:) userInfo:@(port) repeats:NO];
-        } else if (port == TELNET_PORT) {
-            self->outputTelnetStream = outputStream;
-            self->inputTelnetStream = inputStream;
-        }
-    });
+- (void) recordStartTime {
+    self->startTime = [[NSDate date] timeIntervalSince1970];
+}
+
+- (double) getElapsedTime {
+    return [[NSDate date] timeIntervalSince1970] - self->startTime;
 }
 
 // This function sets up a timer that tries on an interval to send a command from a
@@ -144,14 +93,11 @@
         });
         return;
     }
-    NSString* command = [self->telnetCmds objectAtIndex:0];
+    NSString* command = self->telnetCmds[0];
     NSLog (@"  command: %@", command);
     if (self->telnetIsReady) {
-        // send the command
-        [self sendCommand:command];
-        
-        // Remove the command that was just sent
         [self->telnetCmds removeObjectAtIndex:0];
+        [self sendCommand:command];
         
         // Disable the timer if we've run out of commands to send.
         if ([self->telnetCmds count] == 0) {
@@ -159,7 +105,7 @@
                 [timer invalidate];
             });
         }
-        self->telnetIsReady = false;  // telnetIsReady is set to true as soon as the "->" comes back from the controller.
+        self->telnetIsReady = NO;  // telnetIsReady is set to true as soon as the "->" comes back from the controller.
     } else {
         NSLog(@"  telnet is not ready yet...");
         [self sendEmptyCommand];
@@ -167,10 +113,8 @@
 }
 
 - (void)initialize {
-    self->ipAddress = @IFC_ADDR;
-    self->dataPort = DATA_PORT;
-    self->telnetPort = TELNET_PORT;
-    self->telnetIsReady = false;
+    self.state = initializationInProgress;
+    self->telnetIsReady = NO;
     self->controllerType = @"";
     
 #ifdef SEND_DISPLACEMENT_ONLY
@@ -179,7 +123,7 @@
     self->nextIFCValue = IFCIntensity;
 #endif
     
-    self->startTime = [[NSDate date] timeIntervalSince1970]; // start time timestamp in whole seconds.
+    [self recordStartTime]; // start time timestamp in whole seconds.
     
     dispatch_async(dispatch_get_main_queue(), ^{
         [self->timerSendTelnetCommand invalidate];
@@ -192,24 +136,33 @@
     [self->telnetCmds addObject:@"OUTPUT NONE\n"]; // turns off output.
     [self->telnetCmds addObject:@"GETINFO\n"];
     
-    NSLog(@"Calling sendTelnetCommand from initializeSensor");
-    [self setupSerialCableAndCommThread];
+    // Create and start the comm thread.  We'll use this thread to manage the rscMgr so
+    // we don't tie up the UI thread.
+    self->networkQueue = dispatch_queue_create("global_network_queue", DISPATCH_QUEUE_SERIAL); // Not DISPATCH_QUEUE_CONCURRENT
+    dispatch_async(self->networkQueue, ^{
+        [self startCommThread];
+    });
+    
     [self sendTelnetCommand];
+}
 
-    // Remove notifications before adding them so they are not added multiple times.
-    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationDidEnterBackgroundNotification object:nil];
-    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationWillEnterForegroundNotification object:nil];
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(appMovedToBackground:) name:UIApplicationDidEnterBackgroundNotification object:nil];
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(appMovedToForeground:) name:UIApplicationWillEnterForegroundNotification object:nil];
+// start the communication thread
+- (void) startCommThread {
+    NSLog(@"@startCommThread");
+    
+    // run the run loop
+    if (self->networkRunLoop == nil) {
+        NSLog(@"Setting up network runloop");
+        self->networkRunLoop = [NSRunLoop currentRunLoop];
+        [self->networkRunLoop run];
+    }
+    //[[NSRunLoop currentRunLoop] run];
 }
 
 - (void)masterDevice:(NSString*)masteringValue {
     if (![self checkReady]) return;
     NSLog(@"@masteringDevice");
     
-    if (self->inputTelnetStream == nil) {
-        [self connectDevice:self->ipAddress port:self->telnetPort];
-    }
     self.state = masteringInProgress;
     [self->delegate returnPluginResponse:@{@"type":@"status",@"status":@"mastering_in_progress"} keepOpen:YES];
 
@@ -238,8 +191,6 @@
     self.state = darkReferenceInProgress;
     [self->delegate returnPluginResponse:@{@"type":@"status",@"status":@"acquiring"} keepOpen:YES];
     
-    [self connectTelnetPortIfNecessary:self->inputTelnetStream];
-    
     float processTime = 24.0; // Dark correction takes ~22s per channel on the IFC2422.
     if ([self->controllerType containsString:@"IFC2422"]) {
         [self->telnetCmds addObject:@"DARKCORR_CH01\n"];
@@ -256,7 +207,7 @@
     // This timer just updates progress information every second assuming each channel takes ~22s.
     // After the dark correction, it collects 3 seconds of data.
     self->delegate.progress = 0.0;
-    self->startTime = [[NSDate date] timeIntervalSince1970]; // start time timestamp in whole seconds.
+    [self recordStartTime]; // start time timestamp in whole seconds.
     dispatch_async(dispatch_get_main_queue(), ^{
         NSDictionary* info = [[NSDictionary alloc] initWithObjectsAndKeys:
                               [NSNumber numberWithFloat:processTime], @"timeout",
@@ -293,7 +244,7 @@
 
 - (void)setIntensityThreshold:(float)threshold sendImmediately:(bool)send {
     if (![self checkReady]) return;
-    self.state = setThresholdInProgress;
+    if (send) self.state = setThresholdInProgress;
     self.settings.intensityThreshold = threshold;
     if ([self->controllerType containsString:@"IFC2422"]) {
         [self->telnetCmds addObject:[NSString stringWithFormat:@"MIN_THRESHOLD_CH01 %.3f\n", self.settings.intensityThreshold]];
@@ -324,24 +275,42 @@
 
 - (void)disconnectTelnet {
     NSLog(@"@disconnectTelnet.");
-    if (self->inputTelnetStream != nil)
-        [self->inputTelnetStream removeFromRunLoop:self->networkRunLoop forMode:NSDefaultRunLoopMode];
-    
-    if (self->outputTelnetStream != nil)
-        [self->outputTelnetStream removeFromRunLoop:self->networkRunLoop forMode:NSDefaultRunLoopMode];
-    
-    if (self->inputTelnetStream != nil) {
-        [self->inputTelnetStream close];
-        self->inputTelnetStream = nil;
-    }
-    
-    if (self->outputTelnetStream != nil) {
-        [self->outputTelnetStream close];
-        self->outputTelnetStream = nil;
-    }
-    
-    self->telnetStreamIsOpen = false;
     [self->telnetCmds removeAllObjects];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [self->timerSendTelnetCommand invalidate];
+    });
+}
+
+- (void)abortDataCollection {
+    if (self.state == collectingDataInProgress) {
+        self.state = clearanceComputationInProgress;
+        self->delegate.progress = 1.0;
+        self->set_count = 0;
+        
+        if ([self->dataCollectionWaiting isValid]) {
+            [self->dataCollectionWaiting invalidate];
+        }
+        
+        [self disconnectData];
+        [self processResponse:@"->"];
+    }
+}
+
+- (void)queueDataCollection:(float)timeoutSecondsForPrep {
+    [self recordStartTime]; // start timeout timer
+    
+    // The timeoutWaitTimer callback will start data acquisition after the measurement
+    // rate is set.  If the timeout expires, the user just gets an error message.
+    dispatch_async(dispatch_get_main_queue(), ^{
+        NSDictionary* info = [[NSDictionary alloc] initWithObjectsAndKeys:
+                              [NSNumber numberWithFloat:7.0], @"timeout",
+                              @"doDataCollection", @"nextProcess", nil];
+        self->dataCollectionWaiting = [ NSTimer scheduledTimerWithTimeInterval:timeoutSecondsForPrep
+                                                                        target:self
+                                                                      selector:@selector(timeoutWaitTimer:)
+                                                                      userInfo:info
+                                                                       repeats:YES];
+    });
 }
 
 - (void)doDataCollection {
@@ -360,24 +329,21 @@
 
     self->delegate.progress = 0.0;
     self.state = collectingDataInProgress;
-    self->startTime = [[NSDate date] timeIntervalSince1970]; // start time timestamp in whole seconds.
+    [self recordStartTime]; // start time timestamp in whole seconds.
 }
 
 - (void)processResponse:(NSString*)rxData {
     NSLog(@"@processResponse");
     NSString* prompt = @"";
     if (rxData.length > 1) {
+        //TODO: Prompt is only the last 2 characters, seems wrong way to look for '->' (trailing whitespace possible?)
         prompt = [rxData substringFromIndex: [rxData length] - 2];
         NSLog(@"prompt: %@",prompt);
     } else {
         return;
     }
     
-    if ([rxData containsString:@"Measurement range:"]) {
-        NSString* measurementRange = [[rxData componentsSeparatedByString:@"\r\n"][3] substringFromIndex:18];
-        self.settings.sensor.mr = [[measurementRange substringToIndex:[measurementRange length]-2] floatValue];
-        NSLog(@"Sensor Measurement Range is %f", self.settings.sensor.mr);
-    } else if ([rxData containsString:@"IFC2422"]) {
+    if ([rxData containsString:@"IFC2422"]) {
         NSLog(@"Controller is IFC2422");
         self->controllerType = @"IFC2422";
         [self->telnetCmds addObject:@"SENSORINFO_CH01\n"];
@@ -387,11 +353,18 @@
         self->controllerType = @"IFC2421";
         [self->telnetCmds addObject:@"SENSORINFO\n"];
         [self sendTelnetCommand];
+    } else {
+        [self->mrRegex enumerateMatchesInString:rxData options:0 range:NSMakeRange(0, rxData.length) usingBlock:^(NSTextCheckingResult *match, NSMatchingFlags flags, BOOL *stop) {
+            if ([match numberOfRanges] > 1) {
+                self.settings.sensor.mr = [[rxData substringWithRange:[match rangeAtIndex:1]] floatValue];
+                NSLog(@"Controller MR is %f", self.settings.sensor.mr);
+            }
+        }];
     }
     
     if ([prompt containsString:@"->"]) {
         NSLog(@"Got telnet prompt: telnetCmds.count = %lu",(unsigned long)self->telnetCmds.count);
-        self->telnetIsReady = true;
+        self->telnetIsReady = YES;
         switch (self.state) {
                 
             case masteringInProgress:
@@ -415,9 +388,12 @@
                 
             case setThresholdInProgress:
             case clearanceComputationInProgress:
+            case halted:
                 [self->delegate processComplete:@"connected"];
             
             default:
+                //TODO: incorrect to transition to ready on "any other" condition
+                //TODO: transition to ready only on specific set of conditions
                 self.state = ready;
                 break;
         }
@@ -429,7 +405,7 @@
     NSDictionary* info = [timer userInfo];
     NSNumber* timeout = [info valueForKey:@"timeout"];
     NSString* nextProc = [info valueForKey:@"nextProcess"];
-    NSTimeInterval dT = [[NSDate date] timeIntervalSince1970] - self->startTime;
+    NSTimeInterval dT = [self getElapsedTime];
     if (dT < [timeout doubleValue]) {
         if (self.state == ready) {
             [timer invalidate];  // Everything is good. Turn off the timer and do the next thing.
@@ -458,19 +434,7 @@
             } else if (self.state == darkReferenceInProgress) {
                 // update then hide the progress bar.
                 self->delegate.progress = 1.0;
-                dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
-                    NSDictionary* jsonDict = @{@"type":@"alert",@"message":@"Dark referencing complete."};
-                    if (/* DISABLES CODE */ (true)) {
-                        NSError* error;
-                        NSData *jsonData=[NSJSONSerialization dataWithJSONObject:jsonDict options:NSJSONWritingSortedKeys error:&error];
-                        NSString *jsonString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
-                        jsonString = [jsonString stringByReplacingOccurrencesOfString:@"\n" withString:@""];
-                        [self->delegate.commandDelegate evalJs:[NSString stringWithFormat:@"pluginMessage(%@);",jsonString]];
-                    }
-                    else {
-                        [self->delegate returnPluginResponse:jsonDict keepOpen:YES];
-                    }
-                });
+                [self->delegate dispatchMessage:@{@"type":@"alert",@"message":@"Dark referencing complete."}];
                 if ([nextProc containsString:@"doDataCollection"]) {
                     NSLog(@"Dark reference complete. Do data collection. %fs", self.settings.acquisitionTime);
                     [self doDataCollection];
@@ -479,40 +443,6 @@
         }
 
         [timer invalidate];
-    }
-}
-
-- (void)timeoutTimerDataStreamOpening:(NSTimer*)timer {
-    NSLog(@"@timeoutDataStreamOpening: Timer expired (as expected)");
-    int port = [timer.userInfo intValue];
-
-    NSLog(@"    ipaddress = %@:%d",self->ipAddress,port);
-    
-    if(self->dataStreamIsOpen){
-        NSLog(@"    OK - stream is open.");
-    } else {
-        NSLog(@"    stream not open.");
-        [self->inputDataStream removeFromRunLoop:self->networkRunLoop forMode:NSDefaultRunLoopMode];
-        [self->outputDataStream removeFromRunLoop:self->networkRunLoop forMode:NSDefaultRunLoopMode];
-        //[self->inputDataStream removeFromRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
-        //[self->outputDataStream removeFromRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
-        
-        // apple documentation also says to set delegate connection to nil (how?)
-        
-        if (port == DATA_PORT) {
-            NSLog(@"    closing data port streams.");
-            [self->inputDataStream close];
-            self->inputDataStream = nil;
-            [self->outputDataStream close];
-            self->outputDataStream = nil;
-        }
-        else if (port == TELNET_PORT) {
-            NSLog(@"    closing telnet port streams.");
-            [self->inputTelnetStream close];
-            self->inputTelnetStream = nil;
-            [self->outputTelnetStream close];
-            self->outputTelnetStream = nil;
-        }
     }
 }
 
