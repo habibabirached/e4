@@ -890,6 +890,7 @@ enum ifc242xValue {
 - (void)disconnectDevice {
     [self disconnectData];
     [self disconnectTelnet];
+    [self.telnetCmds removeAllObjects];
 }
 
 - (void)disconnectData {
@@ -937,7 +938,6 @@ enum ifc242xValue {
         self.outputTelnetStream = nil;
     }
     self.telnetStreamIsOpen = false;
-    [self.telnetCmds removeAllObjects];
 }
 
 - (void)messageHandler:(NSString*)msg {
@@ -1151,6 +1151,7 @@ enum ifc242xValue {
         return;
     }
     if ([cmd containsString:@"shutdown"]) {
+        [self disconnectDevice];
         exit(0);
     }
     if ([cmd containsString:@"get_version"]) {
@@ -1553,19 +1554,16 @@ enum ifc242xValue {
                 case NSStreamEventEndEncountered:
                 {
                     NSLog(@"NSStreamEventEndEncountered for port = %@", port);
-                    [theStream close];
-                    [theStream removeFromRunLoop:self.networkRunLoop forMode:NSDefaultRunLoopMode];
-                    theStream = nil;
                     
-                    if ([port intValue] == TELNET_PORT) {
-                        self.inputTelnetStream = nil;
-                        self.outputTelnetStream = nil;
+                    if ([port intValue] == self.telnetPort)
+                        [self disconnectTelnet];
+                    else if ([port intValue] == self.dataPort)
+                        [self disconnectData];
+                    else {
+                        [theStream close];
+                        [theStream removeFromRunLoop:self.networkRunLoop forMode:NSDefaultRunLoopMode];
+                        theStream = nil;
                     }
-                    else if ([port intValue] == DATA_PORT) {
-                        self.inputDataStream = nil;
-                        self.outputDataStream = nil;
-                    }
-                    
                     break;
                 }
                 default:
@@ -1602,9 +1600,9 @@ enum ifc242xValue {
         [self->mrRegex enumerateMatchesInString:rxData options:0 range:NSMakeRange(0, rxData.length) usingBlock:^(NSTextCheckingResult *match, NSMatchingFlags flags, BOOL *stop) {
             if ([match numberOfRanges] > 1) {
                 controllerSettings.sensor.mr = [[rxData substringWithRange:[match rangeAtIndex:1]] floatValue];
+                NSLog(@"Sensor Measurement Range is %f", controllerSettings.sensor.mr);
             }
         }];
-        NSLog(@"Sensor Measurement Range is %f", controllerSettings.sensor.mr);
     }
     if ([prompt containsString:@"->"]) {
         NSLog(@"Got telnet prompt: telnetCmds.count = %lu",(unsigned long)self.telnetCmds.count);
@@ -1677,7 +1675,7 @@ enum ifc242xValue {
     NSString* stg_min_clr = [NSString stringWithFormat:@"%f", clearanceData.min];
     NSString* stg_med_clr = [NSString stringWithFormat:@"%f", clearanceData.median];
     NSString* stg_clr_std = [NSString stringWithFormat:@"%f", clearanceData.std];
-    NSString* overall_avg = isnan(clearanceData.averageDisplacement) ? @"--" : [NSString stringWithFormat:@"%f", clearanceData.averageDisplacement];
+    NSString* overall_avg = isnan(clearanceData.averageDisplacement) ? @"\"--\"" : [NSString stringWithFormat:@"%f", clearanceData.averageDisplacement];
     
     [self saveCSVFile:date clearanceData:clearanceData];
     NSArray* savedFilepath = [self.last_saved_file pathComponents];
