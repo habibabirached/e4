@@ -19,23 +19,30 @@
     BOOL dataStreamIsOpen, telnetStreamIsOpen;
     NSInputStream* inputDataStream, *inputTelnetStream;
     NSOutputStream* outputDataStream, *outputTelnetStream;
+    dispatch_queue_t networkQueue;
 }
 
 @dynamic state;
 
 - (void)sendEmptyCommand {
-    [self sendCommand:@"\n"];
+    if ([self->outputTelnetStream hasSpaceAvailable]) {
+        [self sendCommand:@"\n"];
+    }
+}
+
+- (void)sendTelnetCommand {
+    [self connectTelnetPortIfNecessary:self->outputTelnetStream];
+    [super sendTelnetCommand];
 }
 
 - (void)sendCommand:(NSString*)command {
-    [self connectTelnetPortIfNecessary:self->outputTelnetStream];
     NSData* cmdData = [[NSData alloc] initWithData:[command dataUsingEncoding:NSUTF8StringEncoding]];
     [self->outputTelnetStream write:(const unsigned char*)[cmdData bytes] maxLength:[cmdData length]];
 }
 
 - (void)configureOutputSettings {
     [self->telnetCmds addObject:@"OUTPUT ETHERNET\n"];
-    [self->telnetCmds addObject:@"MEASTRANSFER SERVER/TCP 1024\n"];
+    [self->telnetCmds addObject:[NSString stringWithFormat:@"MEASTRANSFER SERVER/TCP %d\n", self->dataPort]];
     [self->telnetCmds addObject:@"OUT_ETH 01INTENSITY 01DIST1 TIMESTAMP\n"];
 }
 
@@ -43,6 +50,7 @@
     self->ipAddress = @IFC_ADDR;
     self->dataPort = DATA_PORT;
     self->telnetPort = TELNET_PORT;
+    self->networkQueue = dispatch_queue_create([[NSString stringWithFormat:@"com.ge.e4pt.%@.global_network_queue", NSStringFromClass([self class])] UTF8String], DISPATCH_QUEUE_SERIAL); // Not DISPATCH_QUEUE_CONCURRENT
     [super initialize];
 }
 
@@ -51,10 +59,15 @@
 }
 
 -(void)connectTelnetPortIfNecessary:(NSStream*)streamToCheck {
-    if (streamToCheck == nil || streamToCheck.streamStatus == NSStreamStatusNotOpen || streamToCheck.streamStatus == NSStreamStatusClosed || streamToCheck.streamStatus == NSStreamStatusError) {
+    if (!streamToCheck) {
         NSLog(@"  Attempting to (re)connect to telnet port.");
         [self connectDevice:self->ipAddress port:self->telnetPort];
     }
+}
+
+- (void)disconnectDevice {
+    [super disconnectDevice];
+    self->networkQueue = nil;
 }
 
 - (void)disconnectData {
@@ -62,45 +75,31 @@
     [self sendTelnetCommand];
     
     NSLog(@"@disconnectData.");
-    if (self->inputDataStream != nil)
-        [self->inputDataStream removeFromRunLoop:self->networkRunLoop forMode:NSDefaultRunLoopMode];
     
-    if (self->outputDataStream != nil)
-        [self->outputDataStream removeFromRunLoop:self->networkRunLoop forMode:NSDefaultRunLoopMode];
-    
-    if (self->inputDataStream != nil) {
-        [self->inputDataStream close];
-        self->inputDataStream = nil;
-    }
-    
-    if (self->outputDataStream != nil) {
-        [self->outputDataStream close];
-        self->outputDataStream = nil;
-    }
-    
-    self->dataStreamIsOpen = false;
+    [self disconnectStream:self->inputDataStream];
+    self->inputDataStream = nil;
+    [self disconnectStream:self->outputDataStream];
+    self->outputDataStream = nil;
+    self->dataStreamIsOpen = NO;
 }
 
 - (void)disconnectTelnet {
     NSLog(@"@disconnectTelnet.");
-    if (self->inputTelnetStream != nil)
-        [self->inputTelnetStream removeFromRunLoop:self->networkRunLoop forMode:NSDefaultRunLoopMode];
     
-    if (self->outputTelnetStream != nil)
-        [self->outputTelnetStream removeFromRunLoop:self->networkRunLoop forMode:NSDefaultRunLoopMode];
-    
-    if (self->inputTelnetStream != nil) {
-        [self->inputTelnetStream close];
-        self->inputTelnetStream = nil;
-    }
-    
-    if (self->outputTelnetStream != nil) {
-        [self->outputTelnetStream close];
-        self->outputTelnetStream = nil;
-    }
-    
-    self->telnetStreamIsOpen = false;
+    [self disconnectStream:self->inputTelnetStream];
+    self->inputTelnetStream = nil;
+    [self disconnectStream:self->outputTelnetStream];
+    self->outputTelnetStream = nil;
+    self->telnetStreamIsOpen = NO;
     [super disconnectTelnet];
+}
+
+- (void)disconnectStream:(NSStream*)stream {
+    if (stream) {
+        [stream removeFromRunLoop:[NSRunLoop mainRunLoop] forMode:NSDefaultRunLoopMode];
+        [stream setDelegate:nil];
+        [stream close];
+    }
 }
 
 - (int)calculateNumberOfDatasetsToAcquireForTime:(float)acqTime atRateInHertz:(float)rate {
@@ -115,41 +114,33 @@
 }
 
 - (void)connectDevice:(NSString*)ip_address port:(int)port {
-
     dispatch_async(self->networkQueue, ^{
         NSLog(@"@connectDevice: %@:%d", ip_address, port);
-        if (port == self->dataPort) self->dataStreamIsOpen = false;
-        if (port == self->telnetPort) self->telnetStreamIsOpen = false;
         
-        if (port == DATA_PORT) {
-            if (self->inputDataStream != nil) {
-                CFStreamStatus chkStream;
-                CFReadStreamRef cfinputstream = (__bridge CFReadStreamRef )self->inputDataStream;
-                chkStream = CFReadStreamGetStatus(cfinputstream);
-                if(chkStream == (CFStreamStatus) kCFStreamStatusOpen){
+        if (port == self->dataPort) {
+            if (self->inputDataStream) {
+                if(CFReadStreamGetStatus((__bridge CFReadStreamRef )self->inputDataStream) == (CFStreamStatus) kCFStreamStatusOpen) {
                     NSLog(@"This device is already connected for data.");
                     return;
                 }
             }
-            if(self->outputDataStream != nil){
+            if(self->outputDataStream){
                 NSLog(@"  Already Connected - Data");
                 return;
             }
-        }
-        else if (port == TELNET_PORT) {
-            if (self->inputTelnetStream != nil) {
-                CFStreamStatus chkStream;
-                CFReadStreamRef cfinputstream = (__bridge CFReadStreamRef )self->inputTelnetStream;
-                chkStream = CFReadStreamGetStatus(cfinputstream);
-                if(chkStream == (CFStreamStatus) kCFStreamStatusOpen){
+            self->dataStreamIsOpen = NO;
+        } else if (port == self->telnetPort) {
+            if (self->inputTelnetStream) {
+                if(CFReadStreamGetStatus((__bridge CFReadStreamRef )self->inputTelnetStream) == (CFStreamStatus) kCFStreamStatusOpen){
                     NSLog(@"This device is already connected for telnet.");
                     return;
                 }
             }
-            if(self->outputTelnetStream != nil){
+            if(self->outputTelnetStream) {
                 NSLog(@"  Already Connected - Telnet");
                 return;
             }
+            self->telnetStreamIsOpen = NO;
         }
         
         CFReadStreamRef readStream;
@@ -160,21 +151,18 @@
         NSOutputStream* outputStream = (__bridge NSOutputStream *)writeStream;
         [inputStream setDelegate:self];
         [outputStream setDelegate:self];
-        [inputStream scheduleInRunLoop:self->networkRunLoop forMode:NSDefaultRunLoopMode];
-        [outputStream scheduleInRunLoop:self->networkRunLoop forMode:NSDefaultRunLoopMode];
-        //[inputStream scheduleInRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
-        //[outputStream scheduleInRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
+        [inputStream scheduleInRunLoop:[NSRunLoop mainRunLoop] forMode:NSDefaultRunLoopMode];
+        [outputStream scheduleInRunLoop:[NSRunLoop mainRunLoop] forMode:NSDefaultRunLoopMode];
         [inputStream open];
         [outputStream open];
         
-        if (port == DATA_PORT) {
+        if (port == self->dataPort) {
             self->outputDataStream = outputStream;
             self->inputDataStream = inputStream;
             [NSTimer scheduledTimerWithTimeInterval:0.75 target:self selector:@selector(timeoutTimerDataStreamOpening:) userInfo:@(port) repeats:NO];
-        } else if (port == TELNET_PORT) {
+        } else if (port == self->telnetPort) {
             self->outputTelnetStream = outputStream;
             self->inputTelnetStream = inputStream;
-//            self->telnetIsReady = YES;
         }
     });
 }
@@ -189,34 +177,28 @@
         NSLog(@"    OK - stream is open.");
     } else {
         NSLog(@"    stream not open.");
-        [self->inputDataStream removeFromRunLoop:self->networkRunLoop forMode:NSDefaultRunLoopMode];
-        [self->outputDataStream removeFromRunLoop:self->networkRunLoop forMode:NSDefaultRunLoopMode];
-        //[self->inputDataStream removeFromRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
-        //[self->outputDataStream removeFromRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
         
-        // apple documentation also says to set delegate connection to nil (how?)
-        
-        if (port == DATA_PORT) {
+        //if (port == self->dataPort) {
             NSLog(@"    closing data port streams.");
-            [self->inputDataStream close];
+            [self disconnectStream:self->inputDataStream];
             self->inputDataStream = nil;
-            [self->outputDataStream close];
+            [self disconnectStream:self->outputDataStream];
             self->outputDataStream = nil;
-        }
-        else if (port == TELNET_PORT) {
-            NSLog(@"    closing telnet port streams.");
-            [self->inputTelnetStream close];
-            self->inputTelnetStream = nil;
-            [self->outputTelnetStream close];
-            self->outputTelnetStream = nil;
-        }
+        //}
+        //else if (port == self->telnetPort) {
+        //    NSLog(@"    closing telnet port streams.");
+        //    [self disconnectStream:self->inputTelnetStream];
+        //    self->inputTelnetStream = nil;
+        //    [self disconnectStream:self->outputTelnetStream];
+        //    self->outputTelnetStream = nil;
+        //}
     }
 }
 
 #pragma mark - TCPSocketDelegate
 
 - (void)stream:(NSStream *)inStream handleEvent:(NSStreamEvent)streamEvent {
-
+    
     dispatch_async(self->networkQueue, ^{
         NSStream* theStream = inStream;
         
@@ -244,54 +226,42 @@
         BOOL foundInputTelnetS = NO;
         BOOL foundOutputTelnetS = NO;
         
-        if([port intValue] == DATA_PORT){
+        if([port intValue] == self->dataPort){
             foundInputDataS = (self->inputDataStream == theStream);
             foundOutputDataS = (self->outputDataStream == theStream);
             dataStreamFound = foundOutputDataS || foundInputDataS;
         }
-        else if ([port intValue] == TELNET_PORT) {
+        else if ([port intValue] == self->telnetPort) {
             foundInputTelnetS = (self->inputTelnetStream == theStream);
             foundOutputTelnetS = (self->outputTelnetStream == theStream);
             telnetStreamFound = foundOutputTelnetS || foundInputTelnetS;
         }
         NSLog(@"dataStreamFound = %d; telnetStreamFound = %d",dataStreamFound,telnetStreamFound);
         
-        if(dataStreamFound || telnetStreamFound){
-            // NSStreamEvents:
-            // NSStreamEventNone = 0
-            // NSStreamEventOpenCompleted = 1
-            // NSStreamEventHasBytesAvailable = 2
-            // NSStreamEventHasSpaceAvailable = 4
-            // NSStreamEventErrorOccurred = 8
-            // NSStreamEventEndEncountered = 16
-            //NSLog(@"working with data stream, ip address = %@",self.ipAddress);
+        if (dataStreamFound || telnetStreamFound) {
             
             switch (streamEvent) {
-                case NSStreamEventHasSpaceAvailable:
+                case NSStreamEventHasSpaceAvailable: //4
                     NSLog(@"NSStreamEventHasSpaceAvailable.");
-//                    if(telnetStreamFound) self->telnetIsReady = YES;
                     break;
-                case NSStreamEventNone:
+                case NSStreamEventNone: //0
                     NSLog(@"NSStreamEventNone.");
                     break;
-                case NSStreamEventOpenCompleted:
+                case NSStreamEventOpenCompleted: //1
                 {
                     NSLog(@"NSStreamEventOpenCompleted.");
                     NSLog(@"  foundInputDataS: %d; foundOutputDataS: %d", foundInputDataS, foundOutputDataS);
-                    if(foundInputDataS) NSLog(@"  stream is an input data stream");
-                    if(foundOutputDataS) NSLog(@"  stream is an output data stream");
-                    if(foundInputTelnetS) NSLog(@"  stream is an input telnet stream");
-                    if(foundOutputTelnetS) NSLog(@"  stream is an output telnet stream");
+                    if (foundInputDataS) NSLog(@"  stream is an input data stream");
+                    if (foundOutputDataS) NSLog(@"  stream is an output data stream");
+                    if (foundInputTelnetS) NSLog(@"  stream is an input telnet stream");
+                    if (foundOutputTelnetS) NSLog(@"  stream is an output telnet stream");
                     
-                    if(dataStreamFound)  self->dataStreamIsOpen = YES;
-                    if(telnetStreamFound) {
-                        self->telnetStreamIsOpen = YES;
-//                        self->telnetIsReady = YES;
-                    }
+                    if (dataStreamFound) self->dataStreamIsOpen = YES;
+                    if (telnetStreamFound) self->telnetStreamIsOpen = YES;
                     
                     break;
                 }
-                case NSStreamEventHasBytesAvailable:
+                case NSStreamEventHasBytesAvailable: //2
                 {
                     if ((self->dataStreamIsOpen == NO) && ([port intValue] == self->dataPort)) {
                         break;
@@ -326,7 +296,7 @@
                     }
                     break;
                 }
-                case NSStreamEventErrorOccurred:
+                case NSStreamEventErrorOccurred: //8
                 {
                     NSLog(@"NSStreamEventErrorOccurred.");
                     NSError* error = [theStream streamError];
@@ -338,25 +308,20 @@
                         [self disconnectTelnet]; // clean things up.
                         [self connectTelnetPortIfNecessary:self->inputTelnetStream];
                     }
-                    [self->delegate returnPluginResponse:@{@"type":@"status",@"status":errorMessage} keepOpen:NO];
+                    [self->delegate returnPluginResponse:@{@"type":@"status",@"status":errorMessage} keepOpen:YES];
                     break;
                 }
-                case NSStreamEventEndEncountered:
+                case NSStreamEventEndEncountered: //16
                 {
                     NSLog(@"NSStreamEventEndEncountered for port = %@", port);
-                    [theStream close];
-                    [theStream removeFromRunLoop:self->networkRunLoop forMode:NSDefaultRunLoopMode];
-                    theStream = nil;
-                    
-                    if ([port intValue] == TELNET_PORT) {
-                        self->inputTelnetStream = nil;
-                        self->outputTelnetStream = nil;
+                    if ([port intValue] == self->telnetPort)
+                        [self disconnectTelnet];
+                    else if ([port intValue] == self->dataPort)
+                        [self disconnectData];
+                    else {
+                        [self disconnectStream:theStream];
+                        theStream = nil;
                     }
-                    else if ([port intValue] == DATA_PORT) {
-                        self->inputDataStream = nil;
-                        self->outputDataStream = nil;
-                    }
-                    
                     break;
                 }
                 default:

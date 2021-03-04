@@ -132,10 +132,10 @@
 		48257AC125C616AE00B1A505 /* redparkSerial.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = redparkSerial.h; sourceTree = "<group>"; };
 		48257AC225C616AE00B1A505 /* CDVIFC242x.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CDVIFC242x.m; sourceTree = "<group>"; };
 		48257AC325C616AE00B1A505 /* MeasurementData.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MeasurementData.m; sourceTree = "<group>"; };
-		4859644A25E062F400B6988A /* ScanMetaData.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ScanMetaData.h; path = ../../../../../../../IFC242xPlugin/src/ios/ScanMetaData.h; sourceTree = "<group>"; };
-		4859644B25E062F400B6988A /* IFC242xManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = IFC242xManager.m; path = ../../../../../../../IFC242xPlugin/src/ios/IFC242xManager.m; sourceTree = "<group>"; };
-		4859644C25E062F500B6988A /* IFC242xManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = IFC242xManager.h; path = ../../../../../../../IFC242xPlugin/src/ios/IFC242xManager.h; sourceTree = "<group>"; };
-		4859644D25E062F500B6988A /* ScanMetaData.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = ScanMetaData.m; path = ../../../../../../../IFC242xPlugin/src/ios/ScanMetaData.m; sourceTree = "<group>"; };
+		4859644A25E062F400B6988A /* ScanMetaData.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ScanMetaData.h; sourceTree = "<group>"; };
+		4859644B25E062F400B6988A /* IFC242xManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = IFC242xManager.m; sourceTree = "<group>"; };
+		4859644C25E062F500B6988A /* IFC242xManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IFC242xManager.h; sourceTree = "<group>"; };
+		4859644D25E062F500B6988A /* ScanMetaData.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ScanMetaData.m; sourceTree = "<group>"; };
 		5667AFFD249BC3330086E54D /* ExternalAccessory.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ExternalAccessory.framework; path = System/Library/Frameworks/ExternalAccessory.framework; sourceTree = SDKROOT; };
 		56BD91B824323B69008117BD /* Settings.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = Settings.bundle; sourceTree = "<group>"; };
 		56EFBB45243E527A007A00D7 /* test_data.csv */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = test_data.csv; path = ../../data/test_data.csv; sourceTree = "<group>"; };

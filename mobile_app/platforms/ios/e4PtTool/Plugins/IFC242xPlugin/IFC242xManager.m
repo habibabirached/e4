@@ -29,6 +29,12 @@
         self->plugin = plugin;
         self->controller = [[SerialController alloc] initWithDelegate:self];
         self->postProcess = [PostProcess new];
+        
+        // Remove notifications before adding them so they are not added multiple times.
+        //[[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationDidEnterBackgroundNotification object:nil];
+        //[[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationWillEnterForegroundNotification object:nil];
+        //[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(appMovedToBackground:) name:UIApplicationDidEnterBackgroundNotification object:nil];
+        //[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(appMovedToForeground:) name:UIApplicationWillEnterForegroundNotification object:nil];
     }
     return self;
 }
@@ -40,28 +46,25 @@
 }
 
 - (void)processComplete:(NSString*)statusMsg {
+    if (self->controller.state == darkReferenceInProgress) {
+        return; // Dark referencing is followed by data collection
+    }
+    
     if (self->controller.state == setMeasurementRateInProgress) {
         [self returnPluginResponse:@{@"type":@"alert",@"message":[NSString stringWithFormat:@"Measurement rate set to %.3f kHz.", self->controller.settings.measurementRate]} keepOpen:YES];
         return;
     }
     
     if (self->controller.state == setThresholdInProgress) {
-        [self returnPluginResponse:@{@"type":@"alert",@"message":[NSString stringWithFormat:@"Threshold is set to %.3f.", self->controller.settings.intensityThreshold]} keepOpen:NO];
-        return;
-    }
-    
-    if (self->controller.state == darkReferenceInProgress) {
-        return; // Dark referencing is followed by data collection
-    }
-    
-    if (self->controller.state == halted) {
+        [self returnPluginResponse:@{@"type":@"alert",@"message":[NSString stringWithFormat:@"Threshold is set to %.3f.", self->controller.settings.intensityThreshold]} keepOpen:YES];
+    } else if (self->controller.state == halted) {
         [self returnData:[self computeClearance:self->controller.measurementData] measurementData:self->controller.measurementData];
     }
-    [self returnPluginResponse:@{@"type":@"status",@"status":statusMsg} keepOpen:NO];
+    [self returnPluginResponse:@{@"type":@"status",@"status":statusMsg}];
 }
 
 - (ClearanceData*)computeClearance:(MeasurementData*)measurementData {
-    self->postProcess.outOfRange = ceilf(self->controller.settings.sensor.smr + self->controller.settings.sensor.mr/2.0);
+    self->postProcess.outOfRange = self->controller.settings.outOfRange;
     
     float offsetAdjustment = 0.0;
     if (self->calibratedAcquire)
@@ -98,7 +101,7 @@
     NSString* stg_min_clr = [NSString stringWithFormat:@"%f", clearanceData.min];
     NSString* stg_med_clr = [NSString stringWithFormat:@"%f", clearanceData.median];
     NSString* stg_clr_std = [NSString stringWithFormat:@"%f", clearanceData.std];
-    NSString* overall_avg = isnan(clearanceData.averageDisplacement) ? @"--" : [NSString stringWithFormat:@"%f", clearanceData.averageDisplacement];
+    NSString* overall_avg = isnan(clearanceData.averageDisplacement) ? @"\"--\"" : [NSString stringWithFormat:@"%f", clearanceData.averageDisplacement];
     
     [self saveCSVFile:date clearanceData:clearanceData measurementData:measurementData];
     NSArray* savedFilepath = [self->lastSavedFile pathComponents];
@@ -118,10 +121,10 @@
                                    @"std_clr":stg_clr_std,
                                    @"overall_avg":overall_avg,
                                    @"date":dateStr,
-                                   @"intensity_threshold":[NSString stringWithFormat:@"%f", self->controller.settings.intensityThreshold],
-                                   @"measurement_rate":[NSString stringWithFormat:@"%f", self->controller.settings.measurementRate],
+                                   @"intensity_threshold":[NSString stringWithFormat:@"%.3f", self->controller.settings.intensityThreshold],
+                                   @"measurement_rate":[NSString stringWithFormat:@"%.3f", self->controller.settings.measurementRate],
                                    @"filename":[[savedFilepath subarrayWithRange:endRange] componentsJoinedByString:@"/"]};
-    [self returnPluginResponse:jsonDataDict keepOpen:NO];
+    [self returnPluginResponse:jsonDataDict keepOpen:YES];
 }
 
 - (void)saveCSVFile:(NSDate*)date clearanceData:(ClearanceData*)clearanceData measurementData:(MeasurementData*)measurementData {
@@ -236,10 +239,8 @@
 - (void)appMovedToBackground:(NSNotification*)note {
     NSLog(@"App moved to background.");
     // Some stuff to stop the serial cable & prepare it to be reconnected.
-    CFRunLoopStop(CFRunLoopGetCurrent());
+    //CFRunLoopStop(CFRunLoopGetCurrent());
     [self->controller disconnectDevice];
-    //self.networkRunLoop = nil;
-    //self.networkQueue = nil;
     //self.rscMgr = nil;
     //[self cableDisconnected];
 }
@@ -281,9 +282,9 @@
                     [self returnPluginResponse:@{@"type":@"alert",@"message":err} keepOpen:YES];
                     return;
                 }
-                NSLog(@"Using auto-settings: Found measurement rate: %f; intensity threshold: %f", self->controller.settings.measurementRate, self->controller.settings.intensityThreshold);
+                NSLog(@"Using auto-settings: Found measurement rate: %.3f; intensity threshold: %.3f", self->controller.settings.measurementRate, self->controller.settings.intensityThreshold);
                 [self->controller setIntensityThreshold:self->controller.settings.intensityThreshold sendImmediately:NO];
-                [self->controller setMeasurementRate:self->controller.settings.measurementRate];
+                [self->controller setMeasurementRate:self->controller.settings.measurementRate reportStatus:NO];
             } else {
                 NSLog(@"Overriding auto-settings.");
             }
@@ -295,7 +296,7 @@
         }
     } else if ([cmd containsString:@"get_data_file"]) {
         NSLog(@"Got get_data_file");
-        [self returnPluginResponse:@{@"type":@"filename",@"fname":self->lastSavedFile} keepOpen:NO];
+        [self returnPluginResponse:@{@"type":@"filename",@"fname":self->lastSavedFile ?: [NSNull null]}];
     } else if ([cmd containsString:@"do_dark_reference"]) {
         NSLog(@"Got do_dark_reference");
         [controller doDarkReference];
@@ -313,11 +314,13 @@
         [self->controller setIntensityThreshold:[[message valueForKey:@"threshold"] floatValue]];
     } else if ([cmd containsString:@"set_manual_override"]) {
         NSLog(@"Got set_manual_override");
-        controller.settings.overrideRateAndIntensity = [[message objectForKey:@"numberOfBlades"] boolValue];
+        controller.settings.overrideRateAndIntensity = [[message objectForKey:@"value"] boolValue];
     } else if ([cmd containsString:@"set_connection_mode"]) {
         NSString* mode = [message objectForKey:@"mode"];
         NSLog(@"Recieved set_connection_mode:%@",mode);
+        [self->controller disconnectDevice];
         ControllerSettings* controllerSettings = self->controller.settings;
+        self->controller = nil;
         if ([mode containsString:@"serial"]) {
             self->controller = [[SerialController alloc] initWithDelegate:self andSettings:controllerSettings];
             [self returnPluginResponse:@{@"type":@"alert",@"message":@"App is now using serial connection."} keepOpen:YES];
@@ -329,18 +332,19 @@
             [self returnPluginResponse:@{@"type":@"alert",@"message":@"App is now in demo mode."} keepOpen:YES];
         }
     } else if ([cmd containsString:@"get_version"]) {
-        if (self->controller.state == notReady) {
-            [self->controller initialize];
-        }
-        [self returnPluginResponse:@{@"type":@"version",@"version":[[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleShortVersionString"]} keepOpen:YES];
+        //if (self->controller.state == notReady) {
+        //    [self->controller initialize];
+        //}
+        [self returnPluginResponse:@{@"type":@"version",@"version":[[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleShortVersionString"]}];
     } else if ([cmd containsString:@"get_sensor_parameters"]) {
         NSDictionary* jsonDict = @{@"type":@"sensor_params", @"master_fixture_height":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.hmf], @"mastering_value":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.mv], @"master_offset":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.mo], @"sensor_selection":self->controller.settings.sensor.name, @"sensor_length":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.length], @"start_measurement_range":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.smr], @"sensor_measurement_range":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.mr]};
-        [self returnPluginResponse:jsonDict keepOpen:NO];
+        [self returnPluginResponse:jsonDict];
     } else if ([cmd containsString:@"set_sensor_parameters"]) {
         self->controller.settings.sensor = [[SensorSettings alloc] initWithName:[message valueForKey:@"name"] lengthInches:[[message valueForKey:@"length"] floatValue] measurementRangeMM:[[message valueForKey:@"mr"] floatValue] startOfMeasurementRangeMM:[[message valueForKey:@"smr"] floatValue] masterFixtureHeightInches:[[message valueForKey:@"hmf"] floatValue] masteringValueMM:[[message objectForKey:@"mv"] floatValue] masteringOffsetInches:[[message objectForKey:@"mo"] floatValue]];
         
-        [self returnPluginResponse:@{@"type":@"alert",@"message":@"Sensor Parameters are Set."} keepOpen:NO];
+        [self returnPluginResponse:@{@"type":@"alert",@"message":@"Sensor Parameters are Set."}];
     } else if ([cmd containsString:@"shutdown"]) {
+        [self->controller disconnectDevice];
         exit(0);
     } else {
         NSLog(@"Got %@", message);

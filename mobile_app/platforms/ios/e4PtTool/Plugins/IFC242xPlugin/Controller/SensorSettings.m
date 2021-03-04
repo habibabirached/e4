@@ -42,12 +42,12 @@
 
 +(SensorSettings*) forType:(NSString*)type {
     if ([@"LONG" isEqualToString:type])
-        return [self LONG];
-    else if ([@"SHORT" isEqualToString:type])
-        return [self SHORT];
-    else if ([@"PROTOTYPE" isEqualToString:type])
-        return [self PROTOTYPE];
-    return [self CUSTOM];
+        return [SensorSettings LONG];
+    if ([@"SHORT" isEqualToString:type])
+        return [SensorSettings SHORT];
+    if ([@"PROTOTYPE" isEqualToString:type])
+        return [SensorSettings PROTOTYPE];
+    return [SensorSettings CUSTOM];
 }
 
 +(float) mvFromLength:(float)length hmf:(float)hmf smr:(float)smr {

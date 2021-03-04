@@ -38,8 +38,6 @@ enum MEASUREMENT_CATEGORY {
     @protected BOOL telnetIsReady;
     @protected int num_sets;
     @protected float set_count;
-    @protected NSRunLoop* networkRunLoop;
-    @protected dispatch_queue_t networkQueue;
     @protected NSTimer* timerSendTelnetCommand;
 }
 
@@ -54,7 +52,6 @@ enum MEASUREMENT_CATEGORY {
 - (void)sendCommand:(NSString*)command;
 - (void)sendEmptyCommand;
 - (void)sendTelnetCommand;
-- (void)startCommThread;
 - (void)timeoutTelnetSendCommand:(NSTimer*)timer;
 
 @end
