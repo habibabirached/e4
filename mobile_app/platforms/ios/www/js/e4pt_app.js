@@ -105,6 +105,14 @@ define(function(require, exports, module) {
     $(document).ready(function(){
         var attachFastClick = Origami.fastclick;
         attachFastClick(document.body);
+        
+        if (window.plugins != null) {
+            messaging.setupPlugin(pluginMessage);
+        } else {
+            createWebSocket();
+        }
+        messaging.sendMessage({args:['ping']});
+        
         document.getElementById("MAIN_MENU").addEventListener('click', function(){
             $("#TITLE_BAR").text("e-4Pt Tool");
             toggle_menu();
@@ -343,13 +351,6 @@ define(function(require, exports, module) {
             enableMasteringValuesForEditing(true);
         }, {passive: true});
         setupAccordian();
-        
-        if (window.plugins != null) {
-            messaging.setupPlugin(pluginMessage);
-        } else {
-            createWebSocket();
-        }
-        messaging.sendMessage({args:['get_version']});
         
         // Wait (0.5s) for the page load to complete, then get the file system.
         setTimeout(function(){
@@ -606,16 +607,10 @@ define(function(require, exports, module) {
             $('#LEFT_MENU').animate({"margin-left": '-=50vmin'});
         }
         else{
-            if (window.plugins != null) {
-                if (!serialConnected) {
-                    e4PtAlert("Connecting...\nPlease wait for indicator to turn green before proceeding.\n(~2s)");
-                }
-                messaging.setupPlugin(pluginMessage);
-                messaging.sendMessage({"args":["get_version"]});
+            if (!serialConnected) {
+                e4PtAlert('Connecting...\nPlease wait for indicator to turn green before proceeding.');
             }
-            else {
-                createWebSocket();
-            }
+            messaging.sendMessage({args:['get_version']});
 
             $('#LEFT_MENU').animate({"margin-left": '+=50vmin'});
         }
@@ -660,6 +655,7 @@ define(function(require, exports, module) {
         $('#CUR_CONN').text('Current Connection: ' + upperMode);
         if ($('#CONNECTION_NAME').text() !== 'DEMO') $('#CONNECTION_NAME').text(upperMode);
         
+        pluginMessage({type:'status',status:'disconnected',noAlert:true});
         messaging.sendMessage({args:['set_connection_mode',mode]});
     }
 
@@ -1676,11 +1672,11 @@ define(function(require, exports, module) {
                     document.getElementById("STATUS_DISPLAY").innerHTML = "Connected"
                     serialConnected = true;
                 }
-                if (msg.status == "disconnected") {
-                    setIndicatorColor("white");
-                    document.getElementById("STATUS_DISPLAY").innerHTML = "Disconnected"
+                if (msg.status == 'disconnected') {
+                    setIndicatorColor('white');
+                    document.getElementById('STATUS_DISPLAY').innerHTML = 'Disconnected'
                     serialConnected = false;
-                    if (!msg.noAlert) e4PtAlert("Controller was disconnected.\nToggle side menu to reconnect.");
+                    if (!msg.noAlert) e4PtAlert('Controller was disconnected.');
                 }
                 if (msg.status == "acquiring") {
                     setIndicatorColor("red");
