@@ -266,17 +266,8 @@ define(function(require, exports, module) {
         document.getElementById("CURR_CASE_THICKNESS").addEventListener('change', function(){
             update_spacer_value();
         }, {passive: true});
-        document.getElementById("MODE_BUTTON_PROD").addEventListener('click', function(){
-            set_demo_mode(true);
-        }, {passive: true});
-        document.getElementById("MODE_BUTTON_DEMO").addEventListener('click', function(){
-            set_demo_mode(false);
-        }, {passive: true});
-        document.getElementById("CONN_BUTTON_ETHERNET").addEventListener('click', function(){
-            set_connection_mode("ethernet");
-        }, {passive: true});
-        document.getElementById("CONN_BUTTON_SERIAL").addEventListener('click', function(){
-            set_connection_mode("serial");
+        document.getElementById("CONN_SELECTION").addEventListener('change', function(){
+            set_connection_mode();
         }, {passive: true});
         document.getElementById("SETUP_CLOSE_BUTTON").addEventListener('click', function(){
             $("#FRD_PAGE").fadeOut();
@@ -637,23 +628,9 @@ define(function(require, exports, module) {
         messaging.sendMessage({args:['get_sensor_parameters']});
     }
 
-    function set_demo_mode(tf) {
-        document.getElementById('MODE_BUTTON_PROD').style.display = tf ? 'none' : 'block';
-        document.getElementById('MODE_BUTTON_DEMO').style.display = tf ? 'block' : 'none';
-        $('#CUR_MODE').text('Current Mode: ' + (tf ? 'Demo' : 'Production'));
-        $('#CONNECTION_NAME').text((tf ? 'DEMO' : $('#CUR_CONN').text().substring(20)));
-        
-        pluginMessage({type:'status',status:'disconnected',noAlert:true});
-        messaging.sendMessage({args:['set_demo_mode',tf.toString()]});
-    }
-
-    function set_connection_mode(mode) {
-        var upperMode = mode.toUpperCase();
-        var otherMode = upperMode === 'ETHERNET' ? 'SERIAL' : 'ETHERNET';
-        document.getElementById('CONN_BUTTON_' + upperMode).style.display = 'none'; //hide
-        document.getElementById('CONN_BUTTON_' + otherMode).style.display = 'block';
-        $('#CUR_CONN').text('Current Connection: ' + upperMode);
-        if ($('#CONNECTION_NAME').text() !== 'DEMO') $('#CONNECTION_NAME').text(upperMode);
+    function set_connection_mode() {
+        var mode = document.getElementById('CONN_SELECTION').value;
+        $('#CONNECTION_NAME').text(mode.toUpperCase());
         
         pluginMessage({type:'status',status:'disconnected',noAlert:true});
         messaging.sendMessage({args:['set_connection_mode',mode]});

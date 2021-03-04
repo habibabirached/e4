@@ -403,34 +403,22 @@
             <button class="ACCORDION">SENSOR CONNECTION</button>
             <div class="PANEL">
                 <br/>
-                <h4> <p id="CUR_CONN">Current Connection: SERIAL</p> </h4>
-                <br/>
-                <a id="CONN_BUTTON_ETHERNET" class="OVERLAY_BUTTON BUTTON" href="#" style="display: block; margin:auto;">Switch to ETHERNET connection.</a>
-                <a id="CONN_BUTTON_SERIAL" class="OVERLAY_BUTTON BUTTON" href="#" style="display: none; margin:auto;">Switch to SERIAL connection.</a>
-                <br/>
-                <div>
-                    <UL>
-                        <LI> Select “Switch to SERIAL connection” to use serial cable.</LI>
-                        <LI> Select “Switch to ETHERNET connection” to use ethernet cable.</LI>
-                    </UL>
-                </div>
-                    <br/><br/>
-            </div>
-            <button class="ACCORDION">SWITCH MODE</button>
-            <div class="PANEL">
-                <br/>
-                <h4> <p id="CUR_MODE">Current Mode: PRODUCTION</p> </h4>
-                <br/>
-                <a id="MODE_BUTTON_PROD" class="OVERLAY_BUTTON BUTTON" href="#" style="display: block; margin:auto;">Switch to DEMO mode</a>
-                <a id="MODE_BUTTON_DEMO" class="OVERLAY_BUTTON BUTTON" href="#" style="display: none; margin:auto;">Switch to PRODUCTION mode</a>
+                <h4> Current Connection:
+                    <select id="CONN_SELECTION" style="font-size:2vmax;">
+                        <option value="serial">SERIAL cable</option>
+                        <option value="ethernet">ETHERNET</option>
+                        <option value="demo">DEMO</option>
+                    </select>
+                </h4>
                 <br/>
                 <div>
                     <UL>
-                        <LI> Select “Switch to DEMO mode” to use pre-recorded data.</LI>
-                        <LI> Select “Switch to PRODUCTION mode” for use with an active sensor.</LI>
+                        <LI> Select “SERIAL cable” to use serial cable.</LI>
+                        <LI> Select “ETHERNET” to communicate over ethernet.</LI>
+                        <LI> Select “DEMO” to use pre-recorded data.</LI>
                     </UL>
                 </div>
-                    <br/><br/>
+                <br/><br/>
             </div>
         </div>
         <!-- --------------- FRAME SELECT PAGE ---------------------  -->

@@ -118,13 +118,6 @@
             [dict setValue:commands[1] forKey:@"value"];
         else if (NSOrderedSame == [commands[0] localizedCaseInsensitiveCompare:@"set_connection_mode"])
             [dict setValue:commands[1] forKey:@"mode"];
-        else if (NSOrderedSame == [commands[0] localizedCaseInsensitiveCompare:@"set_demo_mode"]) {
-            [dict setValue:@"set_connection_mode" forKey:@"command"];
-            if (NSOrderedSame == [commands[1] localizedCaseInsensitiveCompare:@"true"])
-                [dict setValue:@"demo" forKey:@"mode"];
-            else
-                [dict setValue:@"serial" forKey:@"mode"];
-        }
         else if (NSOrderedSame == [commands[0] localizedCaseInsensitiveCompare:@"set_sensor_parameters"]) {
             [dict setValue:commands[1] forKey:@"hmf"];
             if (commands.count > 2) [dict setValue:commands[2] forKey:@"mv"];
