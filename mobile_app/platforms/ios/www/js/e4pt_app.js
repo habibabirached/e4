@@ -247,7 +247,13 @@ define(function(require, exports, module) {
         listDir(cordova.file.documentsDirectory + E4PTdata.serial_number);
         }, {passive: true});
         document.getElementById("STAGE_COLLECT_BUTTON").addEventListener('click', function(){
-        confirm_collect_stage_data();
+            if (document.getElementById("STAGE_COLLECT_BUTTON").innerHTML === 'GO!')
+                confirm_collect_stage_data();
+            else {
+                messaging.sendMessage({args:['abort']});
+                displayGoButton();
+                $("#REV_PROGRESS_BAR").hide();
+            }
         }, {passive: true});
         document.getElementById("COLLECTION_RESET_BUTTON").addEventListener('click', function(){
             confirm_reset_data_collection();
@@ -929,6 +935,20 @@ define(function(require, exports, module) {
             messaging.sendMessage({args:[cmd,input_f]});
         }
     }
+    
+    function displayGoButton() {
+        setButtonProperties(document.getElementById('STAGE_COLLECT_BUTTON'), 'GO!', 'white', 'var(--TRACC-black)');
+    }
+    
+    function displayAbortButton() {
+        setButtonProperties(document.getElementById('STAGE_COLLECT_BUTTON'), 'ABORT!', 'black', 'var(--TRACC-red)');
+    }
+    
+    function setButtonProperties(button, text, textColor, buttonColor) {
+        button.innerHTML = text;
+        button.style.background = buttonColor;
+        button.style.color = textColor;
+    }
 
     function confirm_collect_stage_data() {
         e4PtPrompt('Original calculation assumes master fixture height is SMR+SL+5mm, New calculation uses MV=fixture height - sensor length', function(calcMethod) {
@@ -1580,6 +1600,7 @@ define(function(require, exports, module) {
           console.log("e4PtSocket Message Received: " + msg.type);
           switch(msg.type) {
           case "data":
+            displayGoButton();
             console.log("Received Data Message");
             setIndicatorColor("green");
             //console.log(msg);
@@ -1590,9 +1611,11 @@ define(function(require, exports, module) {
             console.log(msg);
             if (msg.status == "acquiring") {
                 setIndicatorColor("red");
+                displayAbortButton();
             }
             if (msg.status == "processing") {
                 setIndicatorColor("blue");
+                displayGoButton();
             }
             if (msg.status == "done_mastering") {
               done_mastering();
@@ -1656,6 +1679,7 @@ define(function(require, exports, module) {
                     if (!msg.noAlert) e4PtAlert('Controller was disconnected.');
                 }
                 if (msg.status == "acquiring") {
+                    displayAbortButton();
                     setIndicatorColor("red");
                     $("#REV_PROGRESS").html('&nbsp' + '0%');
                     $("#REV_PROGRESS").css('width', '0%');
@@ -1664,6 +1688,7 @@ define(function(require, exports, module) {
                 }
                 if (msg.status == "processing") {
                     setIndicatorColor("blue");
+                    displayGoButton();
                 }
                 if (msg.status == "done_mastering") {
                     done_mastering();
@@ -1682,6 +1707,7 @@ define(function(require, exports, module) {
                 }
                 break;
             case "data":
+                displayGoButton();
                 console.log("Received Data Message");
                 setIndicatorColor("green");
                 $("#REV_PROGRESS_BAR").hide();
@@ -2183,15 +2209,11 @@ define(function(require, exports, module) {
     }
 
     function setMasterMessage( txtColor, bgColor, txt ) {
-        document.getElementById("master_message").style.color = txtColor;
-        document.getElementById("master_message").style.background = bgColor;
-        document.getElementById("master_message").innerHTML = txt;
+        setButtonProperties(document.getElementById('master_message'), txt, txtColor, bgColor);
     }
 
     function setMasterMessage2( txtColor, bgColor, txt ) {
-        document.getElementById("master_message_2").style.color = txtColor;
-        document.getElementById("master_message_2").style.background = bgColor;
-        document.getElementById("master_message_2").innerHTML = txt;
+        setButtonProperties(document.getElementById('master_message_2'), txt, txtColor, bgColor);
     }
 
     function processE4PtData(msg) {
@@ -2259,9 +2281,9 @@ define(function(require, exports, module) {
         }
         charting.clearChartData(document.getElementById('DATA_PLOT2'));
         if (messaging.usesWebSocket()) {
-            setIndicatorColor("yellow");
+            setIndicatorColor('yellow');
         }
-        messaging.sendMessage({"args":["send_data",acquisitionTime, frame, sn, stage, position, casing_thickness, spacer_thickness, num_blades, tip_diameter, blade_width, master_offset, clearance_calc_selection]});
+        messaging.sendMessage({args:['send_data',acquisitionTime, frame, sn, stage, position, casing_thickness, spacer_thickness, num_blades, tip_diameter, blade_width, master_offset, clearance_calc_selection]});
     }
 
     // get_stage_details find the specific information for this stage, given the frame, position,

@@ -28,7 +28,6 @@
 @dynamic state;
 
 - (void) cableConnected:(NSString *)protocol{
-    [self->delegate dispatchMessage:@{@"type":@"status",@"status":@"Error: cable CONNECTED"}];
     NSLog(@"SerialController:cableConnected:%@",protocol);
     
     if (self->byteBuffer == nil) {

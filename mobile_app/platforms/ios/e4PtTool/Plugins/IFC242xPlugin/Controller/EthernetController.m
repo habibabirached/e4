@@ -65,6 +65,13 @@
     }
 }
 
+- (void)abortDataCollection {
+    if (self.state == collectingDataInProgress) {
+        self.state = clearanceComputationInProgress;
+        self->set_count = self->num_sets+1;
+    }
+}
+
 - (void)disconnectDevice {
     [super disconnectDevice];
     self->networkQueue = nil;
@@ -430,7 +437,8 @@
     [self->delegate returnPluginResponse:@{@"type":@"status",@"status":@"processing"} keepOpen:YES];
     
     if (self.state != halted) {
-        self.state = halted;
+        if (self.state != clearanceComputationInProgress)
+            self.state = halted;
         [self processResponse:@"->"];
     }
 }

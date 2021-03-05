@@ -49,8 +49,9 @@
     [self->delegate startProgressReporting];
     [self loadCSVFile:@""];
     [self->delegate returnPluginResponse:@{@"type":@"status",@"status":@"processing"} keepOpen:YES];
-    self.state = halted;
     self->delegate.progress = 1.0;
+    if (self.state == collectingDataInProgress)
+        self.state = halted;
     [self sendCommand:@""];
 }
 

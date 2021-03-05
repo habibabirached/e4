@@ -39,6 +39,10 @@
     return self;
 }
 
+- (void)returnPluginResponse:(NSDictionary*)jsonMessage {
+    [self returnPluginResponse:jsonMessage keepOpen:NO];
+}
+
 - (void)returnPluginResponse:(NSDictionary*)jsonMessage keepOpen:(BOOL)keepOpen {
     CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonMessage];
     [result setKeepCallback:[NSNumber numberWithBool:keepOpen]];
@@ -294,6 +298,9 @@
             self->controller.settings.acquisitionTime = [acqTime floatValue];
             [self->controller doDataCollection];
         }
+    } else if ([cmd containsString:@"abort"]) {
+        NSLog(@"Got ABORT");
+        [controller abortDataCollection];
     } else if ([cmd containsString:@"get_data_file"]) {
         NSLog(@"Got get_data_file");
         [self returnPluginResponse:@{@"type":@"filename",@"fname":self->lastSavedFile ?: [NSNull null]}];

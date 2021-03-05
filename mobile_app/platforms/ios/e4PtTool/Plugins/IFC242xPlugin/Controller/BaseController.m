@@ -14,7 +14,6 @@
 
 @implementation BaseController {
     NSTimeInterval startTime;
-    NSTimer* dataCollectionWaiting;
     NSRegularExpression *mrRegex;
 }
 
@@ -169,7 +168,7 @@
     if (![self checkReady]) return;
     NSLog(@"@doDarkReference");
     self.state = darkReferenceInProgress;
-    [self->delegate returnPluginResponse:@{@"type":@"status",@"status":@"acquiring"} keepOpen:YES];
+    [self->delegate returnPluginResponse:@{@"type":@"status",@"status":@"waiting"} keepOpen:YES];
     
     float processTime = 24.0; // Dark correction takes ~22s per channel on the IFC2422.
     if ([self->controllerType containsString:@"IFC2422"]) {
@@ -180,7 +179,7 @@
         [self->telnetCmds addObject:@"DARKCORR\n"];
     } else {
         self.state = ready;
-        [self->delegate returnPluginResponse:@{@"type":@"status",@"status":@"complete"} keepOpen:YES];
+        [self->delegate returnPluginResponse:@{@"type":@"status",@"status":@"connected"} keepOpen:YES];
         [self->delegate returnPluginResponse:@{@"type":@"alert",@"message":@"Unable to perform dark reference"}];
         return; // Shouldn't get here.
     }
@@ -243,7 +242,7 @@
         [self->telnetCmds addObject:[NSString stringWithFormat:@"MIN_THRESHOLD %.3f\n", self.settings.intensityThreshold]];
     } else {
         self.state = ready;
-        [self->delegate returnPluginResponse:@{@"type":@"status",@"status":@"complete"} keepOpen:YES];
+        [self->delegate returnPluginResponse:@{@"type":@"status",@"status":@"connected"} keepOpen:YES];
         [self->delegate returnPluginResponse:@{@"type":@"alert",@"message":@"Unable to set intensity threshold"}];
         return; // Shouldn't get here.
     }
@@ -273,10 +272,6 @@
 
 - (void)abortDataCollection {
     if (self.state == collectingDataInProgress) {
-        if ([self->dataCollectionWaiting isValid]) {
-            [self->dataCollectionWaiting invalidate];
-        }
-        
         self.state = clearanceComputationInProgress;
         self->delegate.progress = 1.0;
         self->set_count = 0;
@@ -293,11 +288,11 @@
         NSDictionary* info = [[NSDictionary alloc] initWithObjectsAndKeys:
                               [NSNumber numberWithFloat:7.0], @"timeout",
                               @"doDataCollection", @"nextProcess", nil];
-        self->dataCollectionWaiting = [ NSTimer scheduledTimerWithTimeInterval:timeoutSecondsForPrep
-                                                                        target:self
-                                                                      selector:@selector(timeoutWaitTimer:)
-                                                                      userInfo:info
-                                                                       repeats:YES];
+        [NSTimer scheduledTimerWithTimeInterval:timeoutSecondsForPrep
+                                         target:self
+                                       selector:@selector(timeoutWaitTimer:)
+                                       userInfo:info
+                                        repeats:YES];
     });
 }
 
@@ -421,8 +416,9 @@
                 msg = @"Error setting measurement rate.\nTimeout.";
                 
                 NSLog(@"%@",msg);
-                [self->delegate returnPluginResponse:@{@"type":@"alert",@"message":msg}];
+                [self->delegate returnPluginResponse:@{@"type":@"alert",@"message":msg} keepOpen:YES];
                 self.state = ready;
+                [self->delegate processComplete:@"connected"];
             } else if (self.state == darkReferenceInProgress) {
                 // update then hide the progress bar.
                 self->delegate.progress = 1.0;
