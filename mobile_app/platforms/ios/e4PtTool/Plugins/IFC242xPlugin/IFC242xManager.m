@@ -36,6 +36,13 @@
         //[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(appMovedToBackground:) name:UIApplicationDidEnterBackgroundNotification object:nil];
         //[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(appMovedToForeground:) name:UIApplicationWillEnterForegroundNotification object:nil];
     }
+    
+    dispatch_async(dispatch_get_main_queue(), ^{
+        UIApplication* app = [UIApplication sharedApplication];
+        if (![app isIdleTimerDisabled]) {
+            [app setIdleTimerDisabled:YES];
+        }
+    });
     return self;
 }
 
