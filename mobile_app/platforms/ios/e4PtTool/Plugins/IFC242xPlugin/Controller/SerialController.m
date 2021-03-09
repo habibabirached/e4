@@ -357,30 +357,24 @@
             else if (self->nextIFCValue == IFCDisplacement) {
                 dval = [self readNextValueFromBuffer:endPtr];
                 // Error checking
-                NSString* error_msg = @"";
                 if (dval > 262072) {
-                    error_msg = @"Error ";
+                    NSString* error_msg = @"Error unknown type";
                     if (dval == 262073) {
-                        error_msg = [error_msg stringByAppendingString:@"RS422 interface underflow"];
+                        error_msg = @"Error RS422 interface underflow";
+                    } else if (dval == 262074) {
+                        error_msg = @"Error RS422 interface overflow";
+                    } else if (dval == 262075) {
+                        error_msg = @"Error Too much data for baud rate";
+                    } else if (dval == 262076) {
+                        error_msg = @"Error No peak present";
+                    } else if (dval == 262077) {
+                        error_msg = @"Error Peak in front of measuring range";
+                    } else if (dval == 262078) {
+                        error_msg = @"Error Peak is behind measuring range";
+                    } else if (dval == 262079) {
+                        error_msg = @"Error Measuring value cannot be calculated";
                     }
-                    if (dval == 262074) {
-                        error_msg = [error_msg stringByAppendingString:@"RS422 interface overflow"];
-                    }
-                    if (dval == 262075) {
-                        error_msg = [error_msg stringByAppendingString:@"Too much data for baud rate"];
-                    }
-                    if (dval == 262076) {
-                        error_msg = [error_msg stringByAppendingString:@"No peak present"];
-                    }
-                    if (dval == 262077) {
-                        error_msg = [error_msg stringByAppendingString:@"Peak in front of measuring range"];
-                    }
-                    if (dval == 262078) {
-                        error_msg = [error_msg stringByAppendingString:@"Peak is behind measuring range"];
-                    }
-                    if (dval == 262079) {
-                        error_msg = [error_msg stringByAppendingString:@"Measuring value cannot be calculated"];
-                    }
+                    NSLog(@"%@", error_msg);
                     displacement = self.settings.outOfRange;
                 }
                 else {
@@ -475,9 +469,6 @@
         // We need to do any required processing/filtering, save to file,
         // then bundle it up and send it back through to the javascript.
         [self->delegate returnPluginResponse:@{@"type":@"status",@"status":@"processing"} keepOpen:YES];
-#ifdef SIMULATED_DATA
-        [self loadCSVFile:@""];
-#endif
         NSLog(@"Compute clearance and return data...");
         [self processResponse:@"->"];
     }

@@ -345,13 +345,7 @@
         return; // Don't do anything with incoming data while mastering.
     }
     
-    uint32_t order_number;
-    uint32_t serial_number;
-    uint32_t video_length;
-    uint32_t len_meas_dat;
-    uint32_t num_frames;
-    uint32_t counter;
-    uint32_t timestamp;
+    uint32_t order_number, serial_number, video_length, len_meas_dat, num_frames, counter, timestamp;
     uint8_t tmpBuf[4];
     while (self->set_count < self->num_sets) {
         [self->inputDataStream read:tmpBuf maxLength:4];
@@ -374,24 +368,20 @@
                 // Read data from which to extract distance.
                 uint32_t dVal = [self readValueFromStream:tmpBuf];
                 float displacement = 0.0;
-                NSString* error_msg = @"";
                 if (dVal > 2147483392) {
-                    error_msg = @"Error ";
+                    NSString* error_msg = @"Error unknown type";
                     if (dVal == 2147483396) {
-                        error_msg = [error_msg stringByAppendingString:@"No Peak"];
+                        error_msg = @"Error No Peak";
+                    } else if (dVal == 2147483397) {
+                        error_msg = @"Error Peak in front of MR";
+                    } else if (dVal == 2147483398) {
+                        error_msg = @"Error Peak in back of MR";
+                    } else if (dVal == 2147483399) {
+                        error_msg = @"Error Measurement cannot be calculated";
+                    } else if (dVal == 2147483400) {
+                        error_msg = @"Error Measurement is outside representable area";
                     }
-                    if (dVal == 2147483397) {
-                        error_msg = [error_msg stringByAppendingString:@"Peak in front of MR"];
-                    }
-                    if (dVal == 2147483398) {
-                        error_msg = [error_msg stringByAppendingString:@"Peak in back of MR"];
-                    }
-                    if (dVal == 2147483399) {
-                        error_msg = [error_msg stringByAppendingString:@"Measurement cannot be calculated"];
-                    }
-                    if (dVal == 2147483400) {
-                        error_msg = [error_msg stringByAppendingString:@"Measurement is outside representable area"];
-                    }
+                    NSLog(@"%@", error_msg);
                     displacement = self.settings.outOfRange;
                 }
                 else {
@@ -437,7 +427,7 @@
     [self->delegate returnPluginResponse:@{@"type":@"status",@"status":@"processing"} keepOpen:YES];
     
     if (self.state != halted) {
-        if (self.state != clearanceComputationInProgress)
+        if (self.state != clearanceComputationInProgress && self.state != ready)
             self.state = halted;
         [self processResponse:@"->"];
     }
