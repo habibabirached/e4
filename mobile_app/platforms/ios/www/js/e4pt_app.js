@@ -105,6 +105,14 @@ define(function(require, exports, module) {
     $(document).ready(function(){
         var attachFastClick = Origami.fastclick;
         attachFastClick(document.body);
+        
+        if (window.plugins != null) {
+            messaging.setupPlugin(pluginMessage);
+        } else {
+            createWebSocket();
+        }
+        messaging.sendMessage({args:['ping']});
+        
         document.getElementById("MAIN_MENU").addEventListener('click', function(){
             $("#TITLE_BAR").text("e-4Pt Tool");
             toggle_menu();
@@ -239,7 +247,13 @@ define(function(require, exports, module) {
         listDir(cordova.file.documentsDirectory + E4PTdata.serial_number);
         }, {passive: true});
         document.getElementById("STAGE_COLLECT_BUTTON").addEventListener('click', function(){
-        confirm_collect_stage_data();
+            if (document.getElementById("STAGE_COLLECT_BUTTON").innerHTML === 'GO!')
+                confirm_collect_stage_data();
+            else {
+                messaging.sendMessage({args:['abort']});
+                displayGoButton();
+                $("#REV_PROGRESS_BAR").hide();
+            }
         }, {passive: true});
         document.getElementById("COLLECTION_RESET_BUTTON").addEventListener('click', function(){
             confirm_reset_data_collection();
@@ -258,17 +272,8 @@ define(function(require, exports, module) {
         document.getElementById("CURR_CASE_THICKNESS").addEventListener('change', function(){
             update_spacer_value();
         }, {passive: true});
-        document.getElementById("MODE_BUTTON_PROD").addEventListener('click', function(){
-            set_demo_mode(true);
-        }, {passive: true});
-        document.getElementById("MODE_BUTTON_DEMO").addEventListener('click', function(){
-            set_demo_mode(false);
-        }, {passive: true});
-        document.getElementById("CONN_BUTTON_ETHERNET").addEventListener('click', function(){
-            set_connection_mode("ethernet");
-        }, {passive: true});
-        document.getElementById("CONN_BUTTON_SERIAL").addEventListener('click', function(){
-            set_connection_mode("serial");
+        document.getElementById("CONN_SELECTION").addEventListener('change', function(){
+            set_connection_mode();
         }, {passive: true});
         document.getElementById("SETUP_CLOSE_BUTTON").addEventListener('click', function(){
             $("#FRD_PAGE").fadeOut();
@@ -344,18 +349,11 @@ define(function(require, exports, module) {
         }, {passive: true});
         setupAccordian();
         
-        if (window.plugins != null) {
-            messaging.setupPlugin(pluginMessage);
-        } else {
-            createWebSocket();
-        }
-        messaging.sendMessage({"args":["get_version"]});
-        
         // Wait (0.5s) for the page load to complete, then get the file system.
         setTimeout(function(){
-                   window.requestFileSystem  = window.requestFileSystem || window.webkitRequestFileSystem;
-                   window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, gotFS, fsFail);
-                   }, 900);
+            window.requestFileSystem  = window.requestFileSystem || window.webkitRequestFileSystem;
+            window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, gotFS, fsFail);
+        }, 900);
     });
 
     function fadeOutAll() {
@@ -606,16 +604,10 @@ define(function(require, exports, module) {
             $('#LEFT_MENU').animate({"margin-left": '-=50vmin'});
         }
         else{
-            if (window.plugins != null) {
-                if (!serialConnected) {
-                    e4PtAlert("Connecting...\nPlease wait for indicator to turn green before proceeding.\n(~2s)");
-                }
-                messaging.setupPlugin(pluginMessage);
-                messaging.sendMessage({"args":["get_version"]});
+            if (!serialConnected) {
+                e4PtAlert('Connecting...\nPlease wait for indicator to turn green before proceeding.');
             }
-            else {
-                createWebSocket();
-            }
+            messaging.sendMessage({args:['get_version']});
 
             $('#LEFT_MENU').animate({"margin-left": '+=50vmin'});
         }
@@ -642,26 +634,11 @@ define(function(require, exports, module) {
         messaging.sendMessage({args:['get_sensor_parameters']});
     }
 
-    function set_demo_mode(tf) {
-        document.getElementById('MODE_BUTTON_PROD').style.display = tf ? 'none' : 'block';
-        document.getElementById('MODE_BUTTON_DEMO').style.display = tf ? 'block' : 'none';
-        $('#CUR_MODE').text('Current Mode: ' + (tf ? 'Demo' : 'Production'));
-        $('#CONNECTION_NAME').text((tf ? 'DEMO' : $('#CUR_CONN').text().substring(20)));
+    function set_connection_mode() {
+        var mode = document.getElementById('CONN_SELECTION').value;
+        $('#CONNECTION_NAME').text(mode.toUpperCase());
         
-        setIndicatorColor(tf ? 'green' : 'white');
-        serialConnected = tf;
-        
-        messaging.sendMessage({args:['set_demo_mode',tf.toString()]});
-    }
-
-    function set_connection_mode(mode) {
-        var upperMode = mode.toUpperCase();
-        var otherMode = upperMode === 'ETHERNET' ? 'SERIAL' : 'ETHERNET';
-        document.getElementById('CONN_BUTTON_' + upperMode).style.display = 'none'; //hide
-        document.getElementById('CONN_BUTTON_' + otherMode).style.display = 'block';
-        $('#CUR_CONN').text('Current Connection: ' + upperMode);
-        if ($('#CONNECTION_NAME').text() !== 'DEMO') $('#CONNECTION_NAME').text(upperMode);
-        
+        pluginMessage({type:'status',status:'disconnected',noAlert:true});
         messaging.sendMessage({args:['set_connection_mode',mode]});
     }
 
@@ -957,6 +934,20 @@ define(function(require, exports, module) {
         } else {
             messaging.sendMessage({args:[cmd,input_f]});
         }
+    }
+    
+    function displayGoButton() {
+        setButtonProperties(document.getElementById('STAGE_COLLECT_BUTTON'), 'GO!', 'white', 'var(--TRACC-black)');
+    }
+    
+    function displayAbortButton() {
+        setButtonProperties(document.getElementById('STAGE_COLLECT_BUTTON'), 'ABORT!', 'black', 'var(--TRACC-red)');
+    }
+    
+    function setButtonProperties(button, text, textColor, buttonColor) {
+        button.innerHTML = text;
+        button.style.background = buttonColor;
+        button.style.color = textColor;
     }
 
     function confirm_collect_stage_data() {
@@ -1609,6 +1600,7 @@ define(function(require, exports, module) {
           console.log("e4PtSocket Message Received: " + msg.type);
           switch(msg.type) {
           case "data":
+            displayGoButton();
             console.log("Received Data Message");
             setIndicatorColor("green");
             //console.log(msg);
@@ -1619,9 +1611,11 @@ define(function(require, exports, module) {
             console.log(msg);
             if (msg.status == "acquiring") {
                 setIndicatorColor("red");
+                displayAbortButton();
             }
             if (msg.status == "processing") {
                 setIndicatorColor("blue");
+                displayGoButton();
             }
             if (msg.status == "done_mastering") {
               done_mastering();
@@ -1678,13 +1672,14 @@ define(function(require, exports, module) {
                     document.getElementById("STATUS_DISPLAY").innerHTML = "Connected"
                     serialConnected = true;
                 }
-                if (msg.status == "disconnected") {
-                    setIndicatorColor("white");
-                    document.getElementById("STATUS_DISPLAY").innerHTML = "Disconnected"
+                if (msg.status == 'disconnected') {
+                    setIndicatorColor('white');
+                    document.getElementById('STATUS_DISPLAY').innerHTML = 'Disconnected'
                     serialConnected = false;
-                    e4PtAlert("Controller was disconnected.\nToggle side menu to reconnect.");
+                    if (!msg.noAlert) e4PtAlert('Controller was disconnected.');
                 }
                 if (msg.status == "acquiring") {
+                    displayAbortButton();
                     setIndicatorColor("red");
                     $("#REV_PROGRESS").html('&nbsp' + '0%');
                     $("#REV_PROGRESS").css('width', '0%');
@@ -1693,6 +1688,7 @@ define(function(require, exports, module) {
                 }
                 if (msg.status == "processing") {
                     setIndicatorColor("blue");
+                    displayGoButton();
                 }
                 if (msg.status == "done_mastering") {
                     done_mastering();
@@ -1711,6 +1707,7 @@ define(function(require, exports, module) {
                 }
                 break;
             case "data":
+                displayGoButton();
                 console.log("Received Data Message");
                 setIndicatorColor("green");
                 $("#REV_PROGRESS_BAR").hide();
@@ -2212,15 +2209,11 @@ define(function(require, exports, module) {
     }
 
     function setMasterMessage( txtColor, bgColor, txt ) {
-        document.getElementById("master_message").style.color = txtColor;
-        document.getElementById("master_message").style.background = bgColor;
-        document.getElementById("master_message").innerHTML = txt;
+        setButtonProperties(document.getElementById('master_message'), txt, txtColor, bgColor);
     }
 
     function setMasterMessage2( txtColor, bgColor, txt ) {
-        document.getElementById("master_message_2").style.color = txtColor;
-        document.getElementById("master_message_2").style.background = bgColor;
-        document.getElementById("master_message_2").innerHTML = txt;
+        setButtonProperties(document.getElementById('master_message_2'), txt, txtColor, bgColor);
     }
 
     function processE4PtData(msg) {
@@ -2288,9 +2281,9 @@ define(function(require, exports, module) {
         }
         charting.clearChartData(document.getElementById('DATA_PLOT2'));
         if (messaging.usesWebSocket()) {
-            setIndicatorColor("yellow");
+            setIndicatorColor('yellow');
         }
-        messaging.sendMessage({"args":["send_data",acquisitionTime, frame, sn, stage, position, casing_thickness, spacer_thickness, num_blades, tip_diameter, blade_width, master_offset, clearance_calc_selection]});
+        messaging.sendMessage({args:['send_data',acquisitionTime, frame, sn, stage, position, casing_thickness, spacer_thickness, num_blades, tip_diameter, blade_width, master_offset, clearance_calc_selection]});
     }
 
     // get_stage_details find the specific information for this stage, given the frame, position,

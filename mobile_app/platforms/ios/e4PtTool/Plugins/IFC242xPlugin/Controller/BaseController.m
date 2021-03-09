@@ -14,7 +14,6 @@
 
 @implementation BaseController {
     NSTimeInterval startTime;
-    NSTimer* dataCollectionWaiting;
     NSRegularExpression *mrRegex;
 }
 
@@ -136,27 +135,7 @@
     [self->telnetCmds addObject:@"OUTPUT NONE\n"]; // turns off output.
     [self->telnetCmds addObject:@"GETINFO\n"];
     
-    // Create and start the comm thread.  We'll use this thread to manage the rscMgr so
-    // we don't tie up the UI thread.
-    self->networkQueue = dispatch_queue_create("global_network_queue", DISPATCH_QUEUE_SERIAL); // Not DISPATCH_QUEUE_CONCURRENT
-    dispatch_async(self->networkQueue, ^{
-        [self startCommThread];
-    });
-    
     [self sendTelnetCommand];
-}
-
-// start the communication thread
-- (void) startCommThread {
-    NSLog(@"@startCommThread");
-    
-    // run the run loop
-    if (self->networkRunLoop == nil) {
-        NSLog(@"Setting up network runloop");
-        self->networkRunLoop = [NSRunLoop currentRunLoop];
-        [self->networkRunLoop run];
-    }
-    //[[NSRunLoop currentRunLoop] run];
 }
 
 - (void)masterDevice:(NSString*)masteringValue {
@@ -184,12 +163,12 @@
     [self sendTelnetCommand];
 }
 
-//TODO handle unknown controller model
+//TODO: handle unknown controller model
 - (void)doDarkReference {
     if (![self checkReady]) return;
     NSLog(@"@doDarkReference");
     self.state = darkReferenceInProgress;
-    [self->delegate returnPluginResponse:@{@"type":@"status",@"status":@"acquiring"} keepOpen:YES];
+    [self->delegate returnPluginResponse:@{@"type":@"status",@"status":@"waiting"} keepOpen:YES];
     
     float processTime = 24.0; // Dark correction takes ~22s per channel on the IFC2422.
     if ([self->controllerType containsString:@"IFC2422"]) {
@@ -200,20 +179,19 @@
         [self->telnetCmds addObject:@"DARKCORR\n"];
     } else {
         self.state = ready;
-        [self->delegate returnPluginResponse:@{@"type":@"status",@"status":@"complete"} keepOpen:YES];
-        [self->delegate returnPluginResponse:@{@"type":@"alert",@"message":@"Unable to perform dark reference"} keepOpen:YES];
+        [self->delegate returnPluginResponse:@{@"type":@"status",@"status":@"connected"} keepOpen:YES];
+        [self->delegate returnPluginResponse:@{@"type":@"alert",@"message":@"Unable to perform dark reference"}];
         return; // Shouldn't get here.
     }
     // This timer just updates progress information every second assuming each channel takes ~22s.
     // After the dark correction, it collects 3 seconds of data.
+    self.settings.acquisitionTime = 3.0;
     self->delegate.progress = 0.0;
     [self recordStartTime]; // start time timestamp in whole seconds.
     dispatch_async(dispatch_get_main_queue(), ^{
         NSDictionary* info = [[NSDictionary alloc] initWithObjectsAndKeys:
                               [NSNumber numberWithFloat:processTime], @"timeout",
-                              @"doDataCollection", @"nextProcess",
-                              @"3.0", @"acqTime",
-                              nil];
+                              @"doDataCollection", @"nextProcess", nil];
         [NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(timeoutWaitTimer:) userInfo:info repeats:YES];
     });
     [self->delegate startProgressReporting];
@@ -221,19 +199,30 @@
 }
 
 - (void)setMeasurementRate:(float)rate {
-    [self setMeasurementRate:rate sendImmediately:YES];
+    [self setMeasurementRate:rate sendImmediately:YES reportStatus:YES];
 }
 
 - (void)setMeasurementRate:(float)rate sendImmediately:(bool)send {
+    [self setMeasurementRate:rate sendImmediately:send reportStatus:YES];
+}
+
+- (void)setMeasurementRate:(float)rate reportStatus:(bool)report {
+    [self setMeasurementRate:rate sendImmediately:YES reportStatus:report];
+}
+
+- (void)setMeasurementRate:(float)rate sendImmediately:(bool)send reportStatus:(bool)report {
     if (![self checkReady]) return;
     self.state = setMeasurementRateInProgress;
     self.settings.measurementRate = rate;
     [self->telnetCmds addObject:[NSString stringWithFormat:@"MEASRATE %.3f\n", self.settings.measurementRate]];
     if (send) [self sendTelnetCommand];
     
+    [self recordStartTime];
     dispatch_async(dispatch_get_main_queue(), ^{
-        NSDictionary* info = [[NSDictionary alloc] initWithObjectsAndKeys:
+        NSMutableDictionary* info = [NSMutableDictionary dictionaryWithObjectsAndKeys:
                               [NSNumber numberWithFloat:5.0], @"timeout", nil];
+        if (report)
+            [info setValue:@"processComplete" forKey:@"nextProcess"];
         [NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(timeoutWaitTimer:) userInfo:info repeats:YES];
     });
 }
@@ -253,8 +242,8 @@
         [self->telnetCmds addObject:[NSString stringWithFormat:@"MIN_THRESHOLD %.3f\n", self.settings.intensityThreshold]];
     } else {
         self.state = ready;
-        [self->delegate returnPluginResponse:@{@"type":@"status",@"status":@"complete"} keepOpen:YES];
-        [self->delegate returnPluginResponse:@{@"type":@"alert",@"message":@"Unable to set intensity threshold"} keepOpen:YES];
+        [self->delegate returnPluginResponse:@{@"type":@"status",@"status":@"connected"} keepOpen:YES];
+        [self->delegate returnPluginResponse:@{@"type":@"alert",@"message":@"Unable to set intensity threshold"}];
         return; // Shouldn't get here.
     }
     if (send) [self sendTelnetCommand];
@@ -262,7 +251,7 @@
 
 - (bool)checkReady {
     if (self.state != ready) {
-        [self->delegate returnPluginResponse:@{@"type":@"status",@"status":@"Error: Device not ready. Please wait."} keepOpen:YES];
+        [self->delegate returnPluginResponse:@{@"type":@"status",@"status":@"Error: Device not ready. Please wait."}];
     }
     return self.state == ready;
 }
@@ -287,10 +276,6 @@
         self->delegate.progress = 1.0;
         self->set_count = 0;
         
-        if ([self->dataCollectionWaiting isValid]) {
-            [self->dataCollectionWaiting invalidate];
-        }
-        
         [self disconnectData];
         [self processResponse:@"->"];
     }
@@ -299,17 +284,15 @@
 - (void)queueDataCollection:(float)timeoutSecondsForPrep {
     [self recordStartTime]; // start timeout timer
     
-    // The timeoutWaitTimer callback will start data acquisition after the measurement
-    // rate is set.  If the timeout expires, the user just gets an error message.
     dispatch_async(dispatch_get_main_queue(), ^{
         NSDictionary* info = [[NSDictionary alloc] initWithObjectsAndKeys:
                               [NSNumber numberWithFloat:7.0], @"timeout",
                               @"doDataCollection", @"nextProcess", nil];
-        self->dataCollectionWaiting = [ NSTimer scheduledTimerWithTimeInterval:timeoutSecondsForPrep
-                                                                        target:self
-                                                                      selector:@selector(timeoutWaitTimer:)
-                                                                      userInfo:info
-                                                                       repeats:YES];
+        [NSTimer scheduledTimerWithTimeInterval:timeoutSecondsForPrep
+                                         target:self
+                                       selector:@selector(timeoutWaitTimer:)
+                                       userInfo:info
+                                        repeats:YES];
     });
 }
 
@@ -367,6 +350,12 @@
         self->telnetIsReady = YES;
         switch (self.state) {
                 
+            case ready:
+            case collectingDataInProgress:
+            case notReady:
+            case timeOut:
+                break;
+                
             case masteringInProgress:
                 if (self->telnetCmds.count == 0) {
                     NSLog(@"Mastering Complete.");
@@ -376,10 +365,8 @@
                 break;
                 
             case darkReferenceInProgress:
-                if (self->telnetCmds.count == 0) {
+                if (self->telnetCmds.count == 0)
                     NSLog(@"Dark Correction Complete.");
-                    [self->delegate processComplete:@"connected"];
-                }
                 break;
                 
             case initializationInProgress:
@@ -392,8 +379,6 @@
                 [self->delegate processComplete:@"connected"];
             
             default:
-                //TODO: incorrect to transition to ready on "any other" condition
-                //TODO: transition to ready only on specific set of conditions
                 self.state = ready;
                 break;
         }
@@ -412,11 +397,13 @@
             if ([nextProc containsString:@"doDataCollection"]) {
                 NSLog(@"No timeout. Do data collection");
                 [self doDataCollection];
+            } else if ([nextProc containsString:@"processComplete"]) {
+                [self->delegate processComplete:@"connected"];
             }
         } else if (self.state == darkReferenceInProgress) {
             // update the progress bar.
             self->delegate.progress = dT / [timeout doubleValue];
-        } else {
+        } else if (self.state == setMeasurementRateInProgress) {
             // otherwise, keep waiting...
             [self->delegate returnPluginResponse:@{@"type":@"status",@"status":@"waiting"} keepOpen:YES];
         }
@@ -429,8 +416,9 @@
                 msg = @"Error setting measurement rate.\nTimeout.";
                 
                 NSLog(@"%@",msg);
-                [self->delegate returnPluginResponse:@{@"type":@"alert",@"message":msg} keepOpen:NO];
+                [self->delegate returnPluginResponse:@{@"type":@"alert",@"message":msg} keepOpen:YES];
                 self.state = ready;
+                [self->delegate processComplete:@"connected"];
             } else if (self.state == darkReferenceInProgress) {
                 // update then hide the progress bar.
                 self->delegate.progress = 1.0;
@@ -440,6 +428,8 @@
                     [self doDataCollection];
                 }
             }
+        } else if ([nextProc containsString:@"processComplete"]) {
+            [self->delegate processComplete:@"connected"];
         }
 
         [timer invalidate];

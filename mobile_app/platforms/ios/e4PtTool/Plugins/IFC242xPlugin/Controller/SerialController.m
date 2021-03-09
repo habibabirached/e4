@@ -7,7 +7,6 @@
 //
 
 #import "SerialController.h"
-#import "redparkSerial.h"
 
 @interface SerialController ()
 @property (nonatomic) enum CONTROLLER_STATE state;
@@ -15,25 +14,52 @@
 
 @implementation SerialController {
     BOOL dataStreamIsSynchronized;
-    NSThread* commThread;   // thread for communications tasks
     RscMgr* rscMgr;         // Redpark serial communications
     uint8_t* byteBuffer, *writePtr, *readPtr;
     uint32_t* val1Ptr;
     DataSizeType dataSizeType;
     ParityType parityType;
     StopBitsType stopBitsType;
-    int baudRate, dataBits, parity, stopBits, rts, cts, leftoverBytes;
+    int baudRate, rts, cts, leftoverBytes;
     NSTimeInterval testTime;
+    NSRunLoop* networkRunLoop;
 }
 
 @dynamic state;
 
 - (void) cableConnected:(NSString *)protocol{
     NSLog(@"SerialController:cableConnected:%@",protocol);
+    
+    if (self->byteBuffer == nil) {
+        self->byteBuffer = (uint8_t *) malloc(BYTE_BUFFER_SIZE);
+        self->readPtr = self->byteBuffer;
+        self->writePtr = self->byteBuffer;
+        self->val1Ptr = (uint32_t*)self->readPtr;
+    }
+    
+    [self->rscMgr setBaud:self->baudRate];
+    [self->rscMgr setDataSize:self->dataSizeType];
+    [self->rscMgr setParity:self->parityType];
+    [self->rscMgr setStopBits:self->stopBitsType];
+    
+    serialPortConfig portConfig;
+    [self->rscMgr getPortConfig:&portConfig];
+    portConfig.txAckSetting = 1;
+    portConfig.rxFlowControl = self->rts;
+    portConfig.txFlowControl = self->cts;
+    portConfig.rxForwardCount = RX_FORWARD_COUNT;
+    portConfig.rxForwardingTimeout = 50; // default = 100;
+    [self->rscMgr setPortConfig:&portConfig requestStatus:NO];
 }
-- (void) cableDisconnected{
+
+//TODO: disconnectdevice, and cableConnected may need to run initialize
+- (void) cableDisconnected {
     NSLog(@"SerialController:cableDisconnected");
+    self.state = notReady;
+    self->rscMgr = nil;
+    [self->delegate dispatchMessage:@{@"type":@"status",@"status":@"disconnected"}];
 }
+
 - (void) portStatusChanged{
     NSLog(@"SerialController:portStatusChanged");
 }
@@ -60,14 +86,30 @@
 #endif
 }
 
-
 - (void)initialize {
+    self->baudRate = 460800; // Slower cables only do 115200
+    //TODO: shouldn't need the following initializations as they are the default values
+    self->dataSizeType = kDataSize8;
+    self->parityType = kParityNone;
+    self->stopBitsType = kStopBits1;
+    self->rts = RXFLOW_NONE;
+    self->cts = TXFLOW_NONE;
+    
+    [self startCommThread];
     [super initialize];
-    [self clearByteBuffer];
 }
 
 - (void)selectOppositeOutput {
     [self->telnetCmds addObject:@"OUTPUT RS422\n"];
+}
+
+- (void)disconnectDevice {
+    [super disconnectDevice];
+    [self->rscMgr setDelegate:nil];
+    if (self->networkRunLoop)
+        CFRunLoopStop([self->networkRunLoop getCFRunLoop]);
+    self->networkRunLoop = nil;
+    self->rscMgr = nil;
 }
 
 - (void)disconnectData {
@@ -110,50 +152,34 @@
 - (void)setupSerialCable {
     NSLog(@"@setupSerialCable");
     
-    if (self->byteBuffer == nil) {
-        self->byteBuffer = (uint8_t *) malloc(BYTE_BUFFER_SIZE);
-        self->readPtr = self->byteBuffer;
-        self->writePtr = self->byteBuffer;
-        self->val1Ptr = (uint32_t*)self->readPtr;
-    }
+    //if (self->byteBuffer == nil) {
+    //    self->byteBuffer = (uint8_t *) malloc(BYTE_BUFFER_SIZE);
+    //    self->readPtr = self->byteBuffer;
+    //    self->writePtr = self->byteBuffer;
+    //    self->val1Ptr = (uint32_t*)self->readPtr;
+    //}
     
     //[self->rscMgr enableExternalLogging:true];
     //[self->rscMgr enableTxRxExternalLogging:true];
-    
-    self->dataSizeType = SERIAL_DATABITS_8;
-    self->parityType = SERIAL_PARITY_NONE;
-    self->stopBitsType = STOPBITS_1;
-    self->rts = RXFLOW_NONE;
-    self->cts = RXFLOW_NONE;
-
-    self->baudRate = 460800; // Slower cables only do 115200
-    
-    // set baud rate, data bits, parity, and stop bits
-    [self->rscMgr setBaud:self->baudRate];
-    [self->rscMgr setDataSize:self->dataSizeType];
-    [self->rscMgr setParity:self->parityType];
-    [self->rscMgr setStopBits:self->stopBitsType];
-
-    serialPortConfig portCfg;
-    [self->rscMgr getPortConfig:&portCfg];
-    portCfg.txAckSetting = 1;
-    portCfg.rxFlowControl = self->rts;    // set flow control
-    portCfg.txFlowControl = self->cts;
-    portCfg.rxForwardCount = RX_FORWARD_COUNT;
-    portCfg.rxForwardingTimeout = 50; // default = 100;
-    [self->rscMgr setPortConfig:&portCfg requestStatus: NO];
+    //TODO: do we need this?
+    //[self cableConnected:@" not from red park "];
 }
 
 // start the communication thread
 - (void) startCommThread {
-    // initialize RscMgr on this thread
-    // so it schedules delegate callbacks for this thread
-    if (self->rscMgr == nil) {
-        self->rscMgr = [[RscMgr alloc] init];
-        [self->rscMgr setDelegate:self];
-    }
-    [self setupSerialCable];
-    [super startCommThread];
+    // Create and start the comm thread.  We'll use this thread so we don't tie up the UI thread.
+    dispatch_async(dispatch_queue_create([[NSString stringWithFormat:@"com.ge.ent.e4PtTool.%@.network_comms_queue", NSStringFromClass([self class])] UTF8String], DISPATCH_QUEUE_SERIAL), ^{
+        // initialize RscMgr on this thread
+        // so it schedules delegate callbacks for this thread
+        if (self->rscMgr == nil) {
+            self->rscMgr = [[RscMgr alloc] init];
+            [self->rscMgr setDelegate:self];
+        }
+        //[self setupSerialCable];
+        // run the run loop
+        self->networkRunLoop = [NSRunLoop currentRunLoop];
+        [self->networkRunLoop run];
+    });
 }
 
 - (void)resetSerialParams {
@@ -331,30 +357,24 @@
             else if (self->nextIFCValue == IFCDisplacement) {
                 dval = [self readNextValueFromBuffer:endPtr];
                 // Error checking
-                NSString* error_msg = @"";
                 if (dval > 262072) {
-                    error_msg = @"Error ";
+                    NSString* error_msg = @"Error unknown type";
                     if (dval == 262073) {
-                        error_msg = [error_msg stringByAppendingString:@"RS422 interface underflow"];
+                        error_msg = @"Error RS422 interface underflow";
+                    } else if (dval == 262074) {
+                        error_msg = @"Error RS422 interface overflow";
+                    } else if (dval == 262075) {
+                        error_msg = @"Error Too much data for baud rate";
+                    } else if (dval == 262076) {
+                        error_msg = @"Error No peak present";
+                    } else if (dval == 262077) {
+                        error_msg = @"Error Peak in front of measuring range";
+                    } else if (dval == 262078) {
+                        error_msg = @"Error Peak is behind measuring range";
+                    } else if (dval == 262079) {
+                        error_msg = @"Error Measuring value cannot be calculated";
                     }
-                    if (dval == 262074) {
-                        error_msg = [error_msg stringByAppendingString:@"RS422 interface overflow"];
-                    }
-                    if (dval == 262075) {
-                        error_msg = [error_msg stringByAppendingString:@"Too much data for baud rate"];
-                    }
-                    if (dval == 262076) {
-                        error_msg = [error_msg stringByAppendingString:@"No peak present"];
-                    }
-                    if (dval == 262077) {
-                        error_msg = [error_msg stringByAppendingString:@"Peak in front of measuring range"];
-                    }
-                    if (dval == 262078) {
-                        error_msg = [error_msg stringByAppendingString:@"Peak is behind measuring range"];
-                    }
-                    if (dval == 262079) {
-                        error_msg = [error_msg stringByAppendingString:@"Measuring value cannot be calculated"];
-                    }
+                    NSLog(@"%@", error_msg);
                     displacement = self.settings.outOfRange;
                 }
                 else {
@@ -449,9 +469,6 @@
         // We need to do any required processing/filtering, save to file,
         // then bundle it up and send it back through to the javascript.
         [self->delegate returnPluginResponse:@{@"type":@"status",@"status":@"processing"} keepOpen:YES];
-#ifdef SIMULATED_DATA
-        [self loadCSVFile:@""];
-#endif
         NSLog(@"Compute clearance and return data...");
         [self processResponse:@"->"];
     }

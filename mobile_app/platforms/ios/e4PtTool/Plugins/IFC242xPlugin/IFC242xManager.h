@@ -16,6 +16,7 @@
 - (void)dispatchMessage:(NSDictionary*)messagesDictionary;
 - (void)messageHandler:(NSDictionary*)message callbackId:(NSString*)callbackId;
 - (void)processComplete:(NSString*)statusMsg;
+- (void)returnPluginResponse:(NSDictionary*)jsonMessage;
 - (void)returnPluginResponse:(NSDictionary*)jsonMessage keepOpen:(BOOL)keepOpen;
 - (void)startProgressReporting;
 @end

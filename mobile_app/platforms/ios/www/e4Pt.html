@@ -403,34 +403,22 @@
             <button class="ACCORDION">SENSOR CONNECTION</button>
             <div class="PANEL">
                 <br/>
-                <h4> <p id="CUR_CONN">Current Connection: SERIAL</p> </h4>
-                <br/>
-                <a id="CONN_BUTTON_ETHERNET" class="OVERLAY_BUTTON BUTTON" href="#" style="display: block; margin:auto;">Switch to ETHERNET connection.</a>
-                <a id="CONN_BUTTON_SERIAL" class="OVERLAY_BUTTON BUTTON" href="#" style="display: none; margin:auto;">Switch to SERIAL connection.</a>
-                <br/>
-                <div>
-                    <UL>
-                        <LI> Select “Switch to SERIAL connection” to use serial cable.</LI>
-                        <LI> Select “Switch to ETHERNET connection” to use ethernet cable.</LI>
-                    </UL>
-                </div>
-                    <br/><br/>
-            </div>
-            <button class="ACCORDION">SWITCH MODE</button>
-            <div class="PANEL">
-                <br/>
-                <h4> <p id="CUR_MODE">Current Mode: PRODUCTION</p> </h4>
-                <br/>
-                <a id="MODE_BUTTON_PROD" class="OVERLAY_BUTTON BUTTON" href="#" style="display: block; margin:auto;">Switch to DEMO mode</a>
-                <a id="MODE_BUTTON_DEMO" class="OVERLAY_BUTTON BUTTON" href="#" style="display: none; margin:auto;">Switch to PRODUCTION mode</a>
+                <h4> Current Connection:
+                    <select id="CONN_SELECTION" style="font-size:2vmax;">
+                        <option value="serial">SERIAL cable</option>
+                        <option value="ethernet">ETHERNET</option>
+                        <option value="demo">DEMO</option>
+                    </select>
+                </h4>
                 <br/>
                 <div>
                     <UL>
-                        <LI> Select “Switch to DEMO mode” to use pre-recorded data.</LI>
-                        <LI> Select “Switch to PRODUCTION mode” for use with an active sensor.</LI>
+                        <LI> Select “SERIAL cable” to use serial cable.</LI>
+                        <LI> Select “ETHERNET” to communicate over ethernet.</LI>
+                        <LI> Select “DEMO” to use pre-recorded data.</LI>
                     </UL>
                 </div>
-                    <br/><br/>
+                <br/><br/>
             </div>
         </div>
         <!-- --------------- FRAME SELECT PAGE ---------------------  -->
@@ -706,9 +694,7 @@ r                        </tbody>
             <button class="ACCORDION">MEASUREMENT RATE</button>
             <div class="PANEL SELECTED_ROW">
                 <H2><U>Set Sensor Measurement Rate</U></H2><br/>
-                <p>The sampling rate may be set in kHz between 0.100 and 6.500. A maximum of 3 decimal places may be specified.</p>
-                <br/>
-                <H2>Measurement Rate</H2>
+                <p>The app will automatically the measurement (sampling) rate, and it is set in kHz between 0.100 and 6.500. A maximum of 3 decimal places may be specified.</p><br/>
                 <div class="ROW W100 FONT_CENTER">
                   <input class="BORDER_BLACK_1 TXTFIELD FONT_CENTER" type="text" id="MEASUREMENT_RATE_1" value=""/>
                   <span class="SCAN_INFO_TEXT_C">kHz</span>
@@ -716,14 +702,15 @@ r                        </tbody>
                 <br/>
                 <div id="SET_MEASUREMENT_RATE_BUTTON" class="BUTTON W40 OVERLAY_BUTTON" style="margin:0 auto;">SET MEASUREMENT RATE</div>
                 <br/>
+                <p><b>Note:</b> increasing measurement rate is needed with higher rpm to ensure enough data points per blade tip, however increased measuring rate is a tradeoff requiring a lower intensity threshold (a lower sensitivity of the sensor) and blades could be missed entirely.</p>
+                <br/>
+                <p><b>Note:</b> if changing the Measurement/Sampling Rate, it is recommended to change the intensity rate to match the values listed in the table in the Troubleshooting - Overrides section of the Tool Setup / FRD. These values return the optimal measurements from the sensor.</p>
                 <br/>
             </div>
             <button class="ACCORDION">INTENSITY THRESHOLD</button>
             <div class="PANEL SELECTED_ROW">
                 <H2><U>Set Intensity Threshold</U></H2><br/>
-                <p>The intensity threshold is a percentage and may be set between 0.5% and 100%.</p>
-                <br/>
-                <H2>Intensity Threshold</H2>
+                <p>The intensity threshold is a percentage and may be set between 0.5% and 100%.</p><br/>
                 <div class="ROW W100 FONT_CENTER">
                     <input class="BORDER_BLACK_1 W25 TXTFIELD FONT_CENTER" type="text" id="THRESHOLD_1" value=""/>
                     <span class="SCAN_INFO_TEXT_C">%</span>

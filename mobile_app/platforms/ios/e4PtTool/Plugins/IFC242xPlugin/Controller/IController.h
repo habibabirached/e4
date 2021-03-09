@@ -30,5 +30,7 @@
 - (void)setIntensityThreshold:(float)threshold sendImmediately:(bool)send;
 - (void)setMeasurementRate:(float)rate;
 - (void)setMeasurementRate:(float)rate sendImmediately:(bool)send;
+- (void)setMeasurementRate:(float)rate reportStatus:(bool)report;
+- (void)setMeasurementRate:(float)rate sendImmediately:(bool)send reportStatus:(bool)report;
 
 @end
