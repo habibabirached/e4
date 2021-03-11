@@ -322,7 +322,11 @@
         if ([message objectForKey:@"reset"])
             [self->controller masterDevice:nil];
         else
-            [controller masterDevice:[NSString stringWithFormat:@"%f", self->controller.settings.sensor.mv]];
+            [self->controller masterDevice:[NSString stringWithFormat:@"%f", self->controller.settings.sensor.mv]];
+    } else if ([cmd containsString:@"set_measuring_rate_and_threshold"]) {
+        NSLog(@"Got set_measuring_rate_and_threshold");
+        [self->controller setIntensityThreshold:[[message valueForKey:@"threshold"] floatValue] sendImmediately:NO];
+        [self->controller setMeasurementRate:[[message valueForKey:@"rate"] floatValue]];
     } else if ([cmd containsString:@"set_measuring_rate"]) {
         NSLog(@"Got set_measuring_rate");
         [self->controller setMeasurementRate:[[message valueForKey:@"rate"] floatValue]];

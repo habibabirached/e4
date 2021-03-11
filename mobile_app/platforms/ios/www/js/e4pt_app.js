@@ -242,10 +242,7 @@ define(function(require, exports, module) {
                 messaging.sendMessage({args:['get_threshold_for_rate',sf.toFixed(3)]});
         }, {passive: true});
         document.getElementById("SET_MEASUREMENT_RATE_BUTTON").addEventListener('click', function(){
-        set_measurement_or_intensity_value('MEASUREMENT_RATE_1', 'Measurement rate', 0.1, 6.5, 'set_measuring_rate');
-        }, {passive: true});
-        document.getElementById("SET_THRESHOLD_BUTTON").addEventListener('click', function(){
-        set_measurement_or_intensity_value('THRESHOLD_1', 'Intensity threshold', 0.5, 100, 'set_threshold');
+            set_measurement_and_intensity_value('MEASUREMENT_RATE_1', 'Measurement rate', 0.1, 6.5, parseFloat(document.getElementById('THRESHOLD_1').value).toFixed(3), 'set_measuring_rate_and_threshold');
         }, {passive: true});
         document.getElementById("DOWNLOAD_FILE_BUTTON_01").addEventListener('click', function(){
         toggle_menu();
@@ -904,7 +901,7 @@ define(function(require, exports, module) {
       highlight_cell(current_position, current_stage);
     }
     
-    function set_measurement_or_intensity_value(el_id, label, minVal, maxVal, cmd) {
+    function set_measurement_and_intensity_value(el_id, label, minVal, maxVal, threshold, cmd) {
         var input_f = parseFloat(document.getElementById(el_id).value);
         // Make sure the text is a number
         if ( (isNaN(input_f)) || (typeof(input_f) != 'number')) {
@@ -921,7 +918,7 @@ define(function(require, exports, module) {
                   if (buttonIndex==1){//OK
                       input_f = maxVal;
                       document.getElementById(el_id).value = input_f.toFixed(3);
-                      messaging.sendMessage({args:[cmd,input_f]});
+                      messaging.sendMessage({args:[cmd,input_f,threshold]});
                   } else if (buttonIndex==2){//Cancel
                       document.getElementById(el_id).value = '';
                       return;
@@ -933,14 +930,14 @@ define(function(require, exports, module) {
                   if (buttonIndex==1){//OK
                       input_f = minVal;
                       document.getElementById(el_id).value = input_f.toFixed(3);
-                      messaging.sendMessage({args:[cmd,input_f]});
+                      messaging.sendMessage({args:[cmd,input_f,threshold]});
                   } else if (buttonIndex==2){//Cancel
                       document.getElementById(el_id).value = '';
                       return;
                   }
               });
         } else {
-            messaging.sendMessage({args:[cmd,input_f]});
+            messaging.sendMessage({args:[cmd,input_f,threshold]});
         }
     }
     

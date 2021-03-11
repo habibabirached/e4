@@ -116,6 +116,10 @@
             [dict setValue:commands[1] forKey:@"rate"];
         else if (NSOrderedSame == [commands[0] localizedCaseInsensitiveCompare:@"set_threshold"])
             [dict setValue:commands[1] forKey:@"threshold"];
+        else if (NSOrderedSame == [commands[0] localizedCaseInsensitiveCompare:@"set_measuring_rate_and_threshold"]) {
+            [dict setValue:commands[1] forKey:@"rate"];
+            [dict setValue:commands[2] forKey:@"threshold"];
+        }
         else if (NSOrderedSame == [commands[0] localizedCaseInsensitiveCompare:@"set_manual_override"])
             [dict setValue:commands[1] forKey:@"value"];
         else if (NSOrderedSame == [commands[0] localizedCaseInsensitiveCompare:@"set_connection_mode"])
