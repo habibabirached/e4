@@ -307,17 +307,20 @@
         }
     } else if ([cmd containsString:@"abort"]) {
         NSLog(@"Got ABORT");
-        [controller abortDataCollection];
+        [self->controller abortDataCollection];
+    } else if ([cmd containsString:@"get_threshold_for_rate"]) {
+        NSLog(@"Got threshold for rate");
+        [self returnPluginResponse:@{@"type":@"setting",@"varName":@"intensity_threshold",@"value":[NSString stringWithFormat:@"%.3f", [self->controller.settings calculateIntensityThresholdFromMeasurementRateKHz:[[message valueForKey:@"rate"] floatValue]]]}];
     } else if ([cmd containsString:@"get_data_file"]) {
         NSLog(@"Got get_data_file");
         [self returnPluginResponse:@{@"type":@"filename",@"fname":self->lastSavedFile ?: [NSNull null]}];
     } else if ([cmd containsString:@"do_dark_reference"]) {
         NSLog(@"Got do_dark_reference");
-        [controller doDarkReference];
+        [self->controller doDarkReference];
     } else if ([cmd containsString:@"do_mastering"]) {
         NSLog(@"Got do_mastering");
         if ([message objectForKey:@"reset"])
-            [controller masterDevice:nil];
+            [self->controller masterDevice:nil];
         else
             [controller masterDevice:[NSString stringWithFormat:@"%f", self->controller.settings.sensor.mv]];
     } else if ([cmd containsString:@"set_measuring_rate"]) {
@@ -328,7 +331,7 @@
         [self->controller setIntensityThreshold:[[message valueForKey:@"threshold"] floatValue]];
     } else if ([cmd containsString:@"set_manual_override"]) {
         NSLog(@"Got set_manual_override");
-        controller.settings.overrideRateAndIntensity = [[message objectForKey:@"value"] boolValue];
+        self->controller.settings.overrideRateAndIntensity = [[message objectForKey:@"value"] boolValue];
     } else if ([cmd containsString:@"set_connection_mode"]) {
         NSString* mode = [message objectForKey:@"mode"];
         NSLog(@"Recieved set_connection_mode:%@",mode);

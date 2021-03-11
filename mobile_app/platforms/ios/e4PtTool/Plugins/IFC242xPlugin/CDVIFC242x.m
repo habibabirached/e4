@@ -110,6 +110,8 @@
     if (commands.count > 1) {
         if (NSOrderedSame == [commands[0] localizedCaseInsensitiveCompare:@"do_mastering"])
             [dict setValue:commands[1] forKey:@"reset"];
+        else if (NSOrderedSame == [commands[0] localizedCaseInsensitiveCompare:@"get_threshold_for_rate"])
+                [dict setValue:commands[1] forKey:@"rate"];
         else if (NSOrderedSame == [commands[0] localizedCaseInsensitiveCompare:@"set_measuring_rate"])
             [dict setValue:commands[1] forKey:@"rate"];
         else if (NSOrderedSame == [commands[0] localizedCaseInsensitiveCompare:@"set_threshold"])

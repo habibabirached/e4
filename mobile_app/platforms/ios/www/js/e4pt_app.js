@@ -233,6 +233,14 @@ define(function(require, exports, module) {
         document.getElementById("START_DARK_REFERENCE_BUTTON").addEventListener('click', function(){
         do_dark_reference();
         }, {passive: true});
+        document.getElementById("MEASUREMENT_RATE_1").addEventListener('input', function(){
+            var sf = parseFloat(document.getElementById('MEASUREMENT_RATE_1').value);
+            // Make sure the text is a number
+            if (isNaN(sf) || typeof(sf) !== 'number')
+                document.getElementById('THRESHOLD_1').value = "";
+            else
+                messaging.sendMessage({args:['get_threshold_for_rate',sf.toFixed(3)]});
+        }, {passive: true});
         document.getElementById("SET_MEASUREMENT_RATE_BUTTON").addEventListener('click', function(){
         set_measurement_or_intensity_value('MEASUREMENT_RATE_1', 'Measurement rate', 0.1, 6.5, 'set_measuring_rate');
         }, {passive: true});
@@ -1664,6 +1672,12 @@ define(function(require, exports, module) {
     function pluginMessage(msg) {
         console.log("@pluginMessage: msg.type = ", msg.type);
         switch(msg.type) {
+            case "setting":
+                console.log("Received setting Message");
+                console.log(msg);
+                if (msg.varName === 'intensity_threshold')
+                    document.getElementById('THRESHOLD_1').value = msg.value;
+                break;
             case "status":
                 console.log("Received Status Message");
                 console.log(msg);
