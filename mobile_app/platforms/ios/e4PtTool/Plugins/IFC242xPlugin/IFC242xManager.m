@@ -228,9 +228,10 @@
     }
     
     //  Write the sensor parameters and app version to the CSV file.
-    dataStr = [NSString stringWithFormat:@"\n - Sensor Parameters,,,,,,,,,\nSensor Selection,Sensor Length (in),SMR (mm),Mastering Fixture Height (in),Mastering Value (mm),Master Offset (in),Spacer Thickness (in),Shelf Threshold (mm),Applied Offset Formula,\n%@,%f,%f,%f,%f,%f,%f,%f,%@,\n",
+    dataStr = [NSString stringWithFormat:@"\n - Sensor Parameters,,,,,,,,,\nSensor Selection,Sensor Length (in),MR (mm),SMR (mm),Mastering Fixture Height (in),Mastering Value (mm),Master Offset (in),Spacer Thickness (in),Shelf Threshold (mm),Applied Offset Formula\n%@,%f,%f,%f,%f,%f,%f,%f,%f,%@\n",
                self->controller.settings.sensor.name,
                self->controller.settings.sensor.length,
+               self->controller.settings.sensor.mr,
                self->controller.settings.sensor.smr,
                self->controller.settings.sensor.hmf,
                self->controller.settings.sensor.mv,
