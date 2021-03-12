@@ -199,23 +199,15 @@
 }
 
 - (void)setMeasurementRate:(float)rate {
-    [self setMeasurementRate:rate sendImmediately:YES reportStatus:YES];
-}
-
-- (void)setMeasurementRate:(float)rate sendImmediately:(bool)send {
-    [self setMeasurementRate:rate sendImmediately:send reportStatus:YES];
+    [self setMeasurementRate:rate reportStatus:YES];
 }
 
 - (void)setMeasurementRate:(float)rate reportStatus:(bool)report {
-    [self setMeasurementRate:rate sendImmediately:YES reportStatus:report];
-}
-
-- (void)setMeasurementRate:(float)rate sendImmediately:(bool)send reportStatus:(bool)report {
     if (![self checkReady]) return;
     self.state = setMeasurementRateInProgress;
     self.settings.measurementRate = rate;
     [self->telnetCmds addObject:[NSString stringWithFormat:@"MEASRATE %.3f\n", self.settings.measurementRate]];
-    if (send) [self sendTelnetCommand];
+    [self sendTelnetCommand];
     
     [self recordStartTime];
     dispatch_async(dispatch_get_main_queue(), ^{
