@@ -111,7 +111,7 @@ define(function(require, exports, module) {
         } else {
             createWebSocket();
         }
-        messaging.sendMessage({args:['ping']});
+        get_sensor_parameters();
         
         document.getElementById("MAIN_MENU").addEventListener('click', function(){
             $("#TITLE_BAR").text("e-4Pt Tool");
@@ -239,10 +239,10 @@ define(function(require, exports, module) {
             if (isNaN(sf) || typeof(sf) !== 'number')
                 document.getElementById('THRESHOLD_1').value = "";
             else
-                messaging.sendMessage({args:['get_threshold_for_rate',sf.toFixed(3)]});
+                messaging.sendMessage({args:[{command:'get_threshold_for_rate',rate:sf.toFixed(3)}]});
         }, {passive: true});
         document.getElementById("SET_MEASUREMENT_RATE_BUTTON").addEventListener('click', function(){
-            set_measurement_and_intensity_value('MEASUREMENT_RATE_1', 'Measurement rate', 0.1, 6.5, parseFloat(document.getElementById('THRESHOLD_1').value).toFixed(3), 'set_measuring_rate_and_threshold');
+            set_measurement_and_intensity_value('MEASUREMENT_RATE_1', 'Measurement rate', 0.1, 6.5, {command:'set_measuring_rate_and_threshold',threshold:parseFloat(document.getElementById('THRESHOLD_1').value).toFixed(3),rate:parseFloat(document.getElementById('MEASUREMENT_RATE_1').value)});
         }, {passive: true});
         document.getElementById("DOWNLOAD_FILE_BUTTON_01").addEventListener('click', function(){
         toggle_menu();
@@ -255,7 +255,7 @@ define(function(require, exports, module) {
             if (document.getElementById("STAGE_COLLECT_BUTTON").innerHTML === 'GO!')
                 confirm_collect_stage_data();
             else {
-                messaging.sendMessage({args:['abort']});
+                messaging.sendMessage({args:[{command:'abort'}]});
                 displayGoButton();
                 $("#REV_PROGRESS_BAR").hide();
             }
@@ -502,7 +502,7 @@ define(function(require, exports, module) {
 
     function overrideSettings() {
         manualOverride = !manualOverride;
-        messaging.sendMessage({"args":["set_manual_override",manualOverride]});
+        messaging.sendMessage({args:[{command:'set_manual_override',value:manualOverride}]});
         if (manualOverride) {
             $("#SENSOR_SETUP_PAGE").fadeIn();
         }
@@ -612,7 +612,7 @@ define(function(require, exports, module) {
             if (!serialConnected) {
                 e4PtAlert('Connecting...\nPlease wait for indicator to turn green before proceeding.');
             }
-            messaging.sendMessage({args:['get_version']});
+            messaging.sendMessage({args:[{command:'get_version'}]});
 
             $('#LEFT_MENU').animate({"margin-left": '+=50vmin'});
         }
@@ -636,7 +636,7 @@ define(function(require, exports, module) {
     }
 
     function get_sensor_parameters() {
-        messaging.sendMessage({args:['get_sensor_parameters']});
+        messaging.sendMessage({args:[{command:'get_sensor_parameters'}]});
     }
 
     function set_connection_mode() {
@@ -644,7 +644,7 @@ define(function(require, exports, module) {
         $('#CONNECTION_NAME').text(mode.toUpperCase());
         
         pluginMessage({type:'status',status:'disconnected',noAlert:true});
-        messaging.sendMessage({args:['set_connection_mode',mode]});
+        messaging.sendMessage({args:[{command:'set_connection_mode',mode:mode}]});
     }
 
     function record_casing_thickness() {
@@ -695,7 +695,6 @@ define(function(require, exports, module) {
       if (E4PTdata.operator.length > MAX_STR_LEN) E4PTdata.operator = E4PTdata.operator.substr(0,MAX_STR_LEN);
       E4PTdata.units = document.getElementById("UNITS").value;
       E4PTdata.state = document.getElementById("TURBINE_STATE").value;
-        messaging.sendMessage({"args":["scan_meta_data", E4PTdata.frame, E4PTdata.serial_number, E4PTdata.customer, E4PTdata.site_name, E4PTdata.operator, E4PTdata.units, E4PTdata.state]});
 
       // Get a timestamp in prepartion for saving.
       let d = new Date();
@@ -901,7 +900,7 @@ define(function(require, exports, module) {
       highlight_cell(current_position, current_stage);
     }
     
-    function set_measurement_and_intensity_value(el_id, label, minVal, maxVal, threshold, cmd) {
+    function set_measurement_and_intensity_value(el_id, label, minVal, maxVal, cmd) {
         var input_f = parseFloat(document.getElementById(el_id).value);
         // Make sure the text is a number
         if ( (isNaN(input_f)) || (typeof(input_f) != 'number')) {
@@ -911,6 +910,7 @@ define(function(require, exports, module) {
         
         document.getElementById(el_id).value = input_f.toFixed(3);
         input_f = parseFloat(document.getElementById(el_id).value);
+        cmd.rate = input_f;
         
         if (input_f > maxVal) {
             e4PtConfirm(label + 's over ' + maxVal + ' are not supported. Value will be set to ' + maxVal,
@@ -918,7 +918,8 @@ define(function(require, exports, module) {
                   if (buttonIndex==1){//OK
                       input_f = maxVal;
                       document.getElementById(el_id).value = input_f.toFixed(3);
-                      messaging.sendMessage({args:[cmd,input_f,threshold]});
+                      cmd.rate = input_f;
+                      messaging.sendMessage({args:[cmd]});
                   } else if (buttonIndex==2){//Cancel
                       document.getElementById(el_id).value = '';
                       return;
@@ -930,14 +931,15 @@ define(function(require, exports, module) {
                   if (buttonIndex==1){//OK
                       input_f = minVal;
                       document.getElementById(el_id).value = input_f.toFixed(3);
-                      messaging.sendMessage({args:[cmd,input_f,threshold]});
+                      cmd.rate = input_f;
+                      messaging.sendMessage({args:[cmd]});
                   } else if (buttonIndex==2){//Cancel
                       document.getElementById(el_id).value = '';
                       return;
                   }
               });
         } else {
-            messaging.sendMessage({args:[cmd,input_f,threshold]});
+            messaging.sendMessage({args:[cmd]});
         }
     }
     
@@ -1489,7 +1491,7 @@ define(function(require, exports, module) {
         if (messaging.usesWebSocket()) {
             setIndicatorColor("yellow");
         }
-        messaging.sendMessage({"args":["do_dark_reference"]});
+        messaging.sendMessage({args:[{command:'do_dark_reference'}]});
         $("#SENSOR_SETUP_PAGE").fadeOut();
         $("#LOCAL_DATA_PAGE").fadeOut();
         $("#RESULTS_PAGE").fadeIn();
@@ -1505,9 +1507,9 @@ define(function(require, exports, module) {
         if (messaging.usesWebSocket()) {
             setIndicatorColor('yellow');
         }
-        var cmd = {args:['do_mastering']};
+        var cmd = {args:[{command:'do_mastering'}]};
         if (reset !== undefined) {
-            cmd.args.push(reset);
+            cmd.args[0].reset = true;
         }
         messaging.sendMessage(cmd);
     }
@@ -1535,17 +1537,17 @@ define(function(require, exports, module) {
         if (messaging.usesPlugin) {
             e4PtConfirm("Are you sure you want to exit?",
                         function(idx) {
-                            if (idx == 1) {
-                                messaging.sendMessage({"args":["shutdown"]});
+                            if (idx === 1) {
+                                messaging.sendMessage({args:[{command:'shutdown'}]});
                             }
                         });
         } else {
-            messaging.sendMessage({"args":["shutdown"]});
+            messaging.sendMessage({args:[{command:'shutdown'}]});
         }
     }
 
     function doFileDownload() {
-        messaging.sendMessage({"args":["get_data_file"]});
+        messaging.sendMessage({args:[{command:'get_data_file'}]});
     }
 
     // alert function to work on iOS and web browser
@@ -1631,8 +1633,8 @@ define(function(require, exports, module) {
             break;
           case "pong":
             console.log("Got pong. Send ping.");
-            setTimeout(function(){messaging.sendMessage({"args":["ping"]});}, 5000);
-                  break;
+              setTimeout(function(){messaging.sendMessage({args:[{command:'ping'}]});}, 5000);
+              break;
           case "filename":
             {
               console.log("Got filename: " + msg.fname);
@@ -1834,7 +1836,7 @@ define(function(require, exports, module) {
             );
             return;
         }
-        messaging.sendMessage({"args":["set_sensor_parameters",mfh_f.toString(10), mstrval_f.toString(10), mo_f.toString(10), sensor, sensor_length_f.toString(10), smr_f.toString(10), mr_f.toString(10)]});
+        messaging.sendMessage({args:[{command:'set_sensor_parameters',hmf:mfh_f.toString(10),mv:mstrval_f.toString(10),mo:mo_f.toString(10),name:sensor,length:sensor_length_f.toString(10),smr:smr_f.toString(10),mr:mr_f.toString(10)}]});
         
         sensorSettings.set('sensor_selection', sensor);
         sensorSettings.set('sensor_length', sensor_length_f);
@@ -2263,7 +2265,7 @@ define(function(require, exports, module) {
         if (messaging.usesWebSocket()) {
             setIndicatorColor("yellow");
         }
-        messaging.sendMessage({"args":["send_data",acquisitionTime,"0.0"]});
+        messaging.sendMessage({args:[{command:'send_data',acquisitionTime:acquisitionTime}]});
     }
 
     function requestE4PtDataWithMetaData(acquisitionTime, frame, sn, stage, position, casing_thickness, spacer_thickness, master_offset, clearance_calc_selection) {
@@ -2294,7 +2296,19 @@ define(function(require, exports, module) {
         if (messaging.usesWebSocket()) {
             setIndicatorColor('yellow');
         }
-        messaging.sendMessage({args:['send_data',acquisitionTime, frame, sn, stage, position, casing_thickness, spacer_thickness, num_blades, tip_diameter, blade_width, master_offset, clearance_calc_selection]});
+        messaging.sendMessage({args:[{
+            command:'send_data',
+            rpms:acquisitionTime,
+            serialNumber:sn,
+            stage:stage,
+            position:position,
+            casingThickness:casing_thickness,
+            spacerThickness:spacer_thickness,
+            numberOfBlades:num_blades,
+            tipDiameter:tip_diameter,
+            bladeWidth:blade_width,
+            clearanceCalculationMethod:clearance_calc_selection
+        }]});
     }
 
     // get_stage_details find the specific information for this stage, given the frame, position,

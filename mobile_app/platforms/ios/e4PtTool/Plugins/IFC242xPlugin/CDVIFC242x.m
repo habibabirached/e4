@@ -100,11 +100,17 @@
 - (void)messageHandler:(CDVInvokedUrlCommand*)command {
     NSLog(@"@CDVIFC242x::messageHandler: command.callbackId = %@", command.callbackId);
     [self.commandDelegate runInBackground:^{
-        [self.manager messageHandler:[self commandStringToDictionary:command.arguments] callbackId:command.callbackId];
+        if ([command.arguments[0] isKindOfClass:[NSDictionary class]])
+            [self.manager messageHandler:command.arguments[0] callbackId:command.callbackId];
+        else
+            //support legacy format of array of strings
+            [self.manager messageHandler:[self commandStringToDictionary:command.arguments] callbackId:command.callbackId];
+        
     }];
 }
 
 - (NSDictionary*)commandStringToDictionary:(NSArray*)commands {
+    NSLog(@"Detected the use of legacy payload structure, array of strings.  Compatibility with the legacy format will be removed in a future release. Replace the legacy payload with the supported JSON structure.");
     NSMutableDictionary* dict = [NSMutableDictionary new];
     [dict setValue:commands[0] forKey:@"command"];
     if (commands.count > 1) {
@@ -134,9 +140,9 @@
             if (commands.count > 7) [dict setValue:commands[7] forKey:@"mr"];
         }
         else if (NSOrderedSame == [commands[0] localizedCaseInsensitiveCompare:@"send_data"]) {
-            if (commands.count == 3) {
+            if (commands.count < 4) {
                 [dict setValue:commands[1] forKey:@"acquisitionTime"];
-                [dict setValue:commands[2] forKey:@"casingThickness"];
+                if (commands.count > 2) [dict setValue:commands[2] forKey:@"casingThickness"];
             } else {
                 [dict setValue:commands[1] forKey:@"rpms"];
                 [dict setValue:commands[3] forKey:@"serialNumber"];
