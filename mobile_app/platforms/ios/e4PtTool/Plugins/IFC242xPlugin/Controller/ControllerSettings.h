@@ -18,4 +18,5 @@
 @property (nonatomic) BOOL overrideRateAndIntensity;
 
 -(NSString*)calculateAcquisitionTimeAndSamplingFrequencyAndIntensityThresholdFromRPM:(float)rpm forBladeWidth:(float)bladeWidth forTipDiameter:(float)tipDiameter;
+-(float)calculateIntensityThresholdFromMeasurementRateKHz:(float)measurementRateKHz;
 @end
