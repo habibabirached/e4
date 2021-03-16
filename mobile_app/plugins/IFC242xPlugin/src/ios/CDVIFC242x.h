@@ -90,6 +90,4 @@
  */
 - (void)messageHandler:(CDVInvokedUrlCommand*)command;
 
-@property (strong, nonatomic) CDVInvokedUrlCommand* cmd;
-
 @end

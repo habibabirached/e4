@@ -1,3 +1,4 @@
+cordova.define("IFC242xPlugin.IFC242x", function(require, exports, module) {
 function IFC242x() {
 }
 
@@ -34,13 +35,8 @@ IFC242x.prototype.messageFromDevice = function(message) {
 };
 
 IFC242x.prototype.messageToDevice = function(message, success, failure) {
-    // concatentate message['args'] into a single ";" separated string
-    var concatenatedMessage = "";
-    for (var i=0; i<message["args"].length; i++) {
-        concatenatedMessage = concatenatedMessage + message["args"][i] + ";";
-    }
-    console.log("@ifc242x.js::messageToDevice: ", concatenatedMessage);
-    cordova.exec(success, failure, "IFC242x", "messageHandler", [concatenatedMessage]);
+    console.log("@ifc242x.js::messageToDevice: ", message["args"]);
+    cordova.exec(success, failure, "IFC242x", "messageHandler", message["args"]);
 };
                
 /**
@@ -65,3 +61,5 @@ IFC242x.install = function () {
 
 cordova.addConstructor(IFC242x.install);
 
+
+});

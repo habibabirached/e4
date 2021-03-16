@@ -403,34 +403,22 @@
             <button class="ACCORDION">SENSOR CONNECTION</button>
             <div class="PANEL">
                 <br/>
-                <h4> <p id="CUR_CONN">Current Connection: SERIAL</p> </h4>
-                <br/>
-                <a id="CONN_BUTTON_ETHERNET" class="OVERLAY_BUTTON BUTTON" href="#" style="display: block; margin:auto;">Switch to ETHERNET connection.</a>
-                <a id="CONN_BUTTON_SERIAL" class="OVERLAY_BUTTON BUTTON" href="#" style="display: none; margin:auto;">Switch to SERIAL connection.</a>
-                <br/>
-                <div>
-                    <UL>
-                        <LI> Select “Switch to SERIAL connection” to use serial cable.</LI>
-                        <LI> Select “Switch to ETHERNET connection” to use ethernet cable.</LI>
-                    </UL>
-                </div>
-                    <br/><br/>
-            </div>
-            <button class="ACCORDION">SWITCH MODE</button>
-            <div class="PANEL">
-                <br/>
-                <h4> <p id="CUR_MODE">Current Mode: PRODUCTION</p> </h4>
-                <br/>
-                <a id="MODE_BUTTON_PROD" class="OVERLAY_BUTTON BUTTON" href="#" style="display: block; margin:auto;">Switch to DEMO mode</a>
-                <a id="MODE_BUTTON_DEMO" class="OVERLAY_BUTTON BUTTON" href="#" style="display: none; margin:auto;">Switch to PRODUCTION mode</a>
+                <h4> Current Connection:
+                    <select id="CONN_SELECTION" style="font-size:2vmax;">
+                        <option value="serial">SERIAL cable</option>
+                        <option value="ethernet">ETHERNET</option>
+                        <option value="demo">DEMO</option>
+                    </select>
+                </h4>
                 <br/>
                 <div>
                     <UL>
-                        <LI> Select “Switch to DEMO mode” to use pre-recorded data.</LI>
-                        <LI> Select “Switch to PRODUCTION mode” for use with an active sensor.</LI>
+                        <LI> Select “SERIAL cable” to use serial cable.</LI>
+                        <LI> Select “ETHERNET” to communicate over ethernet.</LI>
+                        <LI> Select “DEMO” to use pre-recorded data.</LI>
                     </UL>
                 </div>
-                    <br/><br/>
+                <br/><br/>
             </div>
         </div>
         <!-- --------------- FRAME SELECT PAGE ---------------------  -->
@@ -684,7 +672,6 @@ r                        </tbody>
             </div>
             <button class="ACCORDION">SENSOR PROBE MASTERING</button>
             <div class="PANEL SELECTED_ROW">
-                <H2><U>Sensor Probe Mastering</U></H2><br/>
                 <p>Mastering in the mastering fixture sets the value of the target distance for the calculation of the clearance.  The mastering fixture is machined to hold the the sensor so that the base surface of the fixture (target surface) is at the center of the sensor measuring range.</p>
                 <br/>
                 <p><U>Instructions:</U></p>
@@ -703,34 +690,29 @@ r                        </tbody>
                 <div id="master_message" class="W25 OVERLAY_BUTTON" style="margin:0 auto;" disabled>READY</div>
                 <br/>
             </div>
-            <button class="ACCORDION">MEASUREMENT RATE</button>
+            <button class="ACCORDION">MEASUREMENT RATE AND INTENSITY THRESHOLD</button>
             <div class="PANEL SELECTED_ROW">
-                <H2><U>Set Sensor Measurement Rate</U></H2><br/>
-                <p>The sampling rate may be set in kHz between 0.100 and 6.500. A maximum of 3 decimal places may be specified.</p>
-                <br/>
-                <H2>Measurement Rate</H2>
-                <div class="ROW W100 FONT_CENTER">
-                  <input class="BORDER_BLACK_1 TXTFIELD FONT_CENTER" type="text" id="MEASUREMENT_RATE_1" value=""/>
-                  <span class="SCAN_INFO_TEXT_C">kHz</span>
+                <div class="ROW FONT_CENTER">
+                    <span class="IN_BLOCK W50 PW1" style="text-align:justify">The app will automatically calculate the measurement (sampling) rate, and it is set in kHz between 0.100 and 6.500. A maximum of 3 decimal places may be specified.</span>
+                    <span class="IN_BLOCK W50 PW9" style="text-align:left;vertical-align:top">The intensity threshold is automatically calculated from the measurement (sampling) rate</span>
                 </div>
                 <br/>
-                <div id="SET_MEASUREMENT_RATE_BUTTON" class="BUTTON W40 OVERLAY_BUTTON" style="margin:0 auto;">SET MEASUREMENT RATE</div>
-                <br/>
-                <br/>
-            </div>
-            <button class="ACCORDION">INTENSITY THRESHOLD</button>
-            <div class="PANEL SELECTED_ROW">
-                <H2><U>Set Intensity Threshold</U></H2><br/>
-                <p>The intensity threshold is a percentage and may be set between 0.5% and 100%.</p>
-                <br/>
-                <H2>Intensity Threshold</H2>
-                <div class="ROW W100 FONT_CENTER">
-                    <input class="BORDER_BLACK_1 W25 TXTFIELD FONT_CENTER" type="text" id="THRESHOLD_1" value=""/>
-                    <span class="SCAN_INFO_TEXT_C">%</span>
+                <div class="ROW FONT_CENTER">
+                    <span class="IN_BLOCK PW9">
+                        Measurement Rate<br/>
+                        <input class="BORDER_BLACK_1 TXTFIELD FONT_CENTER" type="number" id="MEASUREMENT_RATE_1" value=""/>
+                        <span class="SCAN_INFO_TEXT_C">kHz</span>
+                    </span>
+                    <span class="IN_BLOCK PW9">
+                        Intensity Threshold<br/>
+                        <input class="BORDER_BLACK_1 TXTFIELD FONT_CENTER" type="number" id="THRESHOLD_1" value="" readonly disabled/>
+                        <span class="SCAN_INFO_TEXT_C">%</span>
+                    </span>
                 </div>
                 <br/>
-                <div id="SET_THRESHOLD_BUTTON" class="BUTTON W40 OVERLAY_BUTTON" style="margin:0 auto;">SET INTENSITY THRESHOLD</div>
+                <div id="SET_MEASUREMENT_RATE_BUTTON" class="BUTTON W15 OVERLAY_BUTTON" style="margin:0 auto;">SET</div>
                 <br/>
+                <p><b>Note:</b> increasing measurement rate is needed with higher rpm to ensure enough data points per blade tip, however increased measuring rate is a tradeoff requiring a lower intensity threshold (a lower sensitivity of the sensor) and blades could be missed entirely.</p>
                 <br/>
             </div>
             <button class="ACCORDION">SENSOR PARAMETERS</button>
@@ -799,32 +781,36 @@ r                        </tbody>
                 <div>
                     <h4><p align="center">Only authorized users should change the sensor parameters here.</p></h4>
                     <br/>
-                    <h4><p align="center"><p align="center" id="CALIBRATION_DATE">Last Calibration:</p></h4>
+                    <h4><p align="center">Last Calibration:<span align="center" id="CALIBRATION_DATE"></span></p></h4>
                 </div>
                 <div>
                     <div class="NOTIFICATION_STRIPE">
-                        <span class="NOTIFICATION_TITLE">Note:</span>
-                        <span class="NOTIFICATION_CONTENT">When changing the Mastering Value here be certain to perform Mastering before collecting data, else clearances may be calculated incorrectly.</span>
+                        <div class="NOTIFICATION_TITLE">Note:</div>
+                        <div class="NOTIFICATION_CONTENT">When changing the Mastering Value here be certain to perform Mastering before collecting data, else clearances may be calculated incorrectly.</div>
                     </div>
                     <div class="NOTIFICATION_STRIPE">
-                        <span class="NOTIFICATION_TITLE">Note:</span>
-                        <span class="NOTIFICATION_CONTENT">The Master Offset is the delta calculated: (measured sensor length + SMR + Mastering Value) - measured mastering fixture height.</span>
+                        <div class="NOTIFICATION_TITLE">Note:</div>
+                        <div class="NOTIFICATION_CONTENT">The Master Offset is the delta calculated: (measured sensor length + SMR + Mastering Value) - measured mastering fixture height.</div>
                     </div>
                     <div class="NOTIFICATION_STRIPE">
-                        <span class="NOTIFICATION_TITLE">Note:</span>
-                        <span>The Mastering Fixture height defaults are:</span>
-                        <span class="EMBEDDED_TABLE">
-                            <span class="EMBEDDED_TABLE" align="center"><u>Short Master Fixture</u><br/>3.568&quot; +/- 0.0005in</span>
-                            <span class="EMBEDDED_TABLE" align="center"><u>Long Master Fixture</u><br/>9.463&quot; +/- 0.0005in</span>
-                        </span>
+                        <div class="NOTIFICATION_TITLE">Note:</div>
+                        <div class="NOTIFICATION_CONTENT">
+                            <span style="text-align:left">The Mastering Fixture height defaults are:</span>
+                            <span class="EMBEDDED_TABLE">
+                                <span class="PW2"><u>Short Master Fixture</u><br/>3.568&quot; +/- 0.0005in</span>
+                                <span class="PW2"><u>Long Master Fixture</u><br/>9.463&quot; +/- 0.0005in</span>
+                            </span>
+                        </div>
                     </div>
                     <div class="NOTIFICATION_STRIPE">
-                        <span class="NOTIFICATION_TITLE">Note:</span>
-                        <span>The production sensor default lengths are:</span>
-                        <span class="EMBEDDED_TABLE">
-                            <span class="EMBEDDED_TABLE" align="center"><u>Short Sensor</u><br/>2.979&quot; +/- 0.0005in</span>
-                            <span class="EMBEDDED_TABLE" align="center"><u>Long Sensor </u><br/>8.825&quot; +/- 0.0005in</span>
-                        </span>
+                        <div class="NOTIFICATION_TITLE">Note:</div>
+                        <div class="NOTIFICATION_CONTENT">
+                            <span style="text-align:left">The production sensor default lengths are:</span>
+                            <span class="EMBEDDED_TABLE">
+                                <span class="PW2"><u>Short Sensor</u><br/>2.979&quot; +/- 0.0005in</span>
+                                <span class="PW2"><u>Long Sensor </u><br/>8.825&quot; +/- 0.0005in</span>
+                            </span>
+                        </div>
                     </div>
                     <br/>
                 </div>

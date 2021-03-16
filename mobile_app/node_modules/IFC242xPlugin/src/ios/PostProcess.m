@@ -35,9 +35,10 @@
 @synthesize useMinimumClearance = _useMinimumClearance;
 
 -(instancetype)init {
-    self = [super init];
-    [self computeKernel:KERNEL_SIGMA kernel_size:KERNEL_SIZE];
-    [self resetOptions];
+    if (self = [super init]) {
+        [self computeKernel:KERNEL_SIGMA kernel_size:KERNEL_SIZE];
+        [self resetOptions];
+    }
     return self;
 }
 
