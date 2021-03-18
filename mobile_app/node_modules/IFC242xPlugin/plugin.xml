@@ -18,6 +18,29 @@
 		</config-file>
 		<header-file src="src/ios/CDVIFC242x.h" />
 		<source-file src="src/ios/CDVIFC242x.m" />
+        <header-file src="src/ios/ClearanceData.h" />
+        <source-file src="src/ios/ClearanceData.m" />
+        <header-file src="src/ios/MeasurementData.h" />
+        <source-file src="src/ios/MeasurementData.m" />
+        <header-file src="src/ios/PostProcess.h" />
+        <source-file src="src/ios/PostProcess.m" />
+        <header-file src="src/ios/ScanMetaData.h" />
+        <source-file src="src/ios/ScanMetaData.m" />
+        <header-file src="src/ios/IFC242xManager.h" />
+        <header-file src="src/ios/IFC242xManager.m" />
+        <header-file src="src/ios/Controller/IController.h" />
+        <header-file src="src/ios/Controller/BaseController.h" />
+        <source-file src="src/ios/Controller/BaseController.m" />
+        <header-file src="src/ios/Controller/DemoController.h" />
+        <source-file src="src/ios/Controller/DemoController.m" />
+        <header-file src="src/ios/Controller/SerialController.h" />
+        <source-file src="src/ios/Controller/SerialController.m" />
+        <header-file src="src/ios/Controller/EthernetController.h" />
+        <source-file src="src/ios/Controller/EthernetController.m" />
+        <header-file src="src/ios/Controller/SensorSettings.h" />
+        <source-file src="src/ios/Controller/SensorSettings.m" />
+        <header-file src="src/ios/Controller/ControllerSettings.h" />
+        <source-file src="src/ios/Controller/ControllerSettings.m" />
 		<header-file src="src/ios/redpark/inc/redparkSerial.h" />
 		<header-file src="src/ios/redpark/inc/RscMgr.h" />
 		<source-file src="src/ios/redpark/lib/libRscMgrUniv.a" framework="true" />

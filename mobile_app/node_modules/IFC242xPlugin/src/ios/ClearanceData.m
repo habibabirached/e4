@@ -8,11 +8,12 @@
 #import "ClearanceData.h"
 
 @interface ClearanceData ()
-@property float clearance;
-@property float max;
-@property float min;
-@property float median;
-@property float std;
+@property (nonatomic) float clearance;
+@property (nonatomic) float max;
+@property (nonatomic) float min;
+@property (nonatomic) float median;
+@property (nonatomic) float std;
+@property (nonatomic) float offsetAdjustmentFactor;
 @end
 
 @implementation ClearanceData
@@ -27,12 +28,14 @@
 @synthesize min = _min;
 @synthesize median = _median;
 @synthesize std = _std;
+@synthesize offsetAdjustmentFactor = _offsetAdjustmentFactor;
 @synthesize averageDisplacement = _averageDisplacement;
 @synthesize shelfThreshold = _shelfThreshold;
 
 -(instancetype)init {
-    self = [super init];
-    self.min = FLT_MAX;
+    if (self = [super init]) {
+        self.min = FLT_MAX;
+    }
     return self;
 }
 
@@ -82,6 +85,8 @@
         tempArray = nil;
     } else
         [self.clearances setArray:self.filtered];
+    
+    self.offsetAdjustmentFactor = adjustment;
 }
 
 -(void)calculateStatistics {

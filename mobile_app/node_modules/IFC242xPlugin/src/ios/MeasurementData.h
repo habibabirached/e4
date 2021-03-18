@@ -10,4 +10,7 @@
 @property (readonly, strong, nonatomic) NSMutableArray* displacements;
 @property (readonly, strong, nonatomic) NSMutableArray* intensities;
 @property (readonly, strong, nonatomic) NSMutableArray* timestamps;
+@property (readonly, strong, nonatomic) NSMutableArray* datasetIDs;
+@property (readonly, strong, nonatomic) NSMutableArray* pointCounts;
+-(void)clear;
 @end
