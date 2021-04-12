@@ -74,7 +74,6 @@
       <div id="page-content-wrapper">
 
         <!-- Plot -->
-        <!-- TODO: fix formatting, hide before data is ready when repeating GET DATA second time -->
         <div id="DATA_PLOT_PAGE" class="container-fluid h-95">
             <div class="card h-100">
                 <div class="card-header">
@@ -816,13 +815,11 @@
                             <!-- Dark Reference -->
                             <h5>Set Sensor Probe Dark Reference</h5><br/>
                             <p>Dark referencing smooths out the signal output because it acquires the sensor brightness at this specific point in time.  It is critical the sensor be covered with a cap and in a fully dark pocket.  This step is needed every time the tool is plugged in or power cycled, or if the data is showing noise.   If the dark reference fails, it is likely the sensor or connection is contaminated.</p>
-                            <br/>
                             <p>The system requires a warm-up time of approximately 30 minutes prior to setting the dark reference. Please ensure that the system has been powered on for 30 minutes to ensure it is warmed up.</p>
                             <ol>
                                 <li>Cover the sensor with the sensor cap to ensure that nothing is in the measurement range and no ambient light enters the sensor.</li>
                                 <li>Press the Start Dark Reference button to initiate the process.</li>
                             </ol>
-                            <br/>
                             <p>This page will disappear and the indicator light will flash yellow, then red. After &lt;30 seconds, you should see a flat line displayed indicating a successfull dark reference.</p>
                             <br/>
                             <div class="d-grid gap-2">
@@ -980,10 +977,11 @@
                             </div>
                             <br/>
 
+                            <!-- TODO: implement
                             <div class="text-center mt-2">
                                 <span class="badge bg-secondary fs-6">Last Calibration:&nbsp;<span id="CALIBRATION_DATE"></span></span>
                             </div>
-                            <br/>
+                            <br/>-->
                             
                             <div class="alert alert-warning" role="alert">
                               <p>When changing the Mastering Value here be certain to perform Mastering before collecting data, else clearances may be calculated incorrectly.</p>

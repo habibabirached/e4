@@ -4,10 +4,9 @@ define(function(require, exports, module) {
     const charting = require('./charting');
     
     // start in DEMO mode
-    var DEMO_MODE = true;
+    var DEMO_MODE = false;
 
     var menu_open = false;
-    //var e4pt = null;
     var downloadFileName = "";
     var fsRoot = "";
     var appDir = "";
@@ -17,6 +16,7 @@ define(function(require, exports, module) {
     var savedRPM = "";
     var fromDataCollectionPage = false;
     var fromSensorSetupPage = false;
+    var collectionAborted = false;
     
     var APP_NAME = "e-4Pt Tool";
     var UPDATE_SENSOR_PARAMETERS_PASSWORD = "Gr0undH0g";
@@ -32,6 +32,11 @@ define(function(require, exports, module) {
     var SSO_SCOPE = "openid+profile";
     var SSO_CLIENT_ID = "GEPW_FFA_TRACC_01";
     var SSO_REDIRECT_URI = "TRaCC://authorization_grant/";
+    
+    var LABEL_GO = "GO!";
+    var LABEL_ABORT = "ABORT!";
+    var LABEL_START_DARK = "START DARK REFERENCE";
+    var LABEL_DARK = "PERFORMING DARK REFERENCE";
 
     var local_db = new PouchDB('e4ptdb', {revs_limit: 1, auto_compaction: true});
 
@@ -139,6 +144,8 @@ define(function(require, exports, module) {
         var newContentHeight = 'calc(100vh - 60px - ' + currentFooterHeight + ')';
         $('#page-content-wrapper').css('height', newContentHeight);
         fadeOutAll();
+        setButtonProperties($("#STAGE_COLLECT_BUTTON"), LABEL_GO, 'green');
+        setButtonProperties($("#START_DARK_REFERENCE_BUTTON"), LABEL_START_DARK, 'blue');
         
         document.getElementById("MAIN_MENU").addEventListener('click', function() {
             $("#TITLE_BAR").text(APP_NAME);
@@ -261,7 +268,6 @@ define(function(require, exports, module) {
             console.log("@GET_DATA_BUTTON event listener function.");
             toggle_menu();
             fadeOutAll();
-            $("#DATA_PLOT_PAGE").fadeIn();
             var acquisitionTime = null;
             doDBSave = false;
             console.log("@GET_DATA_BUTTON: Prompting.");
@@ -302,7 +308,11 @@ define(function(require, exports, module) {
         do_mastering('reset');
         }, {passive: true});
         document.getElementById("START_DARK_REFERENCE_BUTTON").addEventListener('click', function() {
-        do_dark_reference();
+            if (document.getElementById("START_DARK_REFERENCE_BUTTON").innerHTML === LABEL_START_DARK) {
+                do_dark_reference();
+            } else {
+                console.log('already performing dark reference');
+            }
         }, {passive: true});
         document.getElementById("MEASUREMENT_RATE_1").addEventListener('input', function() {
             var sf = parseFloat(document.getElementById('MEASUREMENT_RATE_1').value);
@@ -323,16 +333,14 @@ define(function(require, exports, module) {
             listDir(cordova.file.documentsDirectory + E4PTdata.serial_number);
         }, {passive: true});
         document.getElementById("STAGE_COLLECT_BUTTON").addEventListener('click', function() {
-            if (document.getElementById("STAGE_COLLECT_BUTTON").innerHTML === 'GO!') {
+            if (document.getElementById("STAGE_COLLECT_BUTTON").innerHTML === LABEL_GO) {
+                collectionAborted = false;
                 confirm_collect_stage_data();
-            } else if (document.getElementById("STAGE_COLLECT_BUTTON").innerHTML === 'ABORT!') {
+            } else if (document.getElementById("STAGE_COLLECT_BUTTON").innerHTML === LABEL_ABORT) {
                 messaging.sendMessage({args:[{command:'abort'}]});
-                displayGoButton();
-                // TODO: needed?
-                //setIndicatorColor("green");
-                // TODO: ignore data response to hide DATA_PLOT
-                $("#REV_PROGRESS_BAR").hide();
-                $("#STATUS_BAR").show();
+                // ignore data response to hide DATA_PLOT
+                collectionAborted = true;
+                resetDataCollection();
             }
         }, {passive: true});
         document.getElementById("COLLECTION_RESET_BUTTON").addEventListener('click', function() {
@@ -473,6 +481,23 @@ define(function(require, exports, module) {
                 'document.getElementById("IMAGE_VIEW").setAttribute("src","' + imageName + '")'
             });
         });
+    }
+    
+    function resetDataCollection() {
+        setButtonProperties($("#START_DARK_REFERENCE_BUTTON"), LABEL_START_DARK, 'blue');
+        displayGoButton();
+        setIndicatorColor("green");
+        $("#REV_PROGRESS_BAR").hide();
+        $("#STATUS_BAR").show();
+    }
+    
+    function startProgressBar() {
+        $("#REV_PROGRESS")
+              .css("width", 0 + "%")
+              .attr("aria-valuenow", 0)
+              .text(0 + "%");
+        $("#REV_PROGRESS_BAR").show();
+        $("#STATUS_BAR").hide();
     }
 
     // Clear all the current data to start fresh.
@@ -978,11 +1003,11 @@ define(function(require, exports, module) {
     }
     
     function displayGoButton() {
-        setButtonProperties($("#STAGE_COLLECT_BUTTON"), 'GO!', 'green');
+        setButtonProperties($("#STAGE_COLLECT_BUTTON"), LABEL_GO, 'green');
     }
     
     function displayAbortButton() {
-        setButtonProperties($("#STAGE_COLLECT_BUTTON"), 'ABORT!', 'red');
+        setButtonProperties($("#STAGE_COLLECT_BUTTON"), LABEL_ABORT, 'red');
     }
     
     function setButtonProperties(button, text, buttonColor) {
@@ -995,6 +1020,9 @@ define(function(require, exports, module) {
           case "red":
             targetColor = "btn-danger";
             break;
+            case "blue":
+              targetColor = "btn-primary";
+              break;
           case "green":
             targetColor = "btn-success";
             break;
@@ -1561,19 +1589,14 @@ define(function(require, exports, module) {
         if (messaging.usesWebSocket()) {
             setIndicatorColor("yellow");
         }
+        setButtonProperties($("#START_DARK_REFERENCE_BUTTON"), LABEL_DARK, 'yellow');
+
         messaging.sendMessage({args:[{command:'do_dark_reference'}]});
-        $("#SENSOR_SETUP_PAGE").fadeOut();
         
         // set flag to show SENSOR SETUP page on close
         fromSensorSetupPage = true;
 
-        $("#DATA_PLOT_PAGE").fadeIn();
-        $("#STATUS_BAR").hide();
-        $("#REV_PROGRESS")
-              .css("width", 0 + "%")
-              .attr("aria-valuenow", 0)
-              .text(0 + "%");
-        $("#REV_PROGRESS_BAR").show();
+        startProgressBar();
         charting.clearChartData(document.getElementById('DATA_PLOT'));
         current_frame_data = [];
     }
@@ -1658,8 +1681,7 @@ define(function(require, exports, module) {
         }
     }
 
-
-    //    prompt: function (message, resultCallback, title, buttonLabels, defaultText) {
+    // prompt: function (message, resultCallback, title, buttonLabels, defaultText) {
     function e4PtPrompt(msg, callback, title, buttonLabels) {
         try {
             navigator.notification.confirm(
@@ -1683,17 +1705,20 @@ define(function(require, exports, module) {
           console.log("e4PtSocket Message Received: " + msg.type);
           switch(msg.type) {
           case "data":
-            displayGoButton();
-            console.log("Received Data Message");
-            setIndicatorColor("green");
-            //console.log(msg);
-            processE4PtData(msg);
+            if (!collectionAborted) {
+                displayGoButton();
+                console.log("Received Data Message");
+                setIndicatorColor("green");
+                //console.log(msg);
+                processE4PtData(msg);
+            } else {
+                console.log("Data collection was aboreted");
+            }
             break;
           case "status":
             console.log("Received Status Message");
             console.log(msg);
             if (msg.status == "acquiring") {
-                // TODO: is this called?
                 setIndicatorColor("red");
                 displayAbortButton();
             } else if (msg.status == "processing") {
@@ -1770,12 +1795,7 @@ define(function(require, exports, module) {
                     // TODO: is this called?
                     displayAbortButton();
                     setIndicatorColor("red");
-                    $("#REV_PROGRESS")
-                          .css("width", 0 + "%")
-                          .attr("aria-valuenow", 0)
-                          .text(0 + "%");
-                    $("#REV_PROGRESS_BAR").show();
-                    $("#STATUS_BAR").hide();
+                    startProgressBar();
                 } else if (msg.status == "processing") {
                     setIndicatorColor("blue");
                     displayGoButton();
@@ -1792,18 +1812,19 @@ define(function(require, exports, module) {
                 }
                 break;
             case "data":
-                displayGoButton();
+                resetDataCollection();
                 console.log("Received Data Message");
-                setIndicatorColor("green");
-                $("#REV_PROGRESS_BAR").hide();
-                $("#STATUS_BAR").show();
-                msg.data = JSON.parse(msg.data);
-                msg.intensity = JSON.parse(msg.intensity);
-                msg.locs = JSON.parse(msg.locs);
-                msg.gaps = JSON.parse(msg.gaps);
-                msg.quality = JSON.parse(msg.quality);
-                msg.overall_avg = JSON.parse(msg.overall_avg);
-                processE4PtData(msg);
+                if (!collectionAborted) {
+                    msg.data = JSON.parse(msg.data);
+                    msg.intensity = JSON.parse(msg.intensity);
+                    msg.locs = JSON.parse(msg.locs);
+                    msg.gaps = JSON.parse(msg.gaps);
+                    msg.quality = JSON.parse(msg.quality);
+                    msg.overall_avg = JSON.parse(msg.overall_avg);
+                    processE4PtData(msg);
+                } else {
+                    console.log("Data collection was aboreted");
+                }
                 break;
             case "filename":
                 console.log("Recieved Filename Message: ", msg.fname);
@@ -1820,10 +1841,7 @@ define(function(require, exports, module) {
                 e4PtAlert(msg.message);
                 break;
             case "progress":
-                //PK
                 console.log("Progress: ", msg.progress);
-                //$("#REV_PROGRESS").html('&nbsp' + msg.progress + '%');
-                //$("#REV_PROGRESS").css('width', msg.progress + '%');
                 $("#REV_PROGRESS")
                       .css("width", msg.progress + "%")
                       .attr("aria-valuenow", msg.progress)
@@ -1854,7 +1872,7 @@ define(function(require, exports, module) {
                 //enableMasteringValuesForEditing(sensorSettings.get('sensor_selection') === 'CUSTOM' || sensorSettings.get('sensor_selection') === 'PROTOTYPE');
                 
                 // TODO: implement
-                document.getElementById("CALIBRATION_DATE").innerHTML = new Date().toLocaleDateString();
+                //document.getElementById("CALIBRATION_DATE").innerHTML = new Date().toLocaleDateString();
                 
                 break;
             default:
@@ -2339,12 +2357,11 @@ define(function(require, exports, module) {
         parse_data();
         document.getElementById('MEASUREMENT_RATE_1').value = E4PTdata.measurement_rate;
         document.getElementById('THRESHOLD_1').value = E4PTdata.intensity_threshold;
-        if (current_frame_data['position'] != null) {
-          // TODO: display progress bar, hide status bar before this
-          // TODO: store state and display previous screen on close
-          fadeOutAll();
-          $("#DATA_PLOT_PAGE").fadeIn();
+        
+        fadeOutAll();
+        $("#DATA_PLOT_PAGE").fadeIn();
 
+        if (current_frame_data['position'] != null) {
           plot_calibrated_acquire();
         } else {
           plot_non_calibrated_acquire();
@@ -2359,12 +2376,7 @@ define(function(require, exports, module) {
         console.log("Requesting " + acquisitionTime + " seconds of data");
         charting.clearChartData(document.getElementById('DATA_PLOT'));
         
-        $("#STATUS_BAR").hide();
-        $("#REV_PROGRESS")
-            .css("width", 0 + "%")
-            .attr("aria-valuenow", 0)
-            .text(0 + "%");
-        $("#REV_PROGRESS_BAR").show();
+        startProgressBar();
 
         // send_data needs args: acquisition time and casing thickness
         // Casing thickness can be zero here.
@@ -2406,16 +2418,10 @@ define(function(require, exports, module) {
         // set flag to show DATA COLLECTION page on close
         fromDataCollectionPage = true;
         
-        // TODO: should not be needed here
-        // TODO: progress bar should update
+        // TODO: should not be needed here, progress bar should update
         setIndicatorColor("red");
         displayAbortButton();
-        $("#REV_PROGRESS")
-              .css("width", 0 + "%")
-              .attr("aria-valuenow", 0)
-              .text(0 + "%");
-        $("#REV_PROGRESS_BAR").show();
-        $("#STATUS_BAR").hide();
+        startProgressBar();
 
         messaging.sendMessage({args:[{
             command:'send_data',
@@ -2614,7 +2620,6 @@ define(function(require, exports, module) {
         document.getElementById(el_id).innerHTML = clearance_f.toFixed(4);
     }
 
-    // TODO: check settings
     function plot_non_calibrated_acquire() {
       let chartConfig = charting.createChartConfig(E4PTdata.data, E4PTdata.minima);
       //chartConfig.chart.backgroundColor = 'white';
@@ -2627,7 +2632,6 @@ define(function(require, exports, module) {
         charting.renderChart(chartConfig, 'DATA_PLOT', chartFilename, writeToFile);
     }
 
-    // TODO: check settings
     function plot_calibrated_acquire() {
       let chartConfig = charting.createChartConfig(E4PTdata.data, E4PTdata.minima);
       chartConfig.tooltip.enabled = false;
