@@ -95,8 +95,6 @@ define(function(require, exports, module) {
         "operator":"",
         "units":"",
         "state":"",
-        "temperature":"",
-        "temperature_unit":"",
         "final":{
             "SCAN":"",
         },
@@ -411,8 +409,6 @@ define(function(require, exports, module) {
             enableMasteringValuesForEditing(true);
         }, {passive: true});
         
-        document.getElementById("TEMPERATURE_UNIT").selectedIndex = 1;
-        
         // Wait (0.9s) for the page load to complete, then get the file system.
         setTimeout(function() {
             window.requestFileSystem  = window.requestFileSystem || window.webkitRequestFileSystem;
@@ -520,8 +516,6 @@ define(function(require, exports, module) {
                      E4PTdata.operator = "";
                      E4PTdata.units = "";
                      E4PTdata.state = "";
-                     E4PTdata.temperature = "";
-                     E4PTdata.temperature_unit = "";
                      E4PTdata.final = {
                          "SCAN":"",
                      };
@@ -547,8 +541,6 @@ define(function(require, exports, module) {
                      document.getElementById("OPERATOR").value = "";
                      document.getElementById("UNITS").selectedIndex = 0;
                      document.getElementById("TURBINE_STATE").selectedIndex = 0;
-                     document.getElementById("TEMPERATURE").value = "";
-                     document.getElementById("TEMPERATURE_UNIT").selectedIndex = 1;
                      document.getElementById("DESCRIPTION").value = "";
                      setupCasingThicknessTable(null);
                      document.getElementById("FRAME_DEFAULT_SENSOR").value = current_frame_data.default_sensor;
@@ -759,8 +751,6 @@ define(function(require, exports, module) {
       if (E4PTdata.operator.length > MAX_STR_LEN) E4PTdata.operator = E4PTdata.operator.substr(0,MAX_STR_LEN);
       E4PTdata.units = document.getElementById("UNITS").value;
       E4PTdata.state = document.getElementById("TURBINE_STATE").value;
-      E4PTdata.temperature = document.getElementById("TEMPERATURE").value;
-      E4PTdata.temperature_unit = document.getElementById("TEMPERATURE_UNIT").value;
 
       // Get a timestamp in prepartion for saving.
       let d = new Date();
@@ -860,7 +850,7 @@ define(function(require, exports, module) {
         }
         document.getElementById("HEADER_DATETIME").innerHTML = dateStr;
         document.getElementById("HEADER_CUSTOMER").innerHTML = customer + " - " + site;
-        document.getElementById("HEADER_FRAME").innerHTML = E4PTdata.frame + ";  Temperature " + E4PTdata.temperature + "°" + E4PTdata.temperature_unit;
+        document.getElementById("HEADER_FRAME").innerHTML = E4PTdata.frame;
         document.getElementById("HEADER_SERIAL").innerHTML = E4PTdata.serial_number + ";  Units: " + E4PTdata.units;
         updateSensorHeaderMessage();
         checkSensorSelection();
@@ -1349,7 +1339,7 @@ define(function(require, exports, module) {
         //var header = "<p>" + dateStr + "  -  " + timeStr + "</p><p>" + customer + " - " + site + "</p><p>Frame: " + E4PTdata.frame + "</p><p>S/N: " + E4PTdata.serial_number + "</p>";
         document.getElementById("HEADER_DATETIME").innerHTML = dateStr;
         document.getElementById("HEADER_CUSTOMER").innerHTML = customer + " - " + site;
-        document.getElementById("HEADER_FRAME").innerHTML = E4PTdata.frame + ";  Temperature " + E4PTdata.temperature + "°" + E4PTdata.temperature_unit;
+        document.getElementById("HEADER_FRAME").innerHTML = E4PTdata.frame;
         document.getElementById("HEADER_SERIAL").innerHTML = E4PTdata.serial_number + ";  Units: " + E4PTdata.units;
         updateSensorHeaderMessage();
         document.getElementById("SENSOR_STAGE").selectedIndex = current_stage_index;
@@ -2731,8 +2721,6 @@ define(function(require, exports, module) {
         operator: e4pt_data.operator,
         units: e4pt_data.units,
         state: e4pt_data.state,
-        temperature: e4pt_data.temperature,
-        temperature_unit: e4pt_data.temperature_unit,
         final: e4pt_data.final,
         date: e4pt_data.date,
         time: e4pt_data.time,
@@ -2841,8 +2829,6 @@ define(function(require, exports, module) {
       tmpData1.operator = "200005229";
       tmpData1.units = "In";
       tmpData1.state = "opening";
-      tmpData1.temperature = 70;
-      tmpData1.temperature_unit = "F";
       tmpData1.final = false;
       tmpData1.date = "Jul-04-1776";
       tmpData1.time = "13:13";
@@ -2867,8 +2853,6 @@ define(function(require, exports, module) {
       tmpData2.operator = "Sandra Kolvick";
       tmpData2.units = "MM";
       tmpData2.state = "closing";
-      tmpData2.temperature = 72;
-      tmpData2.temperature_unit = "F";
       tmpData2.final = true;
       tmpData2.date = "Jul-24-1969";
       tmpData2.time = "20:17";
@@ -3039,13 +3023,6 @@ define(function(require, exports, module) {
         } else if (doc.units == "MM") {
           document.getElementById("UNITS").selectedIndex = 1;
         }
-        document.getElementById("TEMPERATURE").value = doc.temperature;
-        document.getElementById("TEMPERATURE_UNIT").value = doc.temperature_unit;
-        if (doc.temperature_unit == "C") {
-          document.getElementById("TEMPERATURE_UNIT").selectedIndex = 0;
-        } else if (doc.temperature_unit == "F") {
-          document.getElementById("TEMPERATURE_UNIT").selectedIndex = 1;
-        }
         E4PTdata.frame = doc.frame;
         E4PTdata.serial_number = doc.serial_number;
         E4PTdata.data_name = doc.data_name;
@@ -3056,8 +3033,6 @@ define(function(require, exports, module) {
         E4PTdata.operator = doc.operator;
         E4PTdata.units = doc.units;
         E4PTdata.state = doc.state;
-        E4PTdata.temperature = doc.temperature;
-        E4PTdata.temperature_unit = doc.temperature_unit;
         E4PTdata.date = doc.date;
         E4PTdata.time = doc.time;
         E4PTdata.final = doc.final;
