@@ -16,6 +16,7 @@ define(function(require, exports, module) {
     var savedRPM = "";
     var fromDataCollectionPage = false;
     var fromSensorSetupPage = false;
+    var fromDataPlotPage = false;
     var collectionAborted = false;
     
     var APP_NAME = "e-4Pt Tool";
@@ -255,7 +256,13 @@ define(function(require, exports, module) {
         }, {passive: true});
         document.getElementById("FILE_CHOOSER_CLOSE_BUTTON").addEventListener('click', function() {
             $("#FILE_CHOOSER_PAGE").fadeOut();
-            $("#DATA_PLOT_PAGE").fadeIn();
+            if (fromDataPlotPage) {
+                $("#DATA_PLOT_PAGE").fadeIn();
+                fromDataPlotPage = false;
+            } else if (fromDataCollectionPage) {
+                $("#TURBINE_SETUP_PAGE").fadeIn();
+                fromDataCollectionPage = false;
+            }
         }, {passive: true});
         document.getElementById("DATA_DETAILS_CLOSE_BUTTON").addEventListener('click', function() {
             $("#DATA_DETAILS_PAGE").fadeOut();
@@ -325,9 +332,13 @@ define(function(require, exports, module) {
             set_measurement_and_intensity_value('MEASUREMENT_RATE_1', 'Measurement rate', 0.1, 6.5, {command:'set_measuring_rate_and_threshold',threshold:parseFloat(document.getElementById('THRESHOLD_1').value).toFixed(3),rate:parseFloat(document.getElementById('MEASUREMENT_RATE_1').value)});
         }, {passive: true});
         document.getElementById("EXPORT_DATA_BUTTON").addEventListener('click', function() {
+            fromDataPlotPage = true;
+            $("#DATA_PLOT_PAGE").fadeOut();
             listDir(cordova.file.documentsDirectory + "data");
         }, {passive: true});
         document.getElementById("EXPORT_DATA_BUTTON_02").addEventListener('click', function() {
+            fromDataCollectionPage = true;
+            $("#TURBINE_SETUP_PAGE").fadeOut();
             listDir(cordova.file.documentsDirectory + E4PTdata.serial_number);
         }, {passive: true});
         document.getElementById("STAGE_COLLECT_BUTTON").addEventListener('click', function() {
@@ -2152,7 +2163,6 @@ define(function(require, exports, module) {
     }
 
     function populateFileTable(entries) {
-        $("#DATA_PLOT_PAGE").fadeOut();
         $("#FILE_CHOOSER_PAGE").fadeIn();
         
         var prev_tbody = document.getElementById("LOCAL_FILE_TABLE_BODY");
