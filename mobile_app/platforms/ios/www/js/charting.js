@@ -67,13 +67,13 @@ define(function(require, exports, module, sensorSettings) {
       return {
         chart: {
           spacingBottom: 0,
-          spacingTop: 80,
+          spacingTop: 20,
           spacingLeft: 80,
-          spacingRight: 80,
-          marginBottom: 100,
+          spacingRight: 60,
+          marginBottom: 60,
           marginTop: 80,
           marginLeft: 80,
-          marginRight: 80,
+          marginRight: 60,
           backgroundColor: 'transparent',
           animation: false,
           padding: 0
