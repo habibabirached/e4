@@ -43,30 +43,8 @@
             <button id="SETUP_BUTTON" class="btn btn-secondary" type="button">Measure Turbine</button>
             <button id="OPEN_LOCAL_DATA_BUTTON" class="btn btn-secondary" type="button">Open Local</button>
             <button id="GET_DATA_BUTTON" class="btn btn-secondary" type="button">Get Data</button>
-            <button id="EXPORT_DATA_BUTTON" class="btn btn-secondary" type="button">Export Data</button>
             <button id="SHUTDOWN_BUTTON" class="btn btn-secondary" type="button">Shutdown</button>
           </div>
-          <!--<li>
-            <a id="FRD_BUTTON" href="#">Tool Setup</a>
-          </li>
-          <li>
-            <a id="SENSOR_SETUP_BUTTON" href="#">Sensor Setup</a>
-          </li>
-          <li>
-            <a id="SETUP_BUTTON" href="#">Measure Turbine</a>
-          </li>
-          <li>
-            <a id="OPEN_LOCAL_DATA_BUTTON" href="#">Open Local</a>
-          </li>
-          <li>
-            <a id="GET_DATA_BUTTON" href="#">Get Data</a>
-          </li>
-          <li>
-            <a id="EXPORT_DATA_BUTTON" href="#">Export Data</a>
-          </li>
-          <li>
-            <a id="SHUTDOWN_BUTTON" href="#">Shutdown</a>
-          </li>-->
           <!--<div class="text-center pt-2">
             <span id="APP_VERSION" class="badge bg-dark">VERSION 0.0.0.0</span>
           </div>-->
@@ -105,11 +83,16 @@
                         <h4>Data</h4>
                       </div>
                       <div class="col-auto">
+                          <button id="EXPORT_DATA_BUTTON" class="btn btn-primary" type="button">Export Data</button>
+                      </div>
+                      <div class="col-auto">
                         <button id="DATA_PLOT_CLOSE_BUTTON" type="button" class="btn btn-dark"><i class="fas fa-times"></i></button>
                       </div>
                     </div>
                 </div>
-                <div id="DATA_PLOT" class="card-body h-100"></div>
+                <div class="card-body h-100">
+                    <div id="DATA_PLOT" class="h-100"></div>
+                </div>
             </div>
         </div>
 
@@ -891,7 +874,7 @@
                             <!-- Measurement Rate and Intensity Threshold -->
                             <form class="row g-3">
                               <div class="col-md-6">
-                                  <p>The app will automatically the measurement (sampling) rate, and it is set in kHz between 0.100 and 6.500. A maximum of 3 decimal places may be specified.</p>
+                                  <p>The app will automatically calculate the measurement (sampling) rate, and it is set in kHz between 0.100 and 6.500. A maximum of 3 decimal places may be specified.</p>
                               </div>
                               <div class="col-md-6">
                                   <p>The intensity threshold is automatically calculated from the measurement (sampling) rate.</p>
@@ -906,7 +889,7 @@
                               <div class="col-md-6 text-center">
                                   <label for="THRESHOLD_1" class="form-label">Intensity Threshold</label>
                                   <div class="input-group mb-3">
-                                    <input id="THRESHOLD_1" type="text" class="form-control" placeholder="" aria-label="Intensity Threshold" aria-describedby="THRESHOLD_1_TEXT">
+                                    <input id="THRESHOLD_1" type="text" class="form-control" placeholder="" aria-label="Intensity Threshold" aria-describedby="THRESHOLD_1_TEXT" disabled>
                                     <span class="input-group-text" id="THRESHOLD_1_TEXT">%</span>
                                   </div>
                               </div>
@@ -995,9 +978,10 @@
                             <div class="d-grid gap-2" hidden>
                                 <button id="SENSOR_PARAMS_UPDATE_BUTTON" type="button" class="btn btn-primary">UPDATE</button>
                             </div>
+                            <br/>
 
                             <div class="text-center mt-2">
-                                <span class="badge bg-secondary fs-6"><strong>Last Calibration:</strong>&nbsp;<span id="CALIBRATION_DATE"></span></span>
+                                <span class="badge bg-secondary fs-6">Last Calibration:&nbsp;<span id="CALIBRATION_DATE"></span></span>
                             </div>
                             <br/>
                             

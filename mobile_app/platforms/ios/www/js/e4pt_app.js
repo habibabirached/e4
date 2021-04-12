@@ -4,7 +4,7 @@ define(function(require, exports, module) {
     const charting = require('./charting');
     
     // start in DEMO mode
-    var DEMO_MODE = false;
+    var DEMO_MODE = true;
 
     var menu_open = false;
     //var e4pt = null;
@@ -250,6 +250,7 @@ define(function(require, exports, module) {
         }, {passive: true});
         document.getElementById("FILE_CHOOSER_CLOSE_BUTTON").addEventListener('click', function() {
             $("#FILE_CHOOSER_PAGE").fadeOut();
+            $("#DATA_PLOT_PAGE").fadeIn();
         }, {passive: true});
         document.getElementById("DATA_DETAILS_CLOSE_BUTTON").addEventListener('click', function() {
             $("#DATA_DETAILS_PAGE").fadeOut();
@@ -268,7 +269,8 @@ define(function(require, exports, module) {
             if (nav != null) {
                 // We have plugins so we're in Cordova.  Use the Cordova notification.
                 console.log("@GET_DATA_BUTTON: Cordova Prompt");
-                navigator.notification.prompt('Please enter the acquisition time in seconds.',
+                // For issue #69: added additional text to the prompt for acquisition time
+                navigator.notification.prompt('Raw data is the displacement from the sensor with an unknown (default) reference point. This should be used only when relative data is desired. \n \n Please enter the acquisition time in seconds.',
                                               acquisitionTimePromptCallback,
                                               'Acquisition Time',
                                               ['Ok','Cancel'],
@@ -276,7 +278,8 @@ define(function(require, exports, module) {
             } else {
                 // No plugins, so we must not be in Cordova. Use a standard prompt.
                 console.log("@GET_DATA_BUTTON: Windows Prompt");
-                acquisitionTime = window.prompt("Please enter the acquisition time in seconds.", "3");
+                // For issue #69: added additional text to the prompt for acquisition time
+                acquisitionTime = window.prompt("Raw data is the displacement from the sensor with an unknown (default) reference point. This should be used only when relative data is desired. \n \n Please enter the acquisition time in seconds.", "3");
                 acquisitionTimePromptCallback({"input1":acquisitionTime});
             }
         }, {passive: true});
@@ -314,12 +317,10 @@ define(function(require, exports, module) {
             set_measurement_and_intensity_value('MEASUREMENT_RATE_1', 'Measurement rate', 0.1, 6.5, {command:'set_measuring_rate_and_threshold',threshold:parseFloat(document.getElementById('THRESHOLD_1').value).toFixed(3),rate:parseFloat(document.getElementById('MEASUREMENT_RATE_1').value)});
         }, {passive: true});
         document.getElementById("EXPORT_DATA_BUTTON").addEventListener('click', function() {
-            toggle_menu();
-            fadeOutAll();
-        listDir(cordova.file.documentsDirectory + "data");
+            listDir(cordova.file.documentsDirectory + "data");
         }, {passive: true});
         document.getElementById("EXPORT_DATA_BUTTON_02").addEventListener('click', function() {
-        listDir(cordova.file.documentsDirectory + E4PTdata.serial_number);
+            listDir(cordova.file.documentsDirectory + E4PTdata.serial_number);
         }, {passive: true});
         document.getElementById("STAGE_COLLECT_BUTTON").addEventListener('click', function() {
             if (document.getElementById("STAGE_COLLECT_BUTTON").innerHTML === 'GO!') {
@@ -673,11 +674,8 @@ define(function(require, exports, module) {
     }
     
     function demo_connection_mode() {
-        var mode = 'demo';
-        $('#CONNECTION_NAME').text(mode.toUpperCase());
-        
-        pluginMessage({type:'status',status:'disconnected',noAlert:true});
-        messaging.sendMessage({args:[{command:'set_connection_mode',mode:mode}]});
+        document.getElementById('CONN_SELECTION').value = 'demo';
+        set_connection_mode();
     }
 
     function set_connection_mode() {
@@ -1929,7 +1927,6 @@ define(function(require, exports, module) {
         sensorSettings.set('sensor_mr', mr_f);
         sensorSettings.saveValuesForSensorType();
         updateSensorHeaderMessage();
-        // TODO: store last calibration date for display
     }
 
     function getSensorParametersForSensorSelection(sensorType) {
@@ -2147,7 +2144,9 @@ define(function(require, exports, module) {
     }
 
     function populateFileTable(entries) {
+        $("#DATA_PLOT_PAGE").fadeOut();
         $("#FILE_CHOOSER_PAGE").fadeIn();
+        
         var prev_tbody = document.getElementById("LOCAL_FILE_TABLE_BODY");
         var tbody = document.createElement("tbody");
         tbody.setAttribute("id","LOCAL_FILE_TABLE_BODY");
@@ -2357,8 +2356,8 @@ define(function(require, exports, module) {
     }
 
     function requestE4PtData(acquisitionTime) {
-      console.log("Requesting " + acquisitionTime + " seconds of data");
-      charting.clearChartData(document.getElementById('DATA_PLOT'));
+        console.log("Requesting " + acquisitionTime + " seconds of data");
+        charting.clearChartData(document.getElementById('DATA_PLOT'));
         
         $("#STATUS_BAR").hide();
         $("#REV_PROGRESS")
@@ -2625,7 +2624,7 @@ define(function(require, exports, module) {
       charting.addChartSubtitle(chartConfig, E4PTdata.date, E4PTdata.clearance, E4PTdata.overall_avg);
       charting.displayIntensityThresholdAndMeasurementRate(chartConfig, E4PTdata.measurement_rate, E4PTdata.intensity_threshold);
       let chartFilename = charting.createSavedChartFilename(E4PTdata.date.substring(2));
-      charting.renderChart(chartConfig, 'DATA_PLOT', chartFilename, writeToFile);
+        charting.renderChart(chartConfig, 'DATA_PLOT', chartFilename, writeToFile);
     }
 
     // TODO: check settings
@@ -2636,7 +2635,7 @@ define(function(require, exports, module) {
       charting.addChartSubtitle(chartConfig, E4PTdata.date, E4PTdata.clearance);
       charting.displayIntensityThresholdAndMeasurementRate(chartConfig, E4PTdata.measurement_rate, E4PTdata.intensity_threshold);
       let chartFilename = charting.createSavedChartFilename(E4PTdata.date.substring(2), E4PTdata.serial_number, current_stage, current_position.substring(0,1));
-      charting.renderChart(chartConfig, 'DATA_PLOT', chartFilename, writeToFile);
+        charting.renderChart(chartConfig, 'DATA_PLOT', chartFilename, writeToFile);
     }
 
     function loadExternalFile(dir, filename) {
