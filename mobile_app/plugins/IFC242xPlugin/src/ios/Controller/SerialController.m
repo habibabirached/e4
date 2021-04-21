@@ -6,6 +6,7 @@
 //
 //
 
+#import "AppDelegate.h"
 #import "SerialController.h"
 
 @interface SerialController ()
@@ -87,7 +88,10 @@
 }
 
 - (void)initialize {
-    self->baudRate = 460800; // Slower cables only do 115200
+    dispatch_sync(dispatch_get_main_queue(), ^{
+        self->baudRate = [((AppDelegate *)[UIApplication sharedApplication].delegate).baudRate intValue];
+    });
+    //self->baudRate = BAUD_RATE_FAST;
     //TODO: shouldn't need the following initializations as they are the default values
     self->dataSizeType = kDataSize8;
     self->parityType = kParityNone;
@@ -222,7 +226,7 @@
     } else if (self.state != collectingDataInProgress) {
         if (data.length >= 4) {
             NSString* response = [[NSString alloc] initWithData:data encoding:NSASCIIStringEncoding];
-            if ([response containsString:@"->"] && self.state != halted && self.state != clearanceComputationInProgress)
+            if ([response containsString:@TELNET_PROMPT] && self.state != halted && self.state != clearanceComputationInProgress)
                 [self processResponse:response];
         }
         return;  // if we're not collecting data, return.
@@ -470,7 +474,7 @@
         // then bundle it up and send it back through to the javascript.
         [self->delegate returnPluginResponse:@{@"type":@"status",@"status":@"processing"} keepOpen:YES];
         NSLog(@"Compute clearance and return data...");
-        [self processResponse:@"->"];
+        [self processResponse:@TELNET_PROMPT];
     }
 }
 

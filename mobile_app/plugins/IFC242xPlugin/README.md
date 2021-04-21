@@ -15,7 +15,7 @@ Also, you will need to add to the project on the 'Info' screen, "Supported Exter
 In order to execute the tests for this plugin, it needs to be installed in a Cordova app and run from there.
 
 1. [Create a new cordova app](https://cordova.apache.org/docs/en/latest/guide/cli/#create-the-app "Getting started with Cordova")
-2. From the ios platform directory in the new Cordova app, add the plugin and the plugin javascript tests
+2. From the new Cordova app, add the plugin and the plugin javascript tests
 
         cordova plugin add <local path to this checkout>
         cordova plugin add plugins/IFC242xPlugin/tests
@@ -30,6 +30,7 @@ In order to execute the tests for this plugin, it needs to be installed in a Cor
    - Uncheck "Copy items if needed" (if you are developing for this plugin)
    - Choose "Create folder references" for Added folders
    - Select all files and folders under the XCTests directory of this project
+6.  [Add OCMockito and OCHamcrest to the project](https://github.com/jonreid/OCMockito/#prebuilt-frameworks)
 
 ### Executing Javascript tests
 Simply run your Cordova app from XCode on a device and see a webpage open up with the autorun tests and results
