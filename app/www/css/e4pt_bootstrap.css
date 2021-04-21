@@ -1,0 +1,120 @@
+/* CSS used here will be applied after bootstrap.css */
+
+* {
+    cursor: pointer;
+}
+
+body {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    background: #0f0;
+}
+
+.h-95 {
+    height: 95% !important;
+}
+
+/* ordered list counters */
+ol {
+    margin: 0 0 1.5em;
+    padding: 0;
+    counter-reset: item;
+}
+
+ol > li {
+    margin: 0;
+    padding: 0 0 0 2em;
+    text-indent: -2em;
+    counter-increment: item;
+    display: block;
+}
+
+ol > li:before {
+    content: counters(item, ".") " ";
+    font-weight: bold;
+    padding-right: 0.5em;
+}
+
+header {
+    width: 100%;
+    position: fixed;
+    top: 0;
+    -webkit-transition: all 0.25s ease;
+    -moz-transition: all 0.25s ease;
+    -o-transition: all 0.25s ease;
+    transition: all 0.25s ease;
+}
+header.toggled {
+    width: calc(100% - 250px);
+}
+
+footer {
+    width: 100%;
+    position: fixed;
+    bottom: 0;
+    -webkit-transition: all 0.25s ease;
+    -moz-transition: all 0.25s ease;
+    -o-transition: all 0.25s ease;
+    transition: all 0.25s ease;
+}
+footer.toggled {
+    width: calc(100% - 250px);
+}
+
+#wrapper {
+    padding-left: 0;
+    -webkit-transition: all 0.25s ease;
+    -moz-transition: all 0.25s ease;
+    -o-transition: all 0.25s ease;
+    transition: all 0.25s ease;
+}
+#wrapper.toggled {
+    padding-left: 250px;
+}
+
+#sidebar-wrapper {
+    z-index: 1000;
+    position: fixed;
+    left: 250px;
+    width: 0;
+    height: 100%;
+    margin-left: -250px;
+    overflow-y: auto;
+    -webkit-transition: all 0.25s ease;
+    -moz-transition: all 0.25s ease;
+    -o-transition: all 0.25s ease;
+    transition: all 0.25s ease;
+}
+
+#wrapper.toggled #sidebar-wrapper {
+    width: 250px;
+    overflow-x: hidden;
+}
+
+#page-content-wrapper {
+    width: 100%;
+    position: absolute;
+    margin-top: 65px;
+    margin-bottom: 65px;
+    overflow-y: auto;
+}
+
+#wrapper.toggled #page-content-wrapper {
+    position: absolute;
+    margin-right: -250px;
+    width: calc(100% - 250px);
+}
+
+.sidebar-nav {
+    position: absolute;
+    top: 0;
+    width: 250px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 1.2rem;
+}
