@@ -45,13 +45,13 @@ define(function(require, exports, module, sensorSettings) {
     
     const addChartSubtitle = (chartConfig, acquisition_date, overall_clearance, avg_displacement) => {
         
-      let subtitle = acquisition_date + '; Avg. Tip Dist: ' + overall_clearance;
+      let subtitle = 'Date: ' + acquisition_date + '<br>Avg. Tip Dist: ' + overall_clearance;
       if (avg_displacement) {
         if (sensorSettings.doesMeasurementExceedTolerance(avg_displacement)) {
             subtitle = '<span class="FONT_BLACK">' + subtitle + '; </span>' + '<span class="FONT_RED">Overall Avg: ' + avg_displacement + '</span>';
         }
         else {
-            subtitle += "; Overall Avg: " + avg_displacement;
+            subtitle += ";&nbsp;Overall Avg: " + avg_displacement;
         }
       }
         
@@ -60,7 +60,7 @@ define(function(require, exports, module, sensorSettings) {
     
     const displayIntensityThresholdAndMeasurementRate = (chartConfig, measurement_rate, intensity_threshold) => {
           
-        chartConfig.subtitle.text = '<span class="COL_FL FONT_TRANSPARENT">Intensity Threshold: 100%</span><span class="COL_FR">Measurement Rate: ' + measurement_rate + 'kHz<br/>Intensity Threshold: ' + intensity_threshold + '%</span><span>' + chartConfig.subtitle.text + '</span>';
+        chartConfig.subtitle.text = '<span class="COL_FL FONT_TRANSPARENT">Intensity Threshold: 100%</span>;&nbsp;<span class="COL_FR">Measurement Rate: ' + measurement_rate + 'kHz</span><br/><span class="COL_FR">Intensity Threshold: ' + intensity_threshold + '%</span>;&nbsp;<span>' + chartConfig.subtitle.text + '</span>';
     }
     
     const createChartConfig = (displacementsArray, clearancesArray) => {
@@ -70,10 +70,10 @@ define(function(require, exports, module, sensorSettings) {
           spacingTop: 20,
           spacingLeft: 80,
           spacingRight: 60,
-          marginBottom: 60,
-          marginTop: 80,
+          marginBottom: 80,
+          marginTop: 120,
           marginLeft: 80,
-          marginRight: 60,
+          marginRight: 40,
           backgroundColor: 'transparent',
           animation: false,
           padding: 0

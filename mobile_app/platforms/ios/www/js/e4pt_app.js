@@ -2,9 +2,6 @@ define(function(require, exports, module) {
     const messaging = require('./messaging');
     const sensorSettings = require('./sensor_settings');
     const charting = require('./charting');
-    
-    // start in DEMO mode
-    var DEMO_MODE = false;
 
     var menu_open = false;
     var downloadFileName = "";
@@ -425,12 +422,6 @@ define(function(require, exports, module) {
             window.requestFileSystem  = window.requestFileSystem || window.webkitRequestFileSystem;
             window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, gotFS, fsFail);
         }, 900);
-        
-        setTimeout(function() {
-            if (DEMO_MODE) {
-                demo_connection_mode();
-            }
-        }, 1000);
     });
 
     function fadeOutAll() {
@@ -699,11 +690,6 @@ define(function(require, exports, module) {
 
     function get_sensor_parameters() {
         messaging.sendMessage({args:[{command:'get_sensor_parameters'}]});
-    }
-    
-    function demo_connection_mode() {
-        document.getElementById('CONN_SELECTION').value = 'demo';
-        set_connection_mode();
     }
 
     function set_connection_mode() {
@@ -2544,7 +2530,7 @@ define(function(require, exports, module) {
             return;
         }
         // If prior data for this stage & position was found, replace it with this new data.
-        console.log("priorSet before:  ", priorSet);
+        console.log("priorSet before:  ", JSON.stringify(priorSet));
         priorSet.stage = set.stage;
         priorSet.position = set.position;
         priorSet.case_thickness = set.case_thickness;
@@ -2558,7 +2544,7 @@ define(function(require, exports, module) {
         priorSet.measurement_rate = set.measurement_rate;
         priorSet.dateStr = set.dateStr;
         priorSet.filename = set.filename;
-        console.log("priorSet after:  ", priorSet);
+        console.log("priorSet after:  ", JSON.stringify(priorSet));
     }
 
     function update_clearance(clearance) {
