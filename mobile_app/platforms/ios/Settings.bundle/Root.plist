@@ -26,6 +26,46 @@
 			<key>DefaultValue</key>
 			<string>Jan 1, 1970</string>
 		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSMultiValueSpecifier</string>
+			<key>Title</key>
+			<string>IFC IP Address</string>
+			<key>Key</key>
+			<string>ipAddress</string>
+			<key>DefaultValue</key>
+			<string>192.168.168.150</string>
+			<key>Titles</key>
+			<array>
+				<string>GE (192.168.168.150)</string>
+				<string>Micro-Epsilon (169.254.168.150)</string>
+			</array>
+			<key>Values</key>
+			<array>
+				<string>192.168.168.150</string>
+				<string>169.254.168.150</string>
+			</array>
+		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSMultiValueSpecifier</string>
+			<key>Title</key>
+			<string>Baud Rate</string>
+			<key>Key</key>
+			<string>baudRate</string>
+			<key>DefaultValue</key>
+			<integer>460800</integer>
+			<key>Values</key>
+			<array>
+				<integer>460800</integer>
+				<real>115200</real>
+			</array>
+			<key>Titles</key>
+			<array>
+				<string>Fast (460,800)</string>
+				<string>Slow (115,200)</string>
+			</array>
+		</dict>
 	</array>
 </dict>
 </plist>

@@ -30,4 +30,7 @@
 
 @interface AppDelegate : CDVAppDelegate {}
 
+@property NSString *ipAddress;
+@property NSNumber *baudRate;
+
 @end
