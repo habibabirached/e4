@@ -8,6 +8,7 @@
 
 #import "IController.h"
 
+#define TELNET_PROMPT "->"
 
 enum CONTROLLER_STATE {
     ready = 0,

@@ -661,6 +661,8 @@ define(function(require, exports, module) {
         if (!menu_open) {
             if (!serialConnected) {
                 e4PtAlert('Connecting...\nPlease wait for indicator to turn green before proceeding.');
+                // ensure that the connection state updates in case the original message was not received
+                messaging.sendMessage({args:[{command:'check_connection_status'}]});
             }
             messaging.sendMessage({args:[{command:'get_version'}]});
         }
@@ -670,7 +672,6 @@ define(function(require, exports, module) {
         setTimeout(function () { $("body").css("overflow-x", "auto"); }, 1500
         );
     }
-    //
 
     function show_FRD() {
         fileviewer2.open(appDir + FRD_FILE, {
@@ -1769,11 +1770,13 @@ define(function(require, exports, module) {
                 console.log(msg);
                 if (msg.status == "connected") {
                     setIndicatorColor("green");
-                    document.getElementById("STATUS_DISPLAY").innerHTML = "Connected"
+                    document.getElementById("STATUS_DISPLAY").innerHTML = "Connected";
                     serialConnected = true;
+                } else if (msg.status == "connecting") {
+                    document.getElementById("STATUS_DISPLAY").innerHTML = "Connecting";
                 } else if (msg.status == 'disconnected') {
                     setIndicatorColor('white');
-                    document.getElementById('STATUS_DISPLAY').innerHTML = 'Disconnected'
+                    document.getElementById('STATUS_DISPLAY').innerHTML = 'Disconnected';
                     serialConnected = false;
                     if (!msg.noAlert) {
                         e4PtAlert('Controller was disconnected.');

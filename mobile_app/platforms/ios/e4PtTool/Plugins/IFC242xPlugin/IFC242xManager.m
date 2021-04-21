@@ -51,22 +51,20 @@
 }
 
 - (void)returnPluginResponse:(NSDictionary*)jsonMessage keepOpen:(BOOL)keepOpen {
+    NSLog(@"returnPluginResponse [%d]: %@", keepOpen, jsonMessage);
     CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:jsonMessage];
     [result setKeepCallback:[NSNumber numberWithBool:keepOpen]];
     [self->plugin.commandDelegate sendPluginResult:result callbackId:self->cmdCallbackId];
 }
 
 - (void)processComplete:(NSString*)statusMsg {
+    NSLog(@"processComplete: %@", statusMsg);
     if (self->controller.state == darkReferenceInProgress) {
         return; // Dark referencing is followed by data collection
-    }
-    
-    if (self->controller.state == setMeasurementRateInProgress) {
+    } else if (self->controller.state == setMeasurementRateInProgress) {
         [self returnPluginResponse:@{@"type":@"alert",@"message":[NSString stringWithFormat:@"Measurement rate set to %.3f kHz.", self->controller.settings.measurementRate]} keepOpen:YES];
         return;
-    }
-    
-    if (self->controller.state == setThresholdInProgress) {
+    } else if (self->controller.state == setThresholdInProgress) {
         [self returnPluginResponse:@{@"type":@"alert",@"message":[NSString stringWithFormat:@"Threshold is set to %.3f.", self->controller.settings.intensityThreshold]} keepOpen:YES];
     } else if (self->controller.state == halted) {
         [self returnData:[self computeClearance:self->controller.measurementData] measurementData:self->controller.measurementData];
@@ -363,6 +361,12 @@
         //    [self->controller initialize];
         //}
         [self returnPluginResponse:@{@"type":@"version",@"version":[[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleShortVersionString"]}];
+    } else if ([cmd containsString:@"check_connection_status"]) {
+        if (self->controller.state == ready) {
+            [self returnPluginResponse:@{@"type":@"status",@"status":@"connected"}];
+        } else if (self->controller.state == initializationInProgress) {
+            [self returnPluginResponse:@{@"type":@"status",@"status":@"connecting"}];
+        }
     } else if ([cmd containsString:@"get_sensor_parameters"]) {
         NSDictionary* jsonDict = @{@"type":@"sensor_params", @"master_fixture_height":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.hmf], @"mastering_value":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.mv], @"master_offset":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.mo], @"sensor_selection":self->controller.settings.sensor.name, @"sensor_length":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.length], @"start_measurement_range":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.smr], @"sensor_measurement_range":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.mr]};
         [self returnPluginResponse:jsonDict];

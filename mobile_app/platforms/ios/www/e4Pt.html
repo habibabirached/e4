@@ -881,7 +881,7 @@
                                 <button id="SET_MEASUREMENT_RATE_BUTTON" type="button" class="btn btn-primary">SET</button>
                             </div>
                             <br/>
-                            <div class="alert alert-warning" role="alert">
+                            <div class="alert alert-warning pb-0" role="alert">
                               <p>Increasing measurement rate is needed with higher RPM to ensure enough data points per blade tip, however increased measuring rate is a tradeoff requiring a lower intensity threshold (a lower sensitivity of the sensor) and blades could be missed entirely.</p>
                             </div>
                             <!-- -->
@@ -952,10 +952,9 @@
                               </div>
                             </form>
 
-                            <div class="text-center mt-2">
-                                <span class="badge bg-danger fs-6">Only authorized users should change the sensor parameters here</span>
+                            <div class="alert alert-danger text-center pb-0" role="alert">
+                              <p>Only authorized users should change the sensor parameters here.</p>
                             </div>
-                            <br/>
 
                             <div class="d-grid gap-2" hidden>
                                 <button id="SENSOR_PARAMS_UPDATE_BUTTON" type="button" class="btn btn-primary">UPDATE</button>
@@ -968,13 +967,13 @@
                             </div>
                             <br/>-->
                             
-                            <div class="alert alert-warning" role="alert">
+                            <div class="alert alert-warning pb-0" role="alert">
                               <p>When changing the Mastering Value here be certain to perform Mastering before collecting data, else clearances may be calculated incorrectly.</p>
                             </div>
-                            <div class="alert alert-warning" role="alert">
+                            <div class="alert alert-warning pb-0" role="alert">
                               <p>The Master Offset is the delta calculated: (measured sensor length + SMR + Mastering Value) - measured mastering fixture height.</p>
                             </div>
-                            <div class="alert alert-warning" role="alert">
+                            <div class="alert alert-warning pb-0" role="alert">
                               <p>The Mastering Fixture height defaults are:</p>
                               <hr>
                               <dl class="row">
@@ -984,7 +983,7 @@
                                   <dd class="col-sm-6">9.463&quot; +/- 0.0005in</dd>
                               </dl>
                             </div>
-                            <div class="alert alert-warning" role="alert">
+                            <div class="alert alert-warning pb-0" role="alert">
                               <p>The production sensor default lengths are:</p>
                               <hr>
                               <dl class="row">
@@ -1143,11 +1142,12 @@
                 <span class="ps-2">GE Proprietary Information</span>
               </span>
             </div>
+            <div id="REV_PROGRESS_BAR" class="container-fluid px-0 py-1">
+                <div class="progress w-100" style="height: 30px;">
+                  <div id="REV_PROGRESS" class="progress-bar bg-success" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%">0%</div>
+                </div>
+            </div>
           </nav>
-          
-          <div id="REV_PROGRESS_BAR" class="progress">
-            <div id="REV_PROGRESS" class="progress-bar bg-success" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%">0%</div>
-          </div>
       </footer>
       <!-- /Footer -->
 
