@@ -14,6 +14,7 @@
 
 @implementation BaseController {
     NSTimeInterval startTime;
+    NSRegularExpression *promptRegex;
     NSRegularExpression *mrRegex;
     NSRegularExpression *sensorParamRegex;
 }
@@ -33,6 +34,7 @@
         self.settings = settings;
         self.state = notReady;
         self->telnetCmds = [NSMutableArray new];
+        self->promptRegex = [NSRegularExpression regularExpressionWithPattern:@"(\\-\\>)$" options:NSRegularExpressionCaseInsensitive error:nil];
         self->mrRegex = [NSRegularExpression regularExpressionWithPattern:@"\\s(\\d+\\.\\d+)mm" options:NSRegularExpressionCaseInsensitive error:nil];
         self->sensorParamRegex = [NSRegularExpression regularExpressionWithPattern:@":\\s+(\\d{8})(?:$|\\r\\n)" options:NSRegularExpressionAnchorsMatchLines error:nil];
         [self initialize];
@@ -117,6 +119,7 @@
     self.state = initializationInProgress;
     self->telnetIsReady = NO;
     self->controllerType = @"";
+    self->buffer = [[NSMutableString alloc] initWithString:@""];
 
 #ifdef SEND_DISPLACEMENT_ONLY
     self->nextIFCValue = IFCDisplacement;
@@ -312,35 +315,55 @@
 
 - (void)processResponse:(NSString*)rxData {
     NSLog(@"@processResponse");
-    NSString* prompt = @"";
     if (rxData.length > 1) {
-        //TODO: Prompt is only the last 2 characters, seems wrong way to look for '->' (trailing whitespace possible?)
-        prompt = [rxData substringFromIndex: [rxData length] - 2];
-        NSLog(@"prompt: %@",prompt);
+        // fix for DEMO mode
+        if (!self-> buffer) {
+            NSLog(@"WARNING: Buffer was not allocated, allocating buffer");
+            self->buffer = [[NSMutableString alloc] initWithString:@""];
+        }
+        // TODO: check if needed
+        // clear buffer if size over limit
+        if (self->buffer.length > MAX_BUFFER_SIZE) {
+            NSLog(@"WARNING: Buffer length %lu over limit (%d), clearing buffer", self->buffer.length, MAX_BUFFER_SIZE);
+            [self->buffer setString:@""];
+        }
+
+        // add rxData to buffer until end of response
+        [self->buffer appendString:rxData];
+
+        // look for prompt at the end of buffer
+        NSUInteger promptMatches = [promptRegex numberOfMatchesInString:self->buffer options:0 range:NSMakeRange(0, self->buffer.length)];
+        if (promptMatches == 0) {
+            NSLog(@"Partial response: %@", self->buffer);
+            return;
+        } else {
+            NSLog(@"Complete response: %@", self->buffer);
+        }
     } else {
         return;
     }
 
-    if ([rxData containsString:@"IFC2422"]) {
+    // process buffer containing complete response
+    if ([self->buffer containsString:@"IFC2422"]) {
         NSLog(@"Controller is IFC2422");
         self->controllerType = @"IFC2422";
         [self->telnetCmds addObject:@"SENSORINFO_CH01\n"];
         [self sendTelnetCommand];
-    } else if ([rxData containsString:@"IFC2421"]) {
+    } else if ([self->buffer containsString:@"IFC2421"]) {
         NSLog(@"Controller is IFC2421");
         self->controllerType = @"IFC2421";
         [self->telnetCmds addObject:@"SENSORINFO\n"];
         [self sendTelnetCommand];
     } else {
-        [self->mrRegex enumerateMatchesInString:rxData options:0 range:NSMakeRange(0, rxData.length) usingBlock:^(NSTextCheckingResult *match, NSMatchingFlags flags, BOOL *stop) {
+        [self->mrRegex enumerateMatchesInString:self->buffer options:0 range:NSMakeRange(0, self->buffer.length) usingBlock:^(NSTextCheckingResult *match, NSMatchingFlags flags, BOOL *stop) {
             if ([match numberOfRanges] > 1) {
-                self.settings.sensor.mr = [[rxData substringWithRange:[match rangeAtIndex:1]] floatValue];
+                self.settings.sensor.mr = [[self->buffer substringWithRange:[match rangeAtIndex:1]] floatValue];
                 NSLog(@"Sensor MR is %f", self.settings.sensor.mr);
             }
         }];
-        [self->sensorParamRegex enumerateMatchesInString:rxData options:0 range:NSMakeRange(0, rxData.length) usingBlock:^(NSTextCheckingResult *match, NSMatchingFlags flags, BOOL *stop) {
+        [self->sensorParamRegex enumerateMatchesInString:self->buffer options:0 range:NSMakeRange(0, self->buffer.length) usingBlock:^(NSTextCheckingResult *match, NSMatchingFlags flags, BOOL *stop) {
             if ([match numberOfRanges] > 1) {
-                NSString* sensorParams = [rxData substringWithRange:[match rangeAtIndex:1]];
+                NSString* sensorParams = [self->buffer substringWithRange:[match rangeAtIndex:1]];
                 self.settings.sensor.length = [[sensorParams substringToIndex:4] floatValue]/1000.0;
                 self.settings.sensor.smr = [[sensorParams substringFromIndex:4] floatValue]/100.0;
                 NSLog(@"Sensor Length is %.3f and SMR is %.2f", self.settings.sensor.length, self.settings.sensor.smr);
@@ -348,44 +371,46 @@
         }];
     }
 
-    if ([prompt containsString:@TELNET_PROMPT]) {
-        NSLog(@"Got telnet prompt: telnetCmds.count = %lu, pState = %d",(unsigned long)self->telnetCmds.count, self.state);
-        self->telnetIsReady = YES;
-        switch (self.state) {
-            case ready:
-            case collectingDataInProgress:
-            case notReady:
-            case timeOut:
-                break;
-            case masteringInProgress:
-                if (self->telnetCmds.count == 0) {
-                    NSLog(@"Mastering Complete.");
-                    [self->delegate processComplete:@"done_mastering"];
-                    self.state = ready;
-                }
-                break;
-            case darkReferenceInProgress:
-                if (self->telnetCmds.count == 0) {
-                    NSLog(@"Dark Correction Complete.");
-                }
-                break;
-            case initializationInProgress:
-            case setMeasurementRateInProgress:
-                if (self->telnetCmds.count > 0) {
-                    break;
-                } else {
-                    NSLog(@"Initialization Complete.");
-                }
-            case setThresholdInProgress:
-            case clearanceComputationInProgress:
-            case halted:
-                // TODO: does not get received by app for serial connection
-                [self->delegate processComplete:@"connected"];
-            default:
+    NSLog(@"Got telnet prompt: telnetCmds.count = %lu, pState = %d",(unsigned long)self->telnetCmds.count, self.state);
+    self->telnetIsReady = YES;
+    // reset buffer
+    [self->buffer setString:@""];
+
+    switch (self.state) {
+        case ready:
+        case collectingDataInProgress:
+        case notReady:
+        case timeOut:
+            break;
+        case masteringInProgress:
+            if (self->telnetCmds.count == 0) {
+                NSLog(@"Mastering Complete.");
+                [self->delegate processComplete:@"done_mastering"];
                 self.state = ready;
+            }
+            break;
+        case darkReferenceInProgress:
+            if (self->telnetCmds.count == 0) {
+                NSLog(@"Dark Correction Complete.");
+            }
+            break;
+        case initializationInProgress:
+        case setMeasurementRateInProgress:
+            if (self->telnetCmds.count > 0) {
                 break;
-        }
+            } else {
+                NSLog(@"Initialization Complete.");
+            }
+        case setThresholdInProgress:
+        case clearanceComputationInProgress:
+        case halted:
+            // TODO: does not get received by app for serial connection
+            [self->delegate processComplete:@"connected"];
+        default:
+            self.state = ready;
+            break;
     }
+
     NSLog(@"Returning from processResponse");
 }
 
