@@ -274,7 +274,7 @@
     if ([cmd containsString:@"send_data"]) {
         NSLog(@"Got send_data");
         NSString* acqTime = [message valueForKey:@"acquisitionTime"];
-        int rpms = [[message valueForKey:@"rpms"] intValue];
+        float rpms = [[message valueForKey:@"rpms"] floatValue];
         self->controller.settings.sensor.offsetSelector = [message valueForKey:@"clearanceCalculationMethod"];
         //TODO: block in case acquisition already in progress
         self->metaData = [ScanMetaData new];
