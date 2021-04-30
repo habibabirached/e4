@@ -272,7 +272,7 @@
     if ([cmd containsString:@"send_data"]) {
         NSLog(@"Got send_data");
         NSString* acqTime = [message valueForKey:@"acquisitionTime"];
-        int rpms = [[message valueForKey:@"rpms"] intValue];
+        float rpms = [[message valueForKey:@"rpms"] floatValue];
         self->controller.settings.sensor.offsetSelector = [message valueForKey:@"clearanceCalculationMethod"];
         //TODO: block in case acquisition already in progress
         self->metaData = [ScanMetaData new];
@@ -367,6 +367,9 @@
         } else if (self->controller.state == initializationInProgress) {
             [self returnPluginResponse:@{@"type":@"status",@"status":@"connecting"}];
         }
+    } else if ([cmd containsString:@"configure_controller"]) {
+        [self->controller configureController];
+        [self returnPluginResponse:@{@"type":@"alert",@"message":@"Controller configuration is updated, you should shutdown and restart this application."}];
     } else if ([cmd containsString:@"get_sensor_parameters"]) {
         NSDictionary* jsonDict = @{@"type":@"sensor_params", @"master_fixture_height":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.hmf], @"mastering_value":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.mv], @"master_offset":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.mo], @"sensor_selection":self->controller.settings.sensor.name, @"sensor_length":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.length], @"start_measurement_range":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.smr], @"sensor_measurement_range":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.mr]};
         [self returnPluginResponse:jsonDict];

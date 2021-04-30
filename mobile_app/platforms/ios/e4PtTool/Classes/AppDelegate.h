@@ -32,5 +32,6 @@
 
 @property NSString *ipAddress;
 @property NSNumber *baudRate;
+@property BOOL useSerialBuffer;
 
 @end

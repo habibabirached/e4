@@ -32,6 +32,7 @@
 
 @synthesize ipAddress = _ipAddress;
 @synthesize baudRate = _baudRate;
+@synthesize useSerialBuffer = _useSerialBuffer;
 
 - (BOOL)application:(UIApplication*)application didFinishLaunchingWithOptions:(NSDictionary*)launchOptions
 {
@@ -47,12 +48,14 @@
     
     NSObject *ipAddressObject = [defaults objectForKey:@"ipAddress"];
     NSObject *baudRateObject = [defaults objectForKey:@"baudRate"];
-    if (ipAddressObject == nil || baudRateObject == nil) {
+    NSObject *useSerialBufferObject = [defaults objectForKey:@"useSerialBuffer"];
+    if (ipAddressObject == nil || baudRateObject == nil || useSerialBufferObject == nil) {
         [self registerDefaultsFromSettingsBundle];
     }
 
-    self.ipAddress = [defaults stringForKey:@"ipAddress"];;
+    self.ipAddress = [defaults stringForKey:@"ipAddress"];
     self.baudRate = [NSNumber numberWithInt:[[defaults stringForKey:@"baudRate"] intValue]];
+    self.useSerialBuffer = [defaults boolForKey:@"useSerialBuffer"];
 }
 
 - (void)registerDefaultsFromSettingsBundle {

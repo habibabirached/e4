@@ -11,10 +11,12 @@ define(function(require, exports, module) {
     var doDBSave = false;
     var manualOverride = false;
     var savedRPM = "";
+    var fromGetData = false;
     var fromDataCollectionPage = false;
     var fromSensorSetupPage = false;
     var fromDataPlotPage = false;
     var collectionAborted = false;
+    var masteringPerformed = false;
     
     var APP_NAME = "e-4Pt Tool";
     var UPDATE_SENSOR_PARAMETERS_PASSWORD = "Gr0undH0g";
@@ -37,6 +39,7 @@ define(function(require, exports, module) {
     var LABEL_DARK = "PERFORMING DARK REFERENCE";
 
     var local_db = new PouchDB('e4ptdb', {revs_limit: 1, auto_compaction: true});
+    var archive_db = new PouchDB('e4ptarchive', {revs_limit: 1, auto_compaction: true});
 
     // Replace with remote instance when we get to that point.
     //var remoteCouch = 'http://xxx.xxx.xxx.xxx/remote_e4ptdb';
@@ -61,9 +64,10 @@ define(function(require, exports, module) {
         this.measurement_rate = null;
         this.dateStr = null;
         this.filename = null;
+        this.ambient_temperature = null;
     };
 
-    Data_Set.prototype.add_data = function(state, stage, position, case_thickness, blade_number, pts, used_in_avg, clearance, max_clr, min_clr, med_clr, std_clr, quality, intensity_threshold, measurement_rate, dateStr, filename) {
+    Data_Set.prototype.add_data = function(state, stage, position, case_thickness, blade_number, pts, used_in_avg, clearance, max_clr, min_clr, med_clr, std_clr, quality, intensity_threshold, measurement_rate, dateStr, filename, ambient_temperature) {
         this.stage = stage;
         this.position = position;
         this.case_thickness = case_thickness;
@@ -79,6 +83,7 @@ define(function(require, exports, module) {
         this.measurement_rate = measurement_rate;
         this.dateStr = dateStr;
         this.filename = filename;
+        this.ambient_temperature = ambient_temperature;
     };
 
     var E4PTdata = {
@@ -93,6 +98,7 @@ define(function(require, exports, module) {
         "operator":"",
         "units":"",
         "state":"",
+        "temperature_units":"",
         "final":{
             "SCAN":"",
         },
@@ -125,6 +131,7 @@ define(function(require, exports, module) {
     var current_frame_data = [];
 
     $(document).ready(function() {
+        console.log('READY');
         var attachFastClick = Origami.fastclick;
         attachFastClick(document.body);
         
@@ -185,12 +192,67 @@ define(function(require, exports, module) {
                 }
               });
         }, {passive: true});
+        document.getElementById("CLEAR_SELECTED_BUTTON").addEventListener('click', function() {
+            e4PtConfirm("Are you sure you want to delete the selected records?",
+              function(idx) {
+                if (idx == 1) {
+                  console.log("Deleting selected records.");
+                  clearSelectedDB(false) // if true it would clear all Database, even these not selected.
+                } else {
+                  console.log("Deleting selected records was cancelled.");
+                }
+              });
+        }, {passive: true});
+        document.getElementById("ARCHIVE_SELECTED_BUTTON").addEventListener('click', function() {
+            e4PtConfirm("Are you sure you want to archive the selected records?",
+              function(idx) {
+                if (idx == 1) {
+                  console.log("Archiving selected records.");
+                  archiveSelectedDB(false) // if true it would delete local files, even these not selected.
+                } else {
+                  console.log("Archiving selected records was cancelled.");
+                }
+              });
+        }, {passive: true});
+        document.getElementById("DELETE_ARCHIVE_DB_BUTTON").addEventListener('click', function() {
+            e4PtConfirm("Are you sure you want to clear and delete all data from this archive and local drive?",
+              function(idx) {
+                if (idx == 1) {
+                  console.log("Clearing archive.");
+                  clearArchive();
+                } else {
+                  console.log("Archive clear was cancelled.");
+                }
+              });
+        }, {passive: true});
+        document.getElementById("DELETE_SELECTED_ARCHIVE_BUTTON").addEventListener('click', function() {
+            e4PtConfirm("Are you sure you want to delete the selected archive records?",
+              function(idx) {
+                if (idx == 1) {
+                  console.log("Deleting selected archive records.");
+                  clearSelectedArchive(false) // if true it would clear all Database, even these not selected.
+                } else {
+                  console.log("Deleting selected archive records was cancelled.");
+                }
+              });
+        }, {passive: true});
+        document.getElementById("UNARCHIVE_SELECTED_BUTTON").addEventListener('click', function() {
+            e4PtConfirm("Are you sure you want to unarchive the selected records?",
+              function(idx) {
+                if (idx == 1) {
+                  console.log("Unarchiving selected records.");
+                  unarchiveSelectedDB(false) // if true it would delete local files, even these not selected.
+                } else {
+                  console.log("Unarchiving selected records was cancelled.");
+                }
+              });
+        }, {passive: true});
 
         function RESULTS_BUTTON_FUNC() {
             getCredentialforREST();
             toggle_menu();
-            if ($("#TITLE_BAR").text() != "RESULTS") {
-                $("#TITLE_BAR").text("RESULTS");
+            if ($("#TITLE_BAR").text() != "Results") {
+                $("#TITLE_BAR").text("Results");
             }
             createTable();
             $("#RESULTS_PAGE").fadeIn();
@@ -199,11 +261,11 @@ define(function(require, exports, module) {
            fadeOutAll();
             try {
                 set_frame_information();
-                listInternalFiles();
+                listInternalFiles("LOCAL_DATA_TABLE_BODY", local_db, true);
                 SELECTED_FILE = "";
                 toggle_menu();
-                if ($("#TITLE_BAR").text() != "OPEN FROM DEVICE") {
-                    $("#TITLE_BAR").text("OPEN FROM DEVICE");
+                if ($("#TITLE_BAR").text() != "Open From Device") {
+                    $("#TITLE_BAR").text("Open From Device");
                 }
                 $("#LOCAL_DATA_PAGE").fadeIn();
             } catch (err) {
@@ -212,6 +274,23 @@ define(function(require, exports, module) {
                 toggle_menu();
             }
         }, {passive: true});
+        document.getElementById("OPEN_ARCHIVE_DATA_BUTTON").addEventListener('click', function() {
+            fadeOutAll();
+             try {
+                 set_frame_information();
+                 listInternalFiles("ARCHIVE_DATA_TABLE_BODY", archive_db, false);
+                 SELECTED_FILE = "";
+                 toggle_menu();
+                 if ($("#TITLE_BAR").text() != "Open From Archive") {
+                     $("#TITLE_BAR").text("Open From Archive");
+                 }
+                 $("#ARCHIVED_DATA_PAGE").fadeIn();
+             } catch (err) {
+                 console.log("Error getting archive files.");
+                 console.log(err);
+                 toggle_menu();
+             }
+        }, {passive: true});
         document.getElementById("SHUTDOWN_BUTTON").addEventListener('click', function() {
             toggle_menu();
             systemShutdown();
@@ -219,16 +298,21 @@ define(function(require, exports, module) {
         document.getElementById("CONN_SELECTION").addEventListener('change', function() {
             set_connection_mode();
         }, {passive: true});
+        /*document.getElementById("CONFIGURE_CONTROLLER_BUTTON").addEventListener('click', function() {
+            configure_controller();
+        }, {passive: true});*/
         document.getElementById("DATA_PLOT_CLOSE_BUTTON").addEventListener('click', function() {
             $("#DATA_PLOT_PAGE").fadeOut();
             // re-open previous page
             if (fromSensorSetupPage) {
                 $("#SENSOR_SETUP_PAGE").fadeIn();
                 fromSensorSetupPage = false;
-            } else if (fromDataCollectionPage) {
+            }
+            // disabled since showing data on plot2
+            /* else if (fromDataCollectionPage) {
                 $("#TURBINE_SETUP_PAGE").fadeIn();
                 fromDataCollectionPage = false;
-            }
+            }*/
         }, {passive: true});
         document.getElementById("FRD_CLOSE_BUTTON").addEventListener('click', function() {
             $("#FRD_PAGE").fadeOut();
@@ -251,6 +335,10 @@ define(function(require, exports, module) {
             $("#LOCAL_DATA_PAGE").fadeOut();
             $("#TITLE_BAR").text(APP_NAME);
         }, {passive: true});
+        document.getElementById("ARCHIVED_DATA_CLOSE_BUTTON").addEventListener('click', function() {
+            $("#ARCHIVED_DATA_PAGE").fadeOut();
+            $("#TITLE_BAR").text(APP_NAME);
+        }, {passive: true});
         document.getElementById("FILE_CHOOSER_CLOSE_BUTTON").addEventListener('click', function() {
             $("#FILE_CHOOSER_PAGE").fadeOut();
             if (fromDataPlotPage) {
@@ -270,25 +358,19 @@ define(function(require, exports, module) {
             console.log("@GET_DATA_BUTTON event listener function.");
             toggle_menu();
             fadeOutAll();
-            var acquisitionTime = null;
-            doDBSave = false;
-            console.log("@GET_DATA_BUTTON: Prompting.");
-            var nav = navigator.notification;
-            if (nav != null) {
-                // We have plugins so we're in Cordova.  Use the Cordova notification.
-                console.log("@GET_DATA_BUTTON: Cordova Prompt");
-                // For issue #69: added additional text to the prompt for acquisition time
-                navigator.notification.prompt('Raw data is the displacement from the sensor with an unknown (default) reference point. This should be used only when relative data is desired. \n \n Please enter the acquisition time in seconds.',
-                                              acquisitionTimePromptCallback,
-                                              'Acquisition Time',
-                                              ['Ok','Cancel'],
-                                              '3');
+            if (!masteringPerformed) {
+                //e4PtAlert('Mastering has not been performed. Please perform mastering before collecting data.');
+                e4PtConfirm("Mastering has not been performed. Do you want to collect data without mastering?",
+                  function(idx) {
+                    if (idx == 1) {
+                      console.log("Proceeding without mastering");
+                      getData();
+                    } else {
+                      console.log("Get data was cancelled.");
+                    }
+                  });
             } else {
-                // No plugins, so we must not be in Cordova. Use a standard prompt.
-                console.log("@GET_DATA_BUTTON: Windows Prompt");
-                // For issue #69: added additional text to the prompt for acquisition time
-                acquisitionTime = window.prompt("Raw data is the displacement from the sensor with an unknown (default) reference point. This should be used only when relative data is desired. \n \n Please enter the acquisition time in seconds.", "3");
-                acquisitionTimePromptCallback({"input1":acquisitionTime});
+                getData();
             }
         }, {passive: true});
         document.getElementById("SENSOR_SETUP_BUTTON").addEventListener('click', function() {
@@ -341,7 +423,20 @@ define(function(require, exports, module) {
         document.getElementById("STAGE_COLLECT_BUTTON").addEventListener('click', function() {
             if (document.getElementById("STAGE_COLLECT_BUTTON").innerHTML === LABEL_GO) {
                 collectionAborted = false;
-                confirm_collect_stage_data();
+                if (!masteringPerformed) {
+                    //e4PtAlert('Mastering has not been performed. Please perform mastering before collecting data.');
+                    e4PtConfirm("Mastering has not been performed. Do you want to collect stage data without mastering?",
+                      function(idx) {
+                        if (idx == 1) {
+                          console.log("Proceeding without mastering");
+                            confirm_collect_stage_data();
+                        } else {
+                          console.log("Collect stage data was cancelled.");
+                        }
+                      });
+                } else {
+                    confirm_collect_stage_data();
+                }
             } else if (document.getElementById("STAGE_COLLECT_BUTTON").innerHTML === LABEL_ABORT) {
                 messaging.sendMessage({args:[{command:'abort'}]});
                 // ignore data response to hide DATA_PLOT
@@ -422,6 +517,11 @@ define(function(require, exports, module) {
             window.requestFileSystem  = window.requestFileSystem || window.webkitRequestFileSystem;
             window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, gotFS, fsFail);
         }, 900);
+        
+        // Wait (2s) and update connection status if connected before menu is opened
+        setTimeout(function() {
+            messaging.sendMessage({args:[{command:'check_connection_status'}]});
+        }, 2000);
     });
 
     function fadeOutAll() {
@@ -436,6 +536,7 @@ define(function(require, exports, module) {
         $("#INITIALIZE_SENSOR_PAGE").fadeOut();
         $("#TURBINE_SETUP_PAGE").fadeOut();
         $("#LOCAL_DATA_PAGE").fadeOut();
+        $("#ARCHIVED_DATA_PAGE").fadeOut();
         $("#FILE_CHOOSER_PAGE").fadeOut();
         $("#DATA_DETAILS_PAGE").fadeOut();
     }
@@ -481,6 +582,31 @@ define(function(require, exports, module) {
         });
     }
     
+    function getData() {
+        console.log('@getData');
+        fromGetData = true;
+        var acquisitionTime = null;
+        doDBSave = false;
+        console.log("@GET_DATA_BUTTON: Prompting.");
+        var nav = navigator.notification;
+        if (nav != null) {
+            // We have plugins so we're in Cordova.  Use the Cordova notification.
+            console.log("@GET_DATA_BUTTON: Cordova Prompt");
+            // For issue #69: added additional text to the prompt for acquisition time
+            navigator.notification.prompt('Raw data is the displacement from the sensor with an unknown (default) reference point. This should be used only when relative data is desired. \n \n Please enter the acquisition time in seconds.',
+                                          acquisitionTimePromptCallback,
+                                          'Acquisition Time',
+                                          ['Ok','Cancel'],
+                                          '3');
+        } else {
+            // No plugins, so we must not be in Cordova. Use a standard prompt.
+            console.log("@GET_DATA_BUTTON: Windows Prompt");
+            // For issue #69: added additional text to the prompt for acquisition time
+            acquisitionTime = window.prompt("Raw data is the displacement from the sensor with an unknown (default) reference point. This should be used only when relative data is desired. \n \n Please enter the acquisition time in seconds.", "3");
+            acquisitionTimePromptCallback({"input1":acquisitionTime});
+        }
+    }
+    
     function resetDataCollection() {
         setButtonProperties($("#START_DARK_REFERENCE_BUTTON"), LABEL_START_DARK, 'blue');
         displayGoButton();
@@ -518,6 +644,7 @@ define(function(require, exports, module) {
                      E4PTdata.operator = "";
                      E4PTdata.units = "";
                      E4PTdata.state = "";
+                     E4PTdata.temperature_units = "";
                      E4PTdata.final = {
                          "SCAN":"",
                      };
@@ -543,6 +670,8 @@ define(function(require, exports, module) {
                      document.getElementById("OPERATOR").value = "";
                      document.getElementById("UNITS").selectedIndex = 0;
                      document.getElementById("TURBINE_STATE").selectedIndex = 0;
+                     document.getElementById("TEMPERATURE_UNITS").selectedIndex = 0;
+                     document.getElementById("AMBIENT_TEMPERATURE").value = "";
                      document.getElementById("DESCRIPTION").value = "";
                      setupCasingThicknessTable(null);
                      document.getElementById("FRAME_DEFAULT_SENSOR").value = current_frame_data.default_sensor;
@@ -632,7 +761,6 @@ define(function(require, exports, module) {
             console.log("w/o RPM: ", acquisitionTime);
         }
         savedRPM = acquisitionTime.replace("rpm","");
-        savedRPM = savedRPM.replace("RPM","");
         if (acquisitionTime != null) {
             //if (Number.isFinite(acquisitionTime)) {
             //    if (acquisitionTime > 0) {
@@ -655,8 +783,8 @@ define(function(require, exports, module) {
         console.log("fsRoot: ", fsRoot);
 
         $("#wrapper").toggleClass("toggled");
-        $("header").toggleClass("toggled");
-        $("footer").toggleClass("toggled");
+        //$("header").toggleClass("toggled");
+        //$("footer").toggleClass("toggled");
         
         if (!menu_open) {
             if (!serialConnected) {
@@ -668,9 +796,10 @@ define(function(require, exports, module) {
         }
         menu_open = !menu_open;
         
-        $("body").css("overflow-x", "hidden");
-        setTimeout(function () { $("body").css("overflow-x", "auto"); }, 1500
-        );
+        /*$("body").css("overflow-x", "hidden");
+        setTimeout(function () {
+            $("body").css("overflow-x", "auto");
+        }, 1500);*/
     }
 
     function show_FRD() {
@@ -696,9 +825,31 @@ define(function(require, exports, module) {
     function set_connection_mode() {
         var mode = document.getElementById('CONN_SELECTION').value;
         $('#CONNECTION_NAME').text(mode.toUpperCase());
+        
+        if (mode === 'demo') {
+            console.log('DEMO mode: ignore mastering');
+            masteringPerformed = true;
+        }
 
         pluginMessage({type:'status',status:'disconnected',noAlert:true});
         messaging.sendMessage({args:[{command:'set_connection_mode',mode:mode}]});
+    }
+    
+    function configure_controller() {
+        if (!serialConnected) {
+            e4PtAlert('Please connect to the controller before proceeding.');
+        } else {
+            if (messaging.usesPlugin) {
+                e4PtConfirm("Are you sure you want to configure the controller?",
+                            function(idx) {
+                                if (idx === 1) {
+                                    messaging.sendMessage({args:[{command:'configure_controller'}]});
+                                }
+                            });
+            } else {
+                messaging.sendMessage({args:[{command:'configure_controller'}]});
+            }
+        }
     }
 
     function record_casing_thickness() {
@@ -736,6 +887,7 @@ define(function(require, exports, module) {
       $("#DATA_PLOT_PAGE").fadeOut();
       $("#INITIALIZE_SENSOR_PAGE").fadeIn();
       $("#LOCAL_DATA_PAGE").fadeOut();
+      $("#ARCHIVED_DATA_PAGE").fadeOut();
 
       // Here we get values from the UI, but we make sure they don't overrun bounds.
       var frm_idx = document.getElementById("FRAME_SIZE").selectedIndex;
@@ -749,6 +901,7 @@ define(function(require, exports, module) {
       if (E4PTdata.operator.length > MAX_STR_LEN) E4PTdata.operator = E4PTdata.operator.substr(0,MAX_STR_LEN);
       E4PTdata.units = document.getElementById("UNITS").value;
       E4PTdata.state = document.getElementById("TURBINE_STATE").value;
+      E4PTdata.temperature_units = document.getElementById("TEMPERATURE_UNITS").value;
 
       // Get a timestamp in prepartion for saving.
       let d = new Date();
@@ -776,7 +929,7 @@ define(function(require, exports, module) {
     }
 
     function confirm_new_or_continue() {
-        let msg = "Continue collecting data for a turbine, or clear data and start a new collection?"
+        let msg = "Continue collecting data for a turbine, or clear data and start a new collection? Starting a new collection will create a new entry in the database with the same serial number."
         if (E4PTdata.pouchdb_id.length > 0) {
             try{
                 navigator.notification.confirm(
@@ -807,7 +960,7 @@ define(function(require, exports, module) {
     }
 
     function turbine_setup() {
-        $("#TITLE_BAR").text("DATA COLLECTION");
+        $("#TITLE_BAR").text("Data Collection");
         $("#TURBINE_SETUP_PAGE").fadeIn();
         savedRPM = "";
 
@@ -835,13 +988,19 @@ define(function(require, exports, module) {
             document.getElementById("CURR_CASE_THICKNESS_LABEL").innerHTML = "mm";
             document.getElementById("SPACER_THICKNESS_LABEL").innerHTML = "mm";
         }
+        var temperatureUnits = document.getElementById("TEMPERATURE_UNITS").value.toUpperCase();
+        if (temperatureUnits.includes('FAHRENHEIT')) {
+            document.getElementById("AMBIENT_TEMPERATURE_LABEL").innerHTML = "°F";
+        } else {
+            document.getElementById("AMBIENT_TEMPERATURE_LABEL").innerHTML = "°C";
+        }
         let customer = document.getElementById("CUSTOMER").value;
         let site = document.getElementById("SITE").value;
         let dateStr = E4PTdata.date;
         let d = new Date();
-        let hh = ( '0' + d.getHours()).substr(-2);
-        let mm = ( '0' + d.getMinutes()).substr(-2);
-        let ss = ( '0' + d.getSeconds()).substr(-2);
+        let hh = ('0' + d.getHours()).substr(-2);
+        let mm = ('0' + d.getMinutes()).substr(-2);
+        let ss = ('0' + d.getSeconds()).substr(-2);
         let timeStr = hh + ":" + mm;
         if (dateStr.length == 0) {
             dateStr = monthNames[d.getMonth()] + "-" + d.getDate() + "-" + d.getFullYear();
@@ -889,7 +1048,7 @@ define(function(require, exports, module) {
         for (frmIdx = 0; frmIdx < frame_data.length; frmIdx++) {
             html_buf.push("<option value='" + frame_data[frmIdx]['frame'] + "'>" + frame_data[frmIdx]['frame'] + "</option>");
             if (current_frame_data.length != 0) {
-              if (current_frame_data.frame == frame_data[frmIdx]) {
+              if (current_frame_data.frame == frame_data[frmIdx]['frame']) {
                 selectedIndex = frmIdx;
               }
             }
@@ -1088,7 +1247,7 @@ define(function(require, exports, module) {
 
         current_stage_index = document.getElementById("SENSOR_STAGE").selectedIndex;
         current_stage = current_frame_data['stage'][current_stage_index];
-        current_position_index =  document.getElementById("SENSOR_POSITION").selectedIndex;
+        current_position_index = document.getElementById("SENSOR_POSITION").selectedIndex;
         current_position = current_frame_data['position'][current_stage][current_position_index];
         doDBSave = true;
 
@@ -1096,12 +1255,17 @@ define(function(require, exports, module) {
         var nav = navigator.notification;
         if (nav != null) {
             // We have plugins so we're in Cordova.  Use the Cordova notification.
-            if (savedRPM == "") savedRPM = "1";
-            navigator.notification.prompt('Please enter or confirm the rotor RPM.\nEstimate within +/- 1rpm if possible.',
+            savedRPM = document.getElementById('MEASUREMENT_RPM').value;
+            if (savedRPM == "") {
+                savedRPM = "1";
+                document.getElementById("MEASUREMENT_RPM").value = savedRPM;
+            }
+            /*navigator.notification.prompt('Please enter or confirm the rotor RPM.\nEstimate within +/- 1rpm if possible.',
                                           acquisitionTimePromptWithMetaDataCallback,
                                           'Enter RPM',
                                           ['Ok','Cancel'],
-                                          savedRPM);
+                                          savedRPM);*/
+            acquisitionTimePromptWithMetaDataCallback({ "input1": savedRPM });
         } else {
             // No plugins, so we must not be in Cordova. Use a standard prompt.
             acquisitionTime = window.prompt("Please enter the rotor RPM.", "1");
@@ -1141,7 +1305,9 @@ define(function(require, exports, module) {
         document.getElementById("SPACER_COLOR_LABEL").innerHTML = "";
         savedRPM = "";
         setup_data_collection_page("", "", true);
-        charting.clearChartData(document.getElementById('DATA_PLOT'));
+        //charting.clearChartData(document.getElementById('DATA_PLOT'));
+        charting.clearChartData(document.getElementById('DATA_PLOT2'));
+        document.getElementById("DATA_PLOT2").innerHTML = "";
     }
 
     function b64toBlob(b64Data, contentType, sliceSize) {
@@ -1356,7 +1522,7 @@ define(function(require, exports, module) {
             var stage = stages[stage_index];
             var positions = current_frame_data['position'][stage];
             html_buf.push("<td><table class=\"table table-bordered table-sm\">");
-            var header_row = "<thead class=\"table-light\"><tr><th scope=\"col\">POSITION</th><th scope=\"col\">";
+            var header_row = "<thead class=\"table-light\"><tr><th class=\"text-center\" scope=\"col\">POSITION</th><th class=\"text-center\" scope=\"col\">";
             header_row = header_row + "STAGE " + stages[stage_index];
             header_row = header_row + "</th></tr></thead><tbody>";
             html_buf.push(header_row);
@@ -1500,7 +1666,6 @@ define(function(require, exports, module) {
           document.getElementById("SPACER_THUMBNAIL").setAttribute("src",imageName);
       }
 
-
       document.getElementById("SPACER_THICKNESS").value = spacer_value;
       document.getElementById("SPACER_COLOR_LABEL").innerHTML = spacer_color;
       document.getElementById("SPACER_COLOR_LABEL").style.color = spacer.color;
@@ -1591,6 +1756,7 @@ define(function(require, exports, module) {
 
     function do_mastering(reset) {
         console.log('@do_mastering ' + reset);
+        masteringPerformed = false;
         if (messaging.usesWebSocket()) {
             setIndicatorColor('yellow');
         }
@@ -1609,6 +1775,7 @@ define(function(require, exports, module) {
 
     function done_mastering() {
         console.log("@done_mastering");
+        masteringPerformed = true;
         setMasterMessage("green","MASTERING COMPLETE");
         setMasterMessage2("green","MASTERING COMPLETE");
         setIndicatorColor("green");
@@ -1780,6 +1947,7 @@ define(function(require, exports, module) {
                     serialConnected = false;
                     if (!msg.noAlert) {
                         e4PtAlert('Controller was disconnected.');
+                        // TODO: reset
                     }
                 } else if (msg.status == "acquiring") {
                     // TODO: is this called?
@@ -2150,6 +2318,69 @@ define(function(require, exports, module) {
             }
         );
     }
+    
+    function deleteFile(dir, fileName) {
+        console.log("deleteFile, with fileName = " + fileName);
+        dir.getFile
+            (
+                fileName,
+                { create: false },
+                function (fileEntry) {
+                    fileEntry.remove(
+                        function (file) {
+                            console.log("file removed! called");
+                            console.log(file);
+                        },
+                        function (error) {
+                            console.log("error in deleteFile type 1: " + error.code);
+                        },
+                        function () {
+                            console.log("error in deleteFile: file does not exist");
+                        });
+                }
+            );
+    }
+    
+    function deleteFolder(fileName) {
+        console.log ("deleteFolder: " + fileName);
+        window.resolveLocalFileSystemURL(fileName, function (dirEntry) {
+            dirEntry.removeRecursively(
+                console.log('successfully deleted the folder and its content'),
+                //e => console.error('there was an error deleting the directory', e.toString())
+            )
+        });
+    }
+    
+    //examples:
+    //deleteFilesInDir(cordova.file.documentsDirectory + "data");
+    //deleteFilesInDir(cordova.file.documentsDirectory + serial_number);
+    function deleteFilesInDir(path) { // issue #35  This removes the files in the directory
+        console.log("path = " + path);
+        window.resolveLocalFileSystemURL
+            (
+                path,
+                function (dir) {
+                    var reader = dir.createReader();
+                    reader.readEntries(
+                        function (fileName) {
+                            console.log("here")
+                            console.log("in deleteFilesInDir fileName = ")
+                            fileName.map(el => {
+                                deleteFile(dir, el.name); // nativeURL.replace('file://', ''))
+                            })
+                        },
+                        function (err) {
+                            err = "Error in deleteFilesInDir type 1: " + err;
+                            console.log(err);
+                        }
+                    );
+                },
+                function (err) {
+                    err = "Error in deleteFilesInDir type 2: " + err;
+                    console.log(err);
+                }
+            );
+    }
 
     function populateFileTable(entries) {
         $("#FILE_CHOOSER_PAGE").fadeIn();
@@ -2347,8 +2578,12 @@ define(function(require, exports, module) {
         document.getElementById('MEASUREMENT_RATE_1').value = E4PTdata.measurement_rate;
         document.getElementById('THRESHOLD_1').value = E4PTdata.intensity_threshold;
         
-        fadeOutAll();
-        $("#DATA_PLOT_PAGE").fadeIn();
+        // only display the DATA PLOT page for GET DATA or SENSOR SETUP and not from DATA COLLECTION
+        if (fromGetData || fromSensorSetupPage) {
+            fadeOutAll();
+            $("#DATA_PLOT_PAGE").fadeIn();
+            fromGetData = false;
+        }
 
         if (current_frame_data['position'] != null) {
           plot_calibrated_acquire();
@@ -2399,13 +2634,15 @@ define(function(require, exports, module) {
                 }
             }
         }
-        charting.clearChartData(document.getElementById('DATA_PLOT'));
+        //charting.clearChartData(document.getElementById('DATA_PLOT'));
+        charting.clearChartData(document.getElementById('DATA_PLOT2'));
+        document.getElementById("DATA_PLOT2").innerHTML = "";
         if (messaging.usesWebSocket()) {
             setIndicatorColor('yellow');
         }
                 
-        // set flag to show DATA COLLECTION page on close
-        fromDataCollectionPage = true;
+        // set flag to show DATA COLLECTION page on close, disabled to show plot2
+        //fromDataCollectionPage = true;
         
         // TODO: should not be needed here, progress bar should update
         setIndicatorColor("red");
@@ -2501,6 +2738,7 @@ define(function(require, exports, module) {
 
         E4PTdata.frame = document.getElementById("FRAME_SIZE").value;
         E4PTdata.serial_number = document.getElementById("SERIAL_NUMBER").value;
+        E4PTdata.ambient_temperature = document.getElementById("AMBIENT_TEMPERATURE").value;
         var set = new Data_Set();
         set.stage = current_stage;
         set.position = current_position;
@@ -2513,8 +2751,9 @@ define(function(require, exports, module) {
         set.std_clr = E4PTdata.std_clr;
         set.intensity_threshold = E4PTdata.intensity_threshold;
         set.measurement_rate = E4PTdata.measurement_rate;
-        set.dateStr = E4PTdata.date
-        set.filename = E4PTdata.filename
+        set.dateStr = E4PTdata.date;
+        set.filename = E4PTdata.filename;
+        set.ambient_temperature = E4PTdata.ambient_temperature;
         addOrReplaceSet(set);
         if (doDBSave) {
           addDBEntry(E4PTdata); // save the data autmatically after acquisition
@@ -2547,6 +2786,7 @@ define(function(require, exports, module) {
         priorSet.measurement_rate = set.measurement_rate;
         priorSet.dateStr = set.dateStr;
         priorSet.filename = set.filename;
+        priorSet.ambient_temperature = set.ambient_temperature;
         console.log("priorSet after:  ", JSON.stringify(priorSet));
     }
 
@@ -2618,7 +2858,7 @@ define(function(require, exports, module) {
       charting.addChartSubtitle(chartConfig, E4PTdata.date, E4PTdata.clearance, E4PTdata.overall_avg);
       charting.displayIntensityThresholdAndMeasurementRate(chartConfig, E4PTdata.measurement_rate, E4PTdata.intensity_threshold);
       let chartFilename = charting.createSavedChartFilename(E4PTdata.date.substring(2));
-        charting.renderChart(chartConfig, 'DATA_PLOT', chartFilename, writeToFile);
+      charting.renderChart(chartConfig, 'DATA_PLOT', chartFilename, writeToFile);
     }
 
     function plot_calibrated_acquire() {
@@ -2628,7 +2868,8 @@ define(function(require, exports, module) {
       charting.addChartSubtitle(chartConfig, E4PTdata.date, E4PTdata.clearance);
       charting.displayIntensityThresholdAndMeasurementRate(chartConfig, E4PTdata.measurement_rate, E4PTdata.intensity_threshold);
       let chartFilename = charting.createSavedChartFilename(E4PTdata.date.substring(2), E4PTdata.serial_number, current_stage, current_position.substring(0,1));
-        charting.renderChart(chartConfig, 'DATA_PLOT', chartFilename, writeToFile);
+      //charting.renderChart(chartConfig, 'DATA_PLOT', chartFilename, writeToFile);
+      charting.renderChart(chartConfig, 'DATA_PLOT2', chartFilename, writeToFile);
     }
 
     function loadExternalFile(dir, filename) {
@@ -2707,7 +2948,7 @@ define(function(require, exports, module) {
       syncDom.setAttribute('data-sync-state', 'error');
     }
 
-    function addDBEntry(e4pt_data) {
+    function addDBEntry(e4pt_data, db=local_db) {
       var entry = {
         ofs_id: e4pt_data.ofs_id,
         frame: e4pt_data.frame,
@@ -2720,6 +2961,7 @@ define(function(require, exports, module) {
         operator: e4pt_data.operator,
         units: e4pt_data.units,
         state: e4pt_data.state,
+        temperature_units: e4pt_data.temperature_units,
         final: e4pt_data.final,
         date: e4pt_data.date,
         time: e4pt_data.time,
@@ -2736,14 +2978,14 @@ define(function(require, exports, module) {
         // This is a new db entry, so get a new id.
         e4pt_data.pouchdb_id = uuidv4();
         entry._id = e4pt_data.pouchdb_id;
-        local_db.put(entry, function callback(err, result) {
+        db.put(entry, function callback(err, result) {
           if (!err) {
             console.log('PouchDB: Successfully added an entry!');
           }
         });
       } else {
         // This db entry exists, so just update it.
-        local_db.get(e4pt_data.pouchdb_id, function(err, doc) {
+        db.get(e4pt_data.pouchdb_id, function(err, doc) {
           if (err) {
             console.log("Error getting existing document from the database.");
           } else {
@@ -2752,7 +2994,7 @@ define(function(require, exports, module) {
             entry._id = doc._id;
             entry._rev = doc._rev;
             entry.sets = e4pt_data.sets;
-            local_db.put(entry, function callback(err, result) {
+            db.put(entry, function callback(err, result) {
               if (!err) {
                 console.log('Successfully updated an entry!');
               }
@@ -2767,18 +3009,20 @@ define(function(require, exports, module) {
       return local_db.get(uuid);
     }
 
-    function getAllDBEntries() {
-      local_db.allDocs({include_docs: true, descending: true}, function(err, docs) {
+    function getAllDBEntries(elementID, db=local_db) {
+      console.log("getAllDBEntries: ", elementID);
+      db.allDocs({include_docs: true, descending: true}, function(err, docs) {
         console.log("offset: " + docs.offset + "; total_rows: " + docs.total_rows);
-        redrawDataSetsUI(docs.rows);
+        redrawDataSetsUI(docs.rows, elementID);
       });
     }
 
-    function redrawDataSetsUI(rows) {
-      console.log("@redrawDataSetsUI");
-      var prev_tbody = document.getElementById("LOCAL_DATA_TABLE_BODY");
+    function redrawDataSetsUI(rows, elementID) {
+      console.log("@redrawDataSetsUI: ", elementID);
+      var prev_tbody = document.getElementById(elementID);
       var tbody = document.createElement("tbody");
-      tbody.setAttribute("id","LOCAL_DATA_TABLE_BODY");
+      var dataSource = (elementID.includes('ARCHIVE') ? 'Archive' : 'Local');
+      tbody.setAttribute("id",elementID);
       // Create the table body.
       for (var i=0; i<rows.length; i++) {
         console.log("Row: id:" + rows[i].doc._id + "; rev: " + rows[i].doc._rev);
@@ -2788,28 +3032,41 @@ define(function(require, exports, module) {
         var cell0 = new_row.insertCell(-1);
         cell0.innerHTML = rows[i].doc._id;
         cell0.setAttribute("style","display:none;");
-        var clickFn = "loadLocalData(\"" + rows[i].doc._id + "\")";
+        // allow users to open data from both local and archive
+        var clickFn = (elementID.includes('ARCHIVE') ? "loadArchiveData(\"" + rows[i].doc._id + "\")" : "loadLocalData(\"" + rows[i].doc._id + "\")");
+          
+        var cellb = new_row.insertCell(-1);
+        var checkbox = '<input type="checkbox"' + ' class="form-check-input" id="checkBox' + dataSource + 'IdNum' + i.toString() + '" value="no">';
+        cellb.innerHTML = checkbox;
+        cellb.setAttribute("class", "text-center");
+
         var cell1 = new_row.insertCell(-1);
-        cell1.setAttribute("onclick",clickFn);
         cell1.innerHTML = rows[i].doc.frame;
+        cell1.setAttribute("onclick",clickFn);
+        
         var cell2 = new_row.insertCell(-1);
-        cell2.setAttribute("onclick",clickFn);
         cell2.innerHTML = rows[i].doc.serial_number;
+        cell2.setAttribute("onclick",clickFn);
+
         var cell3 = new_row.insertCell(-1);
-        cell3.setAttribute("onclick",clickFn);
         cell3.innerHTML = rows[i].doc.customer;
+        cell3.setAttribute("onclick",clickFn);
+        
         var cell4 = new_row.insertCell(-1);
-        cell4.setAttribute("onclick",clickFn);
         cell4.innerHTML = rows[i].doc.site_name;
+        cell4.setAttribute("onclick",clickFn);
+        
         var cell5 = new_row.insertCell(-1);
-        cell5.setAttribute("onclick",clickFn);
         cell5.innerHTML = rows[i].doc.description;
+        cell5.setAttribute("onclick",clickFn);
+        
         var cell6 = new_row.insertCell(-1);
-        cell6.setAttribute("onclick",clickFn);
         cell6.innerHTML = rows[i].doc.date;
+        cell6.setAttribute("onclick",clickFn);
+        
         var cell7 = new_row.insertCell(-1);
-        cell7.setAttribute("onclick",clickFn);
         cell7.innerHTML = rows[i].doc.time;
+        cell7.setAttribute("onclick",clickFn);
       }
       prev_tbody.parentNode.replaceChild(tbody, prev_tbody);
     }
@@ -2828,6 +3085,7 @@ define(function(require, exports, module) {
       tmpData1.operator = "200005229";
       tmpData1.units = "In";
       tmpData1.state = "opening";
+      tmpData1.temperature_units = "Fahrenheit";
       tmpData1.final = false;
       tmpData1.date = "Jul-04-1776";
       tmpData1.time = "13:13";
@@ -2837,6 +3095,7 @@ define(function(require, exports, module) {
       set1.case_thickness = 4.967;
       set1.clearance = 3.1415;
       set1.state = "opening";
+      set1.ambient_temperature = 70;
       tmpData1.sets = [set1];
       addDBEntry(tmpData1);
       var tmpData2 = {};
@@ -2852,6 +3111,7 @@ define(function(require, exports, module) {
       tmpData2.operator = "Sandra Kolvick";
       tmpData2.units = "MM";
       tmpData2.state = "closing";
+      tmpData2.temperature_units = "Fahrenheit";
       tmpData2.final = true;
       tmpData2.date = "Jul-24-1969";
       tmpData2.time = "20:17";
@@ -2861,44 +3121,205 @@ define(function(require, exports, module) {
       set2.case_thickness = 4.321;
       set2.clearance = 1.4142;
       set2.state = "closing";
+      set2.ambient_temperature = 70;
       tmpData2.sets = [set2];
       addDBEntry(tmpData2);
+    }
+    
+    function archiveSelectedDB(allFlag) {
+        // This method 'removes' the objects from the pouchdb.
+        // However, pouchdb retains the objects and just marks them deleted.
+        // This can cause a memory buildup, but may be more sync-friendly.
+        console.log ("archiveSelectedDB");
+        local_db.allDocs({ include_docs: true, descending: true }, function (err, docs) {
+            console.log ("archiveSelectedDB -- after the local_db.allDocs");
+            for (var i = 0; i < docs.rows.length; i++) {
+                cb = document.getElementById("checkBoxLocalIdNum" + i.toString());
+                console.log(cb);
+                if ((cb.checked) || allFlag) {
+                    console.log('CHECKED');
+                    var response = docs.rows[i].doc;
+                    console.log(response);
+                    response.pouchdb_id = "";  // setting this to an empty string will cause a new DB entry to be created.
+                    addDBEntry(response, archive_db);
+                    // remove it from database also
+                    console.log("Removing doc: ", docs.rows[i].doc.serial_number);
+                    local_db.remove(response, function (err, response) {
+                        if (err) {
+                            console.log("Error removing document:\n", err);
+                        }
+                    });
+                }
+            }
+        });
+        setTimeout(function () { listInternalFiles(); }, 1000);
+    }
+    
+    function unarchiveSelectedDB(allFlag) {
+        // This method 'removes' the objects from the pouchdb.
+        // However, pouchdb retains the objects and just marks them deleted.
+        // This can cause a memory buildup, but may be more sync-friendly.
+        console.log ("unarchiveSelectedDB")
+        archive_db.allDocs({ include_docs: true, descending: true }, function (err, docs) {
+            console.log ("unarchiveSelectedDB -- after the local_db.allDocs");
+            for (var i = 0; i < docs.rows.length; i++) {
+                cb = document.getElementById("checkBoxArchiveIdNum" + i.toString());
+                console.log(cb);
+                if ((cb.checked) || allFlag) {
+                    console.log('CHECKED');
+                    var response = docs.rows[i].doc;
+                    console.log(response);
+                    response.pouchdb_id = "";  // setting this to an empty string will cause a new DB entry to be created.
+                    addDBEntry(response, local_db);
+                    // remove it from database
+                    console.log("Removing doc: ", docs.rows[i].doc.serial_number);
+                    archive_db.remove(response, function (err, response) {
+                        if (err) {
+                            console.log("Error removing document:\n", err);
+                        }
+                    });
+                }
+            }
+        });
+        setTimeout(function () { listInternalFiles("ARCHIVE_DATA_TABLE_BODY", archive_db, false); }, 1000);
+    }
+    
+    function clearSelectedArchive(allFlag) {
+        // This method 'removes' the objects from the pouchdb.
+        // However, pouchdb retains the objects and just marks them deleted.
+        // This can cause a memory buildup, but may be more sync-friendly.
+        console.log ("clearSelectedArchive");
+        archive_db.allDocs({ include_docs: true, descending: true }, function (err, docs) {
+            console.log ("clearSelectedArchive -- after the archive_db.allDocs");
+            for (var i = 0; i < docs.rows.length; i++) {
+                cb = document.getElementById("checkBoxArchiveIdNum" + i.toString());
+                if ((cb.checked) || allFlag) {
+                    console.log("Removing doc: ", docs.rows[i].doc.serial_number);
+                    console.log("Removing doc index i: ", i);
+                    var doc = docs.rows[i].doc;
+
+                    // remove it from local drive
+                    deleteFolder (cordova.file.documentsDirectory + docs.rows[i].doc.serial_number)
+
+                    // remove it from database also
+                    archive_db.remove(doc, function (err, response) {
+                        if (err) {
+                            console.log("Error removing document:\n", err);
+                        }
+                    });
+                }
+            }
+        });
+        setTimeout(function () { listInternalFiles("ARCHIVE_DATA_TABLE_BODY", archive_db, false); }, 1000);
+    }
+    
+    function clearSelectedDB(allFlag) {
+        // This method 'removes' the objects from the pouchdb.
+        // However, pouchdb retains the objects and just marks them deleted.
+        // This can cause a memory buildup, but may be more sync-friendly.
+        console.log ("clearSelectedDB");
+        local_db.allDocs({ include_docs: true, descending: true }, function (err, docs) {
+            console.log ("clearSelectedDB -- after the local_db.allDocs");
+            for (var i = 0; i < docs.rows.length; i++) {
+                cb = document.getElementById("checkBoxLocalIdNum" + i.toString());
+                if ((cb.checked) || allFlag) {
+                    console.log("Removing doc: ", docs.rows[i].doc.serial_number);
+                    console.log("Removing doc index i: ", i);
+                    var doc = docs.rows[i].doc;
+
+                    // remove it from local drive
+                    deleteFolder (cordova.file.documentsDirectory + docs.rows[i].doc.serial_number)
+
+                    // remove it from database also
+                    local_db.remove(doc, function (err, response) {
+                        if (err) {
+                            console.log("Error removing document:\n", err);
+                        }
+                    });
+                }
+            }
+        });
+        setTimeout(function () { listInternalFiles(); }, 1000);
+    }
+    
+    // Not sure if we'll need this in production, but for development it could
+    // be handy.
+    function clearArchive() { // issue #35 ==> make this erase local files.
+        // #35 ==> erasing local files first, then clearing DB.
+        deleteFilesInDir(cordova.file.documentsDirectory + "data");
+        if (false) {
+            // This method 'removes' the objects from the pouchdb.
+            // However, pouchdb retains the objects and just marks them deleted.
+            // This can cause a memory buildup, but may be more sync-friendly.
+            //  The 'else' statement below provides and alternate method by just
+            // destroying the DB and re-creating it.  I'm not sure of the implications
+            // of this on syncing, but it is a brute-force method.
+            local_db.allDocs({ include_docs: true, descending: true }, function (err, docs) {
+                console.log("Clearing DB");
+                for (var i = 0; i < docs.rows.length; i++) {
+                    console.log("Removing doc: ", docs.rows[i].id);
+                    var doc = docs.rows[i].doc;
+                    local_db.remove(doc, function (err, response) {
+                        if (err) {
+                            console.log("Error removing document:\n", err);
+                        }
+                    });
+                }
+            });
+        }
+        else {
+            clearSelectedDB(true) // true would clear all Database, even these not selected.
+            archive_db.destroy(function (err, response) {
+                if (err) {
+                    console.log("Error destroying archive:\n", err);
+                    return;
+                } else {
+                    console.log("Database destroyed. Creating new empty database.");
+                    archive_db = new PouchDB('e4ptarchive', { revs_limit: 1, auto_compaction: true });
+                    setTimeout(function () { listInternalFiles("ARCHIVE_DATA_TABLE_BODY", archive_db, false); }, 1000);
+                }
+            });
+        }
     }
 
     // Not sure if we'll need this in production, but for development it could
     // be handy.
-    function clearDB() {
-      if (false) {
-        // This method 'removes' the objects from the pouchdb.
-        // However, pouchdb retains the objects and just marks them deleted.
-        // This can cause a memory buildup, but may be more sync-friendly.
-        //  The 'else' statement below provides and alternate method by just
-        // destroying the DB and re-creating it.  I'm not sure of the implications
-        // of this on syncing, but it is a brute-force method.
-        local_db.allDocs({include_docs: true, descending: true}, function(err, docs) {
-          console.log("Clearing DB");
-          for (var i=0; i<docs.rows.length; i++) {
-            console.log("Removing doc: ", docs.rows[i].id);
-            var doc = docs.rows[i].doc;
-            local_db.remove(doc, function(err, response) {
-              if (err) {
-                console.log("Error removing document:\n", err);
-              }
+    function clearDB() { // issue #35 ==> make this erase local files.\
+        // #35 ==> erasing local files first, then clearing DB.
+        deleteFilesInDir(cordova.file.documentsDirectory + "data");
+        if (false) {
+            // This method 'removes' the objects from the pouchdb.
+            // However, pouchdb retains the objects and just marks them deleted.
+            // This can cause a memory buildup, but may be more sync-friendly.
+            //  The 'else' statement below provides and alternate method by just
+            // destroying the DB and re-creating it.  I'm not sure of the implications
+            // of this on syncing, but it is a brute-force method.
+            local_db.allDocs({ include_docs: true, descending: true }, function (err, docs) {
+                console.log("Clearing DB");
+                for (var i = 0; i < docs.rows.length; i++) {
+                    console.log("Removing doc: ", docs.rows[i].id);
+                    var doc = docs.rows[i].doc;
+                    local_db.remove(doc, function (err, response) {
+                        if (err) {
+                            console.log("Error removing document:\n", err);
+                        }
+                    });
+                }
             });
-          }
-        });
-      } else {
-        local_db.destroy(function (err, response) {
-          if (err) {
-            console.log("Error destroying database:\n", err);
-            return;
-          } else {
-            console.log("Database destroyed. Creating new empty database.");
-            local_db = new PouchDB('e4ptdb', {revs_limit: 1, auto_compaction: true});
-            setTimeout(function() {listInternalFiles();}, 1000);
-          }
-        });
-      }
+        }
+        else {
+            clearSelectedDB(true) // true would clear all Database, even these not selected.
+            local_db.destroy(function (err, response) {
+                if (err) {
+                    console.log("Error destroying database:\n", err);
+                    return;
+                } else {
+                    console.log("Database destroyed. Creating new empty database.");
+                    local_db = new PouchDB('e4ptdb', { revs_limit: 1, auto_compaction: true });
+                    setTimeout(function () { listInternalFiles(); }, 1000);
+                }
+            });
+        }
     }
 
     // uuidv4 function grabbed from:
@@ -2910,8 +3331,9 @@ define(function(require, exports, module) {
       });
     }
 
-    function listInternalFiles() {
-      getAllDBEntries();
+    function listInternalFiles(elementID ='LOCAL_DATA_TABLE_BODY', db=local_db) {
+      console.log("listInternalFiles: ", elementID);
+      getAllDBEntries(elementID, db);
     }
 
     // sortTable(n) is lifted straight from https://www.w3schools.com/howto/howto_js_sort_table.asp
@@ -2973,23 +3395,34 @@ define(function(require, exports, module) {
         
       let cols = [];
       if (srtTable == "LOCAL_DATA_TABLE") {
-         cols = ["FRAME_COL","SN_COL","CUSTOMER_COL","SITE_COL","DESC_COL","DATE_COL","TIME_COL"];
-      }
-      if (srtTable == "DATA_DETAILS_TABLE") {
+         cols = ["FRAME_COL","SN_COL","CUSTOMER_COL","SITE_COL","DESC_COL","DATE_COL","TIME_COL","CHOOSE_FILES_LOCAL"];
+      } else if (srtTable == "DATA_DETAILS_TABLE") {
         cols = ["STAGE_COL","POSITION_COL","CLEARANCE_COL","MAX_CLR_COL","MIN_CLR_COL","MED_CLR_COL","STD_CLR_COL"];
-      }
-      if (srtTable == "LOCAL_FILE_TABLE") {
+      } else if (srtTable == "LOCAL_FILE_TABLE") {
         cols = ["FNAME_COL"];
-      }
+      } else if (srtTable == "ARCHIVED_DATA_TABLE") {
+          cols = ["FRAME_COL_ARCHIVE","SN_COL_ARCHIVE","CUSTOMER_COL_ARCHIVE","SITE_COL_ARCHIVE","DESC_COL_ARCHIVE","DATE_COL_ARCHIVE","TIME_COL_ARCHIVE","CHOOSE_FILES_ARCHIVE"];
+       }
+       
       for (i=0; i<cols.length; i++) {
-        document.getElementById(cols[i]).style.color = "white";
+          document.getElementById(cols[i]).classList.remove("table-active");
       }
-      if (n > 0) document.getElementById(cols[n-1]).style.color = "aqua";
+      if (n > 0) {
+          document.getElementById(cols[n-1]).classList.add("table-active");
+      }
     }
 
     function loadLocalData(id) {
       console.log("@loadLocalData: id = ", id);
       local_db.get(id, function(err, doc) {
+          console.log("Row: ", doc);
+          initializeFromDocument(doc);
+      });
+    }
+    
+    function loadArchiveData(id) {
+      console.log("@loadArchiveData: id = ", id);
+      archive_db.get(id, function(err, doc) {
           console.log("Row: ", doc);
           initializeFromDocument(doc);
       });
@@ -3022,6 +3455,12 @@ define(function(require, exports, module) {
         } else if (doc.units == "MM") {
           document.getElementById("UNITS").selectedIndex = 1;
         }
+        document.getElementById("TEMPERATURE_UNITS").value = doc.temperature_units;
+        if (doc.temperature_units == "Fahrenheit") {
+            document.getElementById("TEMPERATURE_UNITS").selectedIndex = 0;
+        } else if (doc.temperature_units == "Celsius") {
+            document.getElementById("TEMPERATURE_UNITS").selectedIndex = 1;
+        }
         E4PTdata.frame = doc.frame;
         E4PTdata.serial_number = doc.serial_number;
         E4PTdata.data_name = doc.data_name;
@@ -3047,6 +3486,7 @@ define(function(require, exports, module) {
         current_position = current_frame_data.position[current_stage][0];
 
         $("#LOCAL_DATA_PAGE").fadeOut();
+        $("#ARCHIVED_DATA_PAGE").fadeOut();
           
         // Have to set up the casing thickness table before setting up
         // the data collection page because the data collection page depends
@@ -3140,9 +3580,11 @@ define(function(require, exports, module) {
     module.exports = {
         loadExternalFile:loadExternalFile,
         loadLocalData:loadLocalData,
+        loadArchiveData:loadArchiveData,
         pluginMessage:pluginMessage,
         set_grid_position:set_grid_position,
         toggleFileSelected:toggleFileSelected,
-        toggleDetailsSelected:toggleDetailsSelected
+        toggleDetailsSelected:toggleDetailsSelected,
+        sortTable:sortTable
     };
 });

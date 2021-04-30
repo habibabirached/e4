@@ -6,6 +6,7 @@
 //
 //
 
+#import "AppDelegate.h"
 #import "BaseController.h"
 
 @interface BaseController ()
@@ -17,6 +18,7 @@
     NSRegularExpression *promptRegex;
     NSRegularExpression *mrRegex;
     NSRegularExpression *sensorParamRegex;
+    BOOL useSerialBuffer;
 }
 
 @synthesize measurementData = _measurementData;
@@ -120,6 +122,10 @@
     self->telnetIsReady = NO;
     self->controllerType = @"";
     self->buffer = [[NSMutableString alloc] initWithString:@""];
+    
+    dispatch_sync(dispatch_get_main_queue(), ^{
+        self->useSerialBuffer = ((AppDelegate *)[UIApplication sharedApplication].delegate).useSerialBuffer;
+    });
 
 #ifdef SEND_DISPLACEMENT_ONLY
     self->nextIFCValue = IFCDisplacement;
@@ -141,6 +147,17 @@
     [self->telnetCmds addObject:@"OUTPUT NONE\n"]; // turns off output.
     [self->telnetCmds addObject:@"GETINFO\n"];
 
+    [self sendTelnetCommand];
+}
+
+- (void)configureController {
+    // update controller configuration to GE defaults
+    [self->telnetCmds addObject:@"LANGUAGE EN\n"];
+    [self->telnetCmds addObject:@"BAUDRATE 460800\n"];
+    [self->telnetCmds addObject:@"IPCONFIG STATIC 192.168.168.150 255.255.0.0 192.168.1.1\n"];
+    [self->telnetCmds addObject:@"BASICSETTINGS STORE\n"];
+    [self->telnetCmds addObject:@"RESET\n"];
+    
     [self sendTelnetCommand];
 }
 
@@ -315,35 +332,46 @@
 
 - (void)processResponse:(NSString*)rxData {
     NSLog(@"@processResponse");
+    // TODO: remove old processing logic after we are satisfied with the updated logic
+    NSString* prompt = @"";
     if (rxData.length > 1) {
         // fix for DEMO mode
         if (!self-> buffer) {
             NSLog(@"WARNING: Buffer was not allocated, allocating buffer");
             self->buffer = [[NSMutableString alloc] initWithString:@""];
         }
-        // TODO: check if needed
-        // clear buffer if size over limit
-        if (self->buffer.length > MAX_BUFFER_SIZE) {
-            NSLog(@"WARNING: Buffer length %lu over limit (%d), clearing buffer", self->buffer.length, MAX_BUFFER_SIZE);
-            [self->buffer setString:@""];
-        }
+        if (self->useSerialBuffer) {
+            NSLog(@"Using SERIAL BUFFER logic");
+            // TODO: check if needed
+            // clear buffer if size over limit
+            if (self->buffer.length > MAX_BUFFER_SIZE) {
+                NSLog(@"WARNING: Buffer length %lu over limit (%d), clearing buffer", self->buffer.length, MAX_BUFFER_SIZE);
+                [self->buffer setString:@""];
+            }
 
-        // add rxData to buffer until end of response
-        [self->buffer appendString:rxData];
+            // add rxData to buffer until end of response
+            [self->buffer appendString:rxData];
 
-        // look for prompt at the end of buffer
-        NSUInteger promptMatches = [promptRegex numberOfMatchesInString:self->buffer options:0 range:NSMakeRange(0, self->buffer.length)];
-        if (promptMatches == 0) {
-            NSLog(@"Partial response: %@", self->buffer);
-            return;
+            // look for prompt at the end of buffer
+            NSUInteger promptMatches = [promptRegex numberOfMatchesInString:self->buffer options:0 range:NSMakeRange(0, self->buffer.length)];
+            if (promptMatches == 0) {
+                NSLog(@"Partial response: %@", self->buffer);
+                return;
+            } else {
+                NSLog(@"Complete response: %@", self->buffer);
+            }
         } else {
-            NSLog(@"Complete response: %@", self->buffer);
+            NSLog(@"Using SERIAL PROMPT logic");
+            prompt = [rxData substringFromIndex: [rxData length] - 2];
+            NSLog(@"prompt: %@",prompt);
+            // set buffer to current response
+            [self->buffer setString:rxData];
         }
     } else {
         return;
     }
 
-    // process buffer containing complete response
+    // process buffer containing response
     if ([self->buffer containsString:@"IFC2422"]) {
         NSLog(@"Controller is IFC2422");
         self->controllerType = @"IFC2422";
@@ -371,44 +399,46 @@
         }];
     }
 
-    NSLog(@"Got telnet prompt: telnetCmds.count = %lu, pState = %d",(unsigned long)self->telnetCmds.count, self.state);
-    self->telnetIsReady = YES;
-    // reset buffer
-    [self->buffer setString:@""];
+    if (self->useSerialBuffer || [prompt containsString:@TELNET_PROMPT]) {
+        NSLog(@"Got telnet prompt: telnetCmds.count = %lu, pState = %d",(unsigned long)self->telnetCmds.count, self.state);
+        self->telnetIsReady = YES;
+        // reset buffer
+        [self->buffer setString:@""];
 
-    switch (self.state) {
-        case ready:
-        case collectingDataInProgress:
-        case notReady:
-        case timeOut:
-            break;
-        case masteringInProgress:
-            if (self->telnetCmds.count == 0) {
-                NSLog(@"Mastering Complete.");
-                [self->delegate processComplete:@"done_mastering"];
-                self.state = ready;
-            }
-            break;
-        case darkReferenceInProgress:
-            if (self->telnetCmds.count == 0) {
-                NSLog(@"Dark Correction Complete.");
-            }
-            break;
-        case initializationInProgress:
-        case setMeasurementRateInProgress:
-            if (self->telnetCmds.count > 0) {
+        switch (self.state) {
+            case ready:
+            case collectingDataInProgress:
+            case notReady:
+            case timeOut:
                 break;
-            } else {
-                NSLog(@"Initialization Complete.");
-            }
-        case setThresholdInProgress:
-        case clearanceComputationInProgress:
-        case halted:
-            // TODO: does not get received by app for serial connection
-            [self->delegate processComplete:@"connected"];
-        default:
-            self.state = ready;
-            break;
+            case masteringInProgress:
+                if (self->telnetCmds.count == 0) {
+                    NSLog(@"Mastering Complete.");
+                    [self->delegate processComplete:@"done_mastering"];
+                    self.state = ready;
+                }
+                break;
+            case darkReferenceInProgress:
+                if (self->telnetCmds.count == 0) {
+                    NSLog(@"Dark Correction Complete.");
+                }
+                break;
+            case initializationInProgress:
+            case setMeasurementRateInProgress:
+                if (self->telnetCmds.count > 0) {
+                    break;
+                } else {
+                    NSLog(@"Initialization Complete.");
+                }
+            case setThresholdInProgress:
+            case clearanceComputationInProgress:
+            case halted:
+                // TODO: does not get received by app for serial connection
+                [self->delegate processComplete:@"connected"];
+            default:
+                self.state = ready;
+                break;
+        }
     }
 
     NSLog(@"Returning from processResponse");

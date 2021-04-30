@@ -433,7 +433,7 @@
     if (self.state != halted) {
         if (self.state != clearanceComputationInProgress && self.state != ready)
             self.state = halted;
-        [self processResponse:@"->"];
+        [self processResponse:@TELNET_PROMPT];
     }
 }
 

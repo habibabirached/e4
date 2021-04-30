@@ -6,6 +6,7 @@
 //
 //
 
+#import "AppDelegate.h"
 #import "EthernetController.h"
 
 
@@ -47,7 +48,10 @@
 }
 
 - (void)initialize {
-    self->ipAddress = @IFC_ADDR;
+    dispatch_sync(dispatch_get_main_queue(), ^{
+        self->ipAddress = ((AppDelegate *)[UIApplication sharedApplication].delegate).ipAddress;
+    });
+    //self->ipAddress = IFC_ADDR_GE;
     self->dataPort = DATA_PORT;
     self->telnetPort = TELNET_PORT;
     self->networkQueue = dispatch_queue_create([[NSString stringWithFormat:@"com.ge.e4pt.%@.global_network_queue", NSStringFromClass([self class])] UTF8String], DISPATCH_QUEUE_SERIAL); // Not DISPATCH_QUEUE_CONCURRENT
@@ -429,7 +433,7 @@
     if (self.state != halted) {
         if (self.state != clearanceComputationInProgress && self.state != ready)
             self.state = halted;
-        [self processResponse:@"->"];
+        [self processResponse:@TELNET_PROMPT];
     }
 }
 

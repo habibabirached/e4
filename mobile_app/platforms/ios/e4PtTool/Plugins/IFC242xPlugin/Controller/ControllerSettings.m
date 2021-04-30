@@ -44,11 +44,19 @@
     self.measurementRate = [self calculateKHzFrequencyForSamplesPerInch:(DESIRED_POINTS_PER_BLADE / bladeWidth) atSpeed:inchesPerSecond];
     self.intensityThreshold = [self calculateIntensityThresholdFromMeasurementRateKHz:self.measurementRate];
     
-    if (self.acquisitionTime <= 0)
-        errorMessage = [NSString stringWithFormat:@"Error: Time Low %f, ", self.acquisitionTime];
-    else if (self.acquisitionTime > 1800)
-        errorMessage = [NSString stringWithFormat:@"Error: Time High %f, ", self.acquisitionTime];
-    
+    // may not be a safe float comparison
+    if (rpm == 0) {
+        errorMessage = @"Error: RPM = 0, ";
+    }
+
+    if (self.acquisitionTime <= 0) {
+        if (!errorMessage) errorMessage = @"";
+        errorMessage = [errorMessage stringByAppendingFormat:@"Error: Time Low %f, ", self.acquisitionTime];
+    } else if (self.acquisitionTime > 1800) {
+        if (!errorMessage) errorMessage = @"";
+        errorMessage = [errorMessage stringByAppendingFormat:@"Error: Time High %f, ", self.acquisitionTime];
+    }
+
     if (self.measurementRate >= 6.5) {
         if (!errorMessage) errorMessage = @"";
         errorMessage = [errorMessage stringByAppendingFormat:@"Error: Rate High %d pts/blade", DESIRED_POINTS_PER_BLADE];

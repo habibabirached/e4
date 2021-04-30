@@ -16,7 +16,7 @@
     <script src="./js/lib/all.min.js"></script>
     <script type="application/javascript" src="./js/lib/fastclick_v2_min.js"></script>
 
-    <title>e4-Pt Tool</title>
+    <title>e-4Pt Tool</title>
     <allow-navigation href="*" />
   </head>
 
@@ -27,30 +27,6 @@
 
     <!-- Wrapper -->
     <div id="wrapper">
-
-      <!-- Sidebar -->
-      <div id="sidebar-wrapper" class="bg-dark">
-        <ul class="sidebar-nav">
-          <!--<li class="sidebar-brand">
-            <a href="#">e-4Pt Tool</a>
-          </li>-->
-          <div class="text-center pt-3 pb-2">
-            <span id="APP_VERSION" class="badge bg-dark">VERSION 0.0.0.0</span>
-          </div>
-          <div class="d-grid gap-4 p-3">
-            <button id="FRD_BUTTON" class="btn btn-secondary" type="button">Tool Setup</button>
-            <button id="SENSOR_SETUP_BUTTON" class="btn btn-secondary" type="button">Sensor Setup</button>
-            <button id="SETUP_BUTTON" class="btn btn-secondary" type="button">Measure Turbine</button>
-            <button id="OPEN_LOCAL_DATA_BUTTON" class="btn btn-secondary" type="button">Open Local</button>
-            <button id="GET_DATA_BUTTON" class="btn btn-secondary" type="button">Get Data</button>
-            <button id="SHUTDOWN_BUTTON" class="btn btn-secondary" type="button">Shutdown</button>
-          </div>
-          <!--<div class="text-center pt-2">
-            <span id="APP_VERSION" class="badge bg-dark">VERSION 0.0.0.0</span>
-          </div>-->
-        </ul>
-      </div>
-      <!-- /Sidebar -->
       
       <!-- Header -->
       <header>
@@ -69,12 +45,40 @@
           </nav>
       </header>
       <!-- /Header -->
+      
+      <!-- Sidebar -->
+      <div id="sidebar-wrapper" class="bg-dark">
+        <ul class="sidebar-nav h-100">
+          <!--<li class="sidebar-brand">
+            <a href="#">e-4Pt Tool</a>
+          </li>-->
+          <!--<div class="text-center pt-3 pb-2">
+            <span id="APP_VERSION" class="badge bg-dark">VERSION 0.0.0.0</span>
+          </div>-->
+          <div class="d-grid gap-4 p-3">
+            <button id="FRD_BUTTON" class="btn btn-secondary" type="button">Tool Setup</button>
+            <button id="SENSOR_SETUP_BUTTON" class="btn btn-secondary" type="button">Sensor Setup</button>
+            <button id="SETUP_BUTTON" class="btn btn-secondary" type="button">Measure Turbine</button>
+            <button id="OPEN_LOCAL_DATA_BUTTON" class="btn btn-secondary" type="button">Open Local</button>
+            <button id="OPEN_ARCHIVE_DATA_BUTTON" class="btn btn-secondary" type="button">Open Archive</button>
+            <button id="GET_DATA_BUTTON" class="btn btn-secondary" type="button">Get Data</button>
+            <button id="SHUTDOWN_BUTTON" class="btn btn-secondary" type="button">Shutdown</button>
+          </div>
+          <!--<div class="text-center position-absolute bottom-0 start-50 translate-middle">
+            <span id="APP_VERSION" class="badge bg-dark">VERSION 0.0.0.0</span>
+          </div>-->
+          <div class="text-center pt-3 pb-2">
+            <span id="APP_VERSION" class="badge bg-dark">VERSION 0.0.0.0</span>
+          </div>
+        </ul>
+      </div>
+      <!-- /Sidebar -->
 
       <!-- Content -->
       <div id="page-content-wrapper">
 
         <!-- Plot -->
-        <div id="DATA_PLOT_PAGE" class="container-fluid h-95">
+        <div id="DATA_PLOT_PAGE" class="container-fluid h-95 mb-4">
             <div class="card h-100">
                 <div class="card-header">
                     <div class="row">
@@ -96,7 +100,7 @@
         </div>
 
         <!-- FRD PAGE -->
-        <div id="FRD_PAGE" class="container-fluid">
+        <div id="FRD_PAGE" class="container-fluid mb-4">
             <div class="card">
               <div class="card-header">
                   <div class="row">
@@ -390,14 +394,14 @@
                                                 <li>Once 30 minute warm up time has elapsed open the Menu page and select “Sensor Setup” Submenu.
                                                     <br/>
                                                     <figure class="text-center mt-2">
-                                                        <img class="figure-img img-fluid" width="320" src="img/frd/app_01_home.png"/>
-                                                        <img class="figure-img img-fluid" width="320" src="img/frd/app_02_menu.png"/>
+                                                        <!--<img class="figure-img img-fluid" width="320" src="img/frd/app_home.png"/>-->
+                                                        <img class="figure-img img-fluid" width="320" src="img/frd/app_menu.png"/>
                                                     </figure>
                                                 </li>
                                                 <li>Ensure the dark refence cap is snuggly fit over the end of the sensor and then select the “Dark reference” submenu. Follow the on-screen instructions to perform dark-referencing of the sensor.
                                                     <br/>
                                                     <figure class="text-center mt-2">
-                                                        <img class="figure-img img-fluid" width="320" src="img/frd/app_01_dark.png"/>
+                                                        <img class="figure-img img-fluid" width="320" src="img/frd/app_dark.png"/>
                                                     </figure>
                                                 </li>
                                                 <li>Remove dark reference cap from sensor. Clean the sensor mating surfaces and lens as directed above and carefully insert the sensor into the mastering fixture.
@@ -409,14 +413,13 @@
                                                 <li>Select “Sensor Probe Mastering” from the submenu and follow on screen instructions for mastering the sensor. When Mastering has been completed the green “Ready Button” will transition to “Mastering Complete.”
                                                     <br/>
                                                     <figure class="text-center mt-2">
-                                                       <img class="figure-img img-fluid" width="320" src="img/frd/app_01_master.png"/>
-                                                       <img class="figure-img img-fluid" width="320" src="img/frd/app_02_master.png"/>
+                                                       <img class="figure-img img-fluid" width="320" src="img/frd/app_master.png"/>
                                                    </figure>
                                                 </li>
                                                 <li>Verify that sensor mastering is acceptable by navigating to the main menu and selecting the “Get Data” submenu. Collect data for a short amount of time with the sensor probe still placed in the mastering fixture. The display should be a constant line at 15mm.
                                                     <br/>
                                                     <figure class="text-center mt-2">
-                                                        <img class="figure-img img-fluid" width="320" src="img/frd/app_01_data.png"/>
+                                                        <img class="figure-img img-fluid" width="320" src="img/frd/app_data.png"/>
                                                     </figure>
                                                 </li>
                                                 <li>The sensor is now ready to use. Do not turn power off until all measurements are complete, data has been saved to GE Box, and a Customer report has been generated.</li>
@@ -480,6 +483,36 @@
                               </div>
                             </div>
                           </div>
+                          
+                          <!-- TODO: enable after fully tested -->
+                          <!--<div class="accordion-item">
+                            <h2 class="accordion-header" id="headingSetupThree">
+                              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSetupThree" aria-expanded="false" aria-controls="collapseSetupThree">Controller Configuration</button>
+                            </h2>
+                            <div id="collapseSetupThree" class="accordion-collapse collapse" aria-labelledby="headingSetupThree" data-bs-parent="#accordionSetup">
+                              <div class="accordion-body">
+                                  
+                                  <h5>Update Controller Configuration</h5>
+                                  <p>The controller should be pre-configured with expected output settings. If this is not the case, the controller may be re-configured to these settings.</p>
+                                  <ul>
+                                      <li>Set the language to English</li>
+                                      <li>Set the Serial baudrate to 460,800</li>
+                                      <li>Set the Ethernet static IP to 192.168.168.150</li>
+                                  </ul>
+                                  <div class="alert alert-danger pb-0" role="alert">
+                                    <p>Only perform this procedure if the controller is not configured correctly.</p>
+                                  </div>
+                                  <div class="alert alert-warning pb-0" role="alert">
+                                    <p>After updating the controller, this application must be shutdown and restarted. You may also need to power cycle the controller.</p>
+                                  </div>
+                                  <div class="d-grid gap-2">
+                                      <button id="CONFIGURE_CONTROLLER_BUTTON" type="button" class="btn btn-primary">CONFIGURE CONTROLLER</button>
+                                  </div>
+                                  
+                              </div>
+                            </div>
+                          </div>-->
+                          
                         </div>
                         <!-- -->
                     </div>
@@ -489,7 +522,7 @@
         </div>
         
         <!-- Frame Select Page -->
-        <div id="SETUP_PAGE" class="container-fluid">
+        <div id="SETUP_PAGE" class="container-fluid mb-4">
             <div class="card">
               <div class="card-header">
                 <div class="row">
@@ -564,6 +597,15 @@
                       </div>
                     </div>
                     <div class="row mb-3">
+                      <label for="TEMPERATURE_UNITS" class="col-sm-5 col-form-label">TEMPERATURE UNITS</label>
+                      <div class="col-sm-7">
+                          <select id="TEMPERATURE_UNITS" class="form-select">
+                              <option value="FAHRENHEIT">Fahrenheit</option>
+                              <option value="CELSIUS">Celsius</option>
+                          </select>
+                      </div>
+                    </div>
+                    <div class="row mb-3">
                       <label for="DESCRIPTION" class="col-sm-5 col-form-label">DESCRIPTION</label>
                       <div class="col-sm-7">
                           <textarea class="form-control" id="DESCRIPTION" rows="3"></textarea>
@@ -596,7 +638,7 @@
         </div>
         
         <!-- Sensor Mastering Before Data Collection Page -->
-        <div id="INITIALIZE_SENSOR_PAGE" class="container-fluid">
+        <div id="INITIALIZE_SENSOR_PAGE" class="container-fluid mb-4">
             <div class="card">
               <div class="card-header">
                 <div class="row">
@@ -661,7 +703,7 @@
         </div>
         
         <!-- Turbine Data Collection Page -->
-        <div id="TURBINE_SETUP_PAGE" class="container-fluid">
+        <div id="TURBINE_SETUP_PAGE" class="container-fluid mb-4">
             <div class="card">
               <div class="card-body">
                 <div class="row">
@@ -741,6 +783,17 @@
                         <div class="col-md-2 text-center">
                             <img id="SPACER_THUMBNAIL" class="img-thumbnail" alt="Unknown" src="img/spacers/Unknown.gif" width="75" height="75">
                         </div>
+                        <div class="col-md-5 text-center">
+                            <label for="AMBIENT_TEMPERATURE" class="form-label">Ambient Temperature</label>
+                            <div class="input-group mb-3">
+                              <input type="text" class="form-control" id="AMBIENT_TEMPERATURE" aria-describedby="AMBIENT_TEMPERATURE_LABEL">
+                              <span class="input-group-text" id="AMBIENT_TEMPERATURE_LABEL">°F</span>
+                            </div>
+                        </div>
+                        <div class="col-md-5 text-center">
+                            <label for="MEASUREMENT_RPM" class="form-label">RPM</label>
+                            <input type="text" class="form-control" id="MEASUREMENT_RPM">
+                        </div>
                       </form>
 
                       <table class="table table-borderless table-sm">
@@ -769,11 +822,16 @@
                     </div>
                   </div>
                 </div>
+              <div class="card-footer">
+                  <div class="container-fluid">
+                      <div id="DATA_PLOT2" class="h-100"></div>
+                  </div>
+              </div>
             </div>
         </div>
         
         <!-- Sensor Mastering & Dark Referencing Page -->
-        <div id="SENSOR_SETUP_PAGE" class="container-fluid">
+        <div id="SENSOR_SETUP_PAGE" class="container-fluid mb-4">
             <div class="card">
               <div class="card-header">
                 <div class="row">
@@ -1007,7 +1065,7 @@
         </div>
         
         <!-- Local Stored Data Table Page -->
-        <div id="LOCAL_DATA_PAGE" class="container-fluid">
+        <div id="LOCAL_DATA_PAGE" class="container-fluid mb-4">
             <div class="card">
               <div class="card-header">
                   <div class="row">
@@ -1027,6 +1085,7 @@
                           <thead id="LOCAL_DATA_TABLE_HEADER" class="table-light">
                               <tr>
                                   <th scope="col" style="display:none;">UUID</th><!-- hidden -->
+                                  <th scope="col" id="CHOOSE_FILES_LOCAL" onclick="sortTable('LOCAL_DATA_TABLE',8)">Select</th>
                                   <th scope="col" id="FRAME_COL" onclick="sortTable('LOCAL_DATA_TABLE',1)">Frame</th>
                                   <th scope="col" id="SN_COL" onclick="sortTable('LOCAL_DATA_TABLE',2)">S/N</th>
                                   <th scope="col" id="CUSTOMER_COL" onclick="sortTable('LOCAL_DATA_TABLE',3)">Customer</th>
@@ -1045,14 +1104,72 @@
               </div>
               <div class="card-footer text-muted">
                   <div class="d-grid gap-2">
-                      <button id="CLEAR_DB_BUTTON" class="btn btn-primary">CLEAR DATABASE</button>
+                      <div class="btn-group" role="group" aria-label="Measurement Buttons">
+                        <button id="CLEAR_DB_BUTTON" type="button" class="btn btn-danger">ERASE ALL</button>
+                        <span>&nbsp;</span>
+                        <button id="CLEAR_SELECTED_BUTTON" type="button" class="btn btn-danger">ERASE SELECTED</button>
+                        <span>&nbsp;</span>
+                        <button id="ARCHIVE_SELECTED_BUTTON" type="button" class="btn btn-primary">ARCHIVE SELECTED</button>
+                      </div>
+                  </div>
+              </div>
+            </div>
+        </div>
+        
+        <!-- Archived Data Table Page -->
+        <div id="ARCHIVED_DATA_PAGE" class="container-fluid mb-4">
+            <div class="card">
+              <div class="card-header">
+                  <div class="row">
+                    <div class="col-auto me-auto pt-1">
+                      <h4>Archived Data</h4>
+                    </div>
+                    <div class="col-auto">
+                      <button id="ARCHIVED_DATA_CLOSE_BUTTON" type="button" class="btn btn-dark"><i class="fas fa-times"></i></button>
+                    </div>
+                  </div>
+              </div>
+              <div class="card-body">
+                  <div class="row">
+                    <div class="col-lg-12">
+                      <!-- Archived Data -->
+                      <table id="ARCHIVED_DATA_TABLE" class="table table-striped table-bordered">
+                          <thead id="ARCHIVED_DATA_TABLE_HEADER" class="table-light">
+                              <tr>
+                                  <th scope="col" style="display:none;">UUID</th><!-- hidden -->
+                                  <th scope="col" id="CHOOSE_FILES_ARCHIVE" onclick="sortTable('ARCHIVED_DATA_TABLE',8)">Select</th>
+                                  <th scope="col" id="FRAME_COL_ARCHIVE" onclick="sortTable('ARCHIVED_DATA_TABLE',1)">Frame</th>
+                                  <th scope="col" id="SN_COL_ARCHIVE" onclick="sortTable('ARCHIVED_DATA_TABLE',2)">S/N</th>
+                                  <th scope="col" id="CUSTOMER_COL_ARCHIVE" onclick="sortTable('ARCHIVED_DATA_TABLE',3)">Customer</th>
+                                  <th scope="col" id="SITE_COL_ARCHIVE" onclick="sortTable('ARCHIVED_DATA_TABLE',4)">Site</th>
+                                  <th scope="col" id="DESC_COL_ARCHIVE" onclick="sortTable('ARCHIVED_DATA_TABLE',5)">Description</th>
+                                  <th scope="col" id="DATE_COL_ARCHIVE" onclick="sortTable('ARCHIVED_DATA_TABLE',6)">Date</th>
+                                  <th scope="col" id="TIME_COL_ARCHIVE" onclick="sortTable('ARCHIVED_DATA_TABLE',7)">Time</th>
+                              </tr>
+                          </thead>
+                          <tbody id="ARCHIVE_DATA_TABLE_BODY">
+                          </tbody>
+                      </table>
+                      <!-- -->
+                    </div>
+                  </div>
+              </div>
+              <div class="card-footer text-muted">
+                  <div class="d-grid gap-2">
+                      <div class="btn-group" role="group" aria-label="Measurement Buttons">
+                        <button id="DELETE_ARCHIVE_DB_BUTTON" type="button" class="btn btn-danger">ERASE ALL</button>
+                        <span>&nbsp;</span>
+                        <button id="DELETE_SELECTED_ARCHIVE_BUTTON" type="button" class="btn btn-danger">ERASE SELECTED</button>
+                        <span>&nbsp;</span>
+                        <button id="UNARCHIVE_SELECTED_BUTTON" type="button" class="btn btn-primary">UNARCHIVE SELECTED</button>
+                      </div>
                   </div>
               </div>
             </div>
         </div>
         
         <!-- File Chooser Page -->
-        <div id="FILE_CHOOSER_PAGE" class="container-fluid">
+        <div id="FILE_CHOOSER_PAGE" class="container-fluid mb-4">
             <div class="card">
               <div class="card-header">
                   <div class="row">
@@ -1068,7 +1185,7 @@
                   <div class="row">
                     <div class="col-lg-12">
                       <!-- File Chooser -->
-                      <table id="LOCAL_FILE_TABLE" class="table table-striped table-bordered">
+                      <table id="LOCAL_FILE_TABLE" class="table table-bordered">
                           <thead id="LOCAL_FILE_TABLE_HEADER" class="table-light">
                               <tr>
                                   <th id="FNAME_COL" scope="col" onclick="sortTable('LOCAL_FILE_TABLE',0)">Filename</th>
@@ -1088,7 +1205,7 @@
         </div>
         
         <!-- Data Details Page -->
-        <div id="DATA_DETAILS_PAGE" class="container-fluid">
+        <div id="DATA_DETAILS_PAGE" class="container-fluid mb-4">
             <div class="card">
               <div class="card-header">
                   <div class="row">
@@ -1107,13 +1224,13 @@
                       <table id="DATA_DETAILS_TABLE" class="table table-bordered">
                           <thead id="DATA_DETAILS_TABLE_HEADER" class="table-light">
                               <tr>
-                                  <th span="col" id="STAGE_COL" onclick="sortDetailsTable('DATA_DETAILS_TABLE',1)">Stg</th>
-                                  <th span="col" id="POSITION_COL" onclick="sortDetailsTable('DATA_DETAILS_TABLE',2)">Pos</th>
-                                  <th span="col" id="CLEARANCE_COL" onclick="sortDetailsTable('DATA_DETAILS_TABLE',3)">Clr</th>
-                                  <th span="col" id="MAX_CLR_COL" onclick="sortDetailsTable('DATA_DETAILS_TABLE',4)">Max.Clr</th>
-                                  <th span="col" id="MIN_CLR_COL" onclick="sortDetailsTable('DATA_DETAILS_TABLE',5)">Min.Clr</th>
-                                  <th span="col" id="MED_CLR_COL" onclick="sortDetailsTable('DATA_DETAILS_TABLE',6)">Med.Clr</th>
-                                  <th span="col" id="STD_CLR_COL" onclick="sortDetailsTable('DATA_DETAILS_TABLE',7)">Std.Clr</th>
+                                  <th span="col" id="STAGE_COL" onclick="sortTable('DATA_DETAILS_TABLE',1)">Stg</th>
+                                  <th span="col" id="POSITION_COL" onclick="sortTable('DATA_DETAILS_TABLE',2)">Pos</th>
+                                  <th span="col" id="CLEARANCE_COL" onclick="sortTable('DATA_DETAILS_TABLE',3)">Clr</th>
+                                  <th span="col" id="MAX_CLR_COL" onclick="sortTable('DATA_DETAILS_TABLE',4)">Max.Clr</th>
+                                  <th span="col" id="MIN_CLR_COL" onclick="sortTable('DATA_DETAILS_TABLE',5)">Min.Clr</th>
+                                  <th span="col" id="MED_CLR_COL" onclick="sortTable('DATA_DETAILS_TABLE',6)">Med.Clr</th>
+                                  <th span="col" id="STD_CLR_COL" onclick="sortTable('DATA_DETAILS_TABLE',7)">Std.Clr</th>
                               </tr>
                           </thead>
                           <tbody id="DATA_DETAILS_TABLE_BODY">
@@ -1136,7 +1253,7 @@
       <footer>
           <nav class="navbar navbar-expand navbar-dark bg-dark">
             <div id="STATUS_BAR" class="container-fluid">
-              <span id="STATUS_DISPLAY" class="navbar-text">Connect to e-4Pt Tool to collect data</span>
+              <span id="STATUS_DISPLAY" class="navbar-text">Disconnected</span>
               <span class="navbar-text">
                 <img src="img/ge_logo.png" width="24" height="24"/>
                 <span class="ps-2">GE Proprietary Information</span>
@@ -1164,14 +1281,16 @@
     <script src="./js/lib/require.js"></script>
     
     <script>
-        var loadExternalFile, loadLocalData, pluginMessage, set_grid_position, toggleFileSelected, toggleDetailsSelected;
+        var loadExternalFile, loadLocalData, loadArchiveData, pluginMessage, set_grid_position, toggleFileSelected, toggleDetailsSelected, sortTable;
         require(['js/e4pt_app'], function(app){
             loadExternalFile = app.loadExternalFile;
             loadLocalData = app.loadLocalData;
+            loadArchiveData = app.loadArchiveData;
             pluginMessage = app.pluginMessage;
             set_grid_position = app.set_grid_position;
             toggleFileSelected = app.toggleFileSelected;
             toggleDetailsSelected = app.toggleDetailsSelected;
+            sortTable = app.sortTable;
         });
     </script>
 

@@ -9,8 +9,8 @@
 #import "BaseController.h"
 #import "RscMgr.h"
 
-//#define BAUD_RATE_FAST 460800
-//#define BAUD_RATE_SLOW 115200 // Slower cables only do 115200
+#define BAUD_RATE_FAST 460800
+#define BAUD_RATE_SLOW 115200 // Slower cables only do 115200
 
 // Hard coded values for RS232 serial cable
 // 192 = 64 * 3.  Data seems to come in 64 byte packets and data from
