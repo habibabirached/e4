@@ -141,6 +141,7 @@ define(function(require, exports, module) {
             createWebSocket();
         }
         get_sensor_parameters();
+        get_connection_mode();
         
         $("#REV_PROGRESS_BAR").hide();
         var currentFooterHeight = $('footer').css('height');
@@ -821,15 +822,26 @@ define(function(require, exports, module) {
     function get_sensor_parameters() {
         messaging.sendMessage({args:[{command:'get_sensor_parameters'}]});
     }
-
-    function set_connection_mode() {
-        var mode = document.getElementById('CONN_SELECTION').value;
+    
+    function get_connection_mode() {
+        console.log("@get_connection_mode");
+        messaging.sendMessage({args:[{command:'get_connection_mode'}]});
+    }
+    
+    function update_connection_mode(mode) {
+        console.log("@update_connection_mode: ", mode);
         $('#CONNECTION_NAME').text(mode.toUpperCase());
         
         if (mode === 'demo') {
             console.log('DEMO mode: ignore mastering');
             masteringPerformed = true;
         }
+    }
+
+    function set_connection_mode() {
+        console.log("@set_connection_mode");
+        var mode = document.getElementById('CONN_SELECTION').value;
+        update_connection_mode(mode);
 
         pluginMessage({type:'status',status:'disconnected',noAlert:true});
         messaging.sendMessage({args:[{command:'set_connection_mode',mode:mode}]});
@@ -1931,6 +1943,11 @@ define(function(require, exports, module) {
                 if (msg.varName === 'intensity_threshold') {
                     document.getElementById('THRESHOLD_1').value = msg.value;
                 }
+                break;
+            case "connection":
+                console.log("Received a connection mode message: ", msg.message);
+                document.getElementById('CONN_SELECTION').value = msg.mode;
+                update_connection_mode(msg.mode);
                 break;
             case "status":
                 console.log("Received Status Message");
@@ -3036,7 +3053,7 @@ define(function(require, exports, module) {
         var clickFn = (elementID.includes('ARCHIVE') ? "loadArchiveData(\"" + rows[i].doc._id + "\")" : "loadLocalData(\"" + rows[i].doc._id + "\")");
           
         var cellb = new_row.insertCell(-1);
-        var checkbox = '<input type="checkbox"' + ' class="form-check-input" id="checkBox' + dataSource + 'IdNum' + i.toString() + '" value="no">';
+        var checkbox = '<input type="checkbox"' + ' class="form-check-input form-control-lg" id="checkBox' + dataSource + 'IdNum' + i.toString() + '" value="no">';
         cellb.innerHTML = checkbox;
         cellb.setAttribute("class", "text-center");
 

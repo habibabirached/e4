@@ -30,6 +30,7 @@
 
 @interface AppDelegate : CDVAppDelegate {}
 
+@property NSString *connectionType;
 @property NSString *ipAddress;
 @property NSNumber *baudRate;
 @property BOOL useSerialBuffer;

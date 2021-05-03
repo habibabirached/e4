@@ -30,6 +30,7 @@
 
 @implementation AppDelegate
 
+@synthesize connectionType = _connectionType;
 @synthesize ipAddress = _ipAddress;
 @synthesize baudRate = _baudRate;
 @synthesize useSerialBuffer = _useSerialBuffer;
@@ -46,13 +47,15 @@
 - (void)checkAppSettings {
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     
+    NSObject *connectionTypeObject = [defaults objectForKey:@"connectionType"];
     NSObject *ipAddressObject = [defaults objectForKey:@"ipAddress"];
     NSObject *baudRateObject = [defaults objectForKey:@"baudRate"];
     NSObject *useSerialBufferObject = [defaults objectForKey:@"useSerialBuffer"];
-    if (ipAddressObject == nil || baudRateObject == nil || useSerialBufferObject == nil) {
+    if (connectionTypeObject == nil || ipAddressObject == nil || baudRateObject == nil || useSerialBufferObject == nil) {
         [self registerDefaultsFromSettingsBundle];
     }
 
+    self.connectionType = [defaults stringForKey:@"connectionType"];
     self.ipAddress = [defaults stringForKey:@"ipAddress"];
     self.baudRate = [NSNumber numberWithInt:[[defaults stringForKey:@"baudRate"] intValue]];
     self.useSerialBuffer = [defaults boolForKey:@"useSerialBuffer"];
