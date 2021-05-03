@@ -8,6 +8,8 @@
 
 #import "IController.h"
 
+#define TELNET_PROMPT "->"
+#define MAX_BUFFER_SIZE 1000
 
 enum CONTROLLER_STATE {
     ready = 0,
@@ -39,10 +41,12 @@ enum MEASUREMENT_CATEGORY {
     @protected int num_sets;
     @protected float set_count;
     @protected NSTimer* timerSendTelnetCommand;
+    @protected NSMutableString* buffer;
 }
 
 - (int)calculateNumberOfDatasetsToAcquireForTime:(float)acqTime atRateInHertz:(float)rate;
 - (void)collectDataSets;
+- (void)configureController;
 - (void)configureOutputSettings;
 - (void)disconnectData;
 - (void)disconnectTelnet;

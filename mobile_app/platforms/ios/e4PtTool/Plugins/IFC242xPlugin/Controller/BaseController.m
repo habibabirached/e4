@@ -6,6 +6,7 @@
 //
 //
 
+#import "AppDelegate.h"
 #import "BaseController.h"
 
 @interface BaseController ()
@@ -14,7 +15,10 @@
 
 @implementation BaseController {
     NSTimeInterval startTime;
+    NSRegularExpression *promptRegex;
     NSRegularExpression *mrRegex;
+    NSRegularExpression *sensorParamRegex;
+    BOOL useSerialBuffer;
 }
 
 @synthesize measurementData = _measurementData;
@@ -26,13 +30,15 @@
 }
 
 -(instancetype)initWithDelegate:(IFC242xManager*)delegate andSettings:(ControllerSettings*)settings {
-    
+
     if (self = [super init]) {
         self->delegate = delegate;
         self.settings = settings;
         self.state = notReady;
         self->telnetCmds = [NSMutableArray new];
+        self->promptRegex = [NSRegularExpression regularExpressionWithPattern:@"(\\-\\>)$" options:NSRegularExpressionCaseInsensitive error:nil];
         self->mrRegex = [NSRegularExpression regularExpressionWithPattern:@"\\s(\\d+\\.\\d+)mm" options:NSRegularExpressionCaseInsensitive error:nil];
+        self->sensorParamRegex = [NSRegularExpression regularExpressionWithPattern:@":\\s+(\\d{8})(?:$|\\r\\n)" options:NSRegularExpressionAnchorsMatchLines error:nil];
         [self initialize];
     }
     return self;
@@ -72,7 +78,7 @@
 // queue of commands over telnet.  The timer will keep firing until the queue runs
 // out of command and the timer is invalidated in the callback.
 - (void)sendTelnetCommand {
-    
+
     NSLog(@"@sendTelnetCommand: number of queued commands: %lu", (unsigned long)self->telnetCmds.count);
     dispatch_async(dispatch_get_main_queue(), ^{
         self->timerSendTelnetCommand = [NSTimer scheduledTimerWithTimeInterval:0.1
@@ -97,7 +103,7 @@
     if (self->telnetIsReady) {
         [self->telnetCmds removeObjectAtIndex:0];
         [self sendCommand:command];
-        
+
         // Disable the timer if we've run out of commands to send.
         if ([self->telnetCmds count] == 0) {
             dispatch_async(dispatch_get_main_queue(), ^{
@@ -115,25 +121,42 @@
     self.state = initializationInProgress;
     self->telnetIsReady = NO;
     self->controllerType = @"";
+    self->buffer = [[NSMutableString alloc] initWithString:@""];
     
+    dispatch_sync(dispatch_get_main_queue(), ^{
+        self->useSerialBuffer = ((AppDelegate *)[UIApplication sharedApplication].delegate).useSerialBuffer;
+    });
+
 #ifdef SEND_DISPLACEMENT_ONLY
     self->nextIFCValue = IFCDisplacement;
 #else
     self->nextIFCValue = IFCIntensity;
 #endif
-    
+
     [self recordStartTime]; // start time timestamp in whole seconds.
-    
+
     dispatch_async(dispatch_get_main_queue(), ^{
         [self->timerSendTelnetCommand invalidate];
     });
     [self->telnetCmds removeAllObjects];
     [self->telnetCmds addObject:@"ETHERMODE ETHERNET\n"];
     [self configureOutputSettings];
-    if (self.settings)
+    if (self.settings) {
         [self->telnetCmds addObject:[NSString stringWithFormat:@"MEASRATE %.3f\n", self.settings.measurementRate]];
+    }
     [self->telnetCmds addObject:@"OUTPUT NONE\n"]; // turns off output.
     [self->telnetCmds addObject:@"GETINFO\n"];
+
+    [self sendTelnetCommand];
+}
+
+- (void)configureController {
+    // update controller configuration to GE defaults
+    [self->telnetCmds addObject:@"LANGUAGE EN\n"];
+    [self->telnetCmds addObject:@"BAUDRATE 460800\n"];
+    [self->telnetCmds addObject:@"IPCONFIG STATIC 192.168.168.150 255.255.0.0 192.168.1.1\n"];
+    [self->telnetCmds addObject:@"BASICSETTINGS STORE\n"];
+    [self->telnetCmds addObject:@"RESET\n"];
     
     [self sendTelnetCommand];
 }
@@ -141,7 +164,7 @@
 - (void)masterDevice:(NSString*)masteringValue {
     if (![self checkReady]) return;
     NSLog(@"@masteringDevice");
-    
+
     self.state = masteringInProgress;
     [self->delegate returnPluginResponse:@{@"type":@"status",@"status":@"mastering_in_progress"} keepOpen:YES];
 
@@ -153,9 +176,9 @@
     // can proceed and we are not inundated with data.
     [self selectOppositeOutput];
 
-    if (!masteringValue)
+    if (!masteringValue) {
         [self->telnetCmds addObject:@"MASTER 01DIST1 RESET\n"];
-    else {
+    } else {
         [self->telnetCmds addObject:[NSString stringWithFormat:@"MASTERSIGNAL 01DIST1 %@\n", masteringValue]];
         [self->telnetCmds addObject:@"MASTER 01DIST1 SET\n"];
     }
@@ -169,7 +192,7 @@
     NSLog(@"@doDarkReference");
     self.state = darkReferenceInProgress;
     [self->delegate returnPluginResponse:@{@"type":@"status",@"status":@"waiting"} keepOpen:YES];
-    
+
     float processTime = 24.0; // Dark correction takes ~22s per channel on the IFC2422.
     if ([self->controllerType containsString:@"IFC2422"]) {
         [self->telnetCmds addObject:@"DARKCORR_CH01\n"];
@@ -208,7 +231,7 @@
     self.settings.measurementRate = rate;
     [self->telnetCmds addObject:[NSString stringWithFormat:@"MEASRATE %.3f\n", self.settings.measurementRate]];
     [self sendTelnetCommand];
-    
+
     [self recordStartTime];
     dispatch_async(dispatch_get_main_queue(), ^{
         NSMutableDictionary* info = [NSMutableDictionary dictionaryWithObjectsAndKeys:
@@ -267,15 +290,15 @@
         self.state = clearanceComputationInProgress;
         self->delegate.progress = 1.0;
         self->set_count = 0;
-        
+
         [self disconnectData];
-        [self processResponse:@"->"];
+        [self processResponse:@TELNET_PROMPT];
     }
 }
 
 - (void)queueDataCollection:(float)timeoutSecondsForPrep {
     [self recordStartTime]; // start timeout timer
-    
+
     dispatch_async(dispatch_get_main_queue(), ^{
         NSDictionary* info = [[NSDictionary alloc] initWithObjectsAndKeys:
                               [NSNumber numberWithFloat:7.0], @"timeout",
@@ -290,7 +313,7 @@
 
 - (void)doDataCollection {
     [self prepareDataForCollection];
-    
+
     // Update the status in the HTML page.
     [self->delegate returnPluginResponse:@{@"type":@"status",@"status":@"acquiring"} keepOpen:YES];
     [self collectDataSets];
@@ -309,45 +332,85 @@
 
 - (void)processResponse:(NSString*)rxData {
     NSLog(@"@processResponse");
+    // TODO: remove old processing logic after we are satisfied with the updated logic
     NSString* prompt = @"";
     if (rxData.length > 1) {
-        //TODO: Prompt is only the last 2 characters, seems wrong way to look for '->' (trailing whitespace possible?)
-        prompt = [rxData substringFromIndex: [rxData length] - 2];
-        NSLog(@"prompt: %@",prompt);
+        // fix for DEMO mode
+        if (!self-> buffer) {
+            NSLog(@"WARNING: Buffer was not allocated, allocating buffer");
+            self->buffer = [[NSMutableString alloc] initWithString:@""];
+        }
+        if (self->useSerialBuffer) {
+            NSLog(@"Using SERIAL BUFFER logic");
+            // TODO: check if needed
+            // clear buffer if size over limit
+            if (self->buffer.length > MAX_BUFFER_SIZE) {
+                NSLog(@"WARNING: Buffer length %lu over limit (%d), clearing buffer", self->buffer.length, MAX_BUFFER_SIZE);
+                [self->buffer setString:@""];
+            }
+
+            // add rxData to buffer until end of response
+            [self->buffer appendString:rxData];
+
+            // look for prompt at the end of buffer
+            NSUInteger promptMatches = [promptRegex numberOfMatchesInString:self->buffer options:0 range:NSMakeRange(0, self->buffer.length)];
+            if (promptMatches == 0) {
+                NSLog(@"Partial response: %@", self->buffer);
+                return;
+            } else {
+                NSLog(@"Complete response: %@", self->buffer);
+            }
+        } else {
+            NSLog(@"Using SERIAL PROMPT logic");
+            prompt = [rxData substringFromIndex: [rxData length] - 2];
+            NSLog(@"prompt: %@",prompt);
+            // set buffer to current response
+            [self->buffer setString:rxData];
+        }
     } else {
         return;
     }
-    
-    if ([rxData containsString:@"IFC2422"]) {
+
+    // process buffer containing response
+    if ([self->buffer containsString:@"IFC2422"]) {
         NSLog(@"Controller is IFC2422");
         self->controllerType = @"IFC2422";
         [self->telnetCmds addObject:@"SENSORINFO_CH01\n"];
         [self sendTelnetCommand];
-    } else if ([rxData containsString:@"IFC2421"]) {
+    } else if ([self->buffer containsString:@"IFC2421"]) {
         NSLog(@"Controller is IFC2421");
         self->controllerType = @"IFC2421";
         [self->telnetCmds addObject:@"SENSORINFO\n"];
         [self sendTelnetCommand];
     } else {
-        [self->mrRegex enumerateMatchesInString:rxData options:0 range:NSMakeRange(0, rxData.length) usingBlock:^(NSTextCheckingResult *match, NSMatchingFlags flags, BOOL *stop) {
+        [self->mrRegex enumerateMatchesInString:self->buffer options:0 range:NSMakeRange(0, self->buffer.length) usingBlock:^(NSTextCheckingResult *match, NSMatchingFlags flags, BOOL *stop) {
             if ([match numberOfRanges] > 1) {
-                self.settings.sensor.mr = [[rxData substringWithRange:[match rangeAtIndex:1]] floatValue];
-                NSLog(@"Controller MR is %f", self.settings.sensor.mr);
+                self.settings.sensor.mr = [[self->buffer substringWithRange:[match rangeAtIndex:1]] floatValue];
+                NSLog(@"Sensor MR is %f", self.settings.sensor.mr);
+            }
+        }];
+        [self->sensorParamRegex enumerateMatchesInString:self->buffer options:0 range:NSMakeRange(0, self->buffer.length) usingBlock:^(NSTextCheckingResult *match, NSMatchingFlags flags, BOOL *stop) {
+            if ([match numberOfRanges] > 1) {
+                NSString* sensorParams = [self->buffer substringWithRange:[match rangeAtIndex:1]];
+                self.settings.sensor.length = [[sensorParams substringToIndex:4] floatValue]/1000.0;
+                self.settings.sensor.smr = [[sensorParams substringFromIndex:4] floatValue]/100.0;
+                NSLog(@"Sensor Length is %.3f and SMR is %.2f", self.settings.sensor.length, self.settings.sensor.smr);
             }
         }];
     }
-    
-    if ([prompt containsString:@"->"]) {
-        NSLog(@"Got telnet prompt: telnetCmds.count = %lu",(unsigned long)self->telnetCmds.count);
+
+    if (self->useSerialBuffer || [prompt containsString:@TELNET_PROMPT]) {
+        NSLog(@"Got telnet prompt: telnetCmds.count = %lu, pState = %d",(unsigned long)self->telnetCmds.count, self.state);
         self->telnetIsReady = YES;
+        // reset buffer
+        [self->buffer setString:@""];
+
         switch (self.state) {
-                
             case ready:
             case collectingDataInProgress:
             case notReady:
             case timeOut:
                 break;
-                
             case masteringInProgress:
                 if (self->telnetCmds.count == 0) {
                     NSLog(@"Mastering Complete.");
@@ -355,26 +418,29 @@
                     self.state = ready;
                 }
                 break;
-                
             case darkReferenceInProgress:
-                if (self->telnetCmds.count == 0)
+                if (self->telnetCmds.count == 0) {
                     NSLog(@"Dark Correction Complete.");
+                }
                 break;
-                
             case initializationInProgress:
             case setMeasurementRateInProgress:
-                if (self->telnetCmds.count > 0) break;
-                
+                if (self->telnetCmds.count > 0) {
+                    break;
+                } else {
+                    NSLog(@"Initialization Complete.");
+                }
             case setThresholdInProgress:
             case clearanceComputationInProgress:
             case halted:
+                // TODO: does not get received by app for serial connection
                 [self->delegate processComplete:@"connected"];
-            
             default:
                 self.state = ready;
                 break;
         }
     }
+
     NSLog(@"Returning from processResponse");
 }
 
@@ -406,7 +472,6 @@
             NSString* msg = @"";
             if (self.state == setMeasurementRateInProgress) {
                 msg = @"Error setting measurement rate.\nTimeout.";
-                
                 NSLog(@"%@",msg);
                 [self->delegate returnPluginResponse:@{@"type":@"alert",@"message":msg} keepOpen:YES];
                 self.state = ready;

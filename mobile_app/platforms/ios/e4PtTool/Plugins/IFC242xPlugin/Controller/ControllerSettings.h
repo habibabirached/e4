@@ -5,6 +5,7 @@
 //  Created by Marc Garbiras on 2021-Jan-23.
 //
 //
+
 #import "SensorSettings.h"
 
 #define DESIRED_POINTS_PER_BLADE 4

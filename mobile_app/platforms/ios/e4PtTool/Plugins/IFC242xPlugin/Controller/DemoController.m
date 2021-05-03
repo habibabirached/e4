@@ -8,7 +8,6 @@
 
 #import "DemoController.h"
 
-
 @interface DemoController ()
 @property (nonatomic) enum CONTROLLER_STATE state;
 @end
@@ -35,7 +34,7 @@
 }
 
 - (void)sendCommand:(NSString*)command {
-    [self processResponse:@"->"];
+    [self processResponse:@TELNET_PROMPT];
 }
 
 - (void)selectOppositeOutput {}

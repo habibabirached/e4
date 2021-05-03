@@ -24,6 +24,7 @@
 - (void)doDarkReference;
 - (void)doDataCollection;
 - (void)initialize;
+- (void)configureController;
 - (void)masterDevice:(NSString*)masteringValue;
 - (void)queueDataCollection:(float)timeoutSecondsForPrep;
 - (void)setIntensityThreshold:(float)threshold;

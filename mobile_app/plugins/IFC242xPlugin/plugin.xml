@@ -3,7 +3,7 @@
 	<name>IFC242x</name>
 	<author>GE</author>
 	<description>Cordova IFC242x Plugin</description>
-	<keywords>wirlessdevice</keywords>
+	<keywords>wirelessdevice</keywords>
 	<engines>
 		<engine name="cordova" version=">=3.0.0" />
 	</engines>

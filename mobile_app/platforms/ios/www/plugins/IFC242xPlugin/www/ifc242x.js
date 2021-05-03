@@ -30,12 +30,12 @@ IFC242x.prototype.masterDevice = function(deviceID, success, failure) {
  * This method is called from CDVIFC242x.m via function callBackWithCommandString
  */
 IFC242x.prototype.messageFromDevice = function(message) {
-    console.log("@messageFromDevice: message: ", message);
+    console.log("@messageFromDevice: message: ", JSON.stringify(message));
     pluginMessage(message);
 };
 
 IFC242x.prototype.messageToDevice = function(message, success, failure) {
-    console.log("@ifc242x.js::messageToDevice: ", message["args"]);
+    console.log("@ifc242x.js::messageToDevice: ", JSON.stringify(message["args"]));
     cordova.exec(success, failure, "IFC242x", "messageHandler", message["args"]);
 };
                
@@ -60,6 +60,5 @@ IFC242x.install = function () {
 };
 
 cordova.addConstructor(IFC242x.install);
-
 
 });

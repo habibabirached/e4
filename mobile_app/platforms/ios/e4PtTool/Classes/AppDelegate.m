@@ -30,10 +30,53 @@
 
 @implementation AppDelegate
 
+@synthesize ipAddress = _ipAddress;
+@synthesize baudRate = _baudRate;
+@synthesize useSerialBuffer = _useSerialBuffer;
+
 - (BOOL)application:(UIApplication*)application didFinishLaunchingWithOptions:(NSDictionary*)launchOptions
 {
     self.viewController = [[MainViewController alloc] init];
+    
+    [self checkAppSettings];
+    
     return [super application:application didFinishLaunchingWithOptions:launchOptions];
+}
+
+- (void)checkAppSettings {
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    
+    NSObject *ipAddressObject = [defaults objectForKey:@"ipAddress"];
+    NSObject *baudRateObject = [defaults objectForKey:@"baudRate"];
+    NSObject *useSerialBufferObject = [defaults objectForKey:@"useSerialBuffer"];
+    if (ipAddressObject == nil || baudRateObject == nil || useSerialBufferObject == nil) {
+        [self registerDefaultsFromSettingsBundle];
+    }
+
+    self.ipAddress = [defaults stringForKey:@"ipAddress"];
+    self.baudRate = [NSNumber numberWithInt:[[defaults stringForKey:@"baudRate"] intValue]];
+    self.useSerialBuffer = [defaults boolForKey:@"useSerialBuffer"];
+}
+
+- (void)registerDefaultsFromSettingsBundle {
+    NSString *settingsBundle = [[NSBundle mainBundle] pathForResource:@"Settings" ofType:@"bundle"];
+    if(!settingsBundle) {
+        NSLog(@"Could not find Settings.bundle");
+        return;
+    }
+    
+    NSDictionary *settings = [NSDictionary dictionaryWithContentsOfFile:[settingsBundle stringByAppendingPathComponent:@"Root.plist"]];
+    NSArray *preferences = [settings objectForKey:@"PreferenceSpecifiers"];
+    
+    NSMutableDictionary *defaultsToRegister = [[NSMutableDictionary alloc] initWithCapacity:[preferences count]];
+    for(NSDictionary *prefSpecification in preferences) {
+        NSString *key = [prefSpecification objectForKey:@"Key"];
+        if(key && [[prefSpecification allKeys] containsObject:@"DefaultValue"]) {
+            [defaultsToRegister setObject:[prefSpecification objectForKey:@"DefaultValue"] forKey:key];
+        }
+    }
+    
+    [[NSUserDefaults standardUserDefaults] registerDefaults:defaultsToRegister];
 }
 
 - (BOOL)application:(UIApplication*)application openURL:(nonnull NSURL *)url options:(nonnull NSDictionary<UIApplicationOpenURLOptionsKey,id> *)options {
