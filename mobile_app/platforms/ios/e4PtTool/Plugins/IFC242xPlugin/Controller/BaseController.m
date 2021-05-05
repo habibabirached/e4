@@ -396,9 +396,29 @@
                 NSString* sensorParams = [self->buffer substringWithRange:[match rangeAtIndex:1]];
                 NSLog(@"Sensor params from controller: %@", sensorParams);
                 if (self->useSensorParams) {
-                    self.settings.sensor.length = [[sensorParams substringToIndex:4] floatValue]/1000.0;
-                    self.settings.sensor.smr = [[sensorParams substringFromIndex:4] floatValue]/100.0;
-                    NSLog(@"Sensor Length is %.3f and SMR is %.2f", self.settings.sensor.length, self.settings.sensor.smr);
+                    /*
+                     SENSORINFO code change:
+                      
+                     Name: IFS2403-10(221)_1234 and IFS2403-10(222)_1234 where 1234 = 4 digit SN of the sensor.
+                     Measurement range: XX.XXXmm
+                     Serial: XXXXYYYY where X = sensor length and Y = sensor start of range in mm. We are limited to 8 digits for this field.
+                      
+                     Longer one -> 24281194 -> 24.28 and 11.94
+                     *will need to add leading 2 in the code, to identify the length as 224.28mm
+                     Shorter one -> 75691194 -> 75.69 and 11.94
+                     */
+                    float lengthMM = [[sensorParams substringToIndex:4] floatValue] / 100.0;
+                    // TODO: check rule
+                    if (lengthMM < 50.0) {
+                        NSLog(@"Adding 200mm to sensor length");
+                        lengthMM += 200.0;
+                    }
+                    float lengthInches = lengthMM / IN_to_MM;
+                    NSLog(@"Sensor Length is %.3f mm or %.3f inches", lengthMM, lengthInches);
+                    float smrMM = [[sensorParams substringFromIndex:4] floatValue] / 100.0;
+                    self.settings.sensor.length = lengthInches;
+                    self.settings.sensor.smr = smrMM;
+                    NSLog(@"Sensor Length is %.3f inches and SMR is %.2f mm", self.settings.sensor.length, self.settings.sensor.smr);
                 } else {
                     NSLog(@"Ignoring sensor params");
                 }
