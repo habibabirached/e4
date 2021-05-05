@@ -41,13 +41,15 @@
 }
 
 +(SensorSettings*) forType:(NSString*)type {
-    if ([@"LONG" isEqualToString:type])
+    if ([@"LONG" isEqualToString:type]) {
         return [SensorSettings LONG];
-    if ([@"SHORT" isEqualToString:type])
+    } else if ([@"SHORT" isEqualToString:type]) {
         return [SensorSettings SHORT];
-    if ([@"PROTOTYPE" isEqualToString:type])
+    } else if ([@"PROTOTYPE" isEqualToString:type]) {
         return [SensorSettings PROTOTYPE];
-    return [SensorSettings CUSTOM];
+    } else {
+        return [SensorSettings CUSTOM];
+    }
 }
 
 +(float) mvFromLength:(float)length hmf:(float)hmf smr:(float)smr {
@@ -81,29 +83,34 @@
 }
 
 -(NSString*) offsetSelector {
-    if (!_offsetSelector) _offsetSelector = @"1";
+    if (!_offsetSelector) {
+        _offsetSelector = @"1";
+    }
     return _offsetSelector;
 }
 
 -(void) setOffsetSelector:(NSString*)selector {
-    if (![@"2" isEqualToString:selector])
+    if (![@"2" isEqualToString:selector]) {
         _offsetSelector = @"1";
-    else
+    } else {
         _offsetSelector = selector;
+    }
 }
 
 -(NSString*) offsetAdjustmentFormula {
     if ([@"2" isEqualToString:[self offsetSelector]]) {
         return @"MV + SL - ST - CT + MO";
+    } else {
+        return @"Hmf - ST - CT + MO - MV";
     }
-    return @"Hmf - ST - CT + MO - MV";
 }
 
 -(float)calculateOffsetAdjustment:(float)spacerThickness casingThickness:(float)casingThickness {
     if ([@"2" isEqualToString:[self offsetSelector]]) {
         return [self calcOffsetUsingSL:spacerThickness casingThickness:casingThickness];
+    } else {
+        return [self calcOffsetUsingHmf:spacerThickness casingThickness:casingThickness];
     }
-    return [self calcOffsetUsingHmf:spacerThickness casingThickness:casingThickness];
 }
 
 -(float)calcOffsetUsingHmf:(float)spacerThickness casingThickness:(float)casingThickness {

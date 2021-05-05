@@ -34,5 +34,6 @@
 @property NSString *ipAddress;
 @property NSNumber *baudRate;
 @property BOOL useSerialBuffer;
+@property BOOL useSensorParams;
 
 @end

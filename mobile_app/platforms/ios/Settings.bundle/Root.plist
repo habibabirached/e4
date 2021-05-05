@@ -36,7 +36,7 @@
             <key>Type</key>
             <string>PSMultiValueSpecifier</string>
             <key>Title</key>
-            <string>Type</string>
+            <string>Connection Type</string>
             <key>Key</key>
             <string>connectionType</string>
             <key>DefaultValue</key>
@@ -108,6 +108,20 @@
 			<key>FalseValue</key>
 			<false/>
 		</dict>
+        <dict>
+            <key>Type</key>
+            <string>PSToggleSwitchSpecifier</string>
+            <key>Title</key>
+            <string>Use Controller Sensor Params</string>
+            <key>Key</key>
+            <string>useSensorParams</string>
+            <key>DefaultValue</key>
+            <true/>
+            <key>TrueValue</key>
+            <true/>
+            <key>FalseValue</key>
+            <false/>
+        </dict>
 	</array>
 </dict>
 </plist>
