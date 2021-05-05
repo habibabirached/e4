@@ -48,6 +48,7 @@
 }
 
 - (void)initialize {
+    NSLog(@"@EthernetController::initialize");
     dispatch_sync(dispatch_get_main_queue(), ^{
         self->ipAddress = ((AppDelegate *)[UIApplication sharedApplication].delegate).ipAddress;
     });

@@ -26,17 +26,19 @@
 @synthesize progress = _progress;
 
 -(instancetype)initWithPlugin:(CDVPlugin*)plugin {
+    NSLog(@"@IFC242xManager::initWithPlugin");
     if (self = [super init]) {
         self->plugin = plugin;
 
         dispatch_sync(dispatch_get_main_queue(), ^{
             self->connectionType = ((AppDelegate *)[UIApplication sharedApplication].delegate).connectionType;
         });
-        if ([self->connectionType containsString:@"serial"]) {
+        NSLog(@"Connection type: %@", self->connectionType);
+        if ([self->connectionType isEqualToString:@"serial"]) {
             self->controller = [[SerialController alloc] initWithDelegate:self];
-        } else if ([self->connectionType containsString:@"ethernet"]) {
+        } else if ([self->connectionType isEqualToString:@"ethernet"]) {
             self->controller = [[EthernetController alloc] initWithDelegate:self];
-        } else if ([self->connectionType containsString:@"demo"]) {
+        } else if ([self->connectionType isEqualToString:@"demo"]) {
             self->controller = [[DemoController alloc] initWithDelegate:self];
         } else {
             NSLog(@"Invalid connection type %@, defaulting to serial", self->connectionType);

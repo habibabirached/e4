@@ -19,6 +19,7 @@
     NSRegularExpression *mrRegex;
     NSRegularExpression *sensorParamRegex;
     BOOL useSerialBuffer;
+    BOOL useSensorParams;
 }
 
 @synthesize measurementData = _measurementData;
@@ -78,7 +79,6 @@
 // queue of commands over telnet.  The timer will keep firing until the queue runs
 // out of command and the timer is invalidated in the callback.
 - (void)sendTelnetCommand {
-
     NSLog(@"@sendTelnetCommand: number of queued commands: %lu", (unsigned long)self->telnetCmds.count);
     dispatch_async(dispatch_get_main_queue(), ^{
         self->timerSendTelnetCommand = [NSTimer scheduledTimerWithTimeInterval:0.1
@@ -118,6 +118,7 @@
 }
 
 - (void)initialize {
+    NSLog(@"@BaseController::initialize");
     self.state = initializationInProgress;
     self->telnetIsReady = NO;
     self->controllerType = @"";
@@ -125,6 +126,7 @@
     
     dispatch_sync(dispatch_get_main_queue(), ^{
         self->useSerialBuffer = ((AppDelegate *)[UIApplication sharedApplication].delegate).useSerialBuffer;
+        self->useSensorParams = ((AppDelegate *)[UIApplication sharedApplication].delegate).useSensorParams;
     });
 
 #ifdef SEND_DISPLACEMENT_ONLY
@@ -345,7 +347,7 @@
             // TODO: check if needed
             // clear buffer if size over limit
             if (self->buffer.length > MAX_BUFFER_SIZE) {
-                NSLog(@"WARNING: Buffer length %lu over limit (%d), clearing buffer", self->buffer.length, MAX_BUFFER_SIZE);
+                NSLog(@"WARNING: Buffer length %lu is over the limit (%d), clearing buffer", self->buffer.length, MAX_BUFFER_SIZE);
                 [self->buffer setString:@""];
             }
 
@@ -392,15 +394,43 @@
         [self->sensorParamRegex enumerateMatchesInString:self->buffer options:0 range:NSMakeRange(0, self->buffer.length) usingBlock:^(NSTextCheckingResult *match, NSMatchingFlags flags, BOOL *stop) {
             if ([match numberOfRanges] > 1) {
                 NSString* sensorParams = [self->buffer substringWithRange:[match rangeAtIndex:1]];
-                self.settings.sensor.length = [[sensorParams substringToIndex:4] floatValue]/1000.0;
-                self.settings.sensor.smr = [[sensorParams substringFromIndex:4] floatValue]/100.0;
-                NSLog(@"Sensor Length is %.3f and SMR is %.2f", self.settings.sensor.length, self.settings.sensor.smr);
+                NSLog(@"Sensor params from controller: %@", sensorParams);
+                if (self->useSensorParams) {
+                    /*
+                     SENSORINFO code change:
+                      
+                     Name: IFS2403-10(221)_1234 and IFS2403-10(222)_1234 where 1234 = 4 digit SN of the sensor.
+                     Measurement range: XX.XXXmm
+                     Serial: XXXXYYYY where X = sensor length and Y = sensor start of range in mm. We are limited to 8 digits for this field.
+                      
+                     Longer one -> 24281194 -> 24.28 and 11.94
+                     *will need to add leading 2 in the code, to identify the length as 224.28mm
+                     Shorter one -> 75691194 -> 75.69 and 11.94
+                     */
+                    float lengthMM = [[sensorParams substringToIndex:4] floatValue] / 100.0;
+                    // TODO: check rule
+                    if (lengthMM < 50.0) {
+                        NSLog(@"Adding 200mm to sensor length");
+                        lengthMM += 200.0;
+                    }
+                    float lengthInches = lengthMM / IN_to_MM;
+                    NSLog(@"Sensor Length is %.3f mm or %.3f inches", lengthMM, lengthInches);
+                    float smrMM = [[sensorParams substringFromIndex:4] floatValue] / 100.0;
+                    self.settings.sensor.length = lengthInches;
+                    self.settings.sensor.smr = smrMM;
+                    NSLog(@"Sensor Length is %.3f inches and SMR is %.2f mm", self.settings.sensor.length, self.settings.sensor.smr);
+                } else {
+                    NSLog(@"Ignoring sensor params");
+                }
             }
         }];
     }
 
     if (self->useSerialBuffer || [prompt containsString:@TELNET_PROMPT]) {
         NSLog(@"Got telnet prompt: telnetCmds.count = %lu, pState = %d",(unsigned long)self->telnetCmds.count, self.state);
+        if (!self->telnetIsReady) {
+            NSLog(@"Telnet is ready");
+        }
         self->telnetIsReady = YES;
         // reset buffer
         [self->buffer setString:@""];
