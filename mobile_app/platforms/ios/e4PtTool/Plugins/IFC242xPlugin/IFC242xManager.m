@@ -6,6 +6,7 @@
 //
 //
 
+#import "AppDelegate.h"
 #import "IFC242xManager.h"
 #import "PostProcess.h"
 #import "ScanMetaData.h"
@@ -18,16 +19,32 @@
     NSObject<IController>* controller;
     ScanMetaData* metaData;
     PostProcess* postProcess;
-    NSString* cmdCallbackId, *lastSavedFile;
+    NSString* cmdCallbackId, *lastSavedFile, *connectionType;
     BOOL calibratedAcquire;
 }
 
 @synthesize progress = _progress;
 
 -(instancetype)initWithPlugin:(CDVPlugin*)plugin {
+    NSLog(@"@IFC242xManager::initWithPlugin");
     if (self = [super init]) {
         self->plugin = plugin;
-        self->controller = [[SerialController alloc] initWithDelegate:self];
+
+        dispatch_sync(dispatch_get_main_queue(), ^{
+            self->connectionType = ((AppDelegate *)[UIApplication sharedApplication].delegate).connectionType;
+        });
+        NSLog(@"Connection type: %@", self->connectionType);
+        if ([self->connectionType isEqualToString:@"serial"]) {
+            self->controller = [[SerialController alloc] initWithDelegate:self];
+        } else if ([self->connectionType isEqualToString:@"ethernet"]) {
+            self->controller = [[EthernetController alloc] initWithDelegate:self];
+        } else if ([self->connectionType isEqualToString:@"demo"]) {
+            self->controller = [[DemoController alloc] initWithDelegate:self];
+        } else {
+            NSLog(@"Invalid connection type %@, defaulting to serial", self->connectionType);
+            self->controller = [[SerialController alloc] initWithDelegate:self];
+        }
+        
         self->postProcess = [PostProcess new];
         
         // Remove notifications before adding them so they are not added multiple times.
@@ -340,6 +357,9 @@
     } else if ([cmd containsString:@"set_manual_override"]) {
         NSLog(@"Got set_manual_override");
         self->controller.settings.overrideRateAndIntensity = [[message objectForKey:@"value"] boolValue];
+    } else if ([cmd containsString:@"get_connection_mode"]) {
+        NSLog(@"Got get_connection_mode");
+        [self returnPluginResponse:@{@"type":@"connection",@"mode":self->connectionType}];
     } else if ([cmd containsString:@"set_connection_mode"]) {
         NSString* mode = [message objectForKey:@"mode"];
         NSLog(@"Recieved set_connection_mode:%@",mode);

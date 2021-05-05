@@ -24,8 +24,11 @@
 
 
 - (IFC242xManager*)manager {
-    if (!manager)
+    // TODO: ensure only one instance can exist
+    if (!manager) {
+        NSLog(@"CDVIFC242x::manger: does not exist, initializing");
         manager = [[IFC242xManager alloc] initWithPlugin:self];
+    }
     return manager;
 }
 

@@ -32,6 +32,28 @@
             <key>Title</key>
             <string>CONNECTION</string>
         </dict>
+        <dict>
+            <key>Type</key>
+            <string>PSMultiValueSpecifier</string>
+            <key>Title</key>
+            <string>Connection Type</string>
+            <key>Key</key>
+            <string>connectionType</string>
+            <key>DefaultValue</key>
+            <string>serial</string>
+            <key>Titles</key>
+            <array>
+                <string>Serial</string>
+                <string>Ethernet</string>
+                <string>Demo</string>
+            </array>
+            <key>Values</key>
+            <array>
+                <string>serial</string>
+                <string>ethernet</string>
+                <string>demo</string>
+            </array>
+        </dict>
 		<dict>
 			<key>Type</key>
 			<string>PSMultiValueSpecifier</string>
@@ -86,6 +108,20 @@
 			<key>FalseValue</key>
 			<false/>
 		</dict>
+        <dict>
+            <key>Type</key>
+            <string>PSToggleSwitchSpecifier</string>
+            <key>Title</key>
+            <string>Use Controller Sensor Params</string>
+            <key>Key</key>
+            <string>useSensorParams</string>
+            <key>DefaultValue</key>
+            <true/>
+            <key>TrueValue</key>
+            <true/>
+            <key>FalseValue</key>
+            <false/>
+        </dict>
 	</array>
 </dict>
 </plist>

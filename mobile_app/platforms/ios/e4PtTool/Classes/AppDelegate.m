@@ -30,9 +30,11 @@
 
 @implementation AppDelegate
 
+@synthesize connectionType = _connectionType;
 @synthesize ipAddress = _ipAddress;
 @synthesize baudRate = _baudRate;
 @synthesize useSerialBuffer = _useSerialBuffer;
+@synthesize useSensorParams = _useSensorParams;
 
 - (BOOL)application:(UIApplication*)application didFinishLaunchingWithOptions:(NSDictionary*)launchOptions
 {
@@ -46,16 +48,20 @@
 - (void)checkAppSettings {
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     
+    NSObject *connectionTypeObject = [defaults objectForKey:@"connectionType"];
     NSObject *ipAddressObject = [defaults objectForKey:@"ipAddress"];
     NSObject *baudRateObject = [defaults objectForKey:@"baudRate"];
     NSObject *useSerialBufferObject = [defaults objectForKey:@"useSerialBuffer"];
-    if (ipAddressObject == nil || baudRateObject == nil || useSerialBufferObject == nil) {
+    NSObject *useSensorParamsObject = [defaults objectForKey:@"useSensorParams"];
+    if (connectionTypeObject == nil || ipAddressObject == nil || baudRateObject == nil || useSerialBufferObject == nil || useSensorParamsObject == nil) {
         [self registerDefaultsFromSettingsBundle];
     }
 
+    self.connectionType = [defaults stringForKey:@"connectionType"];
     self.ipAddress = [defaults stringForKey:@"ipAddress"];
     self.baudRate = [NSNumber numberWithInt:[[defaults stringForKey:@"baudRate"] intValue]];
     self.useSerialBuffer = [defaults boolForKey:@"useSerialBuffer"];
+    self.useSensorParams = [defaults boolForKey:@"useSensorParams"];
 }
 
 - (void)registerDefaultsFromSettingsBundle {

@@ -88,6 +88,7 @@
 }
 
 - (void)initialize {
+    NSLog(@"@SerialController::initialize");
     dispatch_sync(dispatch_get_main_queue(), ^{
         self->baudRate = [((AppDelegate *)[UIApplication sharedApplication].delegate).baudRate intValue];
     });
@@ -104,6 +105,8 @@
 }
 
 - (void)selectOppositeOutput {
+    // TODO: check
+    //[self->telnetCmds addObject:@"OUTPUT ETHERNET\n"];
     [self->telnetCmds addObject:@"OUTPUT RS422\n"];
 }
 

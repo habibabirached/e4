@@ -140,11 +140,15 @@ define(function(require, exports, module) {
         } else {
             createWebSocket();
         }
-        get_sensor_parameters();
+        getSensorParameters();
+        // TODO: fix, results in multiple IFC242xManager references
+        //getConnectionMode();
         
         $("#REV_PROGRESS_BAR").hide();
+        var currentHeaderHeight = $('header').css('height');
         var currentFooterHeight = $('footer').css('height');
-        var newContentHeight = 'calc(100vh - 60px - ' + currentFooterHeight + ')';
+        var newContentHeight = 'calc(100vh - ' + currentHeaderHeight + ' - ' + currentFooterHeight + ')';
+        $('#sidebar-wrapper').css('height', newContentHeight);
         $('#page-content-wrapper').css('height', newContentHeight);
         fadeOutAll();
         setButtonProperties($("#STAGE_COLLECT_BUTTON"), LABEL_GO, 'green');
@@ -152,10 +156,10 @@ define(function(require, exports, module) {
         
         document.getElementById("MAIN_MENU").addEventListener('click', function() {
             $("#TITLE_BAR").text(APP_NAME);
-            toggle_menu();
+            toggleMenu();
         }, {passive: true});
         document.getElementById("FRD_BUTTON").addEventListener('click', function() {
-            toggle_menu();
+            toggleMenu();
             fadeOutAll();
             $("#FRD_PAGE").fadeIn();
         }, {passive: true});
@@ -163,7 +167,7 @@ define(function(require, exports, module) {
             show_FRD();
         }, {passive: true});
         document.getElementById("SETUP_BUTTON").addEventListener('click', function() {
-            toggle_menu();
+            toggleMenu();
             fadeOutAll();
             $("#SETUP_PAGE").fadeIn();
             set_frame_information();
@@ -250,7 +254,7 @@ define(function(require, exports, module) {
 
         function RESULTS_BUTTON_FUNC() {
             getCredentialforREST();
-            toggle_menu();
+            toggleMenu();
             if ($("#TITLE_BAR").text() != "Results") {
                 $("#TITLE_BAR").text("Results");
             }
@@ -263,7 +267,7 @@ define(function(require, exports, module) {
                 set_frame_information();
                 listInternalFiles("LOCAL_DATA_TABLE_BODY", local_db, true);
                 SELECTED_FILE = "";
-                toggle_menu();
+                toggleMenu();
                 if ($("#TITLE_BAR").text() != "Open From Device") {
                     $("#TITLE_BAR").text("Open From Device");
                 }
@@ -271,7 +275,7 @@ define(function(require, exports, module) {
             } catch (err) {
                 console.log("Error getting local files.");
                 console.log(err);
-                toggle_menu();
+                toggleMenu();
             }
         }, {passive: true});
         document.getElementById("OPEN_ARCHIVE_DATA_BUTTON").addEventListener('click', function() {
@@ -280,7 +284,7 @@ define(function(require, exports, module) {
                  set_frame_information();
                  listInternalFiles("ARCHIVE_DATA_TABLE_BODY", archive_db, false);
                  SELECTED_FILE = "";
-                 toggle_menu();
+                 toggleMenu();
                  if ($("#TITLE_BAR").text() != "Open From Archive") {
                      $("#TITLE_BAR").text("Open From Archive");
                  }
@@ -288,11 +292,11 @@ define(function(require, exports, module) {
              } catch (err) {
                  console.log("Error getting archive files.");
                  console.log(err);
-                 toggle_menu();
+                 toggleMenu();
              }
         }, {passive: true});
         document.getElementById("SHUTDOWN_BUTTON").addEventListener('click', function() {
-            toggle_menu();
+            toggleMenu();
             systemShutdown();
         }, {passive: true});
         document.getElementById("CONN_SELECTION").addEventListener('change', function() {
@@ -356,7 +360,7 @@ define(function(require, exports, module) {
         }, {passive: true});
         document.getElementById("GET_DATA_BUTTON").addEventListener('click', function() {
             console.log("@GET_DATA_BUTTON event listener function.");
-            toggle_menu();
+            toggleMenu();
             fadeOutAll();
             if (!masteringPerformed) {
                 //e4PtAlert('Mastering has not been performed. Please perform mastering before collecting data.');
@@ -374,7 +378,7 @@ define(function(require, exports, module) {
             }
         }, {passive: true});
         document.getElementById("SENSOR_SETUP_BUTTON").addEventListener('click', function() {
-            toggle_menu();
+            toggleMenu();
             fadeOutAll();
             $("#SENSOR_SETUP_PAGE").fadeIn();
             setMasterMessage("green","READY");
@@ -520,7 +524,8 @@ define(function(require, exports, module) {
         
         // Wait (2s) and update connection status if connected before menu is opened
         setTimeout(function() {
-            messaging.sendMessage({args:[{command:'check_connection_status'}]});
+            //getConnectionMode();
+            checkConnectionStatus();
         }, 2000);
     });
 
@@ -779,7 +784,7 @@ define(function(require, exports, module) {
         }
     }
 
-    function toggle_menu() {
+    function toggleMenu() {
         console.log("fsRoot: ", fsRoot);
 
         $("#wrapper").toggleClass("toggled");
@@ -790,7 +795,7 @@ define(function(require, exports, module) {
             if (!serialConnected) {
                 e4PtAlert('Connecting...\nPlease wait for indicator to turn green before proceeding.');
                 // ensure that the connection state updates in case the original message was not received
-                messaging.sendMessage({args:[{command:'check_connection_status'}]});
+                checkConnectionStatus();
             }
             messaging.sendMessage({args:[{command:'get_version'}]});
         }
@@ -818,18 +823,35 @@ define(function(require, exports, module) {
         fileviewer2.dismiss();
     }
 
-    function get_sensor_parameters() {
+    function getSensorParameters() {
+        console.log("@getSensorParameters");
         messaging.sendMessage({args:[{command:'get_sensor_parameters'}]});
     }
-
-    function set_connection_mode() {
-        var mode = document.getElementById('CONN_SELECTION').value;
+    
+    function getConnectionMode() {
+        console.log("@getConnectionMode");
+        messaging.sendMessage({args:[{command:'get_connection_mode'}]});
+    }
+    
+    function checkConnectionStatus() {
+        console.log("@checkConnectionStatus");
+        messaging.sendMessage({args:[{command:'check_connection_status'}]});
+    }
+    
+    function update_connection_mode(mode) {
+        console.log("@update_connection_mode: ", mode);
         $('#CONNECTION_NAME').text(mode.toUpperCase());
         
         if (mode === 'demo') {
             console.log('DEMO mode: ignore mastering');
             masteringPerformed = true;
         }
+    }
+
+    function set_connection_mode() {
+        console.log("@set_connection_mode");
+        var mode = document.getElementById('CONN_SELECTION').value;
+        update_connection_mode(mode);
 
         pluginMessage({type:'status',status:'disconnected',noAlert:true});
         messaging.sendMessage({args:[{command:'set_connection_mode',mode:mode}]});
@@ -1932,6 +1954,11 @@ define(function(require, exports, module) {
                     document.getElementById('THRESHOLD_1').value = msg.value;
                 }
                 break;
+            case "connection":
+                console.log("Received a connection mode message: ", msg.message);
+                document.getElementById('CONN_SELECTION').value = msg.mode;
+                update_connection_mode(msg.mode);
+                break;
             case "status":
                 console.log("Received Status Message");
                 console.log(msg);
@@ -1950,7 +1977,6 @@ define(function(require, exports, module) {
                         // TODO: reset
                     }
                 } else if (msg.status == "acquiring") {
-                    // TODO: is this called?
                     displayAbortButton();
                     setIndicatorColor("red");
                     startProgressBar();
@@ -1992,7 +2018,9 @@ define(function(require, exports, module) {
             case "version":
                 console.log("Received version message: ", msg.version);
                 document.getElementById("APP_VERSION").innerHTML = "VERSION " + msg.version;
-                get_sensor_parameters();
+                // executes every time menu is opened
+                getSensorParameters();
+                getConnectionMode();
                 break;
             case "alert":
                 console.log("Received an alert message: ", msg.message);
@@ -2031,6 +2059,9 @@ define(function(require, exports, module) {
                 
                 // TODO: implement
                 //document.getElementById("CALIBRATION_DATE").innerHTML = new Date().toLocaleDateString();
+                
+                getConnectionMode();
+                checkConnectionStatus();
                 
                 break;
             default:
@@ -2086,7 +2117,7 @@ define(function(require, exports, module) {
         if (isNaN(mfh_f) || isNaN(mstrval_f) || isNaN(mo_f) || isNaN(sensor_length_f) || isNaN(smr_f) || isNaN(mr_f)) {
             e4PtConfirm("Please enter only floating point values.\nPlease try again.", function(buttonIndex) {
                     if (buttonIndex==2) {//Cancel - This cancels and gets the previous values back.
-                        get_sensor_parameters();
+                        getSensorParameters();
                     }
                 }
             );
@@ -2106,6 +2137,7 @@ define(function(require, exports, module) {
     }
 
     function getSensorParametersForSensorSelection(sensorType) {
+        console.log("@getSensorParametersForSensorSelection: ", sensorType);
         var info = sensorSettings.getSensorType(sensorType);
         if (info && info.measured_mastering_fixture_height_mm) {
             document.getElementById("SENSOR_LENGTH").value = sensorSettings.toInches(info.measured_length_mm).toFixed(4);
@@ -2551,9 +2583,11 @@ define(function(require, exports, module) {
           default:
             targetColor = "text-light";
         }
-        $("#indicator-pulse")
+        $("#CONNECTION_INDICATOR")
             .removeClass(allColors)
             .addClass(targetColor);
+        //document.getElementById('CONNECTION_INDICATOR').classList.remove("text-danger", "text-warning", "text-success", "text-primary", "text-light");
+        //document.getElementById('CONNECTION_INDICATOR').classList.add(targetColor);
     }
 
     function setMasterMessage( bgColor, txt ) {
@@ -3036,7 +3070,7 @@ define(function(require, exports, module) {
         var clickFn = (elementID.includes('ARCHIVE') ? "loadArchiveData(\"" + rows[i].doc._id + "\")" : "loadLocalData(\"" + rows[i].doc._id + "\")");
           
         var cellb = new_row.insertCell(-1);
-        var checkbox = '<input type="checkbox"' + ' class="form-check-input" id="checkBox' + dataSource + 'IdNum' + i.toString() + '" value="no">';
+        var checkbox = '<input type="checkbox"' + ' class="form-check-input form-control-lg" id="checkBox' + dataSource + 'IdNum' + i.toString() + '" value="no">';
         cellb.innerHTML = checkbox;
         cellb.setAttribute("class", "text-center");
 
