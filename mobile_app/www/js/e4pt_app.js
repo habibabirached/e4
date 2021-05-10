@@ -489,6 +489,9 @@ define(function(require, exports, module) {
         document.getElementById("SPACER_THUMBNAIL").addEventListener('click', function() {
             showSpacerImage();
         }, {passive: true});
+        document.getElementById("OFFSET_ADJUSTMENT_BUTTON").addEventListener('click', function() {
+            getOffsetAdjustment();
+        }, {passive: true});
         document.getElementById("FRAME_DATA_CLEAR_BUTTON").addEventListener('click', function() {
             clearFrameData();
         }, {passive: true});
@@ -826,6 +829,11 @@ define(function(require, exports, module) {
 
     function hide_FRD() {
         fileviewer2.dismiss();
+    }
+    
+    function getOffsetAdjustment() {
+        console.log("@getOffsetAdjustment");
+        messaging.sendMessage({args:[{command:'get_offset_adjustment'}]});
     }
 
     function getSensorParameters() {
@@ -1239,7 +1247,7 @@ define(function(require, exports, module) {
 
     function confirm_collect_stage_data() {
         // Disable prompt since offset calculation is disabled
-        /*e4PtPrompt('Original calculation assumes master fixture height is SMR+SL+5mm, New calculation uses MV=fixture height - sensor length', function(calcMethod) {
+        e4PtPrompt('Original calculation assumes master fixture height is SMR+SL+5mm, New calculation uses MV=fixture height - sensor length', function(calcMethod) {
             document.getElementById("CLEARANCE_CALCULATION_METHOD").value = calcMethod;
             // Here we check to see if data is in the cell that is about to be populated.
             // If there is already data there then we confirm with the user to overwrite it.
@@ -1261,28 +1269,7 @@ define(function(require, exports, module) {
                 collect_stage_data();
             }
             return;
-        }, 'Select Clearance Calculation', ['Original','New']);
-        return;*/
-
-        // Here we check to see if data is in the cell that is about to be populated.
-        // If there is already data there then we confirm with the user to overwrite it.
-        let stage = current_frame_data['stage'][current_stage_index];
-        let position = current_frame_data['position'][stage][current_position_index];
-        let el_id = position + stage;
-        el_id = el_id.replace(/\s+/g, '_');
-        let cell_contents = document.getElementById(el_id).innerHTML;
-        if (cell_contents.length > 0) {
-            let msg = "Are you sure you want to overwrite stage " + stage + "-" + position + " data, " + cell_contents + "?";
-            e4PtConfirm(msg, function(buttonIndex) {
-                if (buttonIndex==1) {//OK
-                    collect_stage_data();
-                } else if (buttonIndex==2) {//Cancel
-                    return;
-                }
-            });
-        } else {
-            collect_stage_data();
-        }
+        }, 'Select Clearance Calculation', ['Original','New','None']);
         return;
     }
 

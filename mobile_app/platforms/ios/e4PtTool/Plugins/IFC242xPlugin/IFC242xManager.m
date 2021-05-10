@@ -94,9 +94,9 @@
     
     float offsetAdjustment = 0.0;
     // Disabled until further testing, this would apply offsetAdjustment only for turbine measurements and not apply to acquisition via Get Data
-    /*if (self->calibratedAcquire) {
+    if (self->calibratedAcquire) {
         offsetAdjustment = [self->controller.settings.sensor calculateOffsetAdjustment:self->metaData.spacerThickness casingThickness:self->metaData.casingThickness];
-    }*/
+    }
     return [self->postProcess computeClearance:measurementData bladeCount:self->metaData.numberOfBlades usingAdjustmentFactor:offsetAdjustment];
 }
 
@@ -365,6 +365,11 @@
     } else if ([cmd containsString:@"get_connection_mode"]) {
         NSLog(@"Got get_connection_mode");
         [self returnPluginResponse:@{@"type":@"connection",@"mode":self->connectionType}];
+    } else if ([cmd containsString:@"get_offset_adjustment"]) {
+        NSString* offsetFormula = [self->controller.settings.sensor offsetAdjustmentFormula];
+        NSString* offsetCalculation = [self->controller.settings.sensor offsetAdjustmentExplanation:self->metaData.spacerThickness casingThickness:self->metaData.casingThickness];
+        float offsetValue = [self->controller.settings.sensor calculateOffsetAdjustment:self->metaData.spacerThickness casingThickness:self->metaData.casingThickness];
+        [self returnPluginResponse:@{@"type":@"alert",@"message":[NSString stringWithFormat:@"Formula: %@\n\nCalculation: %@\n\nValue: %.3f", offsetFormula, offsetCalculation, offsetValue]}];
     } else if ([cmd containsString:@"set_connection_mode"]) {
         NSString* mode = [message objectForKey:@"mode"];
         NSLog(@"Recieved set_connection_mode:%@",mode);
