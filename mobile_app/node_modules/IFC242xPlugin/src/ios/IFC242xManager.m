@@ -322,8 +322,15 @@
                 [self->controller setIntensityThreshold:self->controller.settings.intensityThreshold sendImmediately:NO];
                 [self->controller setMeasurementRate:self->controller.settings.measurementRate reportStatus:NO];
             } else {
-                NSLog(@"Overriding auto-settings.");
+                NSString* err = [self->controller.settings calculateAcquisitionTimeFromRPM:rpms forBladeWidth:[[message valueForKey:@"bladeWidth"] floatValue] forTipDiameter:[[message valueForKey:@"tipDiameter"] floatValue]];
+                if (err.length != 0) {
+                    // Report errors.
+                    [self returnPluginResponse:@{@"type":@"alert",@"message":err} keepOpen:YES];
+                    return;
+                }
+                NSLog(@"Overriding auto-settings: Found measurement rate: %.3f; intensity threshold: %.3f", self->controller.settings.measurementRate, self->controller.settings.intensityThreshold);
             }
+            NSLog(@"Acquisition time: %.3f", self->controller.settings.acquisitionTime);
             [self->controller queueDataCollection:interval];
         } else {
             self->calibratedAcquire = false;
