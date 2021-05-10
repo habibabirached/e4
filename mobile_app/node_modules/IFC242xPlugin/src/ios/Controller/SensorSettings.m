@@ -90,26 +90,36 @@
 }
 
 -(void) setOffsetSelector:(NSString*)selector {
-    if (![@"2" isEqualToString:selector]) {
-        _offsetSelector = @"1";
-    } else {
-        _offsetSelector = selector;
-    }
+    _offsetSelector = selector;
 }
 
 -(NSString*) offsetAdjustmentFormula {
     if ([@"2" isEqualToString:[self offsetSelector]]) {
         return @"MV + SL - ST - CT + MO";
-    } else {
+    } else if ([@"1" isEqualToString:[self offsetSelector]]) {
         return @"Hmf - ST - CT + MO - MV";
+    } else {
+        return @"0.0";
+    }
+}
+
+-(NSString*) offsetAdjustmentExplanation:(float)spacerThickness casingThickness:(float)casingThickness {
+    if ([@"2" isEqualToString:[self offsetSelector]]) {
+        return [NSString stringWithFormat:@"%.3f + (%.3f - %.3f - %.3f + %.3f) * %.3f", [self mv], [self length], spacerThickness, casingThickness, [self mo], IN_to_MM];
+    } else if ([@"1" isEqualToString:[self offsetSelector]]) {
+        return [NSString stringWithFormat:@"%.3f * (%.3f - %.3f - %.3f + %.3f) - %.3f", IN_to_MM, [self hmf], spacerThickness, casingThickness, [self mo], [self mv]];
+    } else {
+        return @"0.0";
     }
 }
 
 -(float)calculateOffsetAdjustment:(float)spacerThickness casingThickness:(float)casingThickness {
     if ([@"2" isEqualToString:[self offsetSelector]]) {
         return [self calcOffsetUsingSL:spacerThickness casingThickness:casingThickness];
-    } else {
+    } else if ([@"1" isEqualToString:[self offsetSelector]]) {
         return [self calcOffsetUsingHmf:spacerThickness casingThickness:casingThickness];
+    } else {
+        return 0.0;
     }
 }
 
