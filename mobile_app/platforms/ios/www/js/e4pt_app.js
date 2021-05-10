@@ -307,19 +307,17 @@ define(function(require, exports, module) {
         }, {passive: true});*/
         document.getElementById("DATA_PLOT_CLOSE_BUTTON").addEventListener('click', function() {
             $("#DATA_PLOT_PAGE").fadeOut();
-            if (fromGetData) {
-                fromGetData = false;
-            }
             // re-open previous page
             if (fromSensorSetupPage) {
                 $("#SENSOR_SETUP_PAGE").fadeIn();
-                fromSensorSetupPage = false;
             }
             // disabled since showing data on plot2
             /* else if (fromDataCollectionPage) {
                 $("#TURBINE_SETUP_PAGE").fadeIn();
                 fromDataCollectionPage = false;
             }*/
+            fromGetData = false;
+            fromSensorSetupPage = false;
         }, {passive: true});
         document.getElementById("FRD_CLOSE_BUTTON").addEventListener('click', function() {
             $("#FRD_PAGE").fadeOut();
@@ -348,13 +346,13 @@ define(function(require, exports, module) {
         }, {passive: true});
         document.getElementById("FILE_CHOOSER_CLOSE_BUTTON").addEventListener('click', function() {
             $("#FILE_CHOOSER_PAGE").fadeOut();
-            if (fromDataPlotPage) {
-                $("#DATA_PLOT_PAGE").fadeIn();
-                fromDataPlotPage = false;
-            } else if (fromDataCollectionPage) {
+            if (fromDataCollectionPage) {
                 $("#TURBINE_SETUP_PAGE").fadeIn();
-                fromDataCollectionPage = false;
+            } else if (fromDataPlotPage) {
+                $("#DATA_PLOT_PAGE").fadeIn();
             }
+            fromDataCollectionPage = false;
+            fromDataPlotPage = false;
         }, {passive: true});
         document.getElementById("DATA_DETAILS_CLOSE_BUTTON").addEventListener('click', function() {
             $("#DATA_DETAILS_PAGE").fadeOut();
@@ -598,6 +596,8 @@ define(function(require, exports, module) {
     function getData() {
         console.log('@getData');
         fromGetData = true;
+        fromDataCollectionPage = false;
+
         var acquisitionTime = null;
         doDBSave = false;
         console.log("@GET_DATA_BUTTON: Prompting.");
@@ -729,10 +729,12 @@ define(function(require, exports, module) {
 
     function overrideSettings() {
         manualOverride = document.getElementById("MANUAL_OVERRIDE").checked;
+        console.log("@overrideSettings: ", manualOverride);
         messaging.sendMessage({args:[{command:'set_manual_override',value:manualOverride}]});
         if (manualOverride) {
             $("#TURBINE_SETUP_PAGE").fadeOut();
             // set flag to show DATA COLLECTION page on close
+            fromGetData = false;
             fromDataCollectionPage = true;
             $("#SENSOR_SETUP_PAGE").fadeIn();
         }
@@ -741,6 +743,7 @@ define(function(require, exports, module) {
     function acquisitionTimePromptCallback(results) {
         console.log("@acquisitionTimePromptCallback");
         if (results.buttonIndex > 1) return;
+        console.log("input1: ", results.input1);
         current_frame_data = [];
         acquisitionTime = null;
         if (results.input1.includes("rpm") || results.input1.includes("RPM")) {
@@ -766,14 +769,14 @@ define(function(require, exports, module) {
         if (results.input1.includes("rpm") || results.input1.includes("RPM")) {
             // RPM was specified
             acquisitionTime = results.input1;
-            console.log("w/RPM: ", acquisitionTime);
+            console.log("w/ RPM: ", acquisitionTime);
         } else {
             acquisitionTime = parseFloat(results.input1);
             // Append rpm if its not there already.
             acquisitionTime = acquisitionTime.toString() + "rpm";
             console.log("w/o RPM: ", acquisitionTime);
         }
-        savedRPM = acquisitionTime.replace("rpm","");
+        //savedRPM = acquisitionTime.replace("rpm","");
         if (acquisitionTime != null) {
             //if (Number.isFinite(acquisitionTime)) {
             //    if (acquisitionTime > 0) {
@@ -1286,6 +1289,10 @@ define(function(require, exports, module) {
         current_position_index = document.getElementById("SENSOR_POSITION").selectedIndex;
         current_position = current_frame_data['position'][current_stage][current_position_index];
         doDBSave = true;
+        
+        fromGetData = false;
+        fromDataCollectionPage = true;
+        fromSensorSetupPage = false;
 
         // Collect data from the sensor.
         var nav = navigator.notification;
@@ -1781,14 +1788,16 @@ define(function(require, exports, module) {
         }
         setButtonProperties($("#START_DARK_REFERENCE_BUTTON"), LABEL_DARK, 'yellow');
 
-        messaging.sendMessage({args:[{command:'do_dark_reference'}]});
-        
         // set flag to show SENSOR SETUP page on close
+        fromGetData = false;
+        fromDataCollectionPage = false;
         fromSensorSetupPage = true;
 
         startProgressBar();
         charting.clearChartData(document.getElementById('DATA_PLOT'));
         current_frame_data = [];
+
+        messaging.sendMessage({args:[{command:'do_dark_reference'}]});
     }
 
     function do_mastering(reset) {
@@ -2631,10 +2640,11 @@ define(function(require, exports, module) {
         document.getElementById('THRESHOLD_1').value = E4PTdata.intensity_threshold;
         
         // only display the DATA PLOT page for GET DATA or SENSOR SETUP and not from DATA COLLECTION
-        if ((fromGetData || fromSensorSetupPage) && !fromDataCollectionPage) {
+        if (fromGetData || fromSensorSetupPage) {
             fadeOutAll();
             $("#DATA_PLOT_PAGE").fadeIn();
             fromGetData = false;
+            fromDataCollectionPage = false;
         }
 
         if (current_frame_data['position'] != null) {
@@ -2695,6 +2705,9 @@ define(function(require, exports, module) {
                 
         // set flag to show DATA COLLECTION page on close, disabled to show plot2
         //fromDataCollectionPage = true;
+        
+        // TODO: test this
+        acquisitionTime = acquisitionTime.replace("rpm","");
         
         // TODO: should not be needed here, progress bar should update
         setIndicatorColor("red");
