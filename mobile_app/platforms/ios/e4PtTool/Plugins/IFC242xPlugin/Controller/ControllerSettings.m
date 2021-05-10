@@ -35,6 +35,33 @@
     return _outOfRange;
 }
 
+-(NSString*)calculateAcquisitionTimeFromRPM:(float)rpm forBladeWidth:(float)bladeWidth forTipDiameter:(float)tipDiameter {
+    
+    NSString* errorMessage = @"";
+    float circumference = [self calculateCircumferenceFromTipDiameterInches:tipDiameter];
+    if (circumference == 0) {
+        errorMessage = @"Error: Circumference = 0, ";
+    }
+    float inchesPerSecond = [self calculateSpeedForCircumference:circumference withRPM:rpm];
+    self.acquisitionTime = [self calculateAcquisitionTimeForCircumference:circumference atSpeed:inchesPerSecond];
+    
+    // may not be a safe float comparison
+    if (rpm == 0) {
+        errorMessage = [errorMessage stringByAppendingString:@"Error: RPM = 0, "];
+    }
+
+    if (self.acquisitionTime <= 0) {
+        errorMessage = [errorMessage stringByAppendingFormat:@"Error: Time Low %f, ", self.acquisitionTime];
+    } else if (self.acquisitionTime > 1800) {
+        errorMessage = [errorMessage stringByAppendingFormat:@"Error: Time High %f, ", self.acquisitionTime];
+    }
+
+    if (self.measurementRate >= 6.5) {
+        errorMessage = [errorMessage stringByAppendingFormat:@"Error: Rate High %d pts/blade", DESIRED_POINTS_PER_BLADE];
+    }
+    return errorMessage;
+}
+
 -(NSString*)calculateAcquisitionTimeAndSamplingFrequencyAndIntensityThresholdFromRPM:(float)rpm forBladeWidth:(float)bladeWidth forTipDiameter:(float)tipDiameter {
     
     NSString* errorMessage = @"";
