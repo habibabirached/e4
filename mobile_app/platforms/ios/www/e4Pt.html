@@ -465,10 +465,13 @@
                             <div id="collapseSetupTwo" class="accordion-collapse collapse" aria-labelledby="headingSetupTwo" data-bs-parent="#accordionSetup">
                               <div class="accordion-body">
                                   <!-- Sensor Connection -->
+                                  <div class="alert alert-warning pb-0" role="alert">
+                                    <p>This setting should be changed in the iOS application settings.</p>
+                                  </div>
                                   <form>
                                       <div class="mb-3">
                                         <label for="CONN_SELECTION" class="form-label">Current Connection</label>
-                                        <select id="CONN_SELECTION" class="form-select" aria-label="Current Connection">
+                                        <select id="CONN_SELECTION" class="form-select" aria-label="Current Connection" disabled>
                                           <option value="serial" selected>SERIAL cable</option>
                                           <option value="ethernet">ETHERNET</option>
                                           <option value="demo">DEMO</option>
