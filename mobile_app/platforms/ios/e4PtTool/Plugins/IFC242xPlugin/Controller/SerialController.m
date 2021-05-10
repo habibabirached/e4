@@ -105,9 +105,7 @@
 }
 
 - (void)selectOppositeOutput {
-    // TODO: check
-    //[self->telnetCmds addObject:@"OUTPUT ETHERNET\n"];
-    [self->telnetCmds addObject:@"OUTPUT RS422\n"];
+    [self->telnetCmds addObject:@"OUTPUT ETHERNET\n"];
 }
 
 - (void)disconnectDevice {
