@@ -93,8 +93,10 @@
     self->postProcess.outOfRange = self->controller.settings.outOfRange;
     
     float offsetAdjustment = 0.0;
-    if (self->calibratedAcquire)
+    // Disabled until further testing, this would apply offsetAdjustment only for turbine measurements and not apply to acquisition via Get Data
+    /*if (self->calibratedAcquire) {
         offsetAdjustment = [self->controller.settings.sensor calculateOffsetAdjustment:self->metaData.spacerThickness casingThickness:self->metaData.casingThickness];
+    }*/
     return [self->postProcess computeClearance:measurementData bladeCount:self->metaData.numberOfBlades usingAdjustmentFactor:offsetAdjustment];
 }
 
@@ -131,10 +133,11 @@
     
     [self saveCSVFile:date clearanceData:clearanceData measurementData:measurementData];
     NSArray* savedFilepath;
-    if (self->lastSavedFile)
+    if (self->lastSavedFile) {
         savedFilepath = [self->lastSavedFile pathComponents];
-    else
+    } else {
         savedFilepath = @[@"",@""];
+    }
     NSRange endRange = NSMakeRange(savedFilepath.count - 2, 2);
     NSDictionary* jsonDataDict = @{@"type":@"data",
                                    @"data":dispJSONString,
@@ -159,7 +162,9 @@
 
 - (void)saveCSVFile:(NSDate*)date clearanceData:(ClearanceData*)clearanceData measurementData:(MeasurementData*)measurementData {
     // If called with no displacements, don't write a file, just return;
-    if (measurementData.displacements.count == 0) return;
+    if (measurementData.displacements.count == 0) {
+        return;
+    }
     // Get the date & time for the filename.
     NSDateFormatter *dateFormatter=[[NSDateFormatter alloc] init];
     [dateFormatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
@@ -366,6 +371,7 @@
         [self->controller disconnectDevice];
         ControllerSettings* controllerSettings = self->controller.settings;
         self->controller = nil;
+        self->connectionType = mode;
         if ([mode containsString:@"serial"]) {
             self->controller = [[SerialController alloc] initWithDelegate:self andSettings:controllerSettings];
             [self returnPluginResponse:@{@"type":@"alert",@"message":@"App is now using serial connection."} keepOpen:YES];

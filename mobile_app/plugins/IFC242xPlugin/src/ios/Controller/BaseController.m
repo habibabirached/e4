@@ -165,7 +165,7 @@
 
 - (void)masterDevice:(NSString*)masteringValue {
     if (![self checkReady]) return;
-    NSLog(@"@masteringDevice");
+    NSLog(@"@masteringDevice: %@", masteringValue);
 
     self.state = masteringInProgress;
     [self->delegate returnPluginResponse:@{@"type":@"status",@"status":@"mastering_in_progress"} keepOpen:YES];
