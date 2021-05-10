@@ -307,6 +307,9 @@ define(function(require, exports, module) {
         }, {passive: true});*/
         document.getElementById("DATA_PLOT_CLOSE_BUTTON").addEventListener('click', function() {
             $("#DATA_PLOT_PAGE").fadeOut();
+            if (fromGetData) {
+                fromGetData = false;
+            }
             // re-open previous page
             if (fromSensorSetupPage) {
                 $("#SENSOR_SETUP_PAGE").fadeIn();
@@ -416,10 +419,12 @@ define(function(require, exports, module) {
         }, {passive: true});
         document.getElementById("EXPORT_DATA_BUTTON").addEventListener('click', function() {
             fromDataPlotPage = true;
+            fromDataCollectionPage = false;
             $("#DATA_PLOT_PAGE").fadeOut();
             listDir(cordova.file.documentsDirectory + "data");
         }, {passive: true});
         document.getElementById("EXPORT_DATA_BUTTON_02").addEventListener('click', function() {
+            fromDataPlotPage = false;
             fromDataCollectionPage = true;
             $("#TURBINE_SETUP_PAGE").fadeOut();
             listDir(cordova.file.documentsDirectory + E4PTdata.serial_number);
@@ -720,7 +725,7 @@ define(function(require, exports, module) {
     }
 
     function overrideSettings() {
-        manualOverride = !manualOverride;
+        manualOverride = document.getElementById("MANUAL_OVERRIDE").checked;
         messaging.sendMessage({args:[{command:'set_manual_override',value:manualOverride}]});
         if (manualOverride) {
             $("#TURBINE_SETUP_PAGE").fadeOut();
@@ -1233,7 +1238,8 @@ define(function(require, exports, module) {
     }
 
     function confirm_collect_stage_data() {
-        e4PtPrompt('Original calculation assumes master fixture height is SMR+SL+5mm, New calculation uses MV=fixture height - sensor length', function(calcMethod) {
+        // Disable prompt since offset calculation is disabled
+        /*e4PtPrompt('Original calculation assumes master fixture height is SMR+SL+5mm, New calculation uses MV=fixture height - sensor length', function(calcMethod) {
             document.getElementById("CLEARANCE_CALCULATION_METHOD").value = calcMethod;
             // Here we check to see if data is in the cell that is about to be populated.
             // If there is already data there then we confirm with the user to overwrite it.
@@ -1256,6 +1262,27 @@ define(function(require, exports, module) {
             }
             return;
         }, 'Select Clearance Calculation', ['Original','New']);
+        return;*/
+
+        // Here we check to see if data is in the cell that is about to be populated.
+        // If there is already data there then we confirm with the user to overwrite it.
+        let stage = current_frame_data['stage'][current_stage_index];
+        let position = current_frame_data['position'][stage][current_position_index];
+        let el_id = position + stage;
+        el_id = el_id.replace(/\s+/g, '_');
+        let cell_contents = document.getElementById(el_id).innerHTML;
+        if (cell_contents.length > 0) {
+            let msg = "Are you sure you want to overwrite stage " + stage + "-" + position + " data, " + cell_contents + "?";
+            e4PtConfirm(msg, function(buttonIndex) {
+                if (buttonIndex==1) {//OK
+                    collect_stage_data();
+                } else if (buttonIndex==2) {//Cancel
+                    return;
+                }
+            });
+        } else {
+            collect_stage_data();
+        }
         return;
     }
 
@@ -1638,9 +1665,10 @@ define(function(require, exports, module) {
         if (warnUser == true) {
             // This function may be called in different places so only show the alert
             // if we're on the expected screen.
-            if (!isHidden(document.getElementById("TURBINE_SETUP_PAGE"))) {
+            // Disabled per user feedback
+            /*if (!isHidden(document.getElementById("TURBINE_SETUP_PAGE"))) {
               e4PtAlert("The image for this spacer may be misleading, but it is correct.");
-            }
+            }*/
         }
       }
       return spacer;
@@ -2330,6 +2358,7 @@ define(function(require, exports, module) {
     //listDir(cordova.file.documentsDirectory + "data");
     //listDir(cordova.file.documentsDirectory + serial_number);
     function listDir(path) {
+        console.log("@listDir: ", path);
         window.resolveLocalFileSystemURL(path,
             function (fileSystem) {
                 var reader = fileSystem.createReader();
@@ -2339,14 +2368,16 @@ define(function(require, exports, module) {
                         populateFileTable(entries);
                     },
                     function (err) {
-                        err = "Error: " + err;
+                        err = "Error processing entry: " + JSON.stringify(err);
                         console.log(err);
+                        populateFileTable([]);
                     }
                 );
             },
             function (err) {
-                err = "Error: " + err;
+                err = "Error reading entries: " + JSON.stringify(err);
                 console.log(err);
+                populateFileTable([]);
             }
         );
     }
@@ -2613,7 +2644,7 @@ define(function(require, exports, module) {
         document.getElementById('THRESHOLD_1').value = E4PTdata.intensity_threshold;
         
         // only display the DATA PLOT page for GET DATA or SENSOR SETUP and not from DATA COLLECTION
-        if (fromGetData || fromSensorSetupPage) {
+        if ((fromGetData || fromSensorSetupPage) && !fromDataCollectionPage) {
             fadeOutAll();
             $("#DATA_PLOT_PAGE").fadeIn();
             fromGetData = false;
@@ -3105,6 +3136,7 @@ define(function(require, exports, module) {
       prev_tbody.parentNode.replaceChild(tbody, prev_tbody);
     }
 
+    // TODO: unused
     function addDBDummyData() {
       var tmpData1 = {};
       tmpData1.pouchdb_id = "";
@@ -3186,7 +3218,10 @@ define(function(require, exports, module) {
                 }
             }
         });
-        setTimeout(function () { listInternalFiles(); }, 1000);
+        setTimeout(function () {
+            listInternalFiles();
+            e4PtAlert('Archiving complete.');
+        }, 1000);
     }
     
     function unarchiveSelectedDB(allFlag) {
@@ -3215,7 +3250,10 @@ define(function(require, exports, module) {
                 }
             }
         });
-        setTimeout(function () { listInternalFiles("ARCHIVE_DATA_TABLE_BODY", archive_db, false); }, 1000);
+        setTimeout(function () {
+            listInternalFiles("ARCHIVE_DATA_TABLE_BODY", archive_db, false);
+            e4PtAlert('Unarchiving complete.');
+        }, 1000);
     }
     
     function clearSelectedArchive(allFlag) {
@@ -3244,7 +3282,9 @@ define(function(require, exports, module) {
                 }
             }
         });
-        setTimeout(function () { listInternalFiles("ARCHIVE_DATA_TABLE_BODY", archive_db, false); }, 1000);
+        setTimeout(function () {
+            listInternalFiles("ARCHIVE_DATA_TABLE_BODY", archive_db, false);
+        }, 1000);
     }
     
     function clearSelectedDB(allFlag) {
@@ -3273,7 +3313,9 @@ define(function(require, exports, module) {
                 }
             }
         });
-        setTimeout(function () { listInternalFiles(); }, 1000);
+        setTimeout(function () {
+            listInternalFiles();
+        }, 1000);
     }
     
     // Not sure if we'll need this in production, but for development it could
@@ -3310,7 +3352,9 @@ define(function(require, exports, module) {
                 } else {
                     console.log("Database destroyed. Creating new empty database.");
                     archive_db = new PouchDB('e4ptarchive', { revs_limit: 1, auto_compaction: true });
-                    setTimeout(function () { listInternalFiles("ARCHIVE_DATA_TABLE_BODY", archive_db, false); }, 1000);
+                    setTimeout(function () {
+                        listInternalFiles("ARCHIVE_DATA_TABLE_BODY", archive_db, false);
+                    }, 1000);
                 }
             });
         }
@@ -3350,7 +3394,9 @@ define(function(require, exports, module) {
                 } else {
                     console.log("Database destroyed. Creating new empty database.");
                     local_db = new PouchDB('e4ptdb', { revs_limit: 1, auto_compaction: true });
-                    setTimeout(function () { listInternalFiles(); }, 1000);
+                    setTimeout(function () {
+                        listInternalFiles();
+                    }, 1000);
                 }
             });
         }

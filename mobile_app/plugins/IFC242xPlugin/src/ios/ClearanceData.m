@@ -41,51 +41,63 @@
 
 - (NSMutableArray *) filtered
 {
-    if (!_filtered) _filtered = [NSMutableArray new];
+    if (!_filtered) {
+        _filtered = [NSMutableArray new];
+    }
     return _filtered;
 }
 
 - (NSMutableArray *) clearances
 {
-    if (!_clearances) _clearances = [NSMutableArray new];
+    if (!_clearances) {
+        _clearances = [NSMutableArray new];
+    }
     return _clearances;
 }
 
 - (NSMutableArray *) bladeClearances
 {
-    if (!_bladeClearances) _bladeClearances = [NSMutableArray new];
+    if (!_bladeClearances) {
+        _bladeClearances = [NSMutableArray new];
+    }
     return _bladeClearances;
 }
 
 - (NSMutableArray *) locations
 {
-    if (!_locations) _locations = [NSMutableArray new];
+    if (!_locations) {
+        _locations = [NSMutableArray new];
+    }
     return _locations;
 }
 
 - (NSMutableArray *) quality
 {
-    if (!_quality) _quality = [NSMutableArray new];
+    if (!_quality) {
+        _quality = [NSMutableArray new];
+    }
     return _quality;
 }
 
 -(void)applyAdjustment:(float)adjustment threshold:(float)threshold {
     if (adjustment != 0.0) {
         for (NSNumber* value in self.filtered) {
-            if ([value floatValue] >= threshold)
+            if ([value floatValue] >= threshold) {
                 [self.clearances addObject:value];
-            else
+            } else {
                 [self.clearances addObject:[NSNumber numberWithFloat:([value floatValue] + adjustment)]];
+            }
         }
         
         NSMutableArray* tempArray = [NSMutableArray new];
-        for (NSNumber* value in self.bladeClearances)
+        for (NSNumber* value in self.bladeClearances) {
             [tempArray addObject:[NSNumber numberWithFloat:([value floatValue] + adjustment)]];
+        }
         [self.bladeClearances setArray:tempArray];
         tempArray = nil;
-    } else
+    } else {
         [self.clearances setArray:self.filtered];
-    
+    }
     self.offsetAdjustmentFactor = adjustment;
 }
 
@@ -99,8 +111,9 @@
         NSUInteger upperIndex = (bladeCount == 0) ? self.bladeClearances.count : MIN(self.bladeClearances.count, bladeCount);
         int idx = 0;
         for (NSNumber* number in self.bladeClearances) {
-            if (idx++ < upperIndex)
+            if (idx++ < upperIndex) {
                 [self updateStatsWithClearanceValue:number statsBuffer:statsBuff];
+            }
         }
         self.clearance /= (float)upperIndex;
         
@@ -116,13 +129,19 @@
 -(void)updateStatsWithClearanceValue:(NSNumber*)clearance statsBuffer:(NSMutableArray*)statsBuff {
     float value = [clearance floatValue];
     self.clearance += value;
-    if (value > self.max) self.max = value;
-    if (value < self.min) self.min = value;
+    if (value > self.max) {
+        self.max = value;
+    }
+    if (value < self.min) {
+        self.min = value;
+    }
     [statsBuff addObject:clearance];
 }
     
 -(float)standardDeviationOf:(NSArray *)array  mean:(double)mean {
-    if(![array count]) return 0.0;
+    if(![array count]) {
+        return 0.0;
+    }
     
     double sumOfSquaredDifferences = 0.0;
     for(NSNumber *number in array) {

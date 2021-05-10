@@ -18,31 +18,41 @@
 
 - (NSMutableArray *) displacements
 {
-    if (!_displacements) _displacements = [NSMutableArray new];
+    if (!_displacements) {
+        _displacements = [NSMutableArray new];
+    }
     return _displacements;
 }
 
 - (NSMutableArray *) intensities
 {
-    if (!_intensities) _intensities = [NSMutableArray new];
+    if (!_intensities) {
+        _intensities = [NSMutableArray new];
+    }
     return _intensities;
 }
 
 - (NSMutableArray *) timestamps
 {
-    if (!_timestamps) _timestamps = [NSMutableArray new];
+    if (!_timestamps) {
+        _timestamps = [NSMutableArray new];
+    }
     return _timestamps;
 }
 
 - (NSMutableArray *) datasetIDs
 {
-    if (!_datasetIDs) _datasetIDs = [NSMutableArray new];
+    if (!_datasetIDs) {
+        _datasetIDs = [NSMutableArray new];
+    }
     return _datasetIDs;
 }
 
 - (NSMutableArray *) pointCounts
 {
-    if (!_pointCounts) _pointCounts = [NSMutableArray new];
+    if (!_pointCounts) {
+        _pointCounts = [NSMutableArray new];
+    }
     return _pointCounts;
 }
 

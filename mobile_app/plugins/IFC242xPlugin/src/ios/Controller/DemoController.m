@@ -61,6 +61,7 @@
 // loadCSVFile reads a CSV file and populates the data structures as though
 // the data had come from the sensor.
 - (bool)loadCSVFile:(NSString*)relativePath {
+    NSLog(@"@loadCSVFile: %@", relativePath);
     NSString* filePath = [self getPathToDataFile:relativePath];
     NSFileManager* fm = [NSFileManager defaultManager];
     if (![fm fileExistsAtPath:filePath]) {

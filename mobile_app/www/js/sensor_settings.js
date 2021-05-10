@@ -5,6 +5,7 @@ if (typeof define !== 'function') {
 define(function(require, exports, module) {
                 
     const mmPerInch = 25.4;
+    // This number does not affect the reading of the tool, however it serves to alert the user if the average of the current read average value is deviating greater than 0.003” from the mastering value, with this number being sourced from the DDR presentation, with 0.003” accounting for total spread of the measurement of the tool.
     const mastering_tolerance = 0.0762; // mm
     const sensor_data = {
         sensor_selection: '',
@@ -87,6 +88,7 @@ define(function(require, exports, module) {
         return sensor_data.sensor_selection != '' && !almostEqual(sensor_data.master_fixture_height, toInches(sensor_types[sensor_data.sensor_selection].measured_mastering_fixture_height_mm), 0.0005);
     }
 
+    // This is identifying if the user has made any changes to the input parameters for the sensor, and if so, will send these new values to the controller, and will display them on the data collection page, and return the values in the final csv output files.
     const mvHasBeenEdited = () => {
         return sensor_data.sensor_selection != '' && !almostEqual(sensor_data.mastering_value,
                             calculateMasteringValueMM(
@@ -95,7 +97,8 @@ define(function(require, exports, module) {
                                 sensor_data.start_measurement_range),
                             0.0001);
     }
-                            
+
+    // This is identifying if the user has made any changes to the input parameters for the sensor, and if so, will send these new values to the controller, and will display them on the data collection page, and return the values in the final csv output files. This number was raised to 0.0005” to allow for unit conversions to and from inches vs mm.
     const moHasBeenEdited = () => {
         return sensor_data.sensor_selection != '' && !almostEqual(sensor_data.master_offset,
                             calculateMasteringOffsetInches(
@@ -105,16 +108,16 @@ define(function(require, exports, module) {
                                 sensor_data.start_measurement_range),
                             0.0005);
     }
-                            
+
     const almostEqual = (num1, num2, tolerance) => {
         return Math.abs(num1 - num2) < tolerance;
     }
-    
+
     const parseAndSetSensorValue = (varName, value) => {
         sensor_data[varName] = JSON.parse(value);
         return sensor_data[varName].toFixed(4).toString(10);
     }
-        
+
     module.exports = {
         toMMs: toMMs,
         toInches: toInches,

@@ -103,12 +103,12 @@
 - (void)messageHandler:(CDVInvokedUrlCommand*)command {
     NSLog(@"@CDVIFC242x::messageHandler: command.callbackId = %@", command.callbackId);
     [self.commandDelegate runInBackground:^{
-        if ([command.arguments[0] isKindOfClass:[NSDictionary class]])
+        if ([command.arguments[0] isKindOfClass:[NSDictionary class]]) {
             [self.manager messageHandler:command.arguments[0] callbackId:command.callbackId];
-        else
+        } else {
             //support legacy format of array of strings
             [self.manager messageHandler:[self commandStringToDictionary:command.arguments] callbackId:command.callbackId];
-        
+        }
     }];
 }
 
@@ -117,35 +117,47 @@
     NSMutableDictionary* dict = [NSMutableDictionary new];
     [dict setValue:commands[0] forKey:@"command"];
     if (commands.count > 1) {
-        if (NSOrderedSame == [commands[0] localizedCaseInsensitiveCompare:@"do_mastering"])
+        if (NSOrderedSame == [commands[0] localizedCaseInsensitiveCompare:@"do_mastering"]) {
             [dict setValue:commands[1] forKey:@"reset"];
-        else if (NSOrderedSame == [commands[0] localizedCaseInsensitiveCompare:@"get_threshold_for_rate"])
+        } else if (NSOrderedSame == [commands[0] localizedCaseInsensitiveCompare:@"get_threshold_for_rate"]) {
                 [dict setValue:commands[1] forKey:@"rate"];
-        else if (NSOrderedSame == [commands[0] localizedCaseInsensitiveCompare:@"set_measuring_rate"])
+        } else if (NSOrderedSame == [commands[0] localizedCaseInsensitiveCompare:@"set_measuring_rate"]) {
             [dict setValue:commands[1] forKey:@"rate"];
-        else if (NSOrderedSame == [commands[0] localizedCaseInsensitiveCompare:@"set_threshold"])
+        } else if (NSOrderedSame == [commands[0] localizedCaseInsensitiveCompare:@"set_threshold"]) {
             [dict setValue:commands[1] forKey:@"threshold"];
-        else if (NSOrderedSame == [commands[0] localizedCaseInsensitiveCompare:@"set_measuring_rate_and_threshold"]) {
+        } else if (NSOrderedSame == [commands[0] localizedCaseInsensitiveCompare:@"set_measuring_rate_and_threshold"]) {
             [dict setValue:commands[1] forKey:@"rate"];
             [dict setValue:commands[2] forKey:@"threshold"];
-        }
-        else if (NSOrderedSame == [commands[0] localizedCaseInsensitiveCompare:@"set_manual_override"])
+        } else if (NSOrderedSame == [commands[0] localizedCaseInsensitiveCompare:@"set_manual_override"]) {
             [dict setValue:commands[1] forKey:@"value"];
-        else if (NSOrderedSame == [commands[0] localizedCaseInsensitiveCompare:@"set_connection_mode"])
+        } else if (NSOrderedSame == [commands[0] localizedCaseInsensitiveCompare:@"set_connection_mode"]) {
             [dict setValue:commands[1] forKey:@"mode"];
-        else if (NSOrderedSame == [commands[0] localizedCaseInsensitiveCompare:@"set_sensor_parameters"]) {
+        } else if (NSOrderedSame == [commands[0] localizedCaseInsensitiveCompare:@"set_sensor_parameters"]) {
             [dict setValue:commands[1] forKey:@"hmf"];
-            if (commands.count > 2) [dict setValue:commands[2] forKey:@"mv"];
-            if (commands.count > 3) [dict setValue:commands[3] forKey:@"mo"];
-            if (commands.count > 4) [dict setValue:commands[4] forKey:@"name"];
-            if (commands.count > 5) [dict setValue:commands[5] forKey:@"length"];
-            if (commands.count > 6) [dict setValue:commands[6] forKey:@"smr"];
-            if (commands.count > 7) [dict setValue:commands[7] forKey:@"mr"];
-        }
-        else if (NSOrderedSame == [commands[0] localizedCaseInsensitiveCompare:@"send_data"]) {
+            if (commands.count > 2) {
+                [dict setValue:commands[2] forKey:@"mv"];
+            }
+            if (commands.count > 3) {
+                [dict setValue:commands[3] forKey:@"mo"];
+            }
+            if (commands.count > 4) {
+                [dict setValue:commands[4] forKey:@"name"];
+            }
+            if (commands.count > 5) {
+                [dict setValue:commands[5] forKey:@"length"];
+            }
+            if (commands.count > 6) {
+                [dict setValue:commands[6] forKey:@"smr"];
+            }
+            if (commands.count > 7) {
+                [dict setValue:commands[7] forKey:@"mr"];
+            }
+        } else if (NSOrderedSame == [commands[0] localizedCaseInsensitiveCompare:@"send_data"]) {
             if (commands.count < 4) {
                 [dict setValue:commands[1] forKey:@"acquisitionTime"];
-                if (commands.count > 2) [dict setValue:commands[2] forKey:@"casingThickness"];
+                if (commands.count > 2) {
+                    [dict setValue:commands[2] forKey:@"casingThickness"];
+                }
             } else {
                 [dict setValue:commands[1] forKey:@"rpms"];
                 [dict setValue:commands[3] forKey:@"serialNumber"];
