@@ -11,12 +11,15 @@ define(function(require, exports, module) {
     var doDBSave = false;
     var manualOverride = false;
     var savedRPM = "";
+    var computedRPM = "";
     var fromGetData = false;
     var fromDataCollectionPage = false;
     var fromSensorSetupPage = false;
     var fromDataPlotPage = false;
     var collectionAborted = false;
     var masteringPerformed = false;
+    var dataCollectionAcquisitionTime = 3; // 3 seconds by default (as per the input box).
+    var comingFromCollectDataFlag = false
     
     var APP_NAME = "e-4Pt Tool";
     var UPDATE_SENSOR_PARAMETERS_PASSWORD = "Gr0undH0g";
@@ -129,6 +132,11 @@ define(function(require, exports, module) {
     var current_position_index = 0;
     var current_position = 0;
     var current_frame_data = [];
+
+    var selected_frame_data = {
+        frameIdx: 0, // '6B'
+        stageInfoIdx: 0, // '8'
+    }
 
     $(document).ready(function() {
         console.log('READY');
@@ -356,6 +364,7 @@ define(function(require, exports, module) {
         }, {passive: true});
         document.getElementById("GET_DATA_BUTTON").addEventListener('click', function() {
             console.log("@GET_DATA_BUTTON event listener function.");
+            comingFromCollectDataFlag = true
             toggle_menu();
             fadeOutAll();
             if (!masteringPerformed) {
@@ -684,6 +693,14 @@ define(function(require, exports, module) {
     function setupCasingThicknessTable(callback) {
         // Get frame type
         let frm_idx = document.getElementById("FRAME_SIZE").selectedIndex;
+        
+        // Memorise selected_frame_data for computing RPM and remembering it when we come back to the page
+        selected_frame_data.frameIdx = frm_idx;        
+        
+        // initializing stage to the first index value
+        selected_frame_data.stageInfoIdx = 0 // always go back to 0 when we select a new data frame, otherwise, the RPM won't compute correctly, it will take the stage of a the previous frame...
+
+        // fills the 
         current_frame_data = frame_data[frm_idx];
         let pos = current_frame_data.position;
         let tbl = document.getElementById("CASING_THICKNESS_TABLE");
@@ -726,6 +743,7 @@ define(function(require, exports, module) {
     }
 
     function acquisitionTimePromptCallback(results) {
+        dataCollectionAcquisitionTime = Number (results.input1)
         console.log("@acquisitionTimePromptCallback");
         if (results.buttonIndex > 1) return;
         current_frame_data = [];
@@ -962,7 +980,7 @@ define(function(require, exports, module) {
     function turbine_setup() {
         $("#TITLE_BAR").text("Data Collection");
         $("#TURBINE_SETUP_PAGE").fadeIn();
-        savedRPM = "";
+        savedRPM = computedRPM;
 
         // Get frame type
         var frm_idx = document.getElementById("FRAME_SIZE").selectedIndex;
@@ -1057,8 +1075,11 @@ define(function(require, exports, module) {
         document.getElementById("FRAME_SIZE").innerHTML = html;
         if (current_frame_data.length != 0) {
           document.getElementById("FRAME_SIZE").selectedIndex = selectedIndex;
-          document.getElementById("FRAME_SIZE").value = current_frame_data.frame;
+          document.getElementById("FRAME_SIZE").value =  current_frame_data.frame;
         } else {
+            // otherwise, put back the last thing that was selected by the user.
+            document.getElementById("FRAME_SIZE").selectedIndex = selected_frame_data.frameIdx;
+            document.getElementById("FRAME_SIZE").value = frame_data[selected_frame_data.frameIdx].frame; 
             setupCasingThicknessTable(null);
         }
         document.getElementById("FRAME_DEFAULT_SENSOR").value = current_frame_data.default_sensor;
@@ -1092,6 +1113,10 @@ define(function(require, exports, module) {
 
     function set_stage() {
       current_stage_index = document.getElementById("SENSOR_STAGE").selectedIndex;
+      
+      // memorise which stage index we are at, for RPM computation, 
+      selected_frame_data.stageInfoIdx = current_stage_index
+
       current_stage = current_frame_data['stage'][current_stage_index];
       set_position_information();
       current_position_index = 0;
@@ -1303,7 +1328,7 @@ define(function(require, exports, module) {
         document.getElementById("CURR_CASE_THICKNESS").value = E4PTdata.turbine_casing_thicknesses[ct_id];
         document.getElementById("CLEARANCE_ERROR").innerHTML = "";
         document.getElementById("SPACER_COLOR_LABEL").innerHTML = "";
-        savedRPM = "";
+        savedRPM = computedRPM;
         setup_data_collection_page("", "", true);
         //charting.clearChartData(document.getElementById('DATA_PLOT'));
         charting.clearChartData(document.getElementById('DATA_PLOT2'));
@@ -1971,7 +1996,36 @@ define(function(require, exports, module) {
                 break;
             case "data":
                 resetDataCollection();
-                console.log("Received Data Message");
+                console.log("Received Data Message")
+                console.log (msg)
+                howManyBladesPassedBy = 0
+                var currentFrameIdx = selected_frame_data.frameIdx                
+                var currentStageIdx = selected_frame_data.stageInfoIdx                
+                if (frame_data[currentFrameIdx].stage_info == undefined){
+                    var message = "the current frame does not have a stage_info field, thus no number of blades \n";
+                    message = message + "frame: " + frame_data[currentFrameIdx].frame
+                    alert (message)
+                }
+                var blade_count = Object.values(frame_data[currentFrameIdx].stage_info)[currentStageIdx].blade_count
+                var flagHitABlade = false
+                var data_ = JSON.parse(msg.data)
+                for (i=0; i< data_.length; i++){
+                    var datum_ = data_[i];
+                    if ((datum_ != 15) && ( flagHitABlade == false)) {
+                        flagHitABlade = true
+                        howManyBladesPassedBy++
+                    }
+                    if (datum_ == 15)
+                        flagHitABlade = false
+                }
+                var bladePerMinute = 60 * ( howManyBladesPassedBy / dataCollectionAcquisitionTime ) ;                
+                var RPM = bladePerMinute / blade_count     // 54
+                computedRPM = RPM.toString();
+                if (comingFromCollectDataFlag){
+                    document.getElementById('MEASUREMENT_RPM').value = computedRPM;
+                    comingFromCollectDataFlag = false
+                }
+                console.log ("current_frame_data = ", current_frame_data)
                 if (!collectionAborted) {
                     msg.data = JSON.parse(msg.data);
                     msg.intensity = JSON.parse(msg.intensity);
