@@ -136,6 +136,12 @@ define(function(require, exports, module) {
     var selected_frame_data = {
         frameIdx: 0, // '6B'
         stageInfoIdx: 0, // '8'
+
+        frameName : frame_data[0].frame,
+        stageName : Object.keys(frame_data[0].stage_info)[0],
+
+        bladeCount : Object.values(frame_data[0].stage_info)[0].blade_count,
+        RPM      : 'not computed yet'
     }
 
     $(document).ready(function() {
@@ -2006,6 +2012,8 @@ define(function(require, exports, module) {
                     message = message + "frame: " + frame_data[currentFrameIdx].frame
                     alert (message)
                 }
+                selected_frame_data.frameName = frame_data[currentFrameIdx].frame
+                selected_frame_data.stageName = Object.keys(frame_data[currentFrameIdx].stage_info)[currentStageIdx]
                 var blade_count = Object.values(frame_data[currentFrameIdx].stage_info)[currentStageIdx].blade_count
                 var flagHitABlade = false
                 var data_ = JSON.parse(msg.data)
@@ -2020,6 +2028,7 @@ define(function(require, exports, module) {
                 }
                 var bladePerMinute = 60 * ( howManyBladesPassedBy / dataCollectionAcquisitionTime ) ;
                 var RPM = bladePerMinute / blade_count     // 54
+                selected_frame_data.RPM = RPM;
                 computedRPM = RPM.toString();
                 if (comingFromCollectDataFlag){
                     document.getElementById('MEASUREMENT_RPM').value = computedRPM;
@@ -2910,7 +2919,7 @@ define(function(require, exports, module) {
       chartConfig.chart.panKey = 'shift';
       chartConfig.chart.zoomType = 'xy';
       charting.addChartSubtitle(chartConfig, E4PTdata.date, E4PTdata.clearance, E4PTdata.overall_avg);
-      charting.displayIntensityThresholdAndMeasurementRate(chartConfig, E4PTdata.measurement_rate, E4PTdata.intensity_threshold);
+      charting.displayIntensityThresholdAndMeasurementRate(chartConfig, E4PTdata.measurement_rate, E4PTdata.intensity_threshold, selected_frame_data);
       let chartFilename = charting.createSavedChartFilename(E4PTdata.date.substring(2));
       charting.renderChart(chartConfig, 'DATA_PLOT', chartFilename, writeToFile);
     }
@@ -2920,7 +2929,7 @@ define(function(require, exports, module) {
       chartConfig.tooltip.enabled = false;
       chartConfig.series[0].name = 'Filtered ' + chartConfig.series[0].name;
       charting.addChartSubtitle(chartConfig, E4PTdata.date, E4PTdata.clearance);
-      charting.displayIntensityThresholdAndMeasurementRate(chartConfig, E4PTdata.measurement_rate, E4PTdata.intensity_threshold);
+      charting.displayIntensityThresholdAndMeasurementRate(chartConfig, E4PTdata.measurement_rate, E4PTdata.intensity_threshold, selected_frame_data);
       let chartFilename = charting.createSavedChartFilename(E4PTdata.date.substring(2), E4PTdata.serial_number, current_stage, current_position.substring(0,1));
       //charting.renderChart(chartConfig, 'DATA_PLOT', chartFilename, writeToFile);
       charting.renderChart(chartConfig, 'DATA_PLOT2', chartFilename, writeToFile);
