@@ -194,6 +194,7 @@ define(function(require, exports, module) {
         document.getElementById("COLLECT_DATA_BUTTON").addEventListener('click', function() {
             fadeOutAll();
             turbine_setup();
+
         }, {passive: true});
         document.getElementById("CLEAR_DB_BUTTON").addEventListener('click', function() {
             e4PtConfirm("Are you sure you want to clear all data from this database?",
@@ -703,9 +704,6 @@ define(function(require, exports, module) {
         // Memorise selected_frame_data for computing RPM and remembering it when we come back to the page
         selected_frame_data.frameIdx = frm_idx;
         
-        // initializing stage to the first index value
-        selected_frame_data.stageInfoIdx = 0 // always go back to 0 when we select a new data frame, otherwise, the RPM won't compute correctly, it will take the stage of a the previous frame...
-
         // fills the
         current_frame_data = frame_data[frm_idx];
         let pos = current_frame_data.position;
@@ -1111,6 +1109,10 @@ define(function(require, exports, module) {
         }
         html = html_buf.join('\n');
         document.getElementById("SENSOR_STAGE").innerHTML = html;
+        document.getElementById("SENSOR_STAGE").selectedIndex = selected_frame_data.stageInfoIdx;
+        selected_frame_data.stageName = Object.keys(frame_data[selected_frame_data.frameIdx].stage_info)[selected_frame_data.stageInfoIdx]
+        document.getElementById("SENSOR_STAGE").value = selected_frame_data.stageName;
+        console.log ("selected_frame_data.stageName  , index= ", selected_frame_data.stageName, selected_frame_data.stageInfoIdx);
         current_stage_index = document.getElementById("SENSOR_STAGE").selectedIndex;
         current_stage = stages[current_stage_index];
         set_position_information(); // When you change the stage, the position information changes too.
