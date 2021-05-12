@@ -17,6 +17,7 @@
 @property (nonatomic) float measurementRate;
 @property (nonatomic) float intensityThreshold;
 @property (nonatomic) BOOL overrideRateAndIntensity;
+@property (nonatomic) BOOL sensorParamsProvided;
 
 -(NSString*)calculateAcquisitionTimeFromRPM:(float)rpm forBladeWidth:(float)bladeWidth forTipDiameter:(float)tipDiameter;
 -(NSString*)calculateAcquisitionTimeAndSamplingFrequencyAndIntensityThresholdFromRPM:(float)rpm forBladeWidth:(float)bladeWidth forTipDiameter:(float)tipDiameter;

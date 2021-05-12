@@ -17,6 +17,7 @@ define(function(require, exports, module) {
     var fromDataPlotPage = false;
     var collectionAborted = false;
     var masteringPerformed = false;
+    var sensorParamsFromController = false;
     
     var APP_NAME = "e-4Pt Tool";
     var UPDATE_SENSOR_PARAMETERS_PASSWORD = "Gr0undH0g";
@@ -567,8 +568,9 @@ define(function(require, exports, module) {
         window.resolveLocalFileSystemURL(cordova.file.documentsDirectory + "Inbox", function(dirEntry) {
             dirEntry.createReader().readEntries(function(entries) {
                 entries.forEach(function(entry) {
-                    if (entry.isFile && entry.name.endsWith(".json"))
+                    if (entry.isFile && entry.name.endsWith(".json")) {
                         this(entry);
+                    }
                 }, loadJSONFile);
             });
         });
@@ -742,7 +744,9 @@ define(function(require, exports, module) {
 
     function acquisitionTimePromptCallback(results) {
         console.log("@acquisitionTimePromptCallback");
-        if (results.buttonIndex > 1) return;
+        if (results.buttonIndex > 1) {
+            return;
+        }
         console.log("input1: ", results.input1);
         current_frame_data = [];
         acquisitionTime = null;
@@ -763,7 +767,9 @@ define(function(require, exports, module) {
 
     function acquisitionTimePromptWithMetaDataCallback(results) {
         console.log("@acquisitionTimePromptWithMetaDataCallback");
-        if (results.buttonIndex > 1) return;
+        if (results.buttonIndex > 1) {
+            return;
+        }
         console.log("input1: ", results.input1);
         acquisitionTime = null;
         if (results.input1.includes("rpm") || results.input1.includes("RPM")) {
@@ -786,9 +792,13 @@ define(function(require, exports, module) {
                     let ct_id = current_stage + "_" + current_position; // get element id for casing thickness
                     E4PTdata.turbine_casing_thicknesses[ct_id] = casing_thickness;
                     document.getElementById(ct_id).value = casing_thickness;
-                    if (casing_thickness.length > MAX_STR_LEN) casing_thickness = casing_thickness.substr(0,MAX_STR_LEN);
+                    if (casing_thickness.length > MAX_STR_LEN) {
+                        casing_thickness = casing_thickness.substr(0,MAX_STR_LEN);
+                    }
                     var spacer_thickness = document.getElementById("SPACER_THICKNESS").value;
-                    if (spacer_thickness.length > MAX_STR_LEN) spacer_thickness = spacer_thickness.substr(0,MAX_STR_LEN);
+                    if (spacer_thickness.length > MAX_STR_LEN) {
+                        spacer_thickness = spacer_thickness.substr(0,MAX_STR_LEN);
+                    }
                     requestE4PtDataWithMetaData(acquisitionTime, frame, sn, current_stage, current_position, casing_thickness, spacer_thickness, sensorSettings.get('master_offset'), document.getElementById("CLEARANCE_CALCULATION_METHOD").value);
             //    }
             //}
@@ -930,13 +940,21 @@ define(function(require, exports, module) {
       // Here we get values from the UI, but we make sure they don't overrun bounds.
       var frm_idx = document.getElementById("FRAME_SIZE").selectedIndex;
       E4PTdata.frame = frame_data[frm_idx].frame;
-      if (E4PTdata.serial_number.length > MAX_STR_LEN) E4PTdata.serial_number = E4PTdata.serial_number.substr(0,MAX_STR_LEN);
+      if (E4PTdata.serial_number.length > MAX_STR_LEN) {
+          E4PTdata.serial_number = E4PTdata.serial_number.substr(0,MAX_STR_LEN);
+      }
       E4PTdata.customer = document.getElementById("CUSTOMER").value;
-        if (E4PTdata.customer.length > MAX_STR_LEN) E4PTdata.customer = E4PTdata.customer.substr(0,MAX_STR_LEN);
+      if (E4PTdata.customer.length > MAX_STR_LEN) {
+          E4PTdata.customer = E4PTdata.customer.substr(0,MAX_STR_LEN);
+      }
       E4PTdata.site_name = document.getElementById("SITE").value;
-      if (E4PTdata.site_name.length > MAX_STR_LEN) E4PTdata.site_name = E4PTdata.site_name.substr(0,MAX_STR_LEN);
+      if (E4PTdata.site_name.length > MAX_STR_LEN) {
+          E4PTdata.site_name = E4PTdata.site_name.substr(0,MAX_STR_LEN);
+      }
       E4PTdata.operator = document.getElementById("OPERATOR").value;
-      if (E4PTdata.operator.length > MAX_STR_LEN) E4PTdata.operator = E4PTdata.operator.substr(0,MAX_STR_LEN);
+      if (E4PTdata.operator.length > MAX_STR_LEN) {
+          E4PTdata.operator = E4PTdata.operator.substr(0,MAX_STR_LEN);
+      }
       E4PTdata.units = document.getElementById("UNITS").value;
       E4PTdata.state = document.getElementById("TURBINE_STATE").value;
       E4PTdata.temperature_units = document.getElementById("TEMPERATURE_UNITS").value;
@@ -1058,7 +1076,15 @@ define(function(require, exports, module) {
         document.getElementById("MFH_CONFIG_MSG").innerHTML = sensorSettings.get('master_fixture_height') + "&quot; MFH";
         document.getElementById("MV_CONFIG_MSG").innerHTML = sensorSettings.get('mastering_value') + "mm MV";
         document.getElementById("MO_CONFIG_MSG").innerHTML = sensorSettings.get('master_offset') + "&quot; MO";
-        if (sensorSettings.sensorParamsHaveBeenEdited()) {
+        if (sensorParamsFromController) {
+            setSpanProperties($("#SENSOR_PARAMS_CONFIG_MSG"), "Using controller-provided '" + sensorSettings.get('sensor_selection') + "' sensor settings", 'blue');
+            $("#SL_CONFIG_MSG").css('color', 'black');
+            $("#SMR_CONFIG_MSG").css('color', 'black');
+            $("#MR_CONFIG_MSG").css('color', 'black');
+            $("#MFH_CONFIG_MSG").css('color', 'black');
+            $("#MV_CONFIG_MSG").css('color', 'black');
+            $("#MO_CONFIG_MSG").css('color', 'black');
+        } else if (sensorSettings.sensorParamsHaveBeenEdited()) {
             setSpanProperties($("#SENSOR_PARAMS_CONFIG_MSG"), "Using non-standard '" + sensorSettings.get('sensor_selection') + "' sensor settings: ", 'red');
             $("#SL_CONFIG_MSG").css('color', sensorSettings.sensorLengthHasBeenEdited()?'red':'black');
             $("#SMR_CONFIG_MSG").css('color', sensorSettings.smrHasBeenEdited()?'red':'black');
@@ -1236,6 +1262,9 @@ define(function(require, exports, module) {
           case "green":
             targetColor = "bg-success";
             break;
+          case "blue":
+            targetColor = "bg-primary";
+            break;
           case "yellow":
             targetColor = "bg-warning";
             break;
@@ -1312,7 +1341,7 @@ define(function(require, exports, module) {
         } else {
             // No plugins, so we must not be in Cordova. Use a standard prompt.
             acquisitionTime = window.prompt("Please enter the rotor RPM.", "1");
-            acquisitionTimePromptWithMetaDataCallback({"input1":acquisitionTime});
+            acquisitionTimePromptWithMetaDataCallback({ "input1": acquisitionTime });
         }
     }
 
@@ -1615,7 +1644,9 @@ define(function(require, exports, module) {
           // If nothing is in the data structure, fill in the structuer with what's in the field.
           E4PTdata.turbine_casing_thicknesses[ct_id] = case_thick;
       }
-      if (case_thick.length == 0) return spacer;
+      if (case_thick.length == 0) {
+          return spacer;
+      }
       var casing_thickness = parseFloat(case_thick);
       var positions = current_frame_data['position'];
       positions = positions[current_stage];
@@ -1634,7 +1665,9 @@ define(function(require, exports, module) {
                 break;
               }
             }
-            if (spacer_found == true) break;
+            if (spacer_found == true) {
+                break;
+            }
           }
         }
       }
@@ -1719,7 +1752,9 @@ define(function(require, exports, module) {
         // Don't try to advance the position if we're not set up for it.
         // (i.e. if we're not on the right page)
         console.log("@advance_position");
-        if (current_frame_data['position'] == null) return;
+        if (current_frame_data['position'] == null) {
+            return;
+        }
         console.log("@advance_position - continuing");
         // Auto-advance
         var stages = current_frame_data['stage'];
@@ -2061,6 +2096,8 @@ define(function(require, exports, module) {
                 console.log("Received sensor parameters message: ", msg.master_fixture_height, ", ", msg.mastering_value, ", ", msg.master_offset, ", ", msg.sensor_selection, ", ", msg.sensor_length, ", ", msg.start_measurement_range, ", ", msg.sensor_measurement_range);
                 //setIndicatorColor("green");
                 //serialConnected = true;
+                
+                sensorParamsFromController = msg.from_controller;
                 
                 sensorSettings.set('sensor_selection', msg.sensor_selection);
                 document.getElementById("SENSOR_SELECTION").value = sensorSettings.get('sensor_selection');
