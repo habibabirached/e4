@@ -17,7 +17,12 @@ define(function(require, exports, module) {
     var fromDataPlotPage = false;
     var collectionAborted = false;
     var masteringPerformed = false;
+
     var sensorParamsFromController = false;
+    var sensorFromController = "";
+    var sensorLengthFromController = 0.0;
+    var smrFromController = 0.0;
+    var sensorMRFromController = 0.0;
     
     var APP_NAME = "e-4Pt Tool";
     var UPDATE_SENSOR_PARAMETERS_PASSWORD = "Gr0undH0g";
@@ -2098,6 +2103,12 @@ define(function(require, exports, module) {
                 //serialConnected = true;
                 
                 sensorParamsFromController = msg.from_controller;
+                if (sensorParamsFromController) {
+                    sensorFromController = msg.sensor_selection;
+                    sensorLengthFromController = JSON.parse(msg.sensor_length);
+                    smrFromController = JSON.parse(msg.start_measurement_range);
+                    sensorMRFromController = JSON.parse(msg.sensor_measurement_range);
+                }
                 
                 sensorSettings.set('sensor_selection', msg.sensor_selection);
                 document.getElementById("SENSOR_SELECTION").value = sensorSettings.get('sensor_selection');
@@ -2201,11 +2212,19 @@ define(function(require, exports, module) {
         console.log("@getSensorParametersForSensorSelection: ", sensorType);
         var info = sensorSettings.getSensorType(sensorType);
         if (info && info.measured_mastering_fixture_height_mm) {
-            document.getElementById("SENSOR_LENGTH").value = sensorSettings.toInches(info.measured_length_mm).toFixed(4);
-            document.getElementById("MASTER_FIXTURE_HEIGHT").value = sensorSettings.toInches(info.measured_mastering_fixture_height_mm).toFixed(4);
-            //document.getElementById("MASTERING_VALUE").value = info.measured_mastering_value_mm.toFixed(4);
-            document.getElementById("SMR").value = info.measured_start_measurement_range_mm.toFixed(4);
-            //document.getElementById("SENSOR_MR").value = info.measurement_range_mm.toFixed(4);
+            if (sensorParamsFromController && sensorType === sensorFromController) {
+                e4PtAlert("Sensor parameters were provided by the controller:\n- Measured Sensor Length\n- Start of Measure Range\n- Measurement Range");
+                document.getElementById("SENSOR_LENGTH").value = sensorLengthFromController;
+                document.getElementById("MASTER_FIXTURE_HEIGHT").value = sensorSettings.toInches(info.measured_mastering_fixture_height_mm).toFixed(4);
+                document.getElementById("SMR").value = smrFromController;
+                document.getElementById("SENSOR_MR").value = sensorMRFromController;
+            } else {
+                document.getElementById("SENSOR_LENGTH").value = sensorSettings.toInches(info.measured_length_mm).toFixed(4);
+                document.getElementById("MASTER_FIXTURE_HEIGHT").value = sensorSettings.toInches(info.measured_mastering_fixture_height_mm).toFixed(4);
+                //document.getElementById("MASTERING_VALUE").value = info.measured_mastering_value_mm.toFixed(4);
+                document.getElementById("SMR").value = info.measured_start_measurement_range_mm.toFixed(4);
+                //document.getElementById("SENSOR_MR").value = info.measurement_range_mm.toFixed(4);
+            }
             updateMasteringValue();
             updateMasteringOffset();
         }
