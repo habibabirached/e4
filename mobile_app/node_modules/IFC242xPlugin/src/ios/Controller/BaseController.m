@@ -418,7 +418,11 @@
                     float smrMM = [[sensorParams substringFromIndex:4] floatValue] / 100.0;
                     self.settings.sensor.length = lengthInches;
                     self.settings.sensor.smr = smrMM;
+                    self.settings.sensorParamsProvided = TRUE;
+                    // need to update mastering values after reading sensor params from the controller
+                    [self.settings.sensor updateMasteringValues];
                     NSLog(@"Sensor Length is %.3f inches and SMR is %.2f mm", self.settings.sensor.length, self.settings.sensor.smr);
+                    NSLog(@"Mastering Value is %.3f mm and Mastering Offset is %.2f inches", self.settings.sensor.mv, self.settings.sensor.mo);
                 } else {
                     NSLog(@"Ignoring sensor params");
                 }

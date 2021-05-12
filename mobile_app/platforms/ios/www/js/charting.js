@@ -60,7 +60,7 @@ define(function(require, exports, module, sensorSettings) {
     
     const displayIntensityThresholdAndMeasurementRate = (chartConfig, measurement_rate, intensity_threshold) => {
           
-        chartConfig.subtitle.text = '<span class="COL_FL FONT_TRANSPARENT">Intensity Threshold: 100%</span>;&nbsp;<span class="COL_FR">Measurement Rate: ' + measurement_rate + 'kHz</span><br/><span class="COL_FR">Intensity Threshold: ' + intensity_threshold + '%</span>;&nbsp;<span>' + chartConfig.subtitle.text + '</span>';
+        chartConfig.subtitle.text = '<span class="COL_FR">Measurement Rate: ' + measurement_rate + 'kHz</span>;&nbsp;<span class="COL_FR">Intensity Threshold: ' + intensity_threshold + '%</span><br><span>' + chartConfig.subtitle.text + '</span>';
     }
     
     const createChartConfig = (displacementsArray, clearancesArray) => {

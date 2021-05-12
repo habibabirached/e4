@@ -376,7 +376,7 @@
         NSString* offsetFormula = [self->controller.settings.sensor offsetAdjustmentFormula];
         NSString* offsetCalculation = [self->controller.settings.sensor offsetAdjustmentExplanation:self->metaData.spacerThickness casingThickness:self->metaData.casingThickness];
         float offsetValue = [self->controller.settings.sensor calculateOffsetAdjustment:self->metaData.spacerThickness casingThickness:self->metaData.casingThickness];
-        [self returnPluginResponse:@{@"type":@"alert",@"message":[NSString stringWithFormat:@"Formula: %@\n\nCalculation: %@\n\nValue: %.3f", offsetFormula, offsetCalculation, offsetValue]}];
+        [self returnPluginResponse:@{@"type":@"alert",@"message":[NSString stringWithFormat:@"Offset Adjustment is applied to all Clearance values below threshold and all Blade Clearance values.\n\nFormula: %@\n\nCalculation: %@\n\nValue: %.3f", offsetFormula, offsetCalculation, offsetValue]}];
     } else if ([cmd containsString:@"set_connection_mode"]) {
         NSString* mode = [message objectForKey:@"mode"];
         NSLog(@"Recieved set_connection_mode:%@",mode);
@@ -409,7 +409,8 @@
         [self->controller configureController];
         [self returnPluginResponse:@{@"type":@"alert",@"message":@"Controller configuration is updated, you should shutdown and restart this application."}];
     } else if ([cmd containsString:@"get_sensor_parameters"]) {
-        NSDictionary* jsonDict = @{@"type":@"sensor_params", @"master_fixture_height":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.hmf], @"mastering_value":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.mv], @"master_offset":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.mo], @"sensor_selection":self->controller.settings.sensor.name, @"sensor_length":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.length], @"start_measurement_range":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.smr], @"sensor_measurement_range":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.mr]};
+        NSDictionary* jsonDict = @{@"type":@"sensor_params", @"master_fixture_height":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.hmf], @"mastering_value":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.mv], @"master_offset":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.mo], @"sensor_selection":self->controller.settings.sensor.name, @"sensor_length":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.length], @"start_measurement_range":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.smr], @"sensor_measurement_range":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.mr], @"from_controller":@(self->controller.settings.sensorParamsProvided)
+        };
         [self returnPluginResponse:jsonDict];
     } else if ([cmd containsString:@"set_sensor_parameters"]) {
         self->controller.settings.sensor = [[SensorSettings alloc] initWithName:[message valueForKey:@"name"] lengthInches:[[message valueForKey:@"length"] floatValue] measurementRangeMM:[[message valueForKey:@"mr"] floatValue] startOfMeasurementRangeMM:[[message valueForKey:@"smr"] floatValue] masterFixtureHeightInches:[[message valueForKey:@"hmf"] floatValue] masteringValueMM:[[message objectForKey:@"mv"] floatValue] masteringOffsetInches:[[message objectForKey:@"mo"] floatValue]];

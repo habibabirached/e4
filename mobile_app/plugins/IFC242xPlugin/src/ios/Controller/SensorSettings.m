@@ -57,6 +57,7 @@
 }
 
 +(float) moFromLength:(float)length hmf:(float)hmf smr:(float)smr mv:(float)mv {
+    // should always be 0.0
     return length + (smr + mv)/IN_to_MM - hmf;
 }
 
@@ -80,6 +81,11 @@
         self.mo = mo;
     }
     return self;
+}
+
+-(void)updateMasteringValues {
+    self.mv = [SensorSettings mvFromLength:self.length hmf:self.hmf smr:self.smr];
+    self.mo = [SensorSettings moFromLength:self.length hmf:self.hmf smr:self.smr mv:self.mv];
 }
 
 -(NSString*) offsetSelector {
