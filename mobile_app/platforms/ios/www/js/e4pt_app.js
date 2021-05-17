@@ -29,6 +29,8 @@ define(function(require, exports, module) {
     var MAX_STR_LEN = 64;
     var FRD_FILE = 'www/FRD.pdf';
     var DEFAULT_SPACER_FILE = 'img/spacers/Unknown.gif';
+    var MIN_RPM = 0.5;
+    var MAX_RPM = 15.0;
 
     // This is the obscure address of the e4Pt field data Box folder.
     var FIELD_DATA_BOX_FOLDER = "Field_D.c55377p707j2cweu@u.box.com";
@@ -431,7 +433,8 @@ define(function(require, exports, module) {
             fromDataPlotPage = false;
             fromDataCollectionPage = true;
             $("#TURBINE_SETUP_PAGE").fadeOut();
-            listDir(cordova.file.documentsDirectory + E4PTdata.serial_number);
+            let sn = processString(E4PTdata.serial_number);
+            listDir(cordova.file.documentsDirectory + sn);
         }, {passive: true});
         document.getElementById("STAGE_COLLECT_BUTTON").addEventListener('click', function() {
             if (document.getElementById("STAGE_COLLECT_BUTTON").innerHTML === LABEL_GO) {
@@ -583,6 +586,11 @@ define(function(require, exports, module) {
 
     function fsFail(err) {
         console.log("Failed to get file system: ", err);
+    }
+    
+    function processString(s) {
+        // replace spaces with _ and : with -
+        return s.replace(/\s+/g, '_').replace(/:/g, '-');
     }
 
     function showSpacerImage() {
@@ -789,6 +797,15 @@ define(function(require, exports, module) {
         }
         //savedRPM = acquisitionTime.replace("rpm","");
         if (acquisitionTime != null) {
+            let checkRPM = parseFloat(acquisitionTime.replace("rpm",""));
+            if (checkRPM < MIN_RPM || checkRPM > MAX_RPM) {
+                e4PtAlert("RPM must be between " + MIN_RPM + " and " + MAX_RPM + ".");
+                /*if (checkRPM < MIN_RPM) {
+                    document.getElementById("MEASUREMENT_RPM").value = MIN_RPM;
+                } else if (checkRPM > MAX_RPM) {
+                    document.getElementById("MEASUREMENT_RPM").value = MAX_RPM;
+                }*/
+            } else {
             //if (Number.isFinite(acquisitionTime)) {
             //    if (acquisitionTime > 0) {
                     var sn = document.getElementById("SERIAL_NUMBER").value;
@@ -807,6 +824,7 @@ define(function(require, exports, module) {
                     requestE4PtDataWithMetaData(acquisitionTime, frame, sn, current_stage, current_position, casing_thickness, spacer_thickness, sensorSettings.get('master_offset'), document.getElementById("CLEARANCE_CALCULATION_METHOD").value);
             //    }
             //}
+            }
         }
     }
 
@@ -1421,12 +1439,8 @@ define(function(require, exports, module) {
             newWindow.document.write(reportHTML);
         } else {
             // This method generates a PDF, then exports it.
-            let sn = E4PTdata.serial_number;
-            sn = sn.replace(/\s+/g, '_');
-            sn = sn.replace(/:/g, '-');
-            let fileDate = E4PTdata.date;
-            fileDate = fileDate.replace(/\s+/g, '_');
-            fileDate = fileDate.replace(/:/g, '-');
+            let sn = processString(E4PTdata.serial_number);
+            let fileDate = processString(E4PTdata.date);
             let cust_rpt_fileName = "customer_report_e4Pt_" + sn + "_" + fileDate + ".pdf";
             baseURL = appDir + "www";
             var options = {
@@ -1468,10 +1482,9 @@ define(function(require, exports, module) {
         let fileName = "e4Pt.json";
         let subject = "e-4Pt JSON Data";
         if ((typeof E4PTdata.serial_number !== 'undefined') || ( E4PTdata.serial_number.length > 0 )) {
-            targetFolder = E4PTdata.serial_number;
-            fileName = "e4pt_" + E4PTdata.serial_number + "_" + E4PTdata.date + ".json";
-            fileName = fileName.replace(/\s+/g, '_'); // Replace spaces in file name with "_"
-            fileName = fileName.replace(/:/g, '-');   // Replace ":" in file name with "-"
+            let sn = processString(E4PTdata.serial_number);
+            targetFolder = sn;
+            fileName = processString("e4pt_" + sn + "_" + E4PTdata.date + ".json");
             subject = subject + " SN: " + E4PTdata.serial_number + " " + E4PTdata.date;
         }
         writeToFile(targetFolder, fileName, json_blob, function() {
@@ -2273,15 +2286,11 @@ define(function(require, exports, module) {
     function exportDetailsFile(option) {
         let targetFolder = "data";
         let details_file_name = "details_e4pt.csv";
-        let sn = E4PTdata.serial_number;
-        sn = sn.replace(/\s+/g, '_');
-        sn = sn.replace(/:/g, '-');
-        let fileDate = E4PTdata.date;
-        fileDate = fileDate.replace(/\s+/g, '_');
-        fileDate = fileDate.replace(/:/g, '-');
+        let sn = processString(E4PTdata.serial_number);
+        let fileDate = processString(E4PTdata.date);
         if ((typeof E4PTdata.serial_number !== 'undefined') || ( E4PTdata.serial_number.length > 0 )) {
             details_file_name = "details_e4pt_" + sn + "_" + fileDate + ".csv";
-            targetFolder = cordova.file.documentsDirectory + E4PTdata.serial_number;
+            targetFolder = cordova.file.documentsDirectory + sn;
         }
         details_file_name = targetFolder + "/" + details_file_name;
         let attachmentList = [details_file_name];
@@ -2596,9 +2605,9 @@ define(function(require, exports, module) {
         let targetFolder = "data"; // default directory
         let fileName = "details_e4pt.csv";
         if ((typeof E4PTdata.serial_number !== 'undefined') || ( E4PTdata.serial_number.length > 0 )) {
-            let sn = E4PTdata.serial_number.replace(/\s+/g, '_').replace(/:/g, '-');
+            let sn = processString(E4PTdata.serial_number);
             targetFolder = sn;
-            let fileDate = E4PTdata.date.replace(/\s+/g, '_').replace(/:/g, '-');
+            let fileDate = processString(E4PTdata.date);
             fileName = "details_e4pt_" + sn + "_" + fileDate + ".csv";
         }
         writeToFile(targetFolder, fileName, contents, null);
@@ -3607,6 +3616,7 @@ define(function(require, exports, module) {
         E4PTdata.operator = doc.operator;
         E4PTdata.units = doc.units;
         E4PTdata.state = doc.state;
+        E4PTdata.temperature_units = doc.temperature_units;
         E4PTdata.date = doc.date;
         E4PTdata.time = doc.time;
         E4PTdata.final = doc.final;
