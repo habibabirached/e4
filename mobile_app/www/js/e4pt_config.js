@@ -102,6 +102,64 @@ frame_data = [
      'option':'full_turn',
      'default_sensor':'SHORT'
     },
+      {'frame':'6F.01',
+       'stage':['1', '5', '10', '14'],
+       'position':{'1':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
+                   '5':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
+                   '10':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
+                   '14':['TOP', 'RIGHT', 'BOTTOM', 'LEFT']},
+       'spacers':[
+           {'stage':'1', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'1.43', 'color':'RED', 'image':'6FA-R2'},
+           {'stage':'5', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'1.502', 'color':'BLUE', 'image':'6FA-R6'},
+           {'stage':'10', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'1.178', 'color':'BLACK', 'image':'6FA-R10'},
+           {'stage':'14', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'0.978', 'color':'GREEN', 'image':'6FA-R15'}
+       ],
+       'stage_info':{
+           '1':{
+               'RIGHT':['A', 10.0, 10.0, 1.375],
+               'TOP':['B', 80.0, 80.0, 1.375],
+               'LEFT':['C', 170.0, 170.0, 1.375],
+               'BOTTOM':['D', 260.0, 260.0, 1.375],
+               'blade_count':18,
+               'tip_diameter':42.98,
+               'blade_width':0.05
+           },
+           '5':{
+               'RIGHT':['A', 10.0, 10.0, 2.73],
+               'TOP':['B', 80.0, 80.0, 2.73],
+               'LEFT':['C', 170.0, 170.0, 2.73],
+               'BOTTOM':['D', 260.0, 260.0, 2.73],
+               'blade_count':44,
+               'tip_diameter':37.766,
+               'blade_width':0.04
+           },
+           '10':{
+               'RIGHT':['A', 10.0, 10.0, 2.65],
+               'TOP':['B', 80.0, 80.0, 2.65],
+               'LEFT':['C', 170.0, 170.0, 2.65],
+               'BOTTOM':['D', 260.0, 260.0, 2.65],
+               'blade_count':78,
+               'tip_diameter':34.7,
+               'blade_width':0.1034
+           },
+           '14':{
+               'RIGHT':['A', 10.0, 10.0, 1.872],
+               'TOP':['B', 80.0, 80.0, 1.8724],
+               'LEFT':['C', 170.0, 170.0, 1.8724],
+               'BOTTOM':['D', 260.0, 260.0, 1.8724],
+               'blade_count':64,
+               'tip_diameter':45.037,
+               'blade_width':0.162
+           },
+       },
+       'turning_gear_rpm':6.0,
+       'max_turn_time':0,
+       'rotor_mode':'rotating',
+       'measure_mode':'dynamic',
+       'option':'full_turn',
+       'default_sensor':'SHORT'
+
+      },
     {'frame':'7E',
      'stage':['7', '12', '17'],
      'position':{'7':['TOP', 'BOTTOM', 'RIGHT', 'LEFT'],
@@ -477,6 +535,33 @@ frame_data = [
          {'stage':'14', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'4.191', 'max':'4.291', 'size':'5.122', 'color':'SILVER', 'image':'7HA01-R14-1'},
          {'stage':'14', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'6.83', 'max':'6.93', 'size':'2.483', 'color':'GOLD', 'image':'7HA01-R14-2'}
      ],
+    'stage_info':{
+         '6':{
+             'RIGHT':['A', 350.0, 350.0, 2.718],
+             'TOP':['B', 80.0, 80.0, 2.718],
+             'LEFT':['C', 170.0, 170.0, 2.718],
+             'BOTTOM':['D', 260.0, 260.0, 2.718],
+             'blade_count':24,
+             'tip_diameter':88.722,
+             'blade_width':0.08
+         },
+         '10':{
+             'RIGHT':['A', 25.0, 25.0, 2.597],
+             'TOP':['B', 115.0, 115.0, 2.597],
+             'LEFT':['C', 205.0, 205.0, 2.597],
+             'BOTTOM':['D', 295.0, 295.0, 2.597],
+             'blade_count':85,
+             'tip_diameter':75.188,
+             'blade_width':0.06
+         },
+         '14':{
+             'RIGHT':['A', 17.0, 15.0, 1.786],
+             'LEFT':['B', 163.0, 165.0, 1.786],
+             'blade_count':92,
+             'tip_diameter':69.2202,
+             'blade_width':0.06
+         },
+    },
      'turning_gear_rpm':6.9,
      'max_turn_time':0,
      'rotor_mode':'rotating',
@@ -497,6 +582,53 @@ frame_data = [
          {'stage':'14', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'4.159', 'max':'4.259', 'size':'5.154', 'color':'SILVER', 'image':'7HA02-R14-1'},
          {'stage':'14', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'6.531', 'max':'6.631', 'size':'2.782', 'color':'GOLD', 'image':'7HA02-R14-2'}
      ],
+    'stage_info':{
+        '1':{
+            'RIGHT':['A', 0.0, 0.0, 4.959],
+            'TOP':['B', 90.0, 90.0, 4.959],
+            'LEFT':['C', 180.0, 180.0, 4.959],
+            'BOTTOM':['D', 270.0, 270.0, 4.959],
+            'blade_count':24,
+            'tip_diameter':95.296,
+            'blade_width':0.075
+              },
+        '6':{
+            'RIGHT':['A', 0.0, 0.0, 2.641],
+            'TOP':['B', 90.0, 90.0, 2.641],
+            'LEFT':['C', 180.0, 180.0, 2.641],
+            'BOTTOM':['D', 270.0, 270.0, 2.641],
+            'blade_count':72,
+            'tip_diameter':77.35,
+            'blade_width':0.06
+        },
+        '10':{
+            'RIGHT':['A', 0.0, 0.0, 1.870],
+            'TOP':['B', 90.0, 90.0, 1.870],
+            'LEFT':['C', 180.0, 180.0, 1.870],
+            'BOTTOM':['D', 270.0, 270.0, 1.870],
+            'blade_count':85,
+            'tip_diameter':84.402,
+            'blade_width':0.06
+        },
+        '14.1':{
+            'TOP RIGHT':['A', 0.0, 0.0, 1.860],
+            'TOP LEFT':['B', 90.0, 90.0, 1.860],
+            'BOTTOM RIGHT':['B', 180.0, 180.0, 1.860],
+            'BOTTOM LEFT':['D', 270.0, 270.0, 1.860],
+            'blade_count':92,
+            'tip_diameter':69.796,
+            'blade_width':0.060
+        },
+'14.2':{
+            'TOP RIGHT':['A', 0.0, 0.0, 1.860],
+            'TOP LEFT':['B', 90.0, 90.0, 1.860],
+            'BOTTOM RIGHT':['B', 180.0, 180.0, 1.860],
+            'BOTTOM LEFT':['D', 270.0, 270.0, 1.860],
+            'blade_count':92,
+            'tip_diameter':69.796,
+            'blade_width':0.060
+        },
+    },
     'turning_gear_rpm':6.9,
     'max_turn_time':0,
     'rotor_mode':'rotating',
@@ -1001,6 +1133,63 @@ frame_data = [
      'option':'full_turn',
      'default_sensor':'LONG'
     },
+  {'frame':'9HA.02-16',
+       'stage':['1', '6', '11', '14'],
+       'position':{'1':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
+                   '6':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
+                   '11':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
+                   '14':['TOP', 'RIGHT', 'BOTTOM', 'LEFT']},
+       'spacers':[
+           {'stage':'1', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'4.221', 'color':'BLACK', 'image':'9HA02-FL16-R1'},
+           {'stage':'6', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'5.541', 'color':'BLACK', 'image':'9HA02-FL16-R6'},
+           {'stage':'11', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'6.154', 'color':'BLACK', 'image':'9HA02-FL16-R11'},
+           {'stage':'14', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'6.156', 'color':'BLACK', 'image':'9HA02-FL16-R14'}
+       ],
+       'stage_info':{
+          '1':{
+              'RIGHT':['A', 10.0, 10.0, 3.335],
+              'TOP':['B', 80.0, 80.0, 3.335],
+              'LEFT':['C', 170.0, 170.0, 3.335],
+              'BOTTOM':['D', 260.0, 260.0, 3.335],
+              'blade_count':24,
+              'tip_diameter':106.454,
+              'blade_width':0.096
+          },
+          '6':{
+              'RIGHT':['A', 10.0, 10.0, 5.082],
+              'TOP':['B', 80.0, 80.0, 5.082],
+              'LEFT':['C', 170.0, 170.0, 5.082],
+              'BOTTOM':['D', 260.0, 260.0, 5.082],
+              'blade_count':72,
+              'tip_diameter':92.738,
+              'blade_width':0.072
+          },
+          '11':{
+              'RIGHT':['A', 25.0, 25.0, 3.210],
+              'TOP':['B', 115.0, 115.0, 3.210],
+              'LEFT':['C', 154.0, 155.0, 3.210],
+              'BOTTOM':['D', 295.0, 295.0, 3.210],
+              'blade_count':86,
+              'tip_diameter':85.376,
+              'blade_width':0.072
+          },
+          '14':{
+              'RIGHT':['A', 17.0, 15.0, 3.209],
+              'TOP':['B', 115.0, 115.0, 3.209],
+              'LEFT':['C', 163.0, 165.0, 3.209],
+              'BOTTOM':['D', 295.0, 295.0, 3.209],
+              'blade_count':92,
+              'tip_diameter':83.816,
+              'blade_width':0.072
+          },
+       },
+      'turning_gear_rpm':6.0,
+      'max_turn_time':0,
+      'rotor_mode':'rotating',
+      'measure_mode':'dynamic',
+      'option':'full_turn',
+      'default_sensor':'LONG'
+      },
     {'frame':'9HA.01-FL18',
      'stage':['1', '6', '11', '14'],
      'position':{'1':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
@@ -1057,5 +1246,62 @@ frame_data = [
     'measure_mode':'dynamic',
     'option':'full_turn',
     'default_sensor':'LONG'
-    }
+    },
+  {'frame':'9HA.02-FL18',
+       'stage':['1', '6', '11', '14'],
+       'position':{'1':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
+                   '6':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
+                   '11':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
+                   '14':['TOP', 'RIGHT', 'BOTTOM', 'LEFT']},
+       'spacers':[
+           {'stage':'1', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'4.221', 'color':'BLACK', 'image':'9HA02-FL18-R1'},
+           {'stage':'6', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'5.541', 'color':'BLACK', 'image':'9HA02-FL18-R6'},
+           {'stage':'11', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'6.154', 'color':'BLACK', 'image':'9HA02-FL18-R11'},
+           {'stage':'14', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0', 'max':'100', 'size':'6.156', 'color':'BLACK', 'image':'9HA01-FL18-R14'}
+       ],
+       'stage_info':{
+          '1':{
+              'RIGHT':['A', 10.0, 10.0, 3.335],
+              'TOP':['B', 80.0, 80.0, 3.335],
+              'LEFT':['C', 170.0, 170.0, 3.335],
+              'BOTTOM':['D', 260.0, 260.0, 3.335],
+              'blade_count':24,
+              'tip_diameter':116.228,
+              'blade_width':0.09
+          },
+          '6':{
+              'RIGHT':['A', 10.0, 10.0, 5.082],
+              'TOP':['B', 80.0, 80.0, 5.082],
+              'LEFT':['C', 170.0, 170.0, 5.082],
+              'BOTTOM':['D', 260.0, 260.0, 5.082],
+              'blade_count':72,
+              'tip_diameter':94.63,
+              'blade_width':0.09
+          },
+          '11':{
+              'RIGHT':['A', 25.0, 25.0, 3.210],
+              'TOP':['B', 115.0, 115.0, 3.210],
+              'LEFT':['C', 154.0, 155.0, 3.210],
+              'BOTTOM':['D', 295.0, 295.0, 3.210],
+              'blade_count':86,
+              'tip_diameter':85.378,
+              'blade_width':0.072
+          },
+          '14':{
+              'RIGHT':['A', 17.0, 15.0, 3.209],
+              'TOP':['B', 115.0, 115.0, 3.209],
+              'LEFT':['C', 163.0, 165.0, 3.209],
+              'BOTTOM':['D', 295.0, 295.0, 3.209],
+              'blade_count':92,
+              'tip_diameter':83.796,
+              'blade_width':0.072
+          },
+       },
+      'turning_gear_rpm':6.0,
+      'max_turn_time':0,
+      'rotor_mode':'rotating',
+      'measure_mode':'dynamic',
+      'option':'full_turn',
+      'default_sensor':'LONG'
+      }
 ];
