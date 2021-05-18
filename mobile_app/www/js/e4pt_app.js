@@ -132,6 +132,8 @@ define(function(require, exports, module) {
     var current_position_index = 0;
     var current_position = 0;
     var current_frame_data = [];
+    
+    var computeRPMOnlyNoDataPlotFlag = false;
 
     var selected_frame_data = {
         frameIdx: 0, // '6B'
@@ -495,6 +497,9 @@ define(function(require, exports, module) {
         }, {passive: true});
         document.getElementById("SPACER_THUMBNAIL").addEventListener('click', function() {
             showSpacerImage();
+        }, {passive: true });
+        document.getElementById("RPM_THUMBNAIL").addEventListener('click', function() {
+             computeRPM();
         }, {passive: true});
         document.getElementById("FRAME_DATA_CLEAR_BUTTON").addEventListener('click', function() {
             clearFrameData();
@@ -597,8 +602,39 @@ define(function(require, exports, module) {
             });
         });
     }
+        
+    function computeRPM(){
+        computeRPMOnlyNoDataPlotFlag = true;
+        console.log("@GET_DATA_BUTTON event listener function.");
+        comingFromCollectDataFlag = true
+        console.log('@getData');
+        fromGetData = true;
+        var acquisitionTime = null;
+        doDBSave = false;
+        console.log("@GET_DATA_BUTTON: Prompting.");
+        var nav = navigator.notification;
+        if (nav != null) {
+            // We have plugins so we're in Cordova.  Use the Cordova notification.
+            console.log("@GET_DATA_BUTTON: Cordova Prompt");
+            // For issue #69: added additional text to the prompt for acquisition time
+            navigator.notification.prompt('Raw data is the displacement from the sensor with an unknown (default) reference point. This should be used only when relative data is desired. \n \n Please enter the acquisition time in seconds.',
+                                          acquisitionTimePromptCallback,
+                                          'Acquisition Time',
+                                          ['Ok','Cancel'],
+                                          '3');
+            
+        } else {
+            // No plugins, so we must not be in Cordova. Use a standard prompt.
+            console.log("@GET_DATA_BUTTON: Windows Prompt");
+            // For issue #69: added additional text to the prompt for acquisition time
+            acquisitionTime = window.prompt("Raw data is the displacement from the sensor with an unknown (default) reference point. This should be used only when relative data is desired. \n \n Please enter the acquisition time in seconds.", "3");
+            acquisitionTimePromptCallback({"input1":acquisitionTime});
+            
+        }
+    }
     
     function getData() {
+        computeRPMOnlyNoDataPlotFlag = false;
         console.log('@getData');
         fromGetData = true;
         var acquisitionTime = null;
@@ -702,9 +738,9 @@ define(function(require, exports, module) {
         let frm_idx = document.getElementById("FRAME_SIZE").selectedIndex;
         
         // Memorise selected_frame_data for computing RPM and remembering it when we come back to the page
-        selected_frame_data.frameIdx = frm_idx;        
+        selected_frame_data.frameIdx = frm_idx;
         
-        // fills the 
+        // fills the
         current_frame_data = frame_data[frm_idx];
         let pos = current_frame_data.position;
         let tbl = document.getElementById("CASING_THICKNESS_TABLE");
@@ -1083,7 +1119,7 @@ define(function(require, exports, module) {
         } else {
             // otherwise, put back the last thing that was selected by the user.
             document.getElementById("FRAME_SIZE").selectedIndex = selected_frame_data.frameIdx;
-            document.getElementById("FRAME_SIZE").value = frame_data[selected_frame_data.frameIdx].frame; 
+            document.getElementById("FRAME_SIZE").value = frame_data[selected_frame_data.frameIdx].frame;
             setupCasingThicknessTable(null);
         }
         document.getElementById("FRAME_DEFAULT_SENSOR").value = current_frame_data.default_sensor;
@@ -1122,7 +1158,7 @@ define(function(require, exports, module) {
     function set_stage() {
       current_stage_index = document.getElementById("SENSOR_STAGE").selectedIndex;
       
-      // memorise which stage index we are at, for RPM computation, 
+      // memorise which stage index we are at, for RPM computation,
       selected_frame_data.stageInfoIdx = current_stage_index
 
       current_stage = current_frame_data['stage'][current_stage_index];
@@ -2007,8 +2043,8 @@ define(function(require, exports, module) {
                 console.log("Received Data Message")
                 console.log (msg)
                 howManyBladesPassedBy = 0
-                var currentFrameIdx = selected_frame_data.frameIdx                
-                var currentStageIdx = selected_frame_data.stageInfoIdx                
+                var currentFrameIdx = selected_frame_data.frameIdx
+                var currentStageIdx = selected_frame_data.stageInfoIdx
                 if (frame_data[currentFrameIdx].stage_info == undefined){
                     var message = "the current frame does not have a stage_info field, thus no number of blades \n";
                     message = message + "frame: " + frame_data[currentFrameIdx].frame
@@ -2028,9 +2064,9 @@ define(function(require, exports, module) {
                     if (datum_ == 15)
                         flagHitABlade = false
                 }
-                var bladePerMinute = 60 * ( howManyBladesPassedBy / dataCollectionAcquisitionTime ) ;                
+                var bladePerMinute = 60 * ( howManyBladesPassedBy / dataCollectionAcquisitionTime ) ;
                 var RPM = bladePerMinute / blade_count     // 54
-                selected_frame_data.RPM = RPM; 
+                selected_frame_data.RPM = RPM;
                 computedRPM = RPM.toString();
                 if (comingFromCollectDataFlag){
                     document.getElementById('MEASUREMENT_RPM').value = computedRPM;
@@ -2645,16 +2681,19 @@ define(function(require, exports, module) {
         
         // only display the DATA PLOT page for GET DATA or SENSOR SETUP and not from DATA COLLECTION
         if (fromGetData || fromSensorSetupPage) {
-            fadeOutAll();
-            $("#DATA_PLOT_PAGE").fadeIn();
+            if (computeRPMOnlyNoDataPlotFlag == false){
+                fadeOutAll();
+                $("#DATA_PLOT_PAGE").fadeIn();
+            }
             fromGetData = false;
         }
-
-        if (current_frame_data['position'] != null) {
-          plot_calibrated_acquire();
-        } else {
-          plot_non_calibrated_acquire();
-        }
+          if (computeRPMOnlyNoDataPlotFlag == false){
+            if (current_frame_data['position'] != null) {
+              plot_calibrated_acquire();
+            } else {
+              plot_non_calibrated_acquire();
+            }
+          }
         advance_position();
       } catch (error) {
         console.log(error);
@@ -2663,8 +2702,9 @@ define(function(require, exports, module) {
 
     function requestE4PtData(acquisitionTime) {
         console.log("Requesting " + acquisitionTime + " seconds of data");
+                
+        console.log ("I am in computeRPMOnlyNoDataPlot")
         charting.clearChartData(document.getElementById('DATA_PLOT'));
-        
         startProgressBar();
 
         // send_data needs args: acquisition time and casing thickness
