@@ -27,7 +27,10 @@
 }
 
 -(SensorSettings*) sensor {
-    if (!_sensor) _sensor = [SensorSettings LONG];
+    if (!_sensor) {
+        // default to LONG sensor type
+        _sensor = [SensorSettings LONG];
+    }
     return _sensor;
 }
 

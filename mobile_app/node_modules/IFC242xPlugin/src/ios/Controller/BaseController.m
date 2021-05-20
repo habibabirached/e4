@@ -415,9 +415,24 @@
                     }
                     float lengthInches = lengthMM / IN_to_MM;
                     NSLog(@"Sensor Length is %.3f mm or %.3f inches", lengthMM, lengthInches);
+
                     float smrMM = [[sensorParams substringFromIndex:4] floatValue] / 100.0;
+
+                    float mrMM = self.settings.sensor.mr;
+
+                    // update sensor type based on length
+                    // TODO: check rule
+                    if (lengthInches > 5) {
+                        NSLog(@"Setting sensor to LONG");
+                        self.settings.sensor = [SensorSettings LONG];
+                    } else {
+                        NSLog(@"Setting sensor to SHORT");
+                        self.settings.sensor = [SensorSettings SHORT];
+                    }
+                    // override defaults
                     self.settings.sensor.length = lengthInches;
                     self.settings.sensor.smr = smrMM;
+                    self.settings.sensor.mr = mrMM;
                     self.settings.sensorParamsProvided = TRUE;
                     // need to update mastering values after reading sensor params from the controller
                     [self.settings.sensor updateMasteringValues];
