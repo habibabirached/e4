@@ -25,7 +25,7 @@ define(function(require, exports, module) {
     var sensorMRFromController = 0.0;
     
     var APP_NAME = "e-4Pt Tool";
-    var UPDATE_SENSOR_PARAMETERS_PASSWORD = "Gr0undH0g";
+    var UPDATE_SETTINGS_PASSWORD = "Gr0undH0g";
     var MAX_STR_LEN = 64;
     var FRD_FILE = 'www/FRD.pdf';
     var DEFAULT_SPACER_FILE = 'img/spacers/Unknown.gif';
@@ -310,9 +310,9 @@ define(function(require, exports, module) {
         document.getElementById("CONN_SELECTION").addEventListener('change', function() {
             set_connection_mode();
         }, {passive: true});
-        /*document.getElementById("CONFIGURE_CONTROLLER_BUTTON").addEventListener('click', function() {
-            configure_controller();
-        }, {passive: true});*/
+        document.getElementById("CONFIGURE_CONTROLLER_BUTTON").addEventListener('click', function() {
+            authorizeControllerSettingsUpdate();
+        }, {passive: true});
         document.getElementById("DATA_PLOT_CLOSE_BUTTON").addEventListener('click', function() {
             $("#DATA_PLOT_PAGE").fadeOut();
             // re-open previous page
@@ -906,7 +906,35 @@ define(function(require, exports, module) {
         messaging.sendMessage({args:[{command:'set_connection_mode',mode:mode}]});
     }
     
-    function configure_controller() {
+    function authorizeControllerSettingsUpdate() {
+        // Prompt user for password.
+        var nav = navigator.notification;
+        if (nav != null) {
+            // We have plugins so we're in Cordova.  Use the Cordova notification.
+            navigator.notification.prompt('Please enter the password.',
+                                          confirmControllerSettingsPassword,
+                                          'Enter Password',
+                                          ['Ok','Cancel'],
+                                          '');
+        } else {
+            // No plugins, so we must not be in Cordova. Use a standard prompt.
+            let pw = window.prompt("Please enter the password.", "1");
+            confirmSensorParamsPassword({"input1":pw});
+        }
+    }
+
+    function confirmControllerSettingsPassword(results) {
+        if (results.buttonIndex > 1) {
+            return;
+        }
+        if (results.input1 == UPDATE_SETTINGS_PASSWORD) {
+            configureController();
+        } else {
+            e4PtAlert("Invalid password.");
+        }
+    }
+    
+    function configureController() {
         if (!serialConnected) {
             e4PtAlert('Please connect to the controller before proceeding.');
         } else {
@@ -2161,22 +2189,22 @@ define(function(require, exports, module) {
         if (nav != null) {
             // We have plugins so we're in Cordova.  Use the Cordova notification.
             navigator.notification.prompt('Please enter the password.',
-                                          confirmPassword,
+                                          confirmSensorParamsPassword,
                                           'Enter Password',
                                           ['Ok','Cancel'],
                                           '');
         } else {
             // No plugins, so we must not be in Cordova. Use a standard prompt.
             let pw = window.prompt("Please enter the password.", "1");
-            confirmPassword({"input1":pw});
+            confirmSensorParamsPassword({"input1":pw});
         }
     }
 
-    function confirmPassword(results) {
+    function confirmSensorParamsPassword(results) {
         if (results.buttonIndex > 1) {
             return;
         }
-        if (results.input1 == UPDATE_SENSOR_PARAMETERS_PASSWORD) {
+        if (results.input1 == UPDATE_SETTINGS_PASSWORD) {
             updateSensorParameters(document.getElementById("MASTER_FIXTURE_HEIGHT").value,
                                    document.getElementById("MASTERING_VALUE").value,
                                    document.getElementById("MASTER_OFFSET").value,
