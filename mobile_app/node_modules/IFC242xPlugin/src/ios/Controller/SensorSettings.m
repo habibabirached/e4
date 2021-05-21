@@ -15,9 +15,9 @@
 @implementation SensorSettings
 
 @synthesize name = _name;
-@synthesize length = _length;
-@synthesize smr = _smr;
-@synthesize mr = _mr;
+@synthesize length = _length; // provided by controller
+@synthesize smr = _smr; // provided by controller
+@synthesize mr = _mr; // provided by controller
 @synthesize hmf = _hmf;
 @synthesize mv = _mv;
 @synthesize mo = _mo;
@@ -67,7 +67,8 @@
 
 -(instancetype)initWithName:(NSString*)name lengthInches:(float)length measurementRangeMM:(float)mr startOfMeasurementRangeMM:(float)smr masterFixtureHeightInches:(float)hmf {
     float mv = [SensorSettings mvFromLength:length hmf:hmf smr:smr];
-    return [self initWithName:name lengthInches:length measurementRangeMM:mr startOfMeasurementRangeMM:smr masterFixtureHeightInches:hmf masteringValueMM:mv masteringOffsetInches:[SensorSettings moFromLength:length hmf:hmf smr:smr mv:mv]];
+    float mo = [SensorSettings moFromLength:length hmf:hmf smr:smr mv:mv];
+    return [self initWithName:name lengthInches:length measurementRangeMM:mr startOfMeasurementRangeMM:smr masterFixtureHeightInches:hmf masteringValueMM:mv masteringOffsetInches:mo];
 }
 
 -(instancetype)initWithName:(NSString*)name lengthInches:(float)length measurementRangeMM:(float)mr startOfMeasurementRangeMM:(float)smr masterFixtureHeightInches:(float)hmf masteringValueMM:(float)mv masteringOffsetInches:(float)mo {
