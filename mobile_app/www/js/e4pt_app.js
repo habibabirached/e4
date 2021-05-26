@@ -2110,6 +2110,8 @@ define(function(require, exports, module) {
                     msg.gaps = JSON.parse(msg.gaps);
                     msg.quality = JSON.parse(msg.quality);
                     msg.overall_avg = JSON.parse(msg.overall_avg);
+                    msg.blades = JSON.parse(msg.blades);
+                    msg.blade_samples_avg = JSON.parse(msg.blade_samples_avg)
                     processE4PtData(msg);
                 } else {
                     console.log("Data collection was aboreted");
@@ -3013,7 +3015,7 @@ define(function(require, exports, module) {
       chartConfig.chart.panning = true;
       chartConfig.chart.panKey = 'shift';
       chartConfig.chart.zoomType = 'xy';
-      charting.addChartSubtitle(chartConfig, E4PTdata.date, E4PTdata.clearance, E4PTdata.overall_avg);
+      charting.addChartSubtitle(chartConfig, E4PTdata.date, E4PTdata.clearance, E4PTdata.blades, E4PTdata.blade_samples_avg, E4PTdata.overall_avg);
       charting.displayIntensityThresholdAndMeasurementRate(chartConfig, E4PTdata.measurement_rate, E4PTdata.intensity_threshold);
       let chartFilename = charting.createSavedChartFilename(E4PTdata.date.substring(2));
       charting.renderChart(chartConfig, 'DATA_PLOT', chartFilename, writeToFile);
@@ -3023,7 +3025,7 @@ define(function(require, exports, module) {
       let chartConfig = charting.createChartConfig(E4PTdata.data, E4PTdata.minima);
       chartConfig.tooltip.enabled = false;
       chartConfig.series[0].name = 'Filtered ' + chartConfig.series[0].name;
-      charting.addChartSubtitle(chartConfig, E4PTdata.date, E4PTdata.clearance);
+      charting.addChartSubtitle(chartConfig, E4PTdata.date, E4PTdata.clearance, E4PTdata.blades, E4PTdata.blade_samples_avg);
       charting.displayIntensityThresholdAndMeasurementRate(chartConfig, E4PTdata.measurement_rate, E4PTdata.intensity_threshold);
       let chartFilename = charting.createSavedChartFilename(E4PTdata.date.substring(2), E4PTdata.serial_number, current_stage, current_position.substring(0,1));
       //charting.renderChart(chartConfig, 'DATA_PLOT', chartFilename, writeToFile);

@@ -43,9 +43,9 @@ define(function(require, exports, module, sensorSettings) {
       return "<html><head><script src='https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js'></script><script src='https://code.highcharts.com/highcharts.js'></script><style>.COL_FL{float:left}.COL_FR{float:right}.FONT_BLACK{color:black}.FONT_RED{color:red}.FONT_TRANSPARENT{color: rgba(0, 0, 0, 0)}.highcharts-subtitle {text-align: center;width: 100%;}</style></head><body><div style='width:100%'></div><script>$(function () {$('div').highcharts(" + JSON.stringify(chartConfig) + ");});</script></body></html>";
     }
     
-    const addChartSubtitle = (chartConfig, acquisition_date, overall_clearance, avg_displacement) => {
+    const addChartSubtitle = (chartConfig, acquisition_date, overall_clearance, blades, blade_samples_avg, avg_displacement) => {
         
-      let subtitle = 'Date: ' + acquisition_date + '<br>Avg. Tip Dist: ' + overall_clearance;
+      let subtitle = 'Date: ' + acquisition_date + '<br>Blades: ' + blades + ';&nbsp;Avg. Samples/Blade: ' + blade_samples_avg + '<br>Avg. Tip Dist: ' + overall_clearance;
       if (avg_displacement) {
         if (sensorSettings.doesMeasurementExceedTolerance(avg_displacement)) {
             subtitle = '<span class="FONT_BLACK">' + subtitle + '; </span>' + '<span class="FONT_RED">Overall Avg: ' + avg_displacement + '</span>';

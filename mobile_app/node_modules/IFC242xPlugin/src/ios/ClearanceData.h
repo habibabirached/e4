@@ -20,6 +20,8 @@
 @property (readonly, nonatomic) float offsetAdjustmentFactor;
 @property (nonatomic) float averageDisplacement;
 @property (nonatomic) float shelfThreshold;
+@property (nonatomic) int blades;
+@property (nonatomic) float averageBladeSamples;
 
 -(void)applyAdjustment:(float)adjustment threshold:(float)threshold;
 -(void)calculateStatistics;
