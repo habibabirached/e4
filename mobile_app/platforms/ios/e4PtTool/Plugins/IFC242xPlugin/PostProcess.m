@@ -89,6 +89,10 @@
     // and pos. zero-crossings IFF the intensity is greater than zero.
     // These averages are the per-blade clearances
     int overall_count = 0;
+
+    int blades_count = 0;
+    int blades_samples = 0;
+
     for (int i=0; i<measurementData.displacements.count; i++) {
         float rawDisplacement = [measurementData.displacements[i] floatValue];
         if (rawDisplacement < self.outOfRange) {
@@ -100,7 +104,7 @@
             // so sum displacements to the next positive zero-crossing.
             int start = i;
             int stop = start;
-            // This next loop determines the corresponding stoping point
+            // This next loop determines the corresponding stopping point
             // point for this blade, if any.
             for (; stop < measurementData.displacements.count; stop++) {
                 if (pos_crossing[stop]) {
@@ -148,6 +152,8 @@
                     clearance = -9.996;
                 } else {
                     clearance /= count; // Average clearance for this blade.
+                    blades_count += 1;
+                    blades_samples += count;
                 }
                 if (isnan(clearance)) {
                     clearance = -9.995;  // nan has happened before.
@@ -160,7 +166,7 @@
                     
                         float quality = [self computeQualityScore:0.0254 clearance:clearance minClearance:min_clearance numPoints:(float)count measurementData:measurementData start:start stop:stop];
                         [clearanceData.quality addObject:[NSNumber numberWithFloat:quality]];
-                            min_loc = (start + stop) / 2.0;
+                        min_loc = (start + stop) / 2.0;
                     }
                     [clearanceData.locations addObject:[NSNumber numberWithFloat:min_loc]];
                 }
@@ -185,6 +191,13 @@
     clearanceData.averageDisplacement /= (float)overall_count;
     [clearanceData applyAdjustment:offsetAdjustment threshold:self.outOfRange];
     [clearanceData calculateStatisticsWithBladeCount:bladeCount];
+
+    clearanceData.blades = blades_count;
+    if (blades_count == 0) {
+        clearanceData.averageBladeSamples = 0;
+    } else {
+        clearanceData.averageBladeSamples = (float)blades_samples / (float)blades_count;
+    }
         
     NSLog(@"computeClearance Done.");
     return clearanceData;

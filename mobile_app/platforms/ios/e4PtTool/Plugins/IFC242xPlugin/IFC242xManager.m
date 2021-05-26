@@ -130,6 +130,8 @@
     NSString* stg_med_clr = [NSString stringWithFormat:@"%f", clearanceData.median];
     NSString* stg_clr_std = [NSString stringWithFormat:@"%f", clearanceData.std];
     NSString* overall_avg = isnan(clearanceData.averageDisplacement) ? @"\"--\"" : [NSString stringWithFormat:@"%f", clearanceData.averageDisplacement];
+    NSString* blades = [NSString stringWithFormat:@"%d", clearanceData.blades];
+    NSString* blade_samples_avg = [NSString stringWithFormat:@"%f", clearanceData.averageBladeSamples];
     
     [self saveCSVFile:date clearanceData:clearanceData measurementData:measurementData];
     NSArray* savedFilepath;
@@ -153,6 +155,8 @@
                                    @"med_clr":stg_med_clr,
                                    @"std_clr":stg_clr_std,
                                    @"overall_avg":overall_avg,
+                                   @"blades":blades,
+                                   @"blade_samples_avg":blade_samples_avg,
                                    @"date":dateStr,
                                    @"intensity_threshold":[NSString stringWithFormat:@"%.3f", self->controller.settings.intensityThreshold],
                                    @"measurement_rate":[NSString stringWithFormat:@"%.3f", self->controller.settings.measurementRate],

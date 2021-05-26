@@ -31,6 +31,8 @@
 @synthesize offsetAdjustmentFactor = _offsetAdjustmentFactor;
 @synthesize averageDisplacement = _averageDisplacement;
 @synthesize shelfThreshold = _shelfThreshold;
+@synthesize blades = _blades;
+@synthesize averageBladeSamples = _averageBladeSamples;
 
 -(instancetype)init {
     if (self = [super init]) {
