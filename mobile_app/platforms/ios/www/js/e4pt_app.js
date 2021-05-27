@@ -469,6 +469,7 @@ define(function(require, exports, module) {
             generate_customer_report();
         }, {passive: true});
         document.getElementById("SENSOR_STAGE").addEventListener('change', function() {
+            document.getElementById("RPM_THUMBNAIL").src = "img/spacers/RPM.gif"
             set_stage();
             update_spacer_value();
         }, {passive: true});
@@ -604,6 +605,7 @@ define(function(require, exports, module) {
     }
         
     function computeRPM(){
+        
         computeRPMOnlyNoDataPlotFlag = true;
         console.log("@GET_DATA_BUTTON event listener function.");
         comingFromCollectDataFlag = true
@@ -617,11 +619,12 @@ define(function(require, exports, module) {
             // We have plugins so we're in Cordova.  Use the Cordova notification.
             console.log("@GET_DATA_BUTTON: Cordova Prompt");
             // For issue #69: added additional text to the prompt for acquisition time
-            navigator.notification.prompt('Raw data is the displacement from the sensor with an unknown (default) reference point. This should be used only when relative data is desired. \n \n Please enter the acquisition time in seconds.',
+            let noteMsg = " Note: please ensure that you have selected the cell that represents the location of the sensor in the turbine. \n\n The app will collect data for 60 seconds by default and then calculate rpm.  Or, you can cancel this, and enter RPM directly in the RPM box below. \n\n";
+            navigator.notification.prompt(noteMsg + 'Raw data is the displacement from the sensor with an unknown (default) reference point. This should be used only when relative data is desired. \n \n Please enter the acquisition time in seconds (default 60 seconds).',
                                           acquisitionTimePromptCallback,
                                           'Acquisition Time',
                                           ['Ok','Cancel'],
-                                          '3');
+                                          '60');
             
         } else {
             // No plugins, so we must not be in Cordova. Use a standard prompt.
@@ -631,6 +634,7 @@ define(function(require, exports, module) {
             acquisitionTimePromptCallback({"input1":acquisitionTime});
             
         }
+        
     }
     
     function getData() {
@@ -801,6 +805,7 @@ define(function(require, exports, module) {
                 }
             }
         }
+        document.getElementById("RPM_THUMBNAIL").src = "img/spacers/RPMdone.gif"
     }
 
     function acquisitionTimePromptWithMetaDataCallback(results) {
