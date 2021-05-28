@@ -124,6 +124,8 @@ define(function(require, exports, module) {
         "med_clr":"",
         "std_clr":"",
         "overall_avg":"",
+        "blades":"",
+        "blade_samples_avg":"",
         "alreadyOnLDB":"false",
         "pouchdb_id": ""
     };
@@ -134,12 +136,12 @@ define(function(require, exports, module) {
                             'TOP LEFT':315, 'BOTTOM LEFT':225, 'TOP RIGHT':45, 'BOTTOM RIGHT':135};
     var current_stage_index = 0;
     var current_stage = 0;
+    var current_stage_type = '';
     var current_position_index = 0;
     var current_position = 0;
     var current_frame_data = [];
 
     $(document).ready(function() {
-        console.log('READY');
         var attachFastClick = Origami.fastclick;
         attachFastClick(document.body);
         
@@ -312,6 +314,9 @@ define(function(require, exports, module) {
         }, {passive: true});
         document.getElementById("CONFIGURE_CONTROLLER_BUTTON").addEventListener('click', function() {
             authorizeControllerSettingsUpdate();
+        }, {passive: true});
+        document.getElementById("READ_SENSOR_PARAMETERS_BUTTON").addEventListener('click', function() {
+            readSensorParameters();
         }, {passive: true});
         document.getElementById("DATA_PLOT_CLOSE_BUTTON").addEventListener('click', function() {
             $("#DATA_PLOT_PAGE").fadeOut();
@@ -710,6 +715,7 @@ define(function(require, exports, module) {
     }
 
     function setupCasingThicknessTable(callback) {
+        console.log('@setupCasingThicknessTable');
         // Get frame type
         let frm_idx = document.getElementById("FRAME_SIZE").selectedIndex;
         current_frame_data = frame_data[frm_idx];
@@ -719,13 +725,13 @@ define(function(require, exports, module) {
         let htmlStr = "";
         for (let p of Object.keys(pos)) {
             console.log("stageText:  ", stageText);
-            console.log("current_frame_data.position:  ", p);
+            console.log("current_frame_data.position: ", p);
             htmlStr = htmlStr + '<tr>';
             htmlStr = htmlStr + '<th>' + stageText + '</th>';
             stageText = "";
             for (let j=0; j<pos[p].length; j++) {
                 htmlStr = htmlStr + '<th scope="row">' + pos[p][j] + '</th>';
-                console.log("pos[p][j]:  ", pos[p][j]);
+                console.log("pos[p][j]: ", pos[p][j]);
             }
             htmlStr = htmlStr + '</tr>';
             htmlStr = htmlStr + '<tr>';
@@ -950,8 +956,14 @@ define(function(require, exports, module) {
             }
         }
     }
+    
+    function readSensorParameters() {
+        console.log('@readSensorParameters');
+        messaging.sendMessage({args:[{command:'read_sensor_parameters'}]});
+    }
 
     function record_casing_thickness() {
+        console.log('@record_casing_thickness');
         let frm_idx = document.getElementById("FRAME_SIZE").selectedIndex;
         current_frame_data = frame_data[frm_idx];
         let pos = current_frame_data.position;
@@ -1080,6 +1092,7 @@ define(function(require, exports, module) {
         set_stage_information();
 
         // Setup the position options
+        // TODO: called already by set_stage_information()
         set_position_information();
         current_position_index = 0;
         current_position = current_frame_data['position'][current_stage][current_position_index];
@@ -1128,7 +1141,7 @@ define(function(require, exports, module) {
         document.getElementById("MV_CONFIG_MSG").innerHTML = sensorSettings.get('mastering_value') + "mm MV";
         document.getElementById("MO_CONFIG_MSG").innerHTML = sensorSettings.get('master_offset') + "&quot; MO";
         if (sensorParamsFromController) {
-            setSpanProperties($("#SENSOR_PARAMS_CONFIG_MSG"), "Using controller-provided '" + sensorSettings.get('sensor_selection') + "' sensor settings", 'blue');
+            setSpanProperties($("#SENSOR_PARAMS_CONFIG_MSG"), "Using controller-provided '" + sensorSettings.get('sensor_selection') + "' sensor settings", 'green');
             $("#SL_CONFIG_MSG").css('color', 'black');
             $("#SMR_CONFIG_MSG").css('color', 'black');
             $("#MR_CONFIG_MSG").css('color', 'black');
@@ -1136,7 +1149,7 @@ define(function(require, exports, module) {
             $("#MV_CONFIG_MSG").css('color', 'black');
             $("#MO_CONFIG_MSG").css('color', 'black');
         } else if (sensorSettings.sensorParamsHaveBeenEdited()) {
-            setSpanProperties($("#SENSOR_PARAMS_CONFIG_MSG"), "Using non-standard '" + sensorSettings.get('sensor_selection') + "' sensor settings: ", 'red');
+            setSpanProperties($("#SENSOR_PARAMS_CONFIG_MSG"), "Using non-standard '" + sensorSettings.get('sensor_selection') + "' sensor settings: ", 'yellow');
             $("#SL_CONFIG_MSG").css('color', sensorSettings.sensorLengthHasBeenEdited()?'red':'black');
             $("#SMR_CONFIG_MSG").css('color', sensorSettings.smrHasBeenEdited()?'red':'black');
             $("#MR_CONFIG_MSG").css('color', sensorSettings.mrHasBeenEdited()?'red':'black');
@@ -1144,7 +1157,7 @@ define(function(require, exports, module) {
             $("#MV_CONFIG_MSG").css('color', sensorSettings.mvHasBeenEdited()?'red':'black');
             $("#MO_CONFIG_MSG").css('color', sensorSettings.moHasBeenEdited()?'red':'black');
         } else {
-            setSpanProperties($("#SENSOR_PARAMS_CONFIG_MSG"), "Using preconfigured '" + sensorSettings.get('sensor_selection') + "' sensor settings", 'green');
+            setSpanProperties($("#SENSOR_PARAMS_CONFIG_MSG"), "Using pre-configured '" + sensorSettings.get('sensor_selection') + "' sensor settings", 'red');
             $("#SL_CONFIG_MSG").css('color', 'black');
             $("#SMR_CONFIG_MSG").css('color', 'black');
             $("#MR_CONFIG_MSG").css('color', 'black');
@@ -1180,6 +1193,7 @@ define(function(require, exports, module) {
     }
 
     function set_position_information() {
+        console.log('@set_position_information');
         var html_buf = [];
         var positions = current_frame_data['position'];
         positions = positions[current_stage];
@@ -1273,7 +1287,7 @@ define(function(require, exports, module) {
     }
     
     function setButtonProperties(button, text, buttonColor) {
-        let allColors = "btn-secondary btn-dark btn-danger btn-success btn-warning";
+        let allColors = "btn-secondary btn-dark btn-danger btn-success btn-warning btn-info";
         let targetColor = "btn-secondary";
         switch(buttonColor) {
           case "black":
@@ -1291,6 +1305,9 @@ define(function(require, exports, module) {
           case "yellow":
             targetColor = "btn-warning";
             break;
+          case "cyan":
+            targetColor = "btn-info";
+            break;
           default:
             targetColor = "btn-secondary";
         }
@@ -1301,7 +1318,7 @@ define(function(require, exports, module) {
     }
     
     function setSpanProperties(span, text, spanColor) {
-        let allColors = "bg-secondary bg-dark bg-danger bg-success bg-warning";
+        let allColors = "bg-secondary bg-dark bg-danger bg-success bg-warning bg-info text-dark";
         let targetColor = "bg-secondary";
         switch(spanColor) {
           case "black":
@@ -1317,7 +1334,10 @@ define(function(require, exports, module) {
             targetColor = "bg-primary";
             break;
           case "yellow":
-            targetColor = "bg-warning";
+            targetColor = "bg-warning text-dark";
+            break;
+          case "cyan":
+            targetColor = "bg-info text-dark";
             break;
           default:
             targetColor = "bg-secondary";
@@ -1674,14 +1694,14 @@ define(function(require, exports, module) {
     // the casing thickness information based on any user input.
     //
     function get_spacer_information() {
+      console.log('@get_spacer_information');
       var spacer = null;
       var spacers = current_frame_data['spacers'];
       let ct_id = current_stage + "_" + current_position;
       let case_thick = document.getElementById("CURR_CASE_THICKNESS").value;
       if (case_thick.length > 0) {
           document.getElementById(ct_id).value = document.getElementById("CURR_CASE_THICKNESS").value;
-      }
-      if (case_thick.length == 0) {
+      } else {
           // If the cell is empty, fill in in the field with what's stored in the data structure.
           case_thick = E4PTdata.turbine_casing_thicknesses[ct_id]
           document.getElementById("CURR_CASE_THICKNESS").value = case_thick;
@@ -1691,6 +1711,7 @@ define(function(require, exports, module) {
           E4PTdata.turbine_casing_thicknesses[ct_id] = case_thick;
       }
       if (case_thick.length == 0) {
+          console.log('no case thickness, could not determine spacer');
           return spacer;
       }
       var casing_thickness = parseFloat(case_thick);
@@ -1700,13 +1721,16 @@ define(function(require, exports, module) {
       console.log("Getting spacer information for casing_thickness = ", casing_thickness, ", and position = ", position);
       var spacer_found = false;
       for (var i=0; i<spacers.length; i++) {
-        if (spacers[i].stage == current_stage) {
+        // special handling for stages with multiple configurations
+        if (spacers[i].stage.split('.')[0] == current_stage) {
           var min = parseFloat(spacers[i].min);
           var max = parseFloat(spacers[i].max);
           if ((casing_thickness <= max) && (casing_thickness >= min)) {
             for(var j=0; j<spacers[i].position.length; j++) {
               if (position == spacers[i].position[j]) {
+                console.log(spacers[i]);
                 spacer = {'size':spacers[i].size, 'color':spacers[i].color, 'image':spacers[i].image};
+                current_stage_type = spacers[i].stage;
                 spacer_found = true;
                 break;
               }
@@ -2060,7 +2084,7 @@ define(function(require, exports, module) {
                 }
                 break;
             case "connection":
-                console.log("Received a connection mode message: ", msg.message);
+                console.log("Received a connection mode message: ", msg.mode);
                 document.getElementById('CONN_SELECTION').value = msg.mode;
                 update_connection_mode(msg.mode);
                 break;
@@ -2111,7 +2135,7 @@ define(function(require, exports, module) {
                     msg.quality = JSON.parse(msg.quality);
                     msg.overall_avg = JSON.parse(msg.overall_avg);
                     msg.blades = JSON.parse(msg.blades);
-                    msg.blade_samples_avg = JSON.parse(msg.blade_samples_avg)
+                    msg.blade_samples_avg = JSON.parse(msg.blade_samples_avg);
                     processE4PtData(msg);
                 } else {
                     console.log("Data collection was aboreted");
@@ -2780,7 +2804,7 @@ define(function(require, exports, module) {
         var blade_width = 0;
         var tip_diameter = 0;
         if (typeof current_frame_data.stage_info !== 'undefined') {
-            if (typeof current_frame_data.stage_info[current_stage] !== 'undefined') {
+            if (typeof current_frame_data.stage_info[current_stage_type] !== 'undefined') {
                 stage_details = get_stage_details(position, casing_thickness);
                 num_blades = stage_details.blade_count;
                 blade_width = stage_details.blade_width;
@@ -2827,6 +2851,7 @@ define(function(require, exports, module) {
     // get_stage_details find the specific information for this stage, given the frame, position,
     // and casing thickness.
     function get_stage_details(position, casing_thickness) {
+        console.log('@get_stage_details: ' + position + ', ' + casing_thickness);
         var details = {};
         details["blade_width"] = 0;
         details["blade_count"] = 0;
@@ -2834,7 +2859,7 @@ define(function(require, exports, module) {
         var stageKeys = Object.keys(current_frame_data.stage_info); // Get all the stage information names
         for (var idx in stageKeys) {
             var stageKey = stageKeys[idx];
-            var stageInt = Math.floor(parseFloat(stageKeys[idx])); // Get the stage number for this entry.
+            var stageInt = Math.floor(parseFloat(stageKeys[idx])); // Get the base stage number for this entry, ignore optional .# suffix.
             var stageStr = stageInt.toString(10);
             var foundDetails = false;
             if (stageStr == current_stage ) {
@@ -2979,28 +3004,34 @@ define(function(require, exports, module) {
             err_id.innerHTML = err_str;
             return;
         } else if (clearance_f == -9.994) {
+            // unused
             err_str = "Error: Problem finding blade tips (3).";
         } else if (clearance_f == -9.995) {
-            err_str = "Error: Problem finding blade tips (2).";
+            // clearance is NAN
+            err_str = "Error: Clearance computed to NaN value.";
         } else if (clearance_f == -9.996) {
-            err_str = "Error: Problem finding blade tips (1).";
+            // no samples found
+            err_str = "Error: No gaps detected in data.";
         } else if (clearance_f == -9.997) {
+            // unused
             err_str = "Error: No gaps detected in data.";
         } else if (clearance_f == -9.998) {
+            // unused
             err_str = "Error: gaps contains all NaN values.";
         } else if (clearance_f == -9.999) {
+            // unused
             err_str = "Error: Clearance computed to NaN value.";
         }
 
         if (E4PTdata.quality.length > 0) {
-            var defects = 0;
+            var blades_count = 0;
             for (var i=0; i<E4PTdata.quality.length; i++) {
                 if (E4PTdata.quality[i] < 1.0) {
-                    defects = defects + 1;
+                    blades_count += 1;
                 }
             }
-            if (defects > 0) {
-                err_str = err_str + " Data for " + defects + " blades deviates by >0.001 in.";
+            if (blades_count > 0) {
+                err_str = err_str + " Data for " + blades_count + " blades deviates by >0.001 in.";
                 err_id.innerHTML = err_str;
             }
         }

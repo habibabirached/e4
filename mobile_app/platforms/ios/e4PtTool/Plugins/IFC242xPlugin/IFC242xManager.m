@@ -414,6 +414,8 @@
     } else if ([cmd containsString:@"configure_controller"]) {
         [self->controller configureController];
         [self returnPluginResponse:@{@"type":@"alert",@"message":@"Controller configuration is updated, you should shutdown and restart this application."}];
+    } else if ([cmd containsString:@"read_sensor_parameters"]) {
+        [self->controller readSensorParameters];
     } else if ([cmd containsString:@"get_sensor_parameters"]) {
         NSDictionary* jsonDict = @{@"type":@"sensor_params", @"master_fixture_height":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.hmf], @"mastering_value":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.mv], @"master_offset":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.mo], @"sensor_selection":self->controller.settings.sensor.name, @"sensor_length":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.length], @"start_measurement_range":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.smr], @"sensor_measurement_range":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.mr], @"from_controller":@(self->controller.settings.sensorParamsProvided)
         };

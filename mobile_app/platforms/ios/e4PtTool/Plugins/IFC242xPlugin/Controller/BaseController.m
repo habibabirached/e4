@@ -163,6 +163,21 @@
     [self sendTelnetCommand];
 }
 
+- (void)readSensorParameters {
+    NSLog(@"@readSensorParameters");
+    if ([self->controllerType containsString:@"IFC2422"]) {
+        self.state = initializationInProgress;
+        [self->telnetCmds addObject:@"SENSORINFO_CH01\n"];
+        [self sendTelnetCommand];
+    } else if ([self->controllerType containsString:@"IFC2421"]) {
+        self.state = initializationInProgress;
+        [self->telnetCmds addObject:@"SENSORINFO\n"];
+        [self sendTelnetCommand];
+    } else {
+        NSLog(@"Unknown controller type");
+    }
+}
+
 - (void)masterDevice:(NSString*)masteringValue {
     if (![self checkReady]) return;
     NSLog(@"@masteringDevice: %@", masteringValue);
