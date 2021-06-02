@@ -45,6 +45,8 @@ define(function(require, exports, module) {
     var LABEL_ABORT = "ABORT!";
     var LABEL_START_DARK = "START DARK REFERENCE";
     var LABEL_DARK = "PERFORMING DARK REFERENCE";
+    var LABEL_LOAD_PARAMS = "LOAD FROM CONTROLLER";
+    var LABEL_LOADING_PARAMS = "LOADING FROM CONTROLLER";
 
     var local_db = new PouchDB('e4ptdb', {revs_limit: 1, auto_compaction: true});
     var archive_db = new PouchDB('e4ptarchive', {revs_limit: 1, auto_compaction: true});
@@ -161,8 +163,11 @@ define(function(require, exports, module) {
         $('#sidebar-wrapper').css('height', newContentHeight);
         $('#page-content-wrapper').css('height', newContentHeight);
         fadeOutAll();
+        
+        // set default button values
         setButtonProperties($("#STAGE_COLLECT_BUTTON"), LABEL_GO, 'green');
         setButtonProperties($("#START_DARK_REFERENCE_BUTTON"), LABEL_START_DARK, 'blue');
+        setButtonProperties($("#READ_SENSOR_PARAMETERS_BUTTON"), LABEL_LOAD_PARAMS, 'blue');
         
         document.getElementById("MAIN_MENU").addEventListener('click', function() {
             $("#TITLE_BAR").text(APP_NAME);
@@ -959,7 +964,11 @@ define(function(require, exports, module) {
     
     function readSensorParameters() {
         console.log('@readSensorParameters');
-        messaging.sendMessage({args:[{command:'read_sensor_parameters'}]});
+        let mode = document.getElementById("CONN_SELECTION").value;
+        if (mode != 'demo') {
+            setButtonProperties($("#READ_SENSOR_PARAMETERS_BUTTON"), LABEL_LOADING_PARAMS, 'yellow');
+            messaging.sendMessage({args:[{command:'read_sensor_parameters'}]});
+        }
     }
 
     function record_casing_thickness() {
@@ -1307,6 +1316,9 @@ define(function(require, exports, module) {
             break;
           case "cyan":
             targetColor = "btn-info";
+            break;
+          case "gray":
+            targetColor = "btn-secondary";
             break;
           default:
             targetColor = "btn-secondary";
@@ -2095,6 +2107,7 @@ define(function(require, exports, module) {
                     setIndicatorColor("green");
                     document.getElementById("STATUS_DISPLAY").innerHTML = "Connected";
                     serialConnected = true;
+                    getSensorParameters();
                 } else if (msg.status == "connecting") {
                     document.getElementById("STATUS_DISPLAY").innerHTML = "Connecting";
                 } else if (msg.status == 'disconnected') {
@@ -2175,6 +2188,7 @@ define(function(require, exports, module) {
                     sensorLengthFromController = JSON.parse(msg.sensor_length);
                     smrFromController = JSON.parse(msg.start_measurement_range);
                     sensorMRFromController = JSON.parse(msg.sensor_measurement_range);
+                    setButtonProperties($("#READ_SENSOR_PARAMETERS_BUTTON"), LABEL_LOAD_PARAMS, 'blue');
                 }
                 
                 sensorSettings.set('sensor_selection', msg.sensor_selection);
