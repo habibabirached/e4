@@ -179,7 +179,9 @@
 }
 
 - (void)masterDevice:(NSString*)masteringValue {
-    if (![self checkReady]) return;
+    if (![self checkReady]) {
+        return;
+    }
     NSLog(@"@masteringDevice: %@", masteringValue);
 
     self.state = masteringInProgress;
@@ -194,6 +196,7 @@
     [self selectOppositeOutput];
 
     if (!masteringValue) {
+        [self->telnetCmds addObject:@"MASTERSIGNAL 01DIST1 NONE\n"];
         [self->telnetCmds addObject:@"MASTER 01DIST1 RESET\n"];
     } else {
         [self->telnetCmds addObject:[NSString stringWithFormat:@"MASTERSIGNAL 01DIST1 %@\n", masteringValue]];
