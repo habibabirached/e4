@@ -637,7 +637,7 @@ define(function(require, exports, module) {
         
     }
     
-    function getData() {
+    function getData() { // refz_
         computeRPMOnlyNoDataPlotFlag = false;
         console.log('@getData');
         fromGetData = true;
@@ -649,6 +649,7 @@ define(function(require, exports, module) {
             // We have plugins so we're in Cordova.  Use the Cordova notification.
             console.log("@GET_DATA_BUTTON: Cordova Prompt");
             // For issue #69: added additional text to the prompt for acquisition time
+            
             navigator.notification.prompt('Raw data is the displacement from the sensor with an unknown (default) reference point. This should be used only when relative data is desired. \n \n Please enter the acquisition time in seconds.',
                                           acquisitionTimePromptCallback,
                                           'Acquisition Time',
@@ -785,11 +786,16 @@ define(function(require, exports, module) {
             $("#SENSOR_SETUP_PAGE").fadeIn();
         }
     }
-
+    // refz_
     function acquisitionTimePromptCallback(results) {
         dataCollectionAcquisitionTime = Number (results.input1)
-        console.log("@acquisitionTimePromptCallback");
-        if (results.buttonIndex > 1) return;
+        console.log ("Habib says results = ")
+        console.log (results)
+        if (results.buttonIndex > 1) {
+            $("#DATA_PLOT_PAGE").fadeOut();
+            listDir(cordova.file.documentsDirectory + "data");
+            return;
+        }
         current_frame_data = [];
         acquisitionTime = null;
         if (results.input1.includes("rpm") || results.input1.includes("RPM")) {
@@ -1996,8 +2002,11 @@ define(function(require, exports, module) {
                 }});
     }
 
+    var HabibsCounter = 0
     function pluginMessage(msg) {
         console.log("@pluginMessage: msg.type = ", msg.type);
+        console.log ("Habib says msg came back from cordova saying #",HabibsCounter++)
+        console.log (msg)
         switch(msg.type) {
             case "setting":
                 console.log("Received Setting Message");
@@ -2489,7 +2498,9 @@ define(function(require, exports, module) {
     }
 
     function populateFileTable(entries) {
+
         $("#FILE_CHOOSER_PAGE").fadeIn();
+
         
         var prev_tbody = document.getElementById("LOCAL_FILE_TABLE_BODY");
         var tbody = document.createElement("tbody");
@@ -2508,6 +2519,8 @@ define(function(require, exports, module) {
             rowIdx += 1;
         }
         prev_tbody.parentNode.replaceChild(tbody, prev_tbody);
+        sortTable('LOCAL_FILE_TABLE', 0);
+        $("#FILE_CHOOSER_PAGE").fadeIn();
     }
 
     function populateDetailsTable() {
