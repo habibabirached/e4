@@ -20,6 +20,7 @@ define(function(require, exports, module) {
     var masteringPerformed = false;
     var dataCollectionAcquisitionTime = 3; // 3 seconds by default (as per the input box).
     var comingFromCollectDataFlag = false
+    var userChoseADifferentFrame = false
     
     var APP_NAME = "e-4Pt Tool";
     var UPDATE_SENSOR_PARAMETERS_PASSWORD = "Gr0undH0g";
@@ -186,6 +187,7 @@ define(function(require, exports, module) {
         }, {passive: true});
         document.getElementById("FRAME_SIZE").addEventListener('change', function() {
             console.log("FRAME_SIZE change detected.");
+            console.log (current_frame_data) // refz_
             setupCasingThicknessTable(null);
             document.getElementById("FRAME_DEFAULT_SENSOR").value = current_frame_data.default_sensor;
         }, {passive: true});
@@ -942,7 +944,7 @@ define(function(require, exports, module) {
         console.log("E4PTdata.turbine_casing_thicknesses: ", E4PTdata.turbine_casing_thicknesses);
     }
 
-    function send_scan_meta_data(reset) {
+    function send_scan_meta_data(reset) { // refz
 
       // First make sure the user has input some meta-data.
       E4PTdata.serial_number = document.getElementById("SERIAL_NUMBER").value;
@@ -997,9 +999,15 @@ define(function(require, exports, module) {
         setMasterMessage2("green", "Ready");
     }
 
+    var previousFrameWas = ''
     function confirm_new_or_continue() {
         let msg = "Continue collecting data for a turbine, or clear data and start a new collection? Starting a new collection will create a new entry in the database with the same serial number."
-        if (E4PTdata.pouchdb_id.length > 0) {
+        console.log ("--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------->>>>>")
+        console.log ("previousFrameWas", previousFrameWas)
+        console.log ("current_frame_data.frame", current_frame_data.frame)
+
+        if ((E4PTdata.pouchdb_id.length > 0) && (previousFrameWas == current_frame_data.frame) ){
+            previousFrameWas = current_frame_data.frame
             try{
                 navigator.notification.confirm(
                     String(msg),            // message
@@ -1024,6 +1032,7 @@ define(function(require, exports, module) {
             }
         } else {
             send_scan_meta_data(true);
+            previousFrameWas = current_frame_data.frame
         }
         return;
     }
@@ -1373,7 +1382,7 @@ define(function(require, exports, module) {
           });
     }
 
-    function reset_data_collection() {
+    function reset_data_collection() { // refz_
         E4PTdata.sets = [];
         current_stage_index = 0;
         current_stage = current_frame_data['stage'][current_stage_index];
@@ -2499,9 +2508,7 @@ define(function(require, exports, module) {
 
     function populateFileTable(entries) {
 
-        $("#FILE_CHOOSER_PAGE").fadeIn();
-
-        
+        $("#FILE_CHOOSER_PAGE").fadeIn();        
         var prev_tbody = document.getElementById("LOCAL_FILE_TABLE_BODY");
         var tbody = document.createElement("tbody");
         tbody.setAttribute("id","LOCAL_FILE_TABLE_BODY");
