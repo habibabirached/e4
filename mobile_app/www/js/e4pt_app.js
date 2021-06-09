@@ -186,8 +186,6 @@ define(function(require, exports, module) {
             set_frame_information();
         }, {passive: true});
         document.getElementById("FRAME_SIZE").addEventListener('change', function() {
-            console.log("FRAME_SIZE change detected.");
-            console.log (current_frame_data) // refz_
             setupCasingThicknessTable(null);
             document.getElementById("FRAME_DEFAULT_SENSOR").value = current_frame_data.default_sensor;
         }, {passive: true});
@@ -639,7 +637,7 @@ define(function(require, exports, module) {
         
     }
     
-    function getData() { // refz_
+    function getData() { 
         computeRPMOnlyNoDataPlotFlag = false;
         console.log('@getData');
         fromGetData = true;
@@ -788,7 +786,7 @@ define(function(require, exports, module) {
             $("#SENSOR_SETUP_PAGE").fadeIn();
         }
     }
-    // refz_
+
     function acquisitionTimePromptCallback(results) {
         dataCollectionAcquisitionTime = Number (results.input1)
         console.log ("Habib says results = ")
@@ -944,7 +942,7 @@ define(function(require, exports, module) {
         console.log("E4PTdata.turbine_casing_thicknesses: ", E4PTdata.turbine_casing_thicknesses);
     }
 
-    function send_scan_meta_data(reset) { // refz
+    function send_scan_meta_data(reset) { 
 
       // First make sure the user has input some meta-data.
       E4PTdata.serial_number = document.getElementById("SERIAL_NUMBER").value;
@@ -1382,7 +1380,7 @@ define(function(require, exports, module) {
           });
     }
 
-    function reset_data_collection() { // refz_
+    function reset_data_collection() {
         E4PTdata.sets = [];
         current_stage_index = 0;
         current_stage = current_frame_data['stage'][current_stage_index];
@@ -2445,6 +2443,7 @@ define(function(require, exports, module) {
     
     function deleteFile(dir, fileName) {
         console.log("deleteFile, with fileName = " + fileName);
+        console.log (dir)
         dir.getFile
             (
                 fileName,
@@ -2463,6 +2462,7 @@ define(function(require, exports, module) {
                         });
                 }
             );
+        console.log ("I made it")
     }
     
     function deleteFolder(fileName) {
@@ -2506,23 +2506,94 @@ define(function(require, exports, module) {
             );
     }
 
-    function populateFileTable(entries) {
+    function toggleFileSelected(fileName, idx) {
+        /*let tbl = document.getElementById("LOCAL_FILE_TABLE_BODY");
+        let row = tbl.rows[idx];
+        let cell = row.cells[0]; // Should only be one cell.
+        cell.classList.toggle("table-active"); */ 
 
+        var table = document.getElementById("LOCAL_FILE_TABLE_BODY");
+        for (var i = 0; i <  table.rows.length; i++) {
+            row = table.rows[i]
+            cell = row.cells[0];
+            if (cell.innerHTML == fileName)
+                cell.classList.toggle("table-active");
+        }
+
+    }
+
+    window.im7i = function (arr, index) {
+        return arr.reduce((prev, x, i) => prev.concat(i !== index ? [x] : []), []);
+      }
+
+    window.deleteEntry = function ( nativeURL   , i ){
+        
+        window.entries = window.im7i (window.entries, i)
+        // delete the file
+        var path =  nativeURL //path = file:///Users/habib/Library/Developer/CoreSimulator/Devices/9A780359-5DFC-4686-926F-E7F3D2FBF1BC/data/Containers/Data/Application/E51413CA-4C54-4211-9302-2D6E8FC234B7/Documents/data/data_file9292993.csv .replace('file://', '')
+        var dirArr = path.split('/')
+        var filename = dirArr[dirArr.length - 1]
+        path = path.replace(filename, '') // path = file:///Users/habib/Library/Developer/CoreSimulator/Devices/9A780359-5DFC-4686-926F-E7F3D2FBF1BC/data/Containers/Data/Application/E51413CA-4C54-4211-9302-2D6E8FC234B7/Documents/data/
+        populateFileTable(window.entries)
+        console.log ("after im7i")
+        console.log (path)
+
+        window.resolveLocalFileSystemURL
+            (
+                path,
+                function (dir) {
+                    var reader = dir.createReader();
+                    reader.readEntries(
+                        function (fileName) {
+                            console.log("in deleteFilesInDir fileName = ", fileName)
+                            fileName.map(el => {
+                                console.log (filename, el.name)
+                                if (filename == el.name)
+                                    deleteFile(dir, el.name); // nativeURL.replace('file://', ''))
+                            })
+                        },
+                        function (err) {
+                            err = "Error in deleteFilesInDir type 1: " + err;
+                            console.log(err);
+                        }
+                    );
+                },
+                function (err) {
+                    err = "Error in deleteFilesInDir type 2: " + err;
+                    console.log(err);
+                }
+            );
+
+
+
+        deleteFile(dir, filename)
+        
+        
+    }
+
+    function populateFileTable(entries) { // refz_
         $("#FILE_CHOOSER_PAGE").fadeIn();        
         var prev_tbody = document.getElementById("LOCAL_FILE_TABLE_BODY");
         var tbody = document.createElement("tbody");
         tbody.setAttribute("id","LOCAL_FILE_TABLE_BODY");
         // Create the table body.
         let rowIdx = 0;
+        window.entries = entries
         for (var i=0; i<entries.length; i++) {
             if (!entries[i].isFile) continue;  // ignore any non-file entries
             if (entries[i].name == ".DS_Store") continue;
-            let fileSelectFn = "toggleFileSelected(\"" + entries[i].nativeURL + "\"," + rowIdx + ")";
+            let fileSelectFn = "toggleFileSelected(\"" + entries[i].name + "\"," + rowIdx + ")";
+            let deleteEntry = "window.deleteEntry(\"" + entries[i].nativeURL +  "\"," + i + ")";
             var new_row = tbody.insertRow(-1);
             var cell0 = new_row.insertCell(-1);
             cell0.innerHTML = entries[i].name;
             cell0.setAttribute("onclick",fileSelectFn);
             cell0.setAttribute("nativeURL",entries[i].nativeURL);
+
+            var cell1 = new_row.insertCell(-1);
+            cell1.innerHTML = 'delete entry';
+            cell1.setAttribute("onclick",deleteEntry);
+            //cell1.setAttribute("nativeURL",entries[i].nativeURL);
             rowIdx += 1;
         }
         prev_tbody.parentNode.replaceChild(tbody, prev_tbody);
@@ -2615,12 +2686,6 @@ define(function(require, exports, module) {
         writeToFile(targetFolder, fileName, contents, null);
     }
 
-    function toggleFileSelected(fileName, idx) {
-        let tbl = document.getElementById("LOCAL_FILE_TABLE_BODY");
-        let row = tbl.rows[idx];
-        let cell = row.cells[0]; // Should only be one cell.
-        cell.classList.toggle("table-active");
-    }
 
     function toggleDetailsSelected(idx) {
         let tbl = document.getElementById("DATA_DETAILS_TABLE_BODY");
