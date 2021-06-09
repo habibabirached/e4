@@ -406,13 +406,13 @@ define(function(require, exports, module) {
         do_mastering();
         }, {passive: true});
         document.getElementById("RESET_MASTER_BUTTON").addEventListener('click', function() {
-        do_mastering('reset');
+        do_mastering(true);
         }, {passive: true});
         document.getElementById("START_MASTER_BUTTON_2").addEventListener('click', function() {
         do_mastering();
         }, {passive: true});
         document.getElementById("RESET_MASTER_BUTTON_2").addEventListener('click', function() {
-        do_mastering('reset');
+        do_mastering(true);
         }, {passive: true});
         document.getElementById("START_DARK_REFERENCE_BUTTON").addEventListener('click', function() {
             if (document.getElementById("START_DARK_REFERENCE_BUTTON").innerHTML === LABEL_START_DARK) {
@@ -1719,7 +1719,7 @@ define(function(require, exports, module) {
           document.getElementById("CURR_CASE_THICKNESS").value = case_thick;
       }
       if (typeof E4PTdata.turbine_casing_thicknesses[ct_id] !== 'undefined') {
-          // If nothing is in the data structure, fill in the structuer with what's in the field.
+          // If nothing is in the data structure, fill in the structure with what's in the field.
           E4PTdata.turbine_casing_thicknesses[ct_id] = case_thick;
       }
       if (case_thick.length == 0) {
@@ -1918,13 +1918,13 @@ define(function(require, exports, module) {
     }
 
     function do_mastering(reset) {
-        console.log('@do_mastering ' + reset);
+        console.log('@do_mastering: reset=' + reset);
         masteringPerformed = false;
         if (messaging.usesWebSocket()) {
             setIndicatorColor('yellow');
         }
         var cmd = {args:[{command:'do_mastering'}]};
-        if (reset !== undefined) {
+        if (reset) {
             cmd.args[0].reset = true;
         }
         messaging.sendMessage(cmd);
@@ -2179,8 +2179,6 @@ define(function(require, exports, module) {
                 break;
             case "sensor_params":
                 console.log("Received sensor parameters message: ", msg.master_fixture_height, ", ", msg.mastering_value, ", ", msg.master_offset, ", ", msg.sensor_selection, ", ", msg.sensor_length, ", ", msg.start_measurement_range, ", ", msg.sensor_measurement_range);
-                //setIndicatorColor("green");
-                //serialConnected = true;
                 
                 sensorParamsFromController = msg.from_controller;
                 if (sensorParamsFromController) {

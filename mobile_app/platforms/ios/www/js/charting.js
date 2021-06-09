@@ -45,7 +45,7 @@ define(function(require, exports, module, sensorSettings) {
     
     const addChartSubtitle = (chartConfig, acquisition_date, overall_clearance, blades, blade_samples_avg, avg_displacement) => {
         
-      let subtitle = 'Date: ' + acquisition_date + '<br>Blades: ' + blades + ';&nbsp;Avg. Samples/Blade: ' + blade_samples_avg + '<br>Avg. Tip Dist: ' + overall_clearance;
+      let subtitle = 'Date: ' + acquisition_date + '<br>Blades: ' + blades + ';&nbsp;Avg. Samples/Blade: ' + blade_samples_avg.toFixed(2) + '<br>Avg. Tip Dist: ' + overall_clearance.toFixed(3);
       if (avg_displacement) {
         if (sensorSettings.doesMeasurementExceedTolerance(avg_displacement)) {
             subtitle = '<span class="FONT_BLACK">' + subtitle + '; </span>' + '<span class="FONT_RED">Overall Avg: ' + avg_displacement + '</span>';

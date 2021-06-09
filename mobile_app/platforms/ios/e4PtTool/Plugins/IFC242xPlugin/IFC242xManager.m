@@ -255,8 +255,13 @@
         [handle writeData:[dataStr dataUsingEncoding:NSUTF8StringEncoding]];
     }
     
+    float acquisitionMinutes = self->controller.settings.acquisitionTime / 60.0;
+    // RPM will be 0 for Get Data
+    float rotations = self->metaData.rpm * acquisitionMinutes;
+    int expectedBlades = roundf(self->metaData.numberOfBlades * rotations);
+    
     //  Write the sensor parameters and app version to the CSV file.
-    dataStr = [NSString stringWithFormat:@"\n - Sensor Parameters,,,,,,,,,\nSensor Selection,Sensor Length (in),MR (mm),SMR (mm),Mastering Fixture Height (in),Mastering Value (mm),Master Offset (in),Spacer Thickness (in),Shelf Threshold (mm),Blades,Avg Samples per Blade,Applied Offset Formula\n%@,%f,%f,%f,%f,%f,%f,%f,%f,%d,%f,%@\n",
+    dataStr = [NSString stringWithFormat:@"\n - Sensor Parameters,,,,,,,,,,,,\nSensor Selection,Sensor Length (in),MR (mm),SMR (mm),Mastering Fixture Height (in),Mastering Value (mm),Master Offset (in),Spacer Thickness (in),Shelf Threshold (mm),Expected Blades,Observed Blades,Avg Samples per Blade,Applied Offset Formula\n%@,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%@,%@\n",
                self->controller.settings.sensor.name,
                self->controller.settings.sensor.length,
                self->controller.settings.sensor.mr,
@@ -266,8 +271,9 @@
                self->controller.settings.sensor.mo,
                self->metaData.spacerThickness,
                clearanceData.shelfThreshold,
+               expectedBlades,
                clearanceData.blades,
-               clearanceData.averageBladeSamples,
+               [NSString stringWithFormat:@"%.02f", clearanceData.averageBladeSamples],
                self->controller.settings.sensor.offsetAdjustmentFormula];
     [handle writeData:[dataStr dataUsingEncoding:NSUTF8StringEncoding]];
 
@@ -314,6 +320,7 @@
         // Check if the value is specified in rpm.  If so, extract the rpm value.
         if (!acqTime) {
             self->calibratedAcquire = true;
+            self->metaData.rpm = rpms;
             float interval = 1.0;
             if (!self->controller.settings.overrideRateAndIntensity) {
                 // Set new measurement rate
