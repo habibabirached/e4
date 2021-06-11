@@ -11,10 +11,12 @@ define(function(require, exports, module) {
     var doDBSave = false;
     var manualOverride = false;
     var savedRPM = "";
+    var computedRPM = "";
     var fromGetData = false;
     var fromDataCollectionPage = false;
     var fromSensorSetupPage = false;
     var fromDataPlotPage = false;
+    var fromCalculateRPM = false;
     var collectionAborted = false;
     var masteringPerformed = false;
 
@@ -45,6 +47,8 @@ define(function(require, exports, module) {
     var LABEL_ABORT = "ABORT!";
     var LABEL_START_DARK = "START DARK REFERENCE";
     var LABEL_DARK = "PERFORMING DARK REFERENCE";
+    var LABEL_CALCULATE = "CALCULATE";
+    var LABEL_CALCULATING = "CALCULATING";
     var LABEL_LOAD_PARAMS = "LOAD FROM CONTROLLER";
     var LABEL_LOADING_PARAMS = "LOADING FROM CONTROLLER";
 
@@ -143,6 +147,17 @@ define(function(require, exports, module) {
     var current_position = 0;
     var current_frame_data = [];
 
+    // TODO: needed?
+    var selected_frame_data = {
+        frameIdx: 0,
+        stageInfoIdx: 0,
+        frameName: frame_data[0].frame,
+        stageName: Object.keys(frame_data[0].stage_info)[0],
+        bladeCount: Object.values(frame_data[0].stage_info)[0].blade_count,
+        RPM: 'not computed yet'
+    };
+    var previous_frame = '';
+
     $(document).ready(function() {
         var attachFastClick = Origami.fastclick;
         attachFastClick(document.body);
@@ -167,6 +182,7 @@ define(function(require, exports, module) {
         // set default button values
         setButtonProperties($("#STAGE_COLLECT_BUTTON"), LABEL_GO, 'green');
         setButtonProperties($("#START_DARK_REFERENCE_BUTTON"), LABEL_START_DARK, 'blue');
+        setButtonProperties($("#CALCULATE_RPM_BUTTON"), LABEL_CALCULATE, 'green');
         setButtonProperties($("#READ_SENSOR_PARAMETERS_BUTTON"), LABEL_LOAD_PARAMS, 'blue');
         
         document.getElementById("MAIN_MENU").addEventListener('click', function() {
@@ -188,7 +204,6 @@ define(function(require, exports, module) {
             set_frame_information();
         }, {passive: true});
         document.getElementById("FRAME_SIZE").addEventListener('change', function() {
-            console.log("FRAME_SIZE change detected.");
             setupCasingThicknessTable(null);
             document.getElementById("FRAME_DEFAULT_SENSOR").value = current_frame_data.default_sensor;
         }, {passive: true});
@@ -505,6 +520,9 @@ define(function(require, exports, module) {
         }, {passive: true});
         document.getElementById("SPACER_THUMBNAIL").addEventListener('click', function() {
             showSpacerImage();
+        }, {passive: true });
+        document.getElementById("CALCULATE_RPM_BUTTON").addEventListener('click', function() {
+             calculateRPM();
         }, {passive: true});
         document.getElementById("OFFSET_ADJUSTMENT_BUTTON").addEventListener('click', function() {
             getOffsetAdjustment();
@@ -618,6 +636,30 @@ define(function(require, exports, module) {
         });
     }
     
+    function calculateRPM() {
+        console.log('@calculateRPM');
+        position = document.getElementById("SENSOR_POSITION").value;
+        casing_thickness = document.getElementById("CURR_CASE_THICKNESS").value;
+        if (position && casing_thickness) {
+            if (messaging.usesPlugin) {
+                e4PtConfirm("Note: please ensure that you have selected the cell that represents the location of the sensor in the turbine.\n\nThe app will collect data for 60 seconds and then calculate RPM. Do you wish to continue?",
+                    function(idx) {
+                        if (idx === 1) {
+                            fromCalculateRPM = true;
+                            setButtonProperties($("#CALCULATE_RPM_BUTTON"), LABEL_CALCULATING, 'yellow');
+                            requestE4PtData(60.0);
+                        }
+                    });
+            } else {
+                fromCalculateRPM = true;
+                setButtonProperties($("#CALCULATE_RPM_BUTTON"), LABEL_CALCULATING, 'yellow');
+                requestE4PtData(60.0);
+            }
+        } else {
+            e4PtAlert('No position or casing thickness, could not calculate RPM.');
+        }
+    }
+    
     function getData() {
         console.log('@getData');
         fromGetData = true;
@@ -723,6 +765,10 @@ define(function(require, exports, module) {
         console.log('@setupCasingThicknessTable');
         // Get frame type
         let frm_idx = document.getElementById("FRAME_SIZE").selectedIndex;
+        
+        // Memorise selected_frame_data for computing RPM and remembering it when we come back to the page
+        selected_frame_data.frameIdx = frm_idx;
+        
         current_frame_data = frame_data[frm_idx];
         let pos = current_frame_data.position;
         let tbl = document.getElementById("CASING_THICKNESS_TABLE");
@@ -769,6 +815,9 @@ define(function(require, exports, module) {
     function acquisitionTimePromptCallback(results) {
         console.log("@acquisitionTimePromptCallback");
         if (results.buttonIndex > 1) {
+            // TODO: test
+            $("#DATA_PLOT_PAGE").fadeOut();
+            listDir(cordova.file.documentsDirectory + "data");
             return;
         }
         console.log("input1: ", results.input1);
@@ -1058,7 +1107,11 @@ define(function(require, exports, module) {
 
     function confirm_new_or_continue() {
         let msg = "Continue collecting data for a turbine, or clear data and start a new collection? Starting a new collection will create a new entry in the database with the same serial number."
-        if (E4PTdata.pouchdb_id.length > 0) {
+        console.log ("previous_frame: ", previous_frame);
+        console.log ("current_frame_data.frame: ", current_frame_data.frame);
+
+        if ((E4PTdata.pouchdb_id.length > 0) && (previous_frame == current_frame_data.frame) ){
+            previousFrameWas = current_frame_data.frame
             try{
                 navigator.notification.confirm(
                     String(msg),            // message
@@ -1083,6 +1136,7 @@ define(function(require, exports, module) {
             }
         } else {
             send_scan_meta_data(true);
+            previous_frame = current_frame_data.frame
         }
         return;
     }
@@ -1090,7 +1144,7 @@ define(function(require, exports, module) {
     function turbine_setup() {
         $("#TITLE_BAR").text("Data Collection");
         $("#TURBINE_SETUP_PAGE").fadeIn();
-        savedRPM = "";
+        savedRPM = computedRPM;
 
         // Get frame type
         var frm_idx = document.getElementById("FRAME_SIZE").selectedIndex;
@@ -1196,6 +1250,9 @@ define(function(require, exports, module) {
           document.getElementById("FRAME_SIZE").selectedIndex = selectedIndex;
           document.getElementById("FRAME_SIZE").value = current_frame_data.frame;
         } else {
+            // otherwise, put back the last thing that was selected by the user.
+            document.getElementById("FRAME_SIZE").selectedIndex = selected_frame_data.frameIdx;
+            document.getElementById("FRAME_SIZE").value = frame_data[selected_frame_data.frameIdx].frame;
             setupCasingThicknessTable(null);
         }
         document.getElementById("FRAME_DEFAULT_SENSOR").value = current_frame_data.default_sensor;
@@ -1222,6 +1279,11 @@ define(function(require, exports, module) {
         }
         html = html_buf.join('\n');
         document.getElementById("SENSOR_STAGE").innerHTML = html;
+        // TODO: value is set twice
+        document.getElementById("SENSOR_STAGE").selectedIndex = selected_frame_data.stageInfoIdx;
+        selected_frame_data.stageName = Object.keys(frame_data[selected_frame_data.frameIdx].stage_info)[selected_frame_data.stageInfoIdx]
+        document.getElementById("SENSOR_STAGE").value = selected_frame_data.stageName;
+        console.log ("selected_frame_data.stageName  , index= ", selected_frame_data.stageName, selected_frame_data.stageInfoIdx);
         current_stage_index = document.getElementById("SENSOR_STAGE").selectedIndex;
         current_stage = stages[current_stage_index];
         set_position_information(); // When you change the stage, the position information changes too.
@@ -1230,6 +1292,10 @@ define(function(require, exports, module) {
 
     function set_stage() {
       current_stage_index = document.getElementById("SENSOR_STAGE").selectedIndex;
+      
+      // memorise which stage index we are at, for RPM computation,
+      selected_frame_data.stageInfoIdx = current_stage_index
+
       current_stage = current_frame_data['stage'][current_stage_index];
       set_position_information();
       current_position_index = 0;
@@ -1458,7 +1524,7 @@ define(function(require, exports, module) {
         document.getElementById("CURR_CASE_THICKNESS").value = E4PTdata.turbine_casing_thicknesses[ct_id];
         document.getElementById("CLEARANCE_ERROR").innerHTML = "";
         document.getElementById("SPACER_COLOR_LABEL").innerHTML = "";
-        savedRPM = "";
+        savedRPM = computedRPM;
         setup_data_collection_page("", "", true);
         //charting.clearChartData(document.getElementById('DATA_PLOT'));
         charting.clearChartData(document.getElementById('DATA_PLOT2'));
@@ -2149,9 +2215,36 @@ define(function(require, exports, module) {
                     msg.overall_avg = JSON.parse(msg.overall_avg);
                     msg.blades = JSON.parse(msg.blades);
                     msg.blade_samples_avg = JSON.parse(msg.blade_samples_avg);
-                    processE4PtData(msg);
+
+                    //processE4PtData(msg);
+                    if (fromCalculateRPM) {
+                        console.log('calculating RPM');
+                        position = document.getElementById("SENSOR_POSITION").value;
+                        casing_thickness = document.getElementById("CURR_CASE_THICKNESS").value;
+                        if (position && casing_thickness) {
+                            stage_details = get_stage_details(position, casing_thickness);
+                            console.log(stage_details);
+                            let rotor_blades = stage_details.blade_count;;
+                            let observed_blades = parseFloat(msg.blades);
+                            if (observed_blades > 0) {
+                                let calculated_rpm = rotor_blades / observed_blades;
+                                console.log('calculated_rpm = ' + calculated_rpm);
+                                document.getElementById("MEASUREMENT_RPM").value = calculated_rpm.toFixed(3);
+                                computedRPM = calculated_rpm;
+                                selected_frame_data.RPM = calculated_rpm;
+                            } else {
+                                e4PtAlert('No blades observed, could not calculate RPM.');
+                            }
+                        } else {
+                            e4PtAlert('No position or casing thickness, could not calculate RPM.');
+                        }
+                        setButtonProperties($("#CALCULATE_RPM_BUTTON"), LABEL_CALCULATE, 'green');
+                        fromCalculateRPM = false;
+                    } else {
+                        processE4PtData(msg);
+                    }
                 } else {
-                    console.log("Data collection was aboreted");
+                    console.log("Data collection was aborted");
                 }
                 break;
             case "filename":
@@ -2461,8 +2554,7 @@ define(function(require, exports, module) {
                  isHtml: false
                  });
             }
-        },
-        this);
+        }, this);
     }
 
     function uploadFileToBox(fileFullPath) {
@@ -2486,49 +2578,35 @@ define(function(require, exports, module) {
     //listDir(cordova.file.documentsDirectory + serial_number);
     function listDir(path) {
         console.log("@listDir: ", path);
-        window.resolveLocalFileSystemURL(path,
-            function (fileSystem) {
-                var reader = fileSystem.createReader();
-                reader.readEntries(
-                    function (entries) {
-                        console.log(entries);
-                        populateFileTable(entries);
-                    },
-                    function (err) {
-                        err = "Error processing entry: " + JSON.stringify(err);
-                        console.log(err);
-                        populateFileTable([]);
-                    }
-                );
-            },
-            function (err) {
-                err = "Error reading entries: " + JSON.stringify(err);
+        window.resolveLocalFileSystemURL(path, function (fileSystem) {
+            var reader = fileSystem.createReader();
+            reader.readEntries(function (entries) {
+                console.log(entries.length + " entries");
+                populateFileTable(entries);
+            }, function (err) {
+                err = "Error processing entry: " + JSON.stringify(err);
                 console.log(err);
                 populateFileTable([]);
-            }
-        );
+            });
+        }, function (err) {
+            err = "Error reading entries: " + JSON.stringify(err);
+            console.log(err);
+            populateFileTable([]);
+        });
     }
     
     function deleteFile(dir, fileName) {
-        console.log("deleteFile, with fileName = " + fileName);
-        dir.getFile
-            (
-                fileName,
-                { create: false },
-                function (fileEntry) {
-                    fileEntry.remove(
-                        function (file) {
-                            console.log("file removed! called");
-                            console.log(file);
-                        },
-                        function (error) {
-                            console.log("error in deleteFile type 1: " + error.code);
-                        },
-                        function () {
-                            console.log("error in deleteFile: file does not exist");
-                        });
-                }
-            );
+        console.log("@deleteFile: dir=" + JSON.stringify(dir) + ", fileName=" + fileName);
+        dir.getFile(fileName, { create: false }, function (fileEntry) {
+            console.log("fileEntry=", fileEntry);
+            fileEntry.remove(function (file) {
+                console.log("removed: " + file);
+            }, function (error) {
+                console.log("error in deleteFile type 1: " + error.code);
+            }, function () {
+                console.log("error in deleteFile: file does not exist");
+            });
+        });
     }
     
     function deleteFolder(fileName) {
@@ -2546,55 +2624,112 @@ define(function(require, exports, module) {
     //deleteFilesInDir(cordova.file.documentsDirectory + serial_number);
     function deleteFilesInDir(path) { // issue #35  This removes the files in the directory
         console.log("path = " + path);
-        window.resolveLocalFileSystemURL
-            (
-                path,
-                function (dir) {
-                    var reader = dir.createReader();
-                    reader.readEntries(
-                        function (fileName) {
-                            console.log("here")
-                            console.log("in deleteFilesInDir fileName = ")
-                            fileName.map(el => {
-                                deleteFile(dir, el.name); // nativeURL.replace('file://', ''))
-                            })
-                        },
-                        function (err) {
-                            err = "Error in deleteFilesInDir type 1: " + err;
-                            console.log(err);
-                        }
-                    );
-                },
-                function (err) {
-                    err = "Error in deleteFilesInDir type 2: " + err;
-                    console.log(err);
-                }
-            );
+        window.resolveLocalFileSystemURL(path, function (dir) {
+            var reader = dir.createReader();
+            reader.readEntries(function (fileName) {
+                console.log("in deleteFilesInDir fileName = ")
+                fileName.map(el => {
+                    deleteFile(dir, el.name); // nativeURL.replace('file://', ''))
+                })
+            }, function (err) {
+                console.log("Error in deleteFilesInDir type 1: " + err);
+            });
+        }, function (err) {
+            console.log("Error in deleteFilesInDir type 2: " + err);
+        });
+    }
+
+    function toggleFileSelected(fileName, idx) {
+        /*let tbl = document.getElementById("LOCAL_FILE_TABLE_BODY");
+        let row = tbl.rows[idx];
+        let cell = row.cells[0]; // Should only be one cell.
+        cell.classList.toggle("table-active"); */
+
+        var table = document.getElementById("LOCAL_FILE_TABLE_BODY");
+        for (var i = 0; i <  table.rows.length; i++) {
+            row = table.rows[i]
+            cell = row.cells[0];
+            if (cell.innerHTML == fileName) {
+                cell.classList.toggle("table-active");
+            }
+        }
+    }
+
+    function filterArray(arr, index) {
+        return arr.reduce((prev, x, i) => prev.concat(i !== index ? [x] : []), []);
+    }
+    
+    function deleteEntry(nativeURL, i) {
+        console.log("@deleteEntry: nativeURL=" + nativeURL + ", i=" + i);
+        var path =  nativeURL;
+        var dirArr = path.split('/');
+        var filename = dirArr[dirArr.length - 1];
+        path = path.replace(filename, '');
+        
+        e4PtConfirm("Are you sure you want to delete the file " + filename + "?", function(idx) {
+            if (idx == 1) {
+                console.log("deleteEntry confirmed");
+                window.resolveLocalFileSystemURL(path, function (dirEntry) {
+                    console.log(dirEntry);
+                    var reader = dirEntry.createReader();
+                    reader.readEntries(function (fileName) {
+                        fileName.map(el => {
+                            console.log(filename, el.name)
+                            if (filename == el.name) {
+                                console.log("found match: " + filename);
+                                deleteFile(dirEntry, el.name);
+                                console.log("updating entries");
+                                window.entries = filterArray(window.entries, i);
+                                populateFileTable(window.entries);
+                            }
+                        });
+                    }, function(error) {
+                        console.log("Error in deleteFilesInDir type 1: " + error);
+                    });
+                }, function(error) {
+                    console.log("Error in deleteFilesInDir type 2: " + error);
+                });
+                //deleteFile(path, filename);
+            }
+        });
     }
 
     function populateFileTable(entries) {
+        console.log("@populateFileTable: " + entries.length);
         $("#FILE_CHOOSER_PAGE").fadeIn();
-        
         var prev_tbody = document.getElementById("LOCAL_FILE_TABLE_BODY");
         var tbody = document.createElement("tbody");
         tbody.setAttribute("id","LOCAL_FILE_TABLE_BODY");
         // Create the table body.
-        let rowIdx = 0;
+        window.entries = entries;
         for (var i=0; i<entries.length; i++) {
+            console.log(i);
             if (!entries[i].isFile) continue;  // ignore any non-file entries
             if (entries[i].name == ".DS_Store") continue;
-            let fileSelectFn = "toggleFileSelected(\"" + entries[i].nativeURL + "\"," + rowIdx + ")";
+            let fileSelectFn = "toggleFileSelected(\"" + entries[i].name + "\"," + i + ")";
+            let deleteEntryFn = "deleteEntry(\"" + entries[i].nativeURL +  "\"," + i + ")";
             var new_row = tbody.insertRow(-1);
             var cell0 = new_row.insertCell(-1);
             cell0.innerHTML = entries[i].name;
             cell0.setAttribute("onclick",fileSelectFn);
             cell0.setAttribute("nativeURL",entries[i].nativeURL);
-            rowIdx += 1;
+            var cell1 = new_row.insertCell(-1);
+            cell1.classList.add("text-center");
+            cell1.innerHTML =  '<i class="fas fa-trash-alt fa-lg text-danger"></i>';
+            cell1.setAttribute("onclick",deleteEntryFn);
+            //cell1.setAttribute("nativeURL",entries[i].nativeURL);
         }
+        console.log('replacing table');
         prev_tbody.parentNode.replaceChild(tbody, prev_tbody);
+        console.log('sorting table');
+        sortTable('LOCAL_FILE_TABLE', 0);
+        console.log('sorted table');
+        $("#FILE_CHOOSER_PAGE").fadeIn();
+        console.log('faded in');
     }
 
     function populateDetailsTable() {
+        console.log('@populateDetailsTable');
         writeDetailsFile();  // Write the CSV file so it will be produced at the same time as the table.
         $("#TURBINE_SETUP_PAGE").fadeOut();
         $("#DATA_DETAILS_PAGE").fadeIn();
@@ -2603,9 +2738,9 @@ define(function(require, exports, module) {
         tbody.setAttribute("id","DATA_DETAILS_TABLE_BODY");
         // Create the table body.
         let tmp = "";
-        let rowIdx = 0;
         for (let i=0; i<E4PTdata.sets.length; i++) {
-            let clickFn = "toggleDetailsSelected(\"" + rowIdx + "\")";
+            console.log(i);
+            let clickFn = "toggleDetailsSelected(\"" + i + "\")";
             var new_row = tbody.insertRow(-1);
             var cell1 = new_row.insertCell(-1);
             cell1.setAttribute("onclick",clickFn);
@@ -2633,8 +2768,8 @@ define(function(require, exports, module) {
             var cell7 = new_row.insertCell(-1);
             cell7.setAttribute("onclick",clickFn);
             cell7.innerHTML = checkValue(E4PTdata.sets[i].std_clr,3);
-            rowIdx += 1;
         }
+        console.log('replacing table');
         prev_tbody.parentNode.replaceChild(tbody, prev_tbody);
     }
 
@@ -2679,12 +2814,6 @@ define(function(require, exports, module) {
         writeToFile(targetFolder, fileName, contents, null);
     }
 
-    function toggleFileSelected(fileName, idx) {
-        let tbl = document.getElementById("LOCAL_FILE_TABLE_BODY");
-        let row = tbl.rows[idx];
-        let cell = row.cells[0]; // Should only be one cell.
-        cell.classList.toggle("table-active");
-    }
 
     function toggleDetailsSelected(idx) {
         let tbl = document.getElementById("DATA_DETAILS_TABLE_BODY");
@@ -2772,10 +2901,10 @@ define(function(require, exports, module) {
         
         // only display the DATA PLOT page for GET DATA or SENSOR SETUP and not from DATA COLLECTION
         if (fromGetData || fromSensorSetupPage) {
-            fadeOutAll();
-            $("#DATA_PLOT_PAGE").fadeIn();
-            fromGetData = false;
-            fromDataCollectionPage = false;
+          fadeOutAll();
+          $("#DATA_PLOT_PAGE").fadeIn();
+          fromGetData = false;
+          fromDataCollectionPage = false;
         }
 
         if (current_frame_data['position'] != null) {
@@ -2792,7 +2921,6 @@ define(function(require, exports, module) {
     function requestE4PtData(acquisitionTime) {
         console.log("Requesting " + acquisitionTime + " seconds of data");
         charting.clearChartData(document.getElementById('DATA_PLOT'));
-        
         startProgressBar();
 
         // send_data needs args: acquisition time and casing thickness
@@ -3058,7 +3186,7 @@ define(function(require, exports, module) {
       chartConfig.chart.panning = true;
       chartConfig.chart.panKey = 'shift';
       chartConfig.chart.zoomType = 'xy';
-      charting.addChartSubtitle(chartConfig, E4PTdata.date, E4PTdata.clearance, E4PTdata.blades, E4PTdata.blade_samples_avg, E4PTdata.overall_avg);
+      charting.addChartSubtitle(chartConfig, E4PTdata.date, E4PTdata.clearance, E4PTdata.blades, E4PTdata.blade_samples_avg, E4PTdata.overall_avg, null);
       charting.displayIntensityThresholdAndMeasurementRate(chartConfig, E4PTdata.measurement_rate, E4PTdata.intensity_threshold);
       let chartFilename = charting.createSavedChartFilename(E4PTdata.date.substring(2));
       charting.renderChart(chartConfig, 'DATA_PLOT', chartFilename, writeToFile);
@@ -3068,7 +3196,7 @@ define(function(require, exports, module) {
       let chartConfig = charting.createChartConfig(E4PTdata.data, E4PTdata.minima);
       chartConfig.tooltip.enabled = false;
       chartConfig.series[0].name = 'Filtered ' + chartConfig.series[0].name;
-      charting.addChartSubtitle(chartConfig, E4PTdata.date, E4PTdata.clearance, E4PTdata.blades, E4PTdata.blade_samples_avg);
+      charting.addChartSubtitle(chartConfig, E4PTdata.date, E4PTdata.clearance, E4PTdata.blades, E4PTdata.blade_samples_avg, null, selected_frame_data);
       charting.displayIntensityThresholdAndMeasurementRate(chartConfig, E4PTdata.measurement_rate, E4PTdata.intensity_threshold);
       let chartFilename = charting.createSavedChartFilename(E4PTdata.date.substring(2), E4PTdata.serial_number, current_stage, current_position.substring(0,1));
       //charting.renderChart(chartConfig, 'DATA_PLOT', chartFilename, writeToFile);
@@ -3700,9 +3828,18 @@ define(function(require, exports, module) {
 
         current_frame_data = frame_data[frm_idx];
         current_stage_index = 0;
-        current_stage = current_frame_data.stage[0];
+        current_stage = current_frame_data.stage[current_stage_index];
         current_position_index = 0;
-        current_position = current_frame_data.position[current_stage][0];
+        current_position = current_frame_data.position[current_stage][current_position_index];
+        
+        // TODO: test
+        console.log(current_frame_data);
+        selected_frame_data.frameIdx = frm_idx;
+        selected_frame_data.stageInfoIdx = current_stage_index;
+        selected_frame_data.frameName = current_frame_data.frame;
+        selected_frame_data.stageName = current_stage;
+        selected_frame_data.bladeCount = current_frame_data.stage_info[current_stage].blade_count;
+        console.log(selected_frame_data);
 
         $("#LOCAL_DATA_PAGE").fadeOut();
         $("#ARCHIVED_DATA_PAGE").fadeOut();
@@ -3804,6 +3941,7 @@ define(function(require, exports, module) {
         set_grid_position:set_grid_position,
         toggleFileSelected:toggleFileSelected,
         toggleDetailsSelected:toggleDetailsSelected,
+        deleteEntry:deleteEntry,
         sortTable:sortTable
     };
 });

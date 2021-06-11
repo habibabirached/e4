@@ -795,7 +795,10 @@
                         </div>
                         <div class="col-md-5 text-center">
                             <label for="MEASUREMENT_RPM" class="form-label">RPM</label>
-                            <input type="text" class="form-control" id="MEASUREMENT_RPM">
+                            <div class="input-group mb-3">
+                              <input type="text" class="form-control" id="MEASUREMENT_RPM">
+                              <button class="btn btn-success" type="button" id="CALCULATE_RPM_BUTTON">CALCULATE</button>
+                            </div>
                         </div>
                         <div class="col-md-2 text-center">
                             <button id="OFFSET_ADJUSTMENT_BUTTON" type="button" class="btn btn-secondary">EXPLAIN OFFSET</button>
@@ -1187,26 +1190,27 @@
                       <h4>Local Files</h4>
                     </div>
                     <div class="col-auto">
+                        <button id="FILE_EXPORT_BUTTON" class="btn btn-primary" type="button">EXPORT</button>
+                    </div>
+                    <div class="col-auto">
                         <button id="FILE_CHOOSER_CLOSE_BUTTON" type="button" class="btn btn-dark"><i class="fas fa-times"></i></button>
                     </div>
                   </div>
               </div>
-              <div class="card-body">
+              <div class="card-body overflow-scroll">
                   <div class="row">
-                    <div class="col-lg-12">
+                    <div class="col-lg-12 overflow-scroll">
                       <!-- File Chooser -->
-                      <table id="LOCAL_FILE_TABLE" class="table table-bordered">
+                      <table id="LOCAL_FILE_TABLE" class="table table-bordered overflow-scroll">
                           <thead id="LOCAL_FILE_TABLE_HEADER" class="table-light">
                               <tr>
                                   <th id="FNAME_COL" scope="col" onclick="sortTable('LOCAL_FILE_TABLE',0)">Filename</th>
+                                  <th></th>
                               </tr>
                           </thead>
                           <tbody id="LOCAL_FILE_TABLE_BODY">
                           </tbody>
                       </table>
-                      <div class="d-grid gap-2">
-                          <button id="FILE_EXPORT_BUTTON" class="btn btn-primary">EXPORT</button>
-                      </div>
                       <!-- -->
                     </div>
                   </div>
@@ -1291,7 +1295,7 @@
     <script src="./js/lib/require.js"></script>
     
     <script>
-        var loadExternalFile, loadLocalData, loadArchiveData, pluginMessage, set_grid_position, toggleFileSelected, toggleDetailsSelected, sortTable;
+        var loadExternalFile, loadLocalData, loadArchiveData, pluginMessage, set_grid_position, toggleFileSelected, toggleDetailsSelected, deleteEntry, sortTable;
         require(['js/e4pt_app'], function(app){
             loadExternalFile = app.loadExternalFile;
             loadLocalData = app.loadLocalData;
@@ -1300,6 +1304,7 @@
             set_grid_position = app.set_grid_position;
             toggleFileSelected = app.toggleFileSelected;
             toggleDetailsSelected = app.toggleDetailsSelected;
+            deleteEntry = app.deleteEntry;
             sortTable = app.sortTable;
         });
     </script>

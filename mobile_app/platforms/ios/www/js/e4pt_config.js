@@ -790,7 +790,7 @@ frame_data = [
           'LEFT':['C', 180.0, 180.0, 5.275],
           'BOTTOM':['D', 270.0, 270.0, 5.203],
           'blade_count':24,
-          'tip_diameter':102.886,
+          'tip_diameter':103.740,
           'blade_width':0.150
       },
       '3':{
@@ -800,9 +800,9 @@ frame_data = [
           'BOTTOM RIGHT':['D', 270.0, 270.0, 2.720],
           'BOTTOM':['E', 270.0, 270.0, 2.722],
           'BOTTOM LEFT':['F', 270.0, 270.0, 2.714],
-          'blade_count':72,
-          'tip_diameter':81.126,
-          'blade_width':0.06
+          'blade_count':54,
+          'tip_diameter':88.897,
+          'blade_width':0.035
       },
       '6':{
           'TOP RIGHT':['A', 0.0, 0.0, 2.660],
@@ -813,7 +813,7 @@ frame_data = [
           'BOTTOM LEFT':['F', 270.0, 270.0, 2.653],
           'blade_count':72,
           'tip_diameter':81.126,
-          'blade_width':0.06
+          'blade_width':0.060
       },
       '10':{
           'TOP RIGHT':['B', 90.0, 90.0, 3.448],
@@ -823,13 +823,13 @@ frame_data = [
           'TOP LEFT':['E', 270.0, 270.0, 3.451],
           'blade_count':85,
           'tip_diameter':74.656,
-          'blade_width':0.06
+          'blade_width':0.060
       },
       '13':{
           'RIGHT':['A', 0.0, 0.0, 1.888],
           'TOP RIGHT':['B', 90.0, 90.0, 1.892],
           'blade_count':92,
-          'tip_diameter':71.128,
+          'tip_diameter':71.735,
           'blade_width':0.060
       },
       '14':{
