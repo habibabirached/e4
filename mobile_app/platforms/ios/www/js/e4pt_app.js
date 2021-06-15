@@ -147,7 +147,6 @@ define(function(require, exports, module) {
     var current_position = 0;
     var current_frame_data = [];
 
-    // TODO: needed?
     var selected_frame_data = {
         frameIdx: 0,
         stageInfoIdx: 0,
@@ -676,7 +675,7 @@ define(function(require, exports, module) {
             // We have plugins so we're in Cordova.  Use the Cordova notification.
             console.log("@GET_DATA_BUTTON: Cordova Prompt");
             // For issue #69: added additional text to the prompt for acquisition time
-            navigator.notification.prompt('Raw data is the displacement from the sensor with an unknown (default) reference point. This should be used only when relative data is desired. \n \n Please enter the acquisition time in seconds.',
+            navigator.notification.prompt('Raw data is the displacement from the sensor with an unknown (default) reference point. This should be used only when relative data is desired.\n\nPlease enter the acquisition time in seconds.\n\nSelect \'Cancel\' to view local data files.',
                                           acquisitionTimePromptCallback,
                                           'Acquisition Time',
                                           ['Ok','Cancel'],
@@ -685,7 +684,7 @@ define(function(require, exports, module) {
             // No plugins, so we must not be in Cordova. Use a standard prompt.
             console.log("@GET_DATA_BUTTON: Windows Prompt");
             // For issue #69: added additional text to the prompt for acquisition time
-            acquisitionTime = window.prompt("Raw data is the displacement from the sensor with an unknown (default) reference point. This should be used only when relative data is desired. \n \n Please enter the acquisition time in seconds.", "3");
+            acquisitionTime = window.prompt("Raw data is the displacement from the sensor with an unknown (default) reference point. This should be used only when relative data is desired.\n\nPlease enter the acquisition time in seconds.\n\nSelect \'Cancel\' to view local data files.", "3");
             acquisitionTimePromptCallback({"input1":acquisitionTime});
         }
     }
@@ -818,8 +817,7 @@ define(function(require, exports, module) {
     function acquisitionTimePromptCallback(results) {
         console.log("@acquisitionTimePromptCallback");
         if (results.buttonIndex > 1) {
-            // TODO: test
-            $("#DATA_PLOT_PAGE").fadeOut();
+            // display local files if Get Data prompt is cancelled
             listDir(cordova.file.documentsDirectory + "data");
             return;
         }
@@ -1272,9 +1270,14 @@ define(function(require, exports, module) {
         }
         var html = html_buf.join('\n');
         document.getElementById("SENSOR_POSITION").innerHTML = html;
+        
+        selected_frame_data.stageInfoIdx = current_stage_index;
+        selected_frame_data.stageName = current_stage;
+        selected_frame_data.bladeCount = current_frame_data.stage_info[current_stage].blade_count;
     }
 
     function set_stage_information() {
+        console.log("@set_stage_information");
         html_buf = [];
         var stages = current_frame_data['stage'];
         for (stage_index = 0; stage_index < stages.length; stage_index++) {
@@ -1282,7 +1285,6 @@ define(function(require, exports, module) {
         }
         html = html_buf.join('\n');
         document.getElementById("SENSOR_STAGE").innerHTML = html;
-        // TODO: value is set twice
         document.getElementById("SENSOR_STAGE").selectedIndex = selected_frame_data.stageInfoIdx;
         selected_frame_data.stageName = Object.keys(frame_data[selected_frame_data.frameIdx].stage_info)[selected_frame_data.stageInfoIdx]
         document.getElementById("SENSOR_STAGE").value = selected_frame_data.stageName;
@@ -1294,6 +1296,7 @@ define(function(require, exports, module) {
     }
 
     function set_stage() {
+      console.log("@set_stage");
       current_stage_index = document.getElementById("SENSOR_STAGE").selectedIndex;
       
       // memorise which stage index we are at, for RPM computation,
@@ -1308,6 +1311,7 @@ define(function(require, exports, module) {
     }
 
     function set_position() {
+      console.log("@set_position");
       current_position_index =  document.getElementById("SENSOR_POSITION").selectedIndex;
       current_position = current_frame_data['position'][current_stage][current_position_index];
       highlight_cell(current_position, current_stage);
@@ -1458,6 +1462,7 @@ define(function(require, exports, module) {
     }
 
     function collect_stage_data() {
+        console.log("@collect_stage_data");
         // Make sure the plot doesn't show on screen
         var position = document.getElementById("SENSOR_POSITION").value;
         var stage = document.getElementById("SENSOR_STAGE").value;
@@ -1497,6 +1502,7 @@ define(function(require, exports, module) {
         }
     }
 
+    // unused, was called on SENSOR_STAGE change event
     function setup_data_collection(update_position) {
         current_stage_index = document.getElementById("SENSOR_STAGE").selectedIndex;
         current_stage = current_frame_data['stage'][current_stage_index];
@@ -2185,7 +2191,7 @@ define(function(require, exports, module) {
                     serialConnected = false;
                     if (!msg.noAlert) {
                         e4PtAlert('Controller was disconnected.');
-                        // TODO: reset
+                        // TODO: reset application/controller connection
                     }
                 } else if (msg.status == "acquiring") {
                     displayAbortButton();
@@ -2988,12 +2994,12 @@ define(function(require, exports, module) {
         // set flag to show DATA COLLECTION page on close, disabled to show plot2
         //fromDataCollectionPage = true;
         
-        // TODO: test this
         acquisitionTime = acquisitionTime.replace("rpm","");
+        selected_frame_data.RPM = acquisitionTime;
         
-        // TODO: should not be needed here, progress bar should update
-        setIndicatorColor("red");
+        // ensure that UI is updated, this should occur on "acquiring" status
         displayAbortButton();
+        setIndicatorColor("red");
         startProgressBar();
 
         messaging.sendMessage({args:[{
@@ -3855,14 +3861,11 @@ define(function(require, exports, module) {
         current_position_index = 0;
         current_position = current_frame_data.position[current_stage][current_position_index];
         
-        // TODO: test
-        console.log(current_frame_data);
         selected_frame_data.frameIdx = frm_idx;
         selected_frame_data.stageInfoIdx = current_stage_index;
         selected_frame_data.frameName = current_frame_data.frame;
         selected_frame_data.stageName = current_stage;
         selected_frame_data.bladeCount = current_frame_data.stage_info[current_stage].blade_count;
-        console.log(selected_frame_data);
 
         $("#LOCAL_DATA_PAGE").fadeOut();
         $("#ARCHIVED_DATA_PAGE").fadeOut();
