@@ -15,4 +15,5 @@
 @synthesize casingThickness = _casingThickness;
 @synthesize spacerThickness = _spacerThickness;
 @synthesize numberOfBlades = _numberOfBlades;
+@synthesize rpm = _rpm;
 @end

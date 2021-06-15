@@ -45,8 +45,15 @@ define(function(require, exports, module, sensorSettings) {
   
   const addChartSubtitle = (chartConfig, acquisition_date, overall_clearance, blades, blade_samples_avg, avg_displacement, selected_frame_data) => {
     let subtitle = 'Date: ' + acquisition_date + ';&nbsp;Observed Blades: ' + blades;
-    subtitle += '<br>';
+    subtitle += '<br/>';
+
+    if (selected_frame_data) {
+      subtitle += 'Frame: ' + selected_frame_data.frameName + ';&nbsp;Stage: ' + selected_frame_data.stageName + ';&nbsp;Blades: ' + selected_frame_data.bladeCount + ';&nbsp;RPM: ' + parseFloat(selected_frame_data.RPM).toFixed(3);
+      subtitle += '<br/>';
+    }
+
     subtitle += 'Avg. Samples/Blade: ' + blade_samples_avg.toFixed(1) + ';&nbsp;Avg. Tip Dist: ' + parseFloat(overall_clearance).toFixed(3);
+
     if (avg_displacement) {
       if (sensorSettings.doesMeasurementExceedTolerance(avg_displacement)) {
           subtitle = '<span class="FONT_BLACK">' + subtitle + ';&nbsp;</span>' + '<span class="FONT_RED">Overall Avg: ' + avg_displacement + '</span>';
@@ -56,16 +63,11 @@ define(function(require, exports, module, sensorSettings) {
       }
     }
       
-    if (selected_frame_data) {
-      subtitle += '<br>';
-      subtitle += 'Frame: ' + selected_frame_data.frameName + ';&nbsp;Stage: ' + selected_frame_data.stageName + ';&nbsp;Blades: ' + selected_frame_data.bladeCount + ';&nbsp;RPM: ' + parseFloat(selected_frame_data.RPM).toFixed(3);
-    }
-      
     chartConfig.subtitle.text = subtitle;
   }
   
   const displayIntensityThresholdAndMeasurementRate = (chartConfig, measurement_rate, intensity_threshold) => {
-      chartConfig.subtitle.text = '<span class="COL_FR">Intensity Threshold: ' + intensity_threshold + '%</span><span class="COL_FR">Measurement Rate: ' + measurement_rate + 'kHz</span><br/><span>' + chartConfig.subtitle.text + '</span>';
+      chartConfig.subtitle.text = '<span>Intensity Threshold: ' + intensity_threshold + '%;&nbsp;Measurement Rate: ' + measurement_rate + 'kHz</span><br/><span>' + chartConfig.subtitle.text + '</span>';
   }
   
   const createChartConfig = (displacementsArray, clearancesArray) => {

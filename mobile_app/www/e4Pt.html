@@ -86,7 +86,7 @@
                         <h4>Data</h4>
                       </div>
                       <div class="col-auto">
-                          <button id="EXPORT_DATA_BUTTON" class="btn btn-primary" type="button">Export Data</button>
+                          <button id="EXPORT_DATA_BUTTON" class="btn btn-primary" type="button">EXPORT DATA</button>
                       </div>
                       <div class="col-auto">
                         <button id="DATA_PLOT_CLOSE_BUTTON" type="button" class="btn btn-dark"><i class="fas fa-times"></i></button>
@@ -707,8 +707,8 @@
         
         <!-- Turbine Data Collection Page -->
         <div id="TURBINE_SETUP_PAGE" class="container-fluid my-2">
-            <div class="card">
-              <div class="card-body">
+            <div class="card w-100">
+              <div class="card-body" style="overflow-y: scroll;">
                 <div class="row">
                     <div class="col-lg-12">
                       <!-- Turbine Data Collection -->
@@ -741,9 +741,11 @@
                       </div>
                       <br/>
 
-                      <!-- This table gets constructed by javascript -->
-                      <table id="SENSOR_DATA_TABLE" class="table table-borderless table-sm">
-                      </table>
+                      <div class="w-100" style="overflow-x: scroll;">
+                          <!-- This table gets constructed by javascript -->
+                          <table id="SENSOR_DATA_TABLE" class="table table-borderless table-sm" style="overflow: scroll;">
+                          </table>
+                      </div>
 
                       <form class="row g-3">
                         <div class="col-md-5 text-center">
@@ -1182,30 +1184,34 @@
         </div>
         
         <!-- File Chooser Page -->
-        <div id="FILE_CHOOSER_PAGE" class="container-fluid my-2">
-            <div class="card">
+        <div id="FILE_CHOOSER_PAGE" class="container-fluid h-95 my-2">
+            <div class="card h-100">
               <div class="card-header">
                   <div class="row">
                     <div class="col-auto me-auto pt-1">
                       <h4>Local Files</h4>
                     </div>
                     <div class="col-auto">
-                        <button id="FILE_EXPORT_BUTTON" class="btn btn-primary" type="button">EXPORT</button>
+                        <div class="btn-group" role="group" aria-label="Measurement Buttons">
+                          <button id="FILE_DELETE_BUTTON" type="button" class="btn btn-danger">DELETE SELECTED</button>
+                          <span>&nbsp;</span>
+                          <button id="FILE_EXPORT_BUTTON" type="button" class="btn btn-primary">EXPORT SELECTED</button>
+                        </div>
                     </div>
                     <div class="col-auto">
                         <button id="FILE_CHOOSER_CLOSE_BUTTON" type="button" class="btn btn-dark"><i class="fas fa-times"></i></button>
                     </div>
                   </div>
               </div>
-              <div class="card-body overflow-scroll">
+              <div class="card-body" style="overflow: scroll;">
                   <div class="row">
-                    <div class="col-lg-12 overflow-scroll">
+                    <div class="col-lg-12">
                       <!-- File Chooser -->
-                      <table id="LOCAL_FILE_TABLE" class="table table-bordered overflow-scroll">
+                      <table id="LOCAL_FILE_TABLE" class="table table-bordered" style="overflow: scroll;">
                           <thead id="LOCAL_FILE_TABLE_HEADER" class="table-light">
                               <tr>
                                   <th id="FNAME_COL" scope="col" onclick="sortTable('LOCAL_FILE_TABLE',0)">Filename</th>
-                                  <th></th>
+                                  <!--<th></th>-->
                               </tr>
                           </thead>
                           <tbody id="LOCAL_FILE_TABLE_BODY">

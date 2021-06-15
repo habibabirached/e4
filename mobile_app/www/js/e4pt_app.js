@@ -147,7 +147,6 @@ define(function(require, exports, module) {
     var current_position = 0;
     var current_frame_data = [];
 
-    // TODO: needed?
     var selected_frame_data = {
         frameIdx: 0,
         stageInfoIdx: 0,
@@ -505,6 +504,9 @@ define(function(require, exports, module) {
         document.getElementById("SENSOR_PARAMS_UPDATE_BUTTON").addEventListener('click', function() {
             authorizeSensorParamsUpdate();
         }, {passive: true});
+        document.getElementById("FILE_DELETE_BUTTON").addEventListener('click', function() {
+            deleteMultipleFiles();
+        }, {passive: true});
         document.getElementById("FILE_EXPORT_BUTTON").addEventListener('click', function() {
             multipleFileDownloadFunction();
         }, {passive: true});
@@ -673,7 +675,7 @@ define(function(require, exports, module) {
             // We have plugins so we're in Cordova.  Use the Cordova notification.
             console.log("@GET_DATA_BUTTON: Cordova Prompt");
             // For issue #69: added additional text to the prompt for acquisition time
-            navigator.notification.prompt('Raw data is the displacement from the sensor with an unknown (default) reference point. This should be used only when relative data is desired. \n \n Please enter the acquisition time in seconds.',
+            navigator.notification.prompt('Raw data is the displacement from the sensor with an unknown (default) reference point. This should be used only when relative data is desired.\n\nPlease enter the acquisition time in seconds.\n\nSelect \'Cancel\' to view local data files.',
                                           acquisitionTimePromptCallback,
                                           'Acquisition Time',
                                           ['Ok','Cancel'],
@@ -682,7 +684,7 @@ define(function(require, exports, module) {
             // No plugins, so we must not be in Cordova. Use a standard prompt.
             console.log("@GET_DATA_BUTTON: Windows Prompt");
             // For issue #69: added additional text to the prompt for acquisition time
-            acquisitionTime = window.prompt("Raw data is the displacement from the sensor with an unknown (default) reference point. This should be used only when relative data is desired. \n \n Please enter the acquisition time in seconds.", "3");
+            acquisitionTime = window.prompt("Raw data is the displacement from the sensor with an unknown (default) reference point. This should be used only when relative data is desired.\n\nPlease enter the acquisition time in seconds.\n\nSelect \'Cancel\' to view local data files.", "3");
             acquisitionTimePromptCallback({"input1":acquisitionTime});
         }
     }
@@ -815,8 +817,7 @@ define(function(require, exports, module) {
     function acquisitionTimePromptCallback(results) {
         console.log("@acquisitionTimePromptCallback");
         if (results.buttonIndex > 1) {
-            // TODO: test
-            $("#DATA_PLOT_PAGE").fadeOut();
+            // display local files if Get Data prompt is cancelled
             listDir(cordova.file.documentsDirectory + "data");
             return;
         }
@@ -1269,9 +1270,14 @@ define(function(require, exports, module) {
         }
         var html = html_buf.join('\n');
         document.getElementById("SENSOR_POSITION").innerHTML = html;
+        
+        selected_frame_data.stageInfoIdx = current_stage_index;
+        selected_frame_data.stageName = current_stage;
+        selected_frame_data.bladeCount = current_frame_data.stage_info[current_stage].blade_count;
     }
 
     function set_stage_information() {
+        console.log("@set_stage_information");
         html_buf = [];
         var stages = current_frame_data['stage'];
         for (stage_index = 0; stage_index < stages.length; stage_index++) {
@@ -1279,7 +1285,6 @@ define(function(require, exports, module) {
         }
         html = html_buf.join('\n');
         document.getElementById("SENSOR_STAGE").innerHTML = html;
-        // TODO: value is set twice
         document.getElementById("SENSOR_STAGE").selectedIndex = selected_frame_data.stageInfoIdx;
         selected_frame_data.stageName = Object.keys(frame_data[selected_frame_data.frameIdx].stage_info)[selected_frame_data.stageInfoIdx]
         document.getElementById("SENSOR_STAGE").value = selected_frame_data.stageName;
@@ -1291,6 +1296,7 @@ define(function(require, exports, module) {
     }
 
     function set_stage() {
+      console.log("@set_stage");
       current_stage_index = document.getElementById("SENSOR_STAGE").selectedIndex;
       
       // memorise which stage index we are at, for RPM computation,
@@ -1305,6 +1311,7 @@ define(function(require, exports, module) {
     }
 
     function set_position() {
+      console.log("@set_position");
       current_position_index =  document.getElementById("SENSOR_POSITION").selectedIndex;
       current_position = current_frame_data['position'][current_stage][current_position_index];
       highlight_cell(current_position, current_stage);
@@ -1455,6 +1462,7 @@ define(function(require, exports, module) {
     }
 
     function collect_stage_data() {
+        console.log("@collect_stage_data");
         // Make sure the plot doesn't show on screen
         var position = document.getElementById("SENSOR_POSITION").value;
         var stage = document.getElementById("SENSOR_STAGE").value;
@@ -1494,6 +1502,7 @@ define(function(require, exports, module) {
         }
     }
 
+    // unused, was called on SENSOR_STAGE change event
     function setup_data_collection(update_position) {
         current_stage_index = document.getElementById("SENSOR_STAGE").selectedIndex;
         current_stage = current_frame_data['stage'][current_stage_index];
@@ -2182,7 +2191,7 @@ define(function(require, exports, module) {
                     serialConnected = false;
                     if (!msg.noAlert) {
                         e4PtAlert('Controller was disconnected.');
-                        // TODO: reset
+                        // TODO: reset application/controller connection
                     }
                 } else if (msg.status == "acquiring") {
                     displayAbortButton();
@@ -2581,7 +2590,6 @@ define(function(require, exports, module) {
         window.resolveLocalFileSystemURL(path, function (fileSystem) {
             var reader = fileSystem.createReader();
             reader.readEntries(function (entries) {
-                console.log(entries.length + " entries");
                 populateFileTable(entries);
             }, function (err) {
                 err = "Error processing entry: " + JSON.stringify(err);
@@ -2600,7 +2608,7 @@ define(function(require, exports, module) {
         dir.getFile(fileName, { create: false }, function (fileEntry) {
             console.log("fileEntry=", fileEntry);
             fileEntry.remove(function (file) {
-                console.log("removed: " + file);
+                console.log("file removed");
             }, function (error) {
                 console.log("error in deleteFile type 1: " + error.code);
             }, function () {
@@ -2670,26 +2678,13 @@ define(function(require, exports, module) {
             if (idx == 1) {
                 console.log("deleteEntry confirmed");
                 window.resolveLocalFileSystemURL(path, function (dirEntry) {
-                    console.log(dirEntry);
-                    var reader = dirEntry.createReader();
-                    reader.readEntries(function (fileName) {
-                        fileName.map(el => {
-                            console.log(filename, el.name)
-                            if (filename == el.name) {
-                                console.log("found match: " + filename);
-                                deleteFile(dirEntry, el.name);
-                                console.log("updating entries");
-                                window.entries = filterArray(window.entries, i);
-                                populateFileTable(window.entries);
-                            }
-                        });
-                    }, function(error) {
-                        console.log("Error in deleteFilesInDir type 1: " + error);
-                    });
+                    deleteFile(dirEntry, filename);
+                    console.log("updating entries");
+                    window.entries = filterArray(window.entries, i);
+                    populateFileTable(window.entries);
                 }, function(error) {
-                    console.log("Error in deleteFilesInDir type 2: " + error);
+                    console.log("Error in deleteEntry type 2: " + error);
                 });
-                //deleteFile(path, filename);
             }
         });
     }
@@ -2703,7 +2698,6 @@ define(function(require, exports, module) {
         // Create the table body.
         window.entries = entries;
         for (var i=0; i<entries.length; i++) {
-            console.log(i);
             if (!entries[i].isFile) continue;  // ignore any non-file entries
             if (entries[i].name == ".DS_Store") continue;
             let fileSelectFn = "toggleFileSelected(\"" + entries[i].name + "\"," + i + ")";
@@ -2713,19 +2707,17 @@ define(function(require, exports, module) {
             cell0.innerHTML = entries[i].name;
             cell0.setAttribute("onclick",fileSelectFn);
             cell0.setAttribute("nativeURL",entries[i].nativeURL);
-            var cell1 = new_row.insertCell(-1);
+            // disabled due to performance with large amount of records
+            /*var cell1 = new_row.insertCell(-1);
             cell1.classList.add("text-center");
-            cell1.innerHTML =  '<i class="fas fa-trash-alt fa-lg text-danger"></i>';
-            cell1.setAttribute("onclick",deleteEntryFn);
+            cell1.innerHTML = '<i class="fas fa-trash-alt fa-lg text-danger"></i>';
+            //cell1.innerHTML = '<button type="button" class="btn btn-danger">DELETE</button>';
+            cell1.setAttribute("onclick",deleteEntryFn);*/
             //cell1.setAttribute("nativeURL",entries[i].nativeURL);
         }
-        console.log('replacing table');
         prev_tbody.parentNode.replaceChild(tbody, prev_tbody);
-        console.log('sorting table');
         sortTable('LOCAL_FILE_TABLE', 0);
-        console.log('sorted table');
         $("#FILE_CHOOSER_PAGE").fadeIn();
-        console.log('faded in');
     }
 
     function populateDetailsTable() {
@@ -2739,7 +2731,6 @@ define(function(require, exports, module) {
         // Create the table body.
         let tmp = "";
         for (let i=0; i<E4PTdata.sets.length; i++) {
-            console.log(i);
             let clickFn = "toggleDetailsSelected(\"" + i + "\")";
             var new_row = tbody.insertRow(-1);
             var cell1 = new_row.insertCell(-1);
@@ -2769,7 +2760,6 @@ define(function(require, exports, module) {
             cell7.setAttribute("onclick",clickFn);
             cell7.innerHTML = checkValue(E4PTdata.sets[i].std_clr,3);
         }
-        console.log('replacing table');
         prev_tbody.parentNode.replaceChild(tbody, prev_tbody);
     }
 
@@ -2832,6 +2822,45 @@ define(function(require, exports, module) {
         let fileName = segments.pop() || segments.pop();
         let prompt = "Email or Upload\n" + fileName + "?";
         e4PtPrompt(prompt, exportFile, "Get File", ["Email","Upload to Box","Cancel"]);
+    }
+    
+    function deleteMultipleFiles() {
+        console.log("@deleteMultipleFiles");
+        let path = cordova.file.documentsDirectory + "data";
+        if (fromDataCollectionPage) {
+            console.log("fromDataCollectionPage");
+            let sn = processString(E4PTdata.serial_number);
+            path = cordova.file.documentsDirectory + sn;
+        }
+        console.log(path);
+        let deleteList = [];
+        let tbl = document.getElementById("LOCAL_FILE_TABLE_BODY");
+        for (let i=0; i<tbl.rows.length; i++) {
+            let row = tbl.rows[i];
+            let cell = row.cells[0]; // Should only be one cell.
+            for (let j=0; j<cell.classList.length; j++) {
+                if (cell.classList[j] = "table-active") {
+                    let dirArr = cell.attributes.nativeURL.value.split('/');
+                    let filename = dirArr[dirArr.length - 1];
+                    console.log("deleteMultipleFiles: Appending " + filename);
+                    deleteList.push(filename);
+                }
+            }
+        }
+        
+        e4PtConfirm("Are you sure you want to delete " + deleteList.length + " file(s)?", function(idx) {
+            if (idx == 1) {
+                console.log("deleteMultipleFiles confirmed");
+                window.resolveLocalFileSystemURL(path, function (dirEntry) {
+                    for (let i=0; i<deleteList.length; i++) {
+                        deleteFile(dirEntry, deleteList[i]);
+                    }
+                    listDir(path);
+                }, function(error) {
+                    console.log("Error in deleteMultipleFiles: " + error);
+                });
+            }
+        });
     }
 
     function multipleFileDownloadFunction() {
@@ -2965,12 +2994,12 @@ define(function(require, exports, module) {
         // set flag to show DATA COLLECTION page on close, disabled to show plot2
         //fromDataCollectionPage = true;
         
-        // TODO: test this
         acquisitionTime = acquisitionTime.replace("rpm","");
+        selected_frame_data.RPM = acquisitionTime;
         
-        // TODO: should not be needed here, progress bar should update
-        setIndicatorColor("red");
+        // ensure that UI is updated, this should occur on "acquiring" status
         displayAbortButton();
+        setIndicatorColor("red");
         startProgressBar();
 
         messaging.sendMessage({args:[{
@@ -3537,7 +3566,7 @@ define(function(require, exports, module) {
                     var doc = docs.rows[i].doc;
 
                     // remove it from local drive
-                    deleteFolder (cordova.file.documentsDirectory + docs.rows[i].doc.serial_number)
+                    deleteFolder(cordova.file.documentsDirectory + docs.rows[i].doc.serial_number);
 
                     // remove it from database also
                     archive_db.remove(doc, function (err, response) {
@@ -3568,7 +3597,7 @@ define(function(require, exports, module) {
                     var doc = docs.rows[i].doc;
 
                     // remove it from local drive
-                    deleteFolder (cordova.file.documentsDirectory + docs.rows[i].doc.serial_number)
+                    deleteFolder(cordova.file.documentsDirectory + docs.rows[i].doc.serial_number);
 
                     // remove it from database also
                     local_db.remove(doc, function (err, response) {
@@ -3832,14 +3861,11 @@ define(function(require, exports, module) {
         current_position_index = 0;
         current_position = current_frame_data.position[current_stage][current_position_index];
         
-        // TODO: test
-        console.log(current_frame_data);
         selected_frame_data.frameIdx = frm_idx;
         selected_frame_data.stageInfoIdx = current_stage_index;
         selected_frame_data.frameName = current_frame_data.frame;
         selected_frame_data.stageName = current_stage;
         selected_frame_data.bladeCount = current_frame_data.stage_info[current_stage].blade_count;
-        console.log(selected_frame_data);
 
         $("#LOCAL_DATA_PAGE").fadeOut();
         $("#ARCHIVED_DATA_PAGE").fadeOut();
