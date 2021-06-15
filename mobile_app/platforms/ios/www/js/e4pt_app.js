@@ -11,10 +11,12 @@ define(function(require, exports, module) {
     var doDBSave = false;
     var manualOverride = false;
     var savedRPM = "";
+    var computedRPM = "";
     var fromGetData = false;
     var fromDataCollectionPage = false;
     var fromSensorSetupPage = false;
     var fromDataPlotPage = false;
+    var fromCalculateRPM = false;
     var collectionAborted = false;
     var masteringPerformed = false;
 
@@ -45,6 +47,10 @@ define(function(require, exports, module) {
     var LABEL_ABORT = "ABORT!";
     var LABEL_START_DARK = "START DARK REFERENCE";
     var LABEL_DARK = "PERFORMING DARK REFERENCE";
+    var LABEL_CALCULATE = "CALCULATE";
+    var LABEL_CALCULATING = "CALCULATING";
+    var LABEL_LOAD_PARAMS = "LOAD FROM CONTROLLER";
+    var LABEL_LOADING_PARAMS = "LOADING FROM CONTROLLER";
 
     var local_db = new PouchDB('e4ptdb', {revs_limit: 1, auto_compaction: true});
     var archive_db = new PouchDB('e4ptarchive', {revs_limit: 1, auto_compaction: true});
@@ -124,6 +130,8 @@ define(function(require, exports, module) {
         "med_clr":"",
         "std_clr":"",
         "overall_avg":"",
+        "blades":"",
+        "blade_samples_avg":"",
         "alreadyOnLDB":"false",
         "pouchdb_id": ""
     };
@@ -134,12 +142,22 @@ define(function(require, exports, module) {
                             'TOP LEFT':315, 'BOTTOM LEFT':225, 'TOP RIGHT':45, 'BOTTOM RIGHT':135};
     var current_stage_index = 0;
     var current_stage = 0;
+    var current_stage_type = '';
     var current_position_index = 0;
     var current_position = 0;
     var current_frame_data = [];
 
+    var selected_frame_data = {
+        frameIdx: 0,
+        stageInfoIdx: 0,
+        frameName: frame_data[0].frame,
+        stageName: Object.keys(frame_data[0].stage_info)[0],
+        bladeCount: Object.values(frame_data[0].stage_info)[0].blade_count,
+        RPM: 'not computed yet'
+    };
+    var previous_frame = '';
+
     $(document).ready(function() {
-        console.log('READY');
         var attachFastClick = Origami.fastclick;
         attachFastClick(document.body);
         
@@ -159,8 +177,12 @@ define(function(require, exports, module) {
         $('#sidebar-wrapper').css('height', newContentHeight);
         $('#page-content-wrapper').css('height', newContentHeight);
         fadeOutAll();
+        
+        // set default button values
         setButtonProperties($("#STAGE_COLLECT_BUTTON"), LABEL_GO, 'green');
         setButtonProperties($("#START_DARK_REFERENCE_BUTTON"), LABEL_START_DARK, 'blue');
+        setButtonProperties($("#CALCULATE_RPM_BUTTON"), LABEL_CALCULATE, 'green');
+        setButtonProperties($("#READ_SENSOR_PARAMETERS_BUTTON"), LABEL_LOAD_PARAMS, 'blue');
         
         document.getElementById("MAIN_MENU").addEventListener('click', function() {
             $("#TITLE_BAR").text(APP_NAME);
@@ -181,7 +203,6 @@ define(function(require, exports, module) {
             set_frame_information();
         }, {passive: true});
         document.getElementById("FRAME_SIZE").addEventListener('change', function() {
-            console.log("FRAME_SIZE change detected.");
             setupCasingThicknessTable(null);
             document.getElementById("FRAME_DEFAULT_SENSOR").value = current_frame_data.default_sensor;
         }, {passive: true});
@@ -313,6 +334,9 @@ define(function(require, exports, module) {
         document.getElementById("CONFIGURE_CONTROLLER_BUTTON").addEventListener('click', function() {
             authorizeControllerSettingsUpdate();
         }, {passive: true});
+        document.getElementById("READ_SENSOR_PARAMETERS_BUTTON").addEventListener('click', function() {
+            readSensorParameters();
+        }, {passive: true});
         document.getElementById("DATA_PLOT_CLOSE_BUTTON").addEventListener('click', function() {
             $("#DATA_PLOT_PAGE").fadeOut();
             // re-open previous page
@@ -396,13 +420,13 @@ define(function(require, exports, module) {
         do_mastering();
         }, {passive: true});
         document.getElementById("RESET_MASTER_BUTTON").addEventListener('click', function() {
-        do_mastering('reset');
+        do_mastering(true);
         }, {passive: true});
         document.getElementById("START_MASTER_BUTTON_2").addEventListener('click', function() {
         do_mastering();
         }, {passive: true});
         document.getElementById("RESET_MASTER_BUTTON_2").addEventListener('click', function() {
-        do_mastering('reset');
+        do_mastering(true);
         }, {passive: true});
         document.getElementById("START_DARK_REFERENCE_BUTTON").addEventListener('click', function() {
             if (document.getElementById("START_DARK_REFERENCE_BUTTON").innerHTML === LABEL_START_DARK) {
@@ -480,6 +504,9 @@ define(function(require, exports, module) {
         document.getElementById("SENSOR_PARAMS_UPDATE_BUTTON").addEventListener('click', function() {
             authorizeSensorParamsUpdate();
         }, {passive: true});
+        document.getElementById("FILE_DELETE_BUTTON").addEventListener('click', function() {
+            deleteMultipleFiles();
+        }, {passive: true});
         document.getElementById("FILE_EXPORT_BUTTON").addEventListener('click', function() {
             multipleFileDownloadFunction();
         }, {passive: true});
@@ -495,6 +522,9 @@ define(function(require, exports, module) {
         }, {passive: true});
         document.getElementById("SPACER_THUMBNAIL").addEventListener('click', function() {
             showSpacerImage();
+        }, {passive: true });
+        document.getElementById("CALCULATE_RPM_BUTTON").addEventListener('click', function() {
+             calculateRPM();
         }, {passive: true});
         document.getElementById("OFFSET_ADJUSTMENT_BUTTON").addEventListener('click', function() {
             getOffsetAdjustment();
@@ -608,6 +638,30 @@ define(function(require, exports, module) {
         });
     }
     
+    function calculateRPM() {
+        console.log('@calculateRPM');
+        position = document.getElementById("SENSOR_POSITION").value;
+        casing_thickness = document.getElementById("CURR_CASE_THICKNESS").value;
+        if (position && casing_thickness) {
+            if (messaging.usesPlugin) {
+                e4PtConfirm("Note: please ensure that you have selected the cell that represents the location of the sensor in the turbine.\n\nThe app will collect data for 60 seconds and then calculate RPM. Do you wish to continue?",
+                    function(idx) {
+                        if (idx === 1) {
+                            fromCalculateRPM = true;
+                            setButtonProperties($("#CALCULATE_RPM_BUTTON"), LABEL_CALCULATING, 'yellow');
+                            requestE4PtData(60.0);
+                        }
+                    });
+            } else {
+                fromCalculateRPM = true;
+                setButtonProperties($("#CALCULATE_RPM_BUTTON"), LABEL_CALCULATING, 'yellow');
+                requestE4PtData(60.0);
+            }
+        } else {
+            e4PtAlert('No position or casing thickness, could not calculate RPM.');
+        }
+    }
+    
     function getData() {
         console.log('@getData');
         fromGetData = true;
@@ -621,7 +675,7 @@ define(function(require, exports, module) {
             // We have plugins so we're in Cordova.  Use the Cordova notification.
             console.log("@GET_DATA_BUTTON: Cordova Prompt");
             // For issue #69: added additional text to the prompt for acquisition time
-            navigator.notification.prompt('Raw data is the displacement from the sensor with an unknown (default) reference point. This should be used only when relative data is desired. \n \n Please enter the acquisition time in seconds.',
+            navigator.notification.prompt('Raw data is the displacement from the sensor with an unknown (default) reference point. This should be used only when relative data is desired.\n\nPlease enter the acquisition time in seconds.\n\nSelect \'Cancel\' to view local data files.',
                                           acquisitionTimePromptCallback,
                                           'Acquisition Time',
                                           ['Ok','Cancel'],
@@ -630,7 +684,7 @@ define(function(require, exports, module) {
             // No plugins, so we must not be in Cordova. Use a standard prompt.
             console.log("@GET_DATA_BUTTON: Windows Prompt");
             // For issue #69: added additional text to the prompt for acquisition time
-            acquisitionTime = window.prompt("Raw data is the displacement from the sensor with an unknown (default) reference point. This should be used only when relative data is desired. \n \n Please enter the acquisition time in seconds.", "3");
+            acquisitionTime = window.prompt("Raw data is the displacement from the sensor with an unknown (default) reference point. This should be used only when relative data is desired.\n\nPlease enter the acquisition time in seconds.\n\nSelect \'Cancel\' to view local data files.", "3");
             acquisitionTimePromptCallback({"input1":acquisitionTime});
         }
     }
@@ -710,8 +764,13 @@ define(function(require, exports, module) {
     }
 
     function setupCasingThicknessTable(callback) {
+        console.log('@setupCasingThicknessTable');
         // Get frame type
         let frm_idx = document.getElementById("FRAME_SIZE").selectedIndex;
+        
+        // Memorise selected_frame_data for computing RPM and remembering it when we come back to the page
+        selected_frame_data.frameIdx = frm_idx;
+        
         current_frame_data = frame_data[frm_idx];
         let pos = current_frame_data.position;
         let tbl = document.getElementById("CASING_THICKNESS_TABLE");
@@ -719,13 +778,13 @@ define(function(require, exports, module) {
         let htmlStr = "";
         for (let p of Object.keys(pos)) {
             console.log("stageText:  ", stageText);
-            console.log("current_frame_data.position:  ", p);
+            console.log("current_frame_data.position: ", p);
             htmlStr = htmlStr + '<tr>';
             htmlStr = htmlStr + '<th>' + stageText + '</th>';
             stageText = "";
             for (let j=0; j<pos[p].length; j++) {
                 htmlStr = htmlStr + '<th scope="row">' + pos[p][j] + '</th>';
-                console.log("pos[p][j]:  ", pos[p][j]);
+                console.log("pos[p][j]: ", pos[p][j]);
             }
             htmlStr = htmlStr + '</tr>';
             htmlStr = htmlStr + '<tr>';
@@ -758,6 +817,8 @@ define(function(require, exports, module) {
     function acquisitionTimePromptCallback(results) {
         console.log("@acquisitionTimePromptCallback");
         if (results.buttonIndex > 1) {
+            // display local files if Get Data prompt is cancelled
+            listDir(cordova.file.documentsDirectory + "data");
             return;
         }
         console.log("input1: ", results.input1);
@@ -950,8 +1011,18 @@ define(function(require, exports, module) {
             }
         }
     }
+    
+    function readSensorParameters() {
+        console.log('@readSensorParameters');
+        let mode = document.getElementById("CONN_SELECTION").value;
+        if (mode != 'demo') {
+            setButtonProperties($("#READ_SENSOR_PARAMETERS_BUTTON"), LABEL_LOADING_PARAMS, 'yellow');
+            messaging.sendMessage({args:[{command:'read_sensor_parameters'}]});
+        }
+    }
 
     function record_casing_thickness() {
+        console.log('@record_casing_thickness');
         let frm_idx = document.getElementById("FRAME_SIZE").selectedIndex;
         current_frame_data = frame_data[frm_idx];
         let pos = current_frame_data.position;
@@ -1037,7 +1108,11 @@ define(function(require, exports, module) {
 
     function confirm_new_or_continue() {
         let msg = "Continue collecting data for a turbine, or clear data and start a new collection? Starting a new collection will create a new entry in the database with the same serial number."
-        if (E4PTdata.pouchdb_id.length > 0) {
+        console.log ("previous_frame: ", previous_frame);
+        console.log ("current_frame_data.frame: ", current_frame_data.frame);
+
+        if ((E4PTdata.pouchdb_id.length > 0) && (previous_frame == current_frame_data.frame) ){
+            previousFrameWas = current_frame_data.frame
             try{
                 navigator.notification.confirm(
                     String(msg),            // message
@@ -1062,6 +1137,7 @@ define(function(require, exports, module) {
             }
         } else {
             send_scan_meta_data(true);
+            previous_frame = current_frame_data.frame
         }
         return;
     }
@@ -1069,7 +1145,7 @@ define(function(require, exports, module) {
     function turbine_setup() {
         $("#TITLE_BAR").text("Data Collection");
         $("#TURBINE_SETUP_PAGE").fadeIn();
-        savedRPM = "";
+        savedRPM = computedRPM;
 
         // Get frame type
         var frm_idx = document.getElementById("FRAME_SIZE").selectedIndex;
@@ -1080,6 +1156,7 @@ define(function(require, exports, module) {
         set_stage_information();
 
         // Setup the position options
+        // TODO: called already by set_stage_information()
         set_position_information();
         current_position_index = 0;
         current_position = current_frame_data['position'][current_stage][current_position_index];
@@ -1128,7 +1205,7 @@ define(function(require, exports, module) {
         document.getElementById("MV_CONFIG_MSG").innerHTML = sensorSettings.get('mastering_value') + "mm MV";
         document.getElementById("MO_CONFIG_MSG").innerHTML = sensorSettings.get('master_offset') + "&quot; MO";
         if (sensorParamsFromController) {
-            setSpanProperties($("#SENSOR_PARAMS_CONFIG_MSG"), "Using controller-provided '" + sensorSettings.get('sensor_selection') + "' sensor settings", 'blue');
+            setSpanProperties($("#SENSOR_PARAMS_CONFIG_MSG"), "Using controller-provided '" + sensorSettings.get('sensor_selection') + "' sensor settings", 'green');
             $("#SL_CONFIG_MSG").css('color', 'black');
             $("#SMR_CONFIG_MSG").css('color', 'black');
             $("#MR_CONFIG_MSG").css('color', 'black');
@@ -1136,7 +1213,7 @@ define(function(require, exports, module) {
             $("#MV_CONFIG_MSG").css('color', 'black');
             $("#MO_CONFIG_MSG").css('color', 'black');
         } else if (sensorSettings.sensorParamsHaveBeenEdited()) {
-            setSpanProperties($("#SENSOR_PARAMS_CONFIG_MSG"), "Using non-standard '" + sensorSettings.get('sensor_selection') + "' sensor settings: ", 'red');
+            setSpanProperties($("#SENSOR_PARAMS_CONFIG_MSG"), "Using non-standard '" + sensorSettings.get('sensor_selection') + "' sensor settings: ", 'yellow');
             $("#SL_CONFIG_MSG").css('color', sensorSettings.sensorLengthHasBeenEdited()?'red':'black');
             $("#SMR_CONFIG_MSG").css('color', sensorSettings.smrHasBeenEdited()?'red':'black');
             $("#MR_CONFIG_MSG").css('color', sensorSettings.mrHasBeenEdited()?'red':'black');
@@ -1144,7 +1221,7 @@ define(function(require, exports, module) {
             $("#MV_CONFIG_MSG").css('color', sensorSettings.mvHasBeenEdited()?'red':'black');
             $("#MO_CONFIG_MSG").css('color', sensorSettings.moHasBeenEdited()?'red':'black');
         } else {
-            setSpanProperties($("#SENSOR_PARAMS_CONFIG_MSG"), "Using preconfigured '" + sensorSettings.get('sensor_selection') + "' sensor settings", 'green');
+            setSpanProperties($("#SENSOR_PARAMS_CONFIG_MSG"), "Using pre-configured '" + sensorSettings.get('sensor_selection') + "' sensor settings", 'red');
             $("#SL_CONFIG_MSG").css('color', 'black');
             $("#SMR_CONFIG_MSG").css('color', 'black');
             $("#MR_CONFIG_MSG").css('color', 'black');
@@ -1174,12 +1251,16 @@ define(function(require, exports, module) {
           document.getElementById("FRAME_SIZE").selectedIndex = selectedIndex;
           document.getElementById("FRAME_SIZE").value = current_frame_data.frame;
         } else {
+            // otherwise, put back the last thing that was selected by the user.
+            document.getElementById("FRAME_SIZE").selectedIndex = selected_frame_data.frameIdx;
+            document.getElementById("FRAME_SIZE").value = frame_data[selected_frame_data.frameIdx].frame;
             setupCasingThicknessTable(null);
         }
         document.getElementById("FRAME_DEFAULT_SENSOR").value = current_frame_data.default_sensor;
     }
 
     function set_position_information() {
+        console.log('@set_position_information');
         var html_buf = [];
         var positions = current_frame_data['position'];
         positions = positions[current_stage];
@@ -1189,9 +1270,14 @@ define(function(require, exports, module) {
         }
         var html = html_buf.join('\n');
         document.getElementById("SENSOR_POSITION").innerHTML = html;
+        
+        selected_frame_data.stageInfoIdx = current_stage_index;
+        selected_frame_data.stageName = current_stage;
+        selected_frame_data.bladeCount = current_frame_data.stage_info[current_stage].blade_count;
     }
 
     function set_stage_information() {
+        console.log("@set_stage_information");
         html_buf = [];
         var stages = current_frame_data['stage'];
         for (stage_index = 0; stage_index < stages.length; stage_index++) {
@@ -1199,6 +1285,10 @@ define(function(require, exports, module) {
         }
         html = html_buf.join('\n');
         document.getElementById("SENSOR_STAGE").innerHTML = html;
+        document.getElementById("SENSOR_STAGE").selectedIndex = selected_frame_data.stageInfoIdx;
+        selected_frame_data.stageName = Object.keys(frame_data[selected_frame_data.frameIdx].stage_info)[selected_frame_data.stageInfoIdx]
+        document.getElementById("SENSOR_STAGE").value = selected_frame_data.stageName;
+        console.log ("selected_frame_data.stageName  , index= ", selected_frame_data.stageName, selected_frame_data.stageInfoIdx);
         current_stage_index = document.getElementById("SENSOR_STAGE").selectedIndex;
         current_stage = stages[current_stage_index];
         set_position_information(); // When you change the stage, the position information changes too.
@@ -1206,7 +1296,12 @@ define(function(require, exports, module) {
     }
 
     function set_stage() {
+      console.log("@set_stage");
       current_stage_index = document.getElementById("SENSOR_STAGE").selectedIndex;
+      
+      // memorise which stage index we are at, for RPM computation,
+      selected_frame_data.stageInfoIdx = current_stage_index
+
       current_stage = current_frame_data['stage'][current_stage_index];
       set_position_information();
       current_position_index = 0;
@@ -1216,6 +1311,7 @@ define(function(require, exports, module) {
     }
 
     function set_position() {
+      console.log("@set_position");
       current_position_index =  document.getElementById("SENSOR_POSITION").selectedIndex;
       current_position = current_frame_data['position'][current_stage][current_position_index];
       highlight_cell(current_position, current_stage);
@@ -1273,7 +1369,7 @@ define(function(require, exports, module) {
     }
     
     function setButtonProperties(button, text, buttonColor) {
-        let allColors = "btn-secondary btn-dark btn-danger btn-success btn-warning";
+        let allColors = "btn-secondary btn-dark btn-danger btn-success btn-warning btn-info";
         let targetColor = "btn-secondary";
         switch(buttonColor) {
           case "black":
@@ -1291,6 +1387,12 @@ define(function(require, exports, module) {
           case "yellow":
             targetColor = "btn-warning";
             break;
+          case "cyan":
+            targetColor = "btn-info";
+            break;
+          case "gray":
+            targetColor = "btn-secondary";
+            break;
           default:
             targetColor = "btn-secondary";
         }
@@ -1301,7 +1403,7 @@ define(function(require, exports, module) {
     }
     
     function setSpanProperties(span, text, spanColor) {
-        let allColors = "bg-secondary bg-dark bg-danger bg-success bg-warning";
+        let allColors = "bg-secondary bg-dark bg-danger bg-success bg-warning bg-info text-dark";
         let targetColor = "bg-secondary";
         switch(spanColor) {
           case "black":
@@ -1317,7 +1419,10 @@ define(function(require, exports, module) {
             targetColor = "bg-primary";
             break;
           case "yellow":
-            targetColor = "bg-warning";
+            targetColor = "bg-warning text-dark";
+            break;
+          case "cyan":
+            targetColor = "bg-info text-dark";
             break;
           default:
             targetColor = "bg-secondary";
@@ -1357,6 +1462,7 @@ define(function(require, exports, module) {
     }
 
     function collect_stage_data() {
+        console.log("@collect_stage_data");
         // Make sure the plot doesn't show on screen
         var position = document.getElementById("SENSOR_POSITION").value;
         var stage = document.getElementById("SENSOR_STAGE").value;
@@ -1396,6 +1502,7 @@ define(function(require, exports, module) {
         }
     }
 
+    // unused, was called on SENSOR_STAGE change event
     function setup_data_collection(update_position) {
         current_stage_index = document.getElementById("SENSOR_STAGE").selectedIndex;
         current_stage = current_frame_data['stage'][current_stage_index];
@@ -1426,7 +1533,7 @@ define(function(require, exports, module) {
         document.getElementById("CURR_CASE_THICKNESS").value = E4PTdata.turbine_casing_thicknesses[ct_id];
         document.getElementById("CLEARANCE_ERROR").innerHTML = "";
         document.getElementById("SPACER_COLOR_LABEL").innerHTML = "";
-        savedRPM = "";
+        savedRPM = computedRPM;
         setup_data_collection_page("", "", true);
         //charting.clearChartData(document.getElementById('DATA_PLOT'));
         charting.clearChartData(document.getElementById('DATA_PLOT2'));
@@ -1674,23 +1781,24 @@ define(function(require, exports, module) {
     // the casing thickness information based on any user input.
     //
     function get_spacer_information() {
+      console.log('@get_spacer_information');
       var spacer = null;
       var spacers = current_frame_data['spacers'];
       let ct_id = current_stage + "_" + current_position;
       let case_thick = document.getElementById("CURR_CASE_THICKNESS").value;
       if (case_thick.length > 0) {
           document.getElementById(ct_id).value = document.getElementById("CURR_CASE_THICKNESS").value;
-      }
-      if (case_thick.length == 0) {
+      } else {
           // If the cell is empty, fill in in the field with what's stored in the data structure.
           case_thick = E4PTdata.turbine_casing_thicknesses[ct_id]
           document.getElementById("CURR_CASE_THICKNESS").value = case_thick;
       }
       if (typeof E4PTdata.turbine_casing_thicknesses[ct_id] !== 'undefined') {
-          // If nothing is in the data structure, fill in the structuer with what's in the field.
+          // If nothing is in the data structure, fill in the structure with what's in the field.
           E4PTdata.turbine_casing_thicknesses[ct_id] = case_thick;
       }
       if (case_thick.length == 0) {
+          console.log('no case thickness, could not determine spacer');
           return spacer;
       }
       var casing_thickness = parseFloat(case_thick);
@@ -1700,13 +1808,16 @@ define(function(require, exports, module) {
       console.log("Getting spacer information for casing_thickness = ", casing_thickness, ", and position = ", position);
       var spacer_found = false;
       for (var i=0; i<spacers.length; i++) {
-        if (spacers[i].stage == current_stage) {
+        // special handling for stages with multiple configurations
+        if (spacers[i].stage.split('.')[0] == current_stage) {
           var min = parseFloat(spacers[i].min);
           var max = parseFloat(spacers[i].max);
           if ((casing_thickness <= max) && (casing_thickness >= min)) {
             for(var j=0; j<spacers[i].position.length; j++) {
               if (position == spacers[i].position[j]) {
+                console.log(spacers[i]);
                 spacer = {'size':spacers[i].size, 'color':spacers[i].color, 'image':spacers[i].image};
+                current_stage_type = spacers[i].stage;
                 spacer_found = true;
                 break;
               }
@@ -1882,13 +1993,13 @@ define(function(require, exports, module) {
     }
 
     function do_mastering(reset) {
-        console.log('@do_mastering ' + reset);
+        console.log('@do_mastering: reset=' + reset);
         masteringPerformed = false;
         if (messaging.usesWebSocket()) {
             setIndicatorColor('yellow');
         }
         var cmd = {args:[{command:'do_mastering'}]};
-        if (reset !== undefined) {
+        if (reset) {
             cmd.args[0].reset = true;
         }
         messaging.sendMessage(cmd);
@@ -2060,7 +2171,7 @@ define(function(require, exports, module) {
                 }
                 break;
             case "connection":
-                console.log("Received a connection mode message: ", msg.message);
+                console.log("Received a connection mode message: ", msg.mode);
                 document.getElementById('CONN_SELECTION').value = msg.mode;
                 update_connection_mode(msg.mode);
                 break;
@@ -2071,6 +2182,7 @@ define(function(require, exports, module) {
                     setIndicatorColor("green");
                     document.getElementById("STATUS_DISPLAY").innerHTML = "Connected";
                     serialConnected = true;
+                    getSensorParameters();
                 } else if (msg.status == "connecting") {
                     document.getElementById("STATUS_DISPLAY").innerHTML = "Connecting";
                 } else if (msg.status == 'disconnected') {
@@ -2079,7 +2191,7 @@ define(function(require, exports, module) {
                     serialConnected = false;
                     if (!msg.noAlert) {
                         e4PtAlert('Controller was disconnected.');
-                        // TODO: reset
+                        // TODO: reset application/controller connection
                     }
                 } else if (msg.status == "acquiring") {
                     displayAbortButton();
@@ -2111,10 +2223,37 @@ define(function(require, exports, module) {
                     msg.quality = JSON.parse(msg.quality);
                     msg.overall_avg = JSON.parse(msg.overall_avg);
                     msg.blades = JSON.parse(msg.blades);
-                    msg.blade_samples_avg = JSON.parse(msg.blade_samples_avg)
-                    processE4PtData(msg);
+                    msg.blade_samples_avg = JSON.parse(msg.blade_samples_avg);
+
+                    //processE4PtData(msg);
+                    if (fromCalculateRPM) {
+                        console.log('calculating RPM');
+                        position = document.getElementById("SENSOR_POSITION").value;
+                        casing_thickness = document.getElementById("CURR_CASE_THICKNESS").value;
+                        if (position && casing_thickness) {
+                            stage_details = get_stage_details(position, casing_thickness);
+                            console.log(stage_details);
+                            let rotor_blades = stage_details.blade_count;;
+                            let observed_blades = parseFloat(msg.blades);
+                            if (observed_blades > 0) {
+                                let calculated_rpm = rotor_blades / observed_blades;
+                                console.log('calculated_rpm = ' + calculated_rpm);
+                                document.getElementById("MEASUREMENT_RPM").value = calculated_rpm.toFixed(3);
+                                computedRPM = calculated_rpm;
+                                selected_frame_data.RPM = calculated_rpm;
+                            } else {
+                                e4PtAlert('No blades observed, could not calculate RPM.');
+                            }
+                        } else {
+                            e4PtAlert('No position or casing thickness, could not calculate RPM.');
+                        }
+                        setButtonProperties($("#CALCULATE_RPM_BUTTON"), LABEL_CALCULATE, 'green');
+                        fromCalculateRPM = false;
+                    } else {
+                        processE4PtData(msg);
+                    }
                 } else {
-                    console.log("Data collection was aboreted");
+                    console.log("Data collection was aborted");
                 }
                 break;
             case "filename":
@@ -2142,8 +2281,6 @@ define(function(require, exports, module) {
                 break;
             case "sensor_params":
                 console.log("Received sensor parameters message: ", msg.master_fixture_height, ", ", msg.mastering_value, ", ", msg.master_offset, ", ", msg.sensor_selection, ", ", msg.sensor_length, ", ", msg.start_measurement_range, ", ", msg.sensor_measurement_range);
-                //setIndicatorColor("green");
-                //serialConnected = true;
                 
                 sensorParamsFromController = msg.from_controller;
                 if (sensorParamsFromController) {
@@ -2151,6 +2288,7 @@ define(function(require, exports, module) {
                     sensorLengthFromController = JSON.parse(msg.sensor_length);
                     smrFromController = JSON.parse(msg.start_measurement_range);
                     sensorMRFromController = JSON.parse(msg.sensor_measurement_range);
+                    setButtonProperties($("#READ_SENSOR_PARAMETERS_BUTTON"), LABEL_LOAD_PARAMS, 'blue');
                 }
                 
                 sensorSettings.set('sensor_selection', msg.sensor_selection);
@@ -2425,8 +2563,7 @@ define(function(require, exports, module) {
                  isHtml: false
                  });
             }
-        },
-        this);
+        }, this);
     }
 
     function uploadFileToBox(fileFullPath) {
@@ -2450,49 +2587,34 @@ define(function(require, exports, module) {
     //listDir(cordova.file.documentsDirectory + serial_number);
     function listDir(path) {
         console.log("@listDir: ", path);
-        window.resolveLocalFileSystemURL(path,
-            function (fileSystem) {
-                var reader = fileSystem.createReader();
-                reader.readEntries(
-                    function (entries) {
-                        console.log(entries);
-                        populateFileTable(entries);
-                    },
-                    function (err) {
-                        err = "Error processing entry: " + JSON.stringify(err);
-                        console.log(err);
-                        populateFileTable([]);
-                    }
-                );
-            },
-            function (err) {
-                err = "Error reading entries: " + JSON.stringify(err);
+        window.resolveLocalFileSystemURL(path, function (fileSystem) {
+            var reader = fileSystem.createReader();
+            reader.readEntries(function (entries) {
+                populateFileTable(entries);
+            }, function (err) {
+                err = "Error processing entry: " + JSON.stringify(err);
                 console.log(err);
                 populateFileTable([]);
-            }
-        );
+            });
+        }, function (err) {
+            err = "Error reading entries: " + JSON.stringify(err);
+            console.log(err);
+            populateFileTable([]);
+        });
     }
     
     function deleteFile(dir, fileName) {
-        console.log("deleteFile, with fileName = " + fileName);
-        dir.getFile
-            (
-                fileName,
-                { create: false },
-                function (fileEntry) {
-                    fileEntry.remove(
-                        function (file) {
-                            console.log("file removed! called");
-                            console.log(file);
-                        },
-                        function (error) {
-                            console.log("error in deleteFile type 1: " + error.code);
-                        },
-                        function () {
-                            console.log("error in deleteFile: file does not exist");
-                        });
-                }
-            );
+        console.log("@deleteFile: dir=" + JSON.stringify(dir) + ", fileName=" + fileName);
+        dir.getFile(fileName, { create: false }, function (fileEntry) {
+            console.log("fileEntry=", fileEntry);
+            fileEntry.remove(function (file) {
+                console.log("file removed");
+            }, function (error) {
+                console.log("error in deleteFile type 1: " + error.code);
+            }, function () {
+                console.log("error in deleteFile: file does not exist");
+            });
+        });
     }
     
     function deleteFolder(fileName) {
@@ -2510,55 +2632,96 @@ define(function(require, exports, module) {
     //deleteFilesInDir(cordova.file.documentsDirectory + serial_number);
     function deleteFilesInDir(path) { // issue #35  This removes the files in the directory
         console.log("path = " + path);
-        window.resolveLocalFileSystemURL
-            (
-                path,
-                function (dir) {
-                    var reader = dir.createReader();
-                    reader.readEntries(
-                        function (fileName) {
-                            console.log("here")
-                            console.log("in deleteFilesInDir fileName = ")
-                            fileName.map(el => {
-                                deleteFile(dir, el.name); // nativeURL.replace('file://', ''))
-                            })
-                        },
-                        function (err) {
-                            err = "Error in deleteFilesInDir type 1: " + err;
-                            console.log(err);
-                        }
-                    );
-                },
-                function (err) {
-                    err = "Error in deleteFilesInDir type 2: " + err;
-                    console.log(err);
-                }
-            );
+        window.resolveLocalFileSystemURL(path, function (dir) {
+            var reader = dir.createReader();
+            reader.readEntries(function (fileName) {
+                console.log("in deleteFilesInDir fileName = ")
+                fileName.map(el => {
+                    deleteFile(dir, el.name); // nativeURL.replace('file://', ''))
+                })
+            }, function (err) {
+                console.log("Error in deleteFilesInDir type 1: " + err);
+            });
+        }, function (err) {
+            console.log("Error in deleteFilesInDir type 2: " + err);
+        });
+    }
+
+    function toggleFileSelected(fileName, idx) {
+        /*let tbl = document.getElementById("LOCAL_FILE_TABLE_BODY");
+        let row = tbl.rows[idx];
+        let cell = row.cells[0]; // Should only be one cell.
+        cell.classList.toggle("table-active"); */
+
+        var table = document.getElementById("LOCAL_FILE_TABLE_BODY");
+        for (var i = 0; i <  table.rows.length; i++) {
+            row = table.rows[i]
+            cell = row.cells[0];
+            if (cell.innerHTML == fileName) {
+                cell.classList.toggle("table-active");
+            }
+        }
+    }
+
+    function filterArray(arr, index) {
+        return arr.reduce((prev, x, i) => prev.concat(i !== index ? [x] : []), []);
+    }
+    
+    function deleteEntry(nativeURL, i) {
+        console.log("@deleteEntry: nativeURL=" + nativeURL + ", i=" + i);
+        var path =  nativeURL;
+        var dirArr = path.split('/');
+        var filename = dirArr[dirArr.length - 1];
+        path = path.replace(filename, '');
+        
+        e4PtConfirm("Are you sure you want to delete the file " + filename + "?", function(idx) {
+            if (idx == 1) {
+                console.log("deleteEntry confirmed");
+                window.resolveLocalFileSystemURL(path, function (dirEntry) {
+                    deleteFile(dirEntry, filename);
+                    console.log("updating entries");
+                    window.entries = filterArray(window.entries, i);
+                    populateFileTable(window.entries);
+                }, function(error) {
+                    console.log("Error in deleteEntry type 2: " + error);
+                });
+            }
+        });
     }
 
     function populateFileTable(entries) {
+        console.log("@populateFileTable: " + entries.length);
         $("#FILE_CHOOSER_PAGE").fadeIn();
-        
         var prev_tbody = document.getElementById("LOCAL_FILE_TABLE_BODY");
         var tbody = document.createElement("tbody");
         tbody.setAttribute("id","LOCAL_FILE_TABLE_BODY");
         // Create the table body.
-        let rowIdx = 0;
+        window.entries = entries;
         for (var i=0; i<entries.length; i++) {
             if (!entries[i].isFile) continue;  // ignore any non-file entries
             if (entries[i].name == ".DS_Store") continue;
-            let fileSelectFn = "toggleFileSelected(\"" + entries[i].nativeURL + "\"," + rowIdx + ")";
+            let fileSelectFn = "toggleFileSelected(\"" + entries[i].name + "\"," + i + ")";
+            let deleteEntryFn = "deleteEntry(\"" + entries[i].nativeURL +  "\"," + i + ")";
             var new_row = tbody.insertRow(-1);
             var cell0 = new_row.insertCell(-1);
             cell0.innerHTML = entries[i].name;
             cell0.setAttribute("onclick",fileSelectFn);
             cell0.setAttribute("nativeURL",entries[i].nativeURL);
-            rowIdx += 1;
+            // disabled due to performance with large amount of records
+            /*var cell1 = new_row.insertCell(-1);
+            cell1.classList.add("text-center");
+            cell1.innerHTML = '<i class="fas fa-trash-alt fa-lg text-danger"></i>';
+            //cell1.innerHTML = '<button type="button" class="btn btn-danger">DELETE</button>';
+            cell1.setAttribute("onclick",deleteEntryFn);*/
+            //cell1.setAttribute("nativeURL",entries[i].nativeURL);
         }
         prev_tbody.parentNode.replaceChild(tbody, prev_tbody);
+        sortTable('LOCAL_FILE_TABLE', 0);
+        $("#FILE_CHOOSER_PAGE").fadeIn();
     }
 
     function populateDetailsTable() {
+        console.log('@populateDetailsTable');
         writeDetailsFile();  // Write the CSV file so it will be produced at the same time as the table.
         $("#TURBINE_SETUP_PAGE").fadeOut();
         $("#DATA_DETAILS_PAGE").fadeIn();
@@ -2567,9 +2730,8 @@ define(function(require, exports, module) {
         tbody.setAttribute("id","DATA_DETAILS_TABLE_BODY");
         // Create the table body.
         let tmp = "";
-        let rowIdx = 0;
         for (let i=0; i<E4PTdata.sets.length; i++) {
-            let clickFn = "toggleDetailsSelected(\"" + rowIdx + "\")";
+            let clickFn = "toggleDetailsSelected(\"" + i + "\")";
             var new_row = tbody.insertRow(-1);
             var cell1 = new_row.insertCell(-1);
             cell1.setAttribute("onclick",clickFn);
@@ -2597,7 +2759,6 @@ define(function(require, exports, module) {
             var cell7 = new_row.insertCell(-1);
             cell7.setAttribute("onclick",clickFn);
             cell7.innerHTML = checkValue(E4PTdata.sets[i].std_clr,3);
-            rowIdx += 1;
         }
         prev_tbody.parentNode.replaceChild(tbody, prev_tbody);
     }
@@ -2643,12 +2804,6 @@ define(function(require, exports, module) {
         writeToFile(targetFolder, fileName, contents, null);
     }
 
-    function toggleFileSelected(fileName, idx) {
-        let tbl = document.getElementById("LOCAL_FILE_TABLE_BODY");
-        let row = tbl.rows[idx];
-        let cell = row.cells[0]; // Should only be one cell.
-        cell.classList.toggle("table-active");
-    }
 
     function toggleDetailsSelected(idx) {
         let tbl = document.getElementById("DATA_DETAILS_TABLE_BODY");
@@ -2667,6 +2822,45 @@ define(function(require, exports, module) {
         let fileName = segments.pop() || segments.pop();
         let prompt = "Email or Upload\n" + fileName + "?";
         e4PtPrompt(prompt, exportFile, "Get File", ["Email","Upload to Box","Cancel"]);
+    }
+    
+    function deleteMultipleFiles() {
+        console.log("@deleteMultipleFiles");
+        let path = cordova.file.documentsDirectory + "data";
+        if (fromDataCollectionPage) {
+            console.log("fromDataCollectionPage");
+            let sn = processString(E4PTdata.serial_number);
+            path = cordova.file.documentsDirectory + sn;
+        }
+        console.log(path);
+        let deleteList = [];
+        let tbl = document.getElementById("LOCAL_FILE_TABLE_BODY");
+        for (let i=0; i<tbl.rows.length; i++) {
+            let row = tbl.rows[i];
+            let cell = row.cells[0]; // Should only be one cell.
+            for (let j=0; j<cell.classList.length; j++) {
+                if (cell.classList[j] = "table-active") {
+                    let dirArr = cell.attributes.nativeURL.value.split('/');
+                    let filename = dirArr[dirArr.length - 1];
+                    console.log("deleteMultipleFiles: Appending " + filename);
+                    deleteList.push(filename);
+                }
+            }
+        }
+        
+        e4PtConfirm("Are you sure you want to delete " + deleteList.length + " file(s)?", function(idx) {
+            if (idx == 1) {
+                console.log("deleteMultipleFiles confirmed");
+                window.resolveLocalFileSystemURL(path, function (dirEntry) {
+                    for (let i=0; i<deleteList.length; i++) {
+                        deleteFile(dirEntry, deleteList[i]);
+                    }
+                    listDir(path);
+                }, function(error) {
+                    console.log("Error in deleteMultipleFiles: " + error);
+                });
+            }
+        });
     }
 
     function multipleFileDownloadFunction() {
@@ -2736,10 +2930,10 @@ define(function(require, exports, module) {
         
         // only display the DATA PLOT page for GET DATA or SENSOR SETUP and not from DATA COLLECTION
         if (fromGetData || fromSensorSetupPage) {
-            fadeOutAll();
-            $("#DATA_PLOT_PAGE").fadeIn();
-            fromGetData = false;
-            fromDataCollectionPage = false;
+          fadeOutAll();
+          $("#DATA_PLOT_PAGE").fadeIn();
+          fromGetData = false;
+          fromDataCollectionPage = false;
         }
 
         if (current_frame_data['position'] != null) {
@@ -2756,7 +2950,6 @@ define(function(require, exports, module) {
     function requestE4PtData(acquisitionTime) {
         console.log("Requesting " + acquisitionTime + " seconds of data");
         charting.clearChartData(document.getElementById('DATA_PLOT'));
-        
         startProgressBar();
 
         // send_data needs args: acquisition time and casing thickness
@@ -2780,7 +2973,7 @@ define(function(require, exports, module) {
         var blade_width = 0;
         var tip_diameter = 0;
         if (typeof current_frame_data.stage_info !== 'undefined') {
-            if (typeof current_frame_data.stage_info[current_stage] !== 'undefined') {
+            if (typeof current_frame_data.stage_info[current_stage_type] !== 'undefined') {
                 stage_details = get_stage_details(position, casing_thickness);
                 num_blades = stage_details.blade_count;
                 blade_width = stage_details.blade_width;
@@ -2801,12 +2994,12 @@ define(function(require, exports, module) {
         // set flag to show DATA COLLECTION page on close, disabled to show plot2
         //fromDataCollectionPage = true;
         
-        // TODO: test this
         acquisitionTime = acquisitionTime.replace("rpm","");
+        selected_frame_data.RPM = acquisitionTime;
         
-        // TODO: should not be needed here, progress bar should update
-        setIndicatorColor("red");
+        // ensure that UI is updated, this should occur on "acquiring" status
         displayAbortButton();
+        setIndicatorColor("red");
         startProgressBar();
 
         messaging.sendMessage({args:[{
@@ -2827,6 +3020,7 @@ define(function(require, exports, module) {
     // get_stage_details find the specific information for this stage, given the frame, position,
     // and casing thickness.
     function get_stage_details(position, casing_thickness) {
+        console.log('@get_stage_details: ' + position + ', ' + casing_thickness);
         var details = {};
         details["blade_width"] = 0;
         details["blade_count"] = 0;
@@ -2834,7 +3028,7 @@ define(function(require, exports, module) {
         var stageKeys = Object.keys(current_frame_data.stage_info); // Get all the stage information names
         for (var idx in stageKeys) {
             var stageKey = stageKeys[idx];
-            var stageInt = Math.floor(parseFloat(stageKeys[idx])); // Get the stage number for this entry.
+            var stageInt = Math.floor(parseFloat(stageKeys[idx])); // Get the base stage number for this entry, ignore optional .# suffix.
             var stageStr = stageInt.toString(10);
             var foundDetails = false;
             if (stageStr == current_stage ) {
@@ -2979,28 +3173,34 @@ define(function(require, exports, module) {
             err_id.innerHTML = err_str;
             return;
         } else if (clearance_f == -9.994) {
+            // unused
             err_str = "Error: Problem finding blade tips (3).";
         } else if (clearance_f == -9.995) {
-            err_str = "Error: Problem finding blade tips (2).";
+            // clearance is NAN
+            err_str = "Error: Clearance computed to NaN value.";
         } else if (clearance_f == -9.996) {
-            err_str = "Error: Problem finding blade tips (1).";
+            // no samples found
+            err_str = "Error: No gaps detected in data.";
         } else if (clearance_f == -9.997) {
+            // unused
             err_str = "Error: No gaps detected in data.";
         } else if (clearance_f == -9.998) {
+            // unused
             err_str = "Error: gaps contains all NaN values.";
         } else if (clearance_f == -9.999) {
+            // unused
             err_str = "Error: Clearance computed to NaN value.";
         }
 
         if (E4PTdata.quality.length > 0) {
-            var defects = 0;
+            var blades_count = 0;
             for (var i=0; i<E4PTdata.quality.length; i++) {
                 if (E4PTdata.quality[i] < 1.0) {
-                    defects = defects + 1;
+                    blades_count += 1;
                 }
             }
-            if (defects > 0) {
-                err_str = err_str + " Data for " + defects + " blades deviates by >0.001 in.";
+            if (blades_count > 0) {
+                err_str = err_str + " Data for " + blades_count + " blades deviates by >0.001 in.";
                 err_id.innerHTML = err_str;
             }
         }
@@ -3015,7 +3215,7 @@ define(function(require, exports, module) {
       chartConfig.chart.panning = true;
       chartConfig.chart.panKey = 'shift';
       chartConfig.chart.zoomType = 'xy';
-      charting.addChartSubtitle(chartConfig, E4PTdata.date, E4PTdata.clearance, E4PTdata.blades, E4PTdata.blade_samples_avg, E4PTdata.overall_avg);
+      charting.addChartSubtitle(chartConfig, E4PTdata.date, E4PTdata.clearance, E4PTdata.blades, E4PTdata.blade_samples_avg, E4PTdata.overall_avg, null);
       charting.displayIntensityThresholdAndMeasurementRate(chartConfig, E4PTdata.measurement_rate, E4PTdata.intensity_threshold);
       let chartFilename = charting.createSavedChartFilename(E4PTdata.date.substring(2));
       charting.renderChart(chartConfig, 'DATA_PLOT', chartFilename, writeToFile);
@@ -3025,7 +3225,7 @@ define(function(require, exports, module) {
       let chartConfig = charting.createChartConfig(E4PTdata.data, E4PTdata.minima);
       chartConfig.tooltip.enabled = false;
       chartConfig.series[0].name = 'Filtered ' + chartConfig.series[0].name;
-      charting.addChartSubtitle(chartConfig, E4PTdata.date, E4PTdata.clearance, E4PTdata.blades, E4PTdata.blade_samples_avg);
+      charting.addChartSubtitle(chartConfig, E4PTdata.date, E4PTdata.clearance, E4PTdata.blades, E4PTdata.blade_samples_avg, null, selected_frame_data);
       charting.displayIntensityThresholdAndMeasurementRate(chartConfig, E4PTdata.measurement_rate, E4PTdata.intensity_threshold);
       let chartFilename = charting.createSavedChartFilename(E4PTdata.date.substring(2), E4PTdata.serial_number, current_stage, current_position.substring(0,1));
       //charting.renderChart(chartConfig, 'DATA_PLOT', chartFilename, writeToFile);
@@ -3366,7 +3566,7 @@ define(function(require, exports, module) {
                     var doc = docs.rows[i].doc;
 
                     // remove it from local drive
-                    deleteFolder (cordova.file.documentsDirectory + docs.rows[i].doc.serial_number)
+                    deleteFolder(cordova.file.documentsDirectory + docs.rows[i].doc.serial_number);
 
                     // remove it from database also
                     archive_db.remove(doc, function (err, response) {
@@ -3397,7 +3597,7 @@ define(function(require, exports, module) {
                     var doc = docs.rows[i].doc;
 
                     // remove it from local drive
-                    deleteFolder (cordova.file.documentsDirectory + docs.rows[i].doc.serial_number)
+                    deleteFolder(cordova.file.documentsDirectory + docs.rows[i].doc.serial_number);
 
                     // remove it from database also
                     local_db.remove(doc, function (err, response) {
@@ -3657,9 +3857,15 @@ define(function(require, exports, module) {
 
         current_frame_data = frame_data[frm_idx];
         current_stage_index = 0;
-        current_stage = current_frame_data.stage[0];
+        current_stage = current_frame_data.stage[current_stage_index];
         current_position_index = 0;
-        current_position = current_frame_data.position[current_stage][0];
+        current_position = current_frame_data.position[current_stage][current_position_index];
+        
+        selected_frame_data.frameIdx = frm_idx;
+        selected_frame_data.stageInfoIdx = current_stage_index;
+        selected_frame_data.frameName = current_frame_data.frame;
+        selected_frame_data.stageName = current_stage;
+        selected_frame_data.bladeCount = current_frame_data.stage_info[current_stage].blade_count;
 
         $("#LOCAL_DATA_PAGE").fadeOut();
         $("#ARCHIVED_DATA_PAGE").fadeOut();
@@ -3761,6 +3967,7 @@ define(function(require, exports, module) {
         set_grid_position:set_grid_position,
         toggleFileSelected:toggleFileSelected,
         toggleDetailsSelected:toggleDetailsSelected,
+        deleteEntry:deleteEntry,
         sortTable:sortTable
     };
 });

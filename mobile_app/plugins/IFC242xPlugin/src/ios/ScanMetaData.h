@@ -13,4 +13,5 @@
 @property (nonatomic) float casingThickness;
 @property (nonatomic) float spacerThickness;
 @property (nonatomic) int numberOfBlades;
+@property (nonatomic) float rpm;
 @end

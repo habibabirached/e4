@@ -47,6 +47,7 @@ enum MEASUREMENT_CATEGORY {
 - (int)calculateNumberOfDatasetsToAcquireForTime:(float)acqTime atRateInHertz:(float)rate;
 - (void)collectDataSets;
 - (void)configureController;
+- (void)readSensorParameters;
 - (void)configureOutputSettings;
 - (void)disconnectData;
 - (void)disconnectTelnet;

@@ -269,7 +269,8 @@ function get_tip_clearance(state, stage, position, data) {
                   data.sets[i].clearance = parseFloat(data.sets[i].clearance);
               }
           }
-          return data.sets[i].clearance.toFixed(4);
+          // specify precision
+          return data.sets[i].clearance.toFixed(3);
         }
       }
     }

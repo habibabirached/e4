@@ -214,11 +214,17 @@
     int bIdx = 0;
     for (NSNumber* n in displacements) {
         // exclude OUT_OF_RANGE points.
-        if ([n floatValue] >= self.outOfRange) continue;
+        if ([n floatValue] >= self.outOfRange) {
+            continue;
+        }
         d = multiplier * [n floatValue];  // multiply the value to get the index.
         bIdx = (int)floor(d); // Using floor makes bin edges integers. E.g. [0-1][+1-2][+2-3]...
-        if (bIdx > nbins-1) bIdx = nbins - 1; // Don't overflow
-        if (bIdx < 0) bIdx = 0; // Don't underflow
+        if (bIdx > nbins-1) {
+            bIdx = nbins - 1; // Don't overflow
+        }
+        if (bIdx < 0) {
+            bIdx = 0; // Don't underflow
+        }
         hBins[bIdx]++; // Increment the histogram bin
     }
     //NSLog(@"Histogram:\n");

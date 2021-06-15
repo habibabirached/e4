@@ -53,9 +53,12 @@
         self.intensityThreshold = [self calculateIntensityThresholdFromMeasurementRateKHz:self.measurementRate];
     }
     
-    // may not be a safe float comparison
     if (rpm == 0) {
         errorMessage = [errorMessage stringByAppendingString:@"Error: RPM = 0, "];
+    } else if (rpm < 0.5) {
+        errorMessage = [errorMessage stringByAppendingFormat:@"Error: RPM Low %f, ", rpm];
+    } else if (rpm > 15.0) {
+        errorMessage = [errorMessage stringByAppendingFormat:@"Error: RPM High %f, ", rpm];
     }
 
     if (self.acquisitionTime <= 0) {
@@ -65,11 +68,10 @@
     }
 
     if (self.measurementRate >= 6.5) {
-        errorMessage = [errorMessage stringByAppendingFormat:@"Error: Rate High %d pts/blade", DESIRED_POINTS_PER_BLADE];
+        errorMessage = [errorMessage stringByAppendingFormat:@"Error: Rate High %f", self.measurementRate];
     }
     return errorMessage;
 }
-
 
 -(NSString*)calculateAcquisitionTimeFromRPM:(float)rpm forBladeWidth:(float)bladeWidth forTipDiameter:(float)tipDiameter {
     return [self calculate:rpm forBladeWidth:bladeWidth forTipDiameter:tipDiameter updateRateAndIntensity:FALSE];
