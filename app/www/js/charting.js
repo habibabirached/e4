@@ -4,6 +4,7 @@ if (typeof define !== 'function') {
 
 define(function(require, exports, module, sensorSettings) {
   require('./lib/highcharts/highcharts6_0_4');
+  require('./lib/highcharts/highcharts_boost');
   var sensorSettings = require('./sensor_settings');
   
   const renderChart = (chartConfig, target, chartFilename, writeToFileFunc) => {
@@ -56,10 +57,10 @@ define(function(require, exports, module, sensorSettings) {
 
     if (avg_displacement) {
       if (sensorSettings.doesMeasurementExceedTolerance(avg_displacement)) {
-          subtitle = '<span class="FONT_BLACK">' + subtitle + ';&nbsp;</span>' + '<span class="FONT_RED">Overall Avg: ' + avg_displacement + '</span>';
+          subtitle = '<span class="FONT_BLACK">' + subtitle + ';&nbsp;</span>' + '<span class="FONT_RED">Overall Avg: ' + avg_displacement.toFixed(3) + '</span>';
       }
       else {
-          subtitle += ";&nbsp;Overall Avg: " + avg_displacement;
+          subtitle += ";&nbsp;Overall Avg: " + avg_displacement.toFixed(3);
       }
     }
       
@@ -73,17 +74,10 @@ define(function(require, exports, module, sensorSettings) {
   const createChartConfig = (displacementsArray, clearancesArray) => {
     return {
       chart: {
-        spacingBottom: 0,
-        spacingTop: 20,
-        spacingLeft: 80,
-        spacingRight: 60,
-        marginBottom: 80,
-        marginTop: 120,
-        marginLeft: 80,
-        marginRight: 40,
-        backgroundColor: 'transparent',
-        animation: false,
-        padding: 0
+        animation: false
+      },
+      credits: {
+        enabled: false
       },
       boost: {
         enabled: true,
@@ -106,8 +100,7 @@ define(function(require, exports, module, sensorSettings) {
         }
      },
       legend: { enabled: false },
-      tooltip: { enabled: true, valueDecimals: 2 },
-      pane: { startAngle: 0 },
+      tooltip: { enabled: true, valueDecimals: 3 },
       plotOptions: {
         series: {
           label: { connectorAllowed: false },
@@ -125,10 +118,7 @@ define(function(require, exports, module, sensorSettings) {
           name: 'Clearance Minima',
           data: clearancesArray
         }
-      ],
-      responsive: {
-        rules: [ { condition: { maxWidth: 1000 } } ]
-      }
+      ]
     };
   }
 
