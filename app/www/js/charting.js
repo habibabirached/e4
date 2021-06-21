@@ -4,7 +4,7 @@ if (typeof define !== 'function') {
 
 define(function(require, exports, module, sensorSettings) {
   require('./lib/highcharts/highcharts6_0_4');
-  require('./lib/highcharts/highcharts_boost');
+  //require('./lib/highcharts/highcharts_boost');
   var sensorSettings = require('./sensor_settings');
   
   const renderChart = (chartConfig, target, chartFilename, writeToFileFunc) => {
