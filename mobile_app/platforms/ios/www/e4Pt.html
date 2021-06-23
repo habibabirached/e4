@@ -711,23 +711,116 @@
               <div class="card-body" style="overflow-y: scroll;">
                 <div class="row">
                     <div class="col-lg-12">
-                      <!-- Turbine Data Collection -->
-                      <table class="table table-borderless table-sm">
-                        <tbody>
-                          <tr>
-                              <th scope="row">Date:</th>
-                              <th scope="row" id="HEADER_DATETIME"></th>
-                              <th scope="row">Customer:</th>
-                              <th scope="row" id="HEADER_CUSTOMER"></th>
-                          </tr>
-                          <tr>
-                              <th scope="row">Frame:</th>
-                              <th scope="row" id="HEADER_FRAME"></th>
-                              <th scope="row">S/N:</th>
-                              <th scope="row" id="HEADER_SERIAL"></th>
-                          </tr>
-                        </tbody>
-                      </table>
+                     
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+
+                      
+                      
+                      
+                      <form>
+                        <div class="row mb-3">
+                          <label for="FRAME_SIZE" class="col-sm-5 col-form-label">FRAME</label>
+                          <div class="col-sm-7">
+                              <select id="FRAME_SIZE2" class="form-select">
+                                  <!-- These values are overwritten by javascript -->
+                                  <option value="6B">6B</option>
+                                  <option value="6FA">6FA</option>
+                                  <option value="7E">7E</option>
+                                  <option value="7FA">7FA</option>
+                                  <option value="7FA.05">7FA.05</option>
+                                  <option value="9E">9E</option>
+                                  <option value="LMS">LMS</option>
+                              </select>
+                          </div>
+                        </div>
+                        <div class="row mb-3">
+                          <label for="SERIAL_NUMBER" class="col-sm-5 col-form-label">SERIAL NUMBER</label>
+                          <div class="col-sm-7">
+                              <input class="form-control" type="text" id="SERIAL_NUMBER2" value=""/>
+                          </div>
+                        </div>
+                        <div class="row mb-3">
+                          <label for="CUSTOMER" class="col-sm-5 col-form-label">CUSTOMER</label>
+                          <div class="col-sm-7">
+                              <input class="form-control" type="text" id="CUSTOMER2" value=""/>
+                          </div>
+                        </div>
+                        <div class="row mb-3">
+                          <label for="SITE" class="col-sm-5 col-form-label">SITE</label>
+                          <div class="col-sm-7">
+                              <input class="form-control" type="text" id="SITE2" value=""/>
+                          </div>
+                        </div>
+                        <div class="row mb-3">
+                          <label for="OPERATOR" class="col-sm-5 col-form-label">OPERATOR</label>
+                          <div class="col-sm-7">
+                              <input class="form-control" type="text" id="OPERATOR2" value=""/>
+                          </div>
+                        </div>
+                        <div class="row mb-3">
+                          <label for="UNITS" class="col-sm-5 col-form-label">UNITS</label>
+                          <div class="col-sm-7">
+                              <select id="UNITS2" class="form-select">
+                                  <option value="In">Inches</option>
+                                  <option value="MM">MM</option>
+                              </select>
+                          </div>
+                        </div>
+                       
+                      </form>
+
+
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
                       <div class="text-center">
                           <span id="SENSOR_PARAMS_CONFIG_MSG" class="badge bg-secondary"></span>
                           <span class="badge bg-light text-dark">
