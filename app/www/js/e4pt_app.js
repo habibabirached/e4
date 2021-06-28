@@ -532,6 +532,9 @@ define(function(require, exports, module) {
         document.getElementById("FRAME_DATA_CLEAR_BUTTON").addEventListener('click', function() {
             clearFrameData();
         }, {passive: true});
+        document.getElementById("OPEN_SETTINGS_BUTTON").addEventListener('click', function() {
+            messaging.sendMessage({args:[{command:'open_settings'}]});
+        }, {passive: true});
         document.getElementById("SENSOR_SELECTION").addEventListener('change', function() {
             getSensorParametersForSensorSelection(document.getElementById("SENSOR_SELECTION").value);
         }, {passive: true});
@@ -2225,7 +2228,6 @@ define(function(require, exports, module) {
                     msg.blades = JSON.parse(msg.blades);
                     msg.blade_samples_avg = JSON.parse(msg.blade_samples_avg);
 
-                    //processE4PtData(msg);
                     if (fromCalculateRPM) {
                         console.log('calculating RPM');
                         position = document.getElementById("SENSOR_POSITION").value;
@@ -2233,10 +2235,11 @@ define(function(require, exports, module) {
                         if (position && casing_thickness) {
                             stage_details = get_stage_details(position, casing_thickness);
                             console.log(stage_details);
-                            let rotor_blades = stage_details.blade_count;;
+                            let rotor_blades = stage_details.blade_count;
                             let observed_blades = parseFloat(msg.blades);
+                            console.log('rotor_blades = ' + rotor_blades + ', observed_blades = ' + observed_blades);
                             if (observed_blades > 0) {
-                                let calculated_rpm = rotor_blades / observed_blades;
+                                let calculated_rpm = observed_blades / rotor_blades;
                                 console.log('calculated_rpm = ' + calculated_rpm);
                                 document.getElementById("MEASUREMENT_RPM").value = calculated_rpm.toFixed(3);
                                 computedRPM = calculated_rpm;
