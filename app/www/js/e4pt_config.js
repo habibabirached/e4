@@ -829,7 +829,7 @@ frame_data = [
           'BOTTOM':['G', 270.0, 270.0, 1.000],
           'BOTTOM LEFT':['H', 270.0, 270.0, 1.000],
           'blade_count':80,
-          'tip_diameter':81.126,
+          'tip_diameter':75.563,
           'blade_width':0.060
       },
       '10':{

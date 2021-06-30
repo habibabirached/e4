@@ -412,6 +412,8 @@
         //    [self->controller initialize];
         //}
         [self returnPluginResponse:@{@"type":@"version",@"version":[[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleShortVersionString"]}];
+    } else if ([cmd containsString:@"open_settings"]) {
+        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:UIApplicationOpenSettingsURLString] options:@{} completionHandler:nil];
     } else if ([cmd containsString:@"check_connection_status"]) {
         if (self->controller.state == ready) {
             [self returnPluginResponse:@{@"type":@"status",@"status":@"connected"}];
