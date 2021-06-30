@@ -586,7 +586,7 @@
                       <div class="col-sm-7">
                           <select id="UNITS" class="form-select">
                               <option value="In">Inches</option>
-                              <option value="MM">MM</option>
+                              <option value="MM">Millimeters</option>
                           </select>
                       </div>
                     </div>
@@ -712,23 +712,58 @@
                 <div class="row">
                     <div class="col-lg-12">
                       <!-- Turbine Data Collection -->
-                      <table class="table table-borderless table-sm">
-                        <tbody>
-                          <tr>
-                              <th scope="row">Date:</th>
-                              <th scope="row" id="HEADER_DATETIME"></th>
-                              <th scope="row">Customer:</th>
-                              <th scope="row" id="HEADER_CUSTOMER"></th>
-                          </tr>
-                          <tr>
-                              <th scope="row">Frame:</th>
-                              <th scope="row" id="HEADER_FRAME"></th>
-                              <th scope="row">S/N:</th>
-                              <th scope="row" id="HEADER_SERIAL"></th>
-                          </tr>
-                        </tbody>
-                      </table>
                       <div class="text-center">
+                          <span class="badge bg-light text-dark">Date: <span id="HEADER_DATETIME"></span></span>
+                      </div>
+
+                      <form class="row g-3">
+                          <div class="col-md-6 text-center">
+                              <label for="FRAME_SIZE2" class="form-label">Frame</label>
+                              <select id="FRAME_SIZE2" class="form-select">
+                                  <!-- These values are overwritten by javascript -->
+                                  <option value="6B">6B</option>
+                                  <option value="6FA">6FA</option>
+                                  <option value="7E">7E</option>
+                                  <option value="7FA">7FA</option>
+                                  <option value="7FA.05">7FA.05</option>
+                                  <option value="9E">9E</option>
+                                  <option value="LMS">LMS</option>
+                              </select>
+                          </div>
+                          <div class="col-md-6 text-center">
+                              <label for="SERIAL_NUMBER2" class="form-label">Serial Number</label>
+                              <div class="input-group mb-2">
+                                <input type="text" class="form-control" id="SERIAL_NUMBER2">
+                              </div>
+                          </div>
+                          <div class="col-md-6 text-center">
+                              <label for="CUSTOMER2" class="form-label">Customer</label>
+                              <div class="input-group mb-2">
+                                <input type="text" class="form-control" id="CUSTOMER2">
+                              </div>
+                          </div>
+                          <div class="col-md-6 text-center">
+                              <label for="SITE2" class="form-label">Site</label>
+                              <div class="input-group mb-2">
+                                <input type="text" class="form-control" id="SITE2">
+                              </div>
+                          </div>
+                          <div class="col-md-6 text-center">
+                              <label for="OPERATOR2" class="form-label">Operator</label>
+                              <div class="input-group mb-2">
+                                <input type="text" class="form-control" id="OPERATOR2">
+                              </div>
+                          </div>
+                          <div class="col-md-6 text-center">
+                              <label for="UNITS2" class="form-label">Units</label>
+                              <select id="UNITS2" class="form-select">
+                                  <option value="In">Inches</option>
+                                  <option value="MM">Millimeters</option>
+                              </select>
+                          </div>
+                      </form>
+
+                      <div class="text-center my-4">
                           <span id="SENSOR_PARAMS_CONFIG_MSG" class="badge bg-secondary"></span>
                           <span class="badge bg-light text-dark">
                               <span id="SL_CONFIG_MSG"></span>,
@@ -739,7 +774,6 @@
                               <span id="MO_CONFIG_MSG"></span>
                           </span>
                       </div>
-                      <br/>
 
                       <div class="w-100" style="overflow-x: scroll;">
                           <!-- This table gets constructed by javascript -->
@@ -803,6 +837,7 @@
                             </div>
                         </div>
                         <div class="col-md-2 text-center">
+                            <!-- TODO: remove -->
                             <button id="OFFSET_ADJUSTMENT_BUTTON" type="button" class="btn btn-secondary">EXPLAIN OFFSET</button>
                         </div>
                       </form>
