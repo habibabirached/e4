@@ -206,6 +206,43 @@ define(function(require, exports, module) {
             setupCasingThicknessTable(null);
             document.getElementById("FRAME_DEFAULT_SENSOR").value = current_frame_data.default_sensor;
         }, {passive: true});
+        document.getElementById("FRAME_SIZE2").addEventListener('change', function() {
+            document.getElementById("FRAME_SIZE").value = document.getElementById("FRAME_SIZE2").value
+            document.getElementById("FRAME_SIZE").selectedIndex = document.getElementById("FRAME_SIZE2").selectedIndex;
+            setupCasingThicknessTable(null);
+            document.getElementById("FRAME_DEFAULT_SENSOR").value = current_frame_data.default_sensor;
+            record_casing_thickness();
+            send_scan_metadata(true, true);
+            turbine_setup();
+            fadeOutAll();
+            $("#TURBINE_SETUP_PAGE").fadeIn();
+        }, {passive: true});
+        document.getElementById("SERIAL_NUMBER2").addEventListener('change', function() {
+            document.getElementById("SERIAL_NUMBER").value = document.getElementById("SERIAL_NUMBER2").value;
+            send_scan_metadata(true, true);
+            $("#TURBINE_SETUP_PAGE").fadeIn();
+        }, {passive: true});
+
+        document.getElementById("CUSTOMER2").addEventListener('change', function() {
+            document.getElementById("CUSTOMER").value = document.getElementById("CUSTOMER2").value;
+            send_scan_metadata(true, true);
+            $("#TURBINE_SETUP_PAGE").fadeIn();
+        }, {passive: true});
+        document.getElementById("SITE2").addEventListener('change', function() {
+            document.getElementById("SITE").value = document.getElementById("SITE2").value;
+            send_scan_metadata(true, true);
+            $("#TURBINE_SETUP_PAGE").fadeIn();
+        }, {passive: true});
+        document.getElementById("OPERATOR2").addEventListener('change', function() {
+            document.getElementById("OPERATOR").value = document.getElementById("OPERATOR2").value;
+            send_scan_metadata(true, true);
+            $("#TURBINE_SETUP_PAGE").fadeIn();
+        }, {passive: true});
+        document.getElementById("UNITS2").addEventListener('change', function() {
+            document.getElementById("UNITS").value = document.getElementById("UNITS2").value;
+            send_scan_metadata(true, true);
+            $("#TURBINE_SETUP_PAGE").fadeIn();
+        }, {passive: true});
         document.getElementById("SN_SUBMIT_BUTTON").addEventListener('click', function() {
             record_casing_thickness();
             confirm_new_or_continue();
@@ -969,6 +1006,7 @@ define(function(require, exports, module) {
         pluginMessage({type:'status',status:'disconnected',noAlert:true});
         messaging.sendMessage({args:[{command:'set_connection_mode',mode:mode}]});
     }
+
     
     function authorizeControllerSettingsUpdate() {
         // Prompt user for password.
@@ -1046,41 +1084,50 @@ define(function(require, exports, module) {
         console.log("E4PTdata.turbine_casing_thicknesses: ", E4PTdata.turbine_casing_thicknesses);
     }
 
-    function send_scan_meta_data(reset) {
+    function send_scan_metadata(reset, updatingExisting = false) {
+      // Set element suffix if we are updating existing measurement
+      var suffix = (updatingExisting ? '2' : '');
 
-      // First make sure the user has input some meta-data.
-      E4PTdata.serial_number = document.getElementById("SERIAL_NUMBER").value;
-      if ( E4PTdata.serial_number.length == 0 ) {
+      // First make sure the user has input some metadata.
+      E4PTdata.serial_number = document.getElementById("SERIAL_NUMBER" + suffix).value;
+      if (E4PTdata.serial_number.length == 0) {
         e4PtAlert("Serial Number is required.");
         return;
       }
-
-      $("#SETUP_PAGE").fadeOut();
-      $("#RESULTS_PAGE").fadeOut();
-      $("#DATA_PLOT_PAGE").fadeOut();
-      $("#INITIALIZE_SENSOR_PAGE").fadeIn();
-      $("#LOCAL_DATA_PAGE").fadeOut();
-      $("#ARCHIVED_DATA_PAGE").fadeOut();
+        
+      if (!updatingExisting) {
+        $("#SETUP_PAGE").fadeOut();
+        $("#RESULTS_PAGE").fadeOut();
+        $("#DATA_PLOT_PAGE").fadeOut();
+        $("#INITIALIZE_SENSOR_PAGE").fadeIn();
+        $("#LOCAL_DATA_PAGE").fadeOut();
+        $("#ARCHIVED_DATA_PAGE").fadeOut();
+      }
 
       // Here we get values from the UI, but we make sure they don't overrun bounds.
-      var frm_idx = document.getElementById("FRAME_SIZE").selectedIndex;
-      E4PTdata.frame = frame_data[frm_idx].frame;
       if (E4PTdata.serial_number.length > MAX_STR_LEN) {
-          E4PTdata.serial_number = E4PTdata.serial_number.substr(0,MAX_STR_LEN);
+        E4PTdata.serial_number = E4PTdata.serial_number.substr(0,MAX_STR_LEN);
       }
-      E4PTdata.customer = document.getElementById("CUSTOMER").value;
+
+      var frm_idx = document.getElementById("FRAME_SIZE" + suffix).selectedIndex;
+      E4PTdata.frame = frame_data[frm_idx].frame;
+
+      E4PTdata.customer = document.getElementById("CUSTOMER" + suffix).value;
       if (E4PTdata.customer.length > MAX_STR_LEN) {
           E4PTdata.customer = E4PTdata.customer.substr(0,MAX_STR_LEN);
       }
-      E4PTdata.site_name = document.getElementById("SITE").value;
+
+      E4PTdata.site_name = document.getElementById("SITE" + suffix).value;
       if (E4PTdata.site_name.length > MAX_STR_LEN) {
           E4PTdata.site_name = E4PTdata.site_name.substr(0,MAX_STR_LEN);
       }
-      E4PTdata.operator = document.getElementById("OPERATOR").value;
+
+      E4PTdata.operator = document.getElementById("OPERATOR" + suffix).value;
       if (E4PTdata.operator.length > MAX_STR_LEN) {
           E4PTdata.operator = E4PTdata.operator.substr(0,MAX_STR_LEN);
       }
-      E4PTdata.units = document.getElementById("UNITS").value;
+
+      E4PTdata.units = document.getElementById("UNITS" + suffix).value;
       E4PTdata.state = document.getElementById("TURBINE_STATE").value;
       E4PTdata.temperature_units = document.getElementById("TEMPERATURE_UNITS").value;
 
@@ -1095,7 +1142,9 @@ define(function(require, exports, module) {
       E4PTdata.time = timeStr;
 
       if (reset) {
-          E4PTdata.pouchdb_id = "";  // setting this to an empty string will cause a new DB entry to be created.
+          if (!updatingExisting) {
+            E4PTdata.pouchdb_id = "";  // setting this to an empty string will cause a new DB entry to be created.
+          }
           reset_data_collection();
       }
       addDBEntry(E4PTdata); // Save to the database here so we don't lose this data.
@@ -1121,9 +1170,9 @@ define(function(require, exports, module) {
                     String(msg),            // message
                     function(idx) {
                         if (idx == 1) { // Continue
-                            send_scan_meta_data(false);
+                            send_scan_metadata(false);
                         } else if (idx == 2) { // Start New
-                            send_scan_meta_data(true);
+                            send_scan_metadata(true);
                         } else if (idx == 3) { // Cancel
                             return; // Do nothing
                         }
@@ -1139,7 +1188,7 @@ define(function(require, exports, module) {
                 }
             }
         } else {
-            send_scan_meta_data(true);
+            send_scan_metadata(true);
             previous_frame = current_frame_data.frame
         }
         return;
@@ -1193,13 +1242,18 @@ define(function(require, exports, module) {
             dateStr = monthNames[d.getMonth()] + "-" + d.getDate() + "-" + d.getFullYear();
         }
         document.getElementById("HEADER_DATETIME").innerHTML = dateStr;
-        document.getElementById("HEADER_CUSTOMER").innerHTML = customer + " - " + site;
-        document.getElementById("HEADER_FRAME").innerHTML = E4PTdata.frame;
-        document.getElementById("HEADER_SERIAL").innerHTML = E4PTdata.serial_number + ";  Units: " + E4PTdata.units;
+        
+        document.getElementById("FRAME_SIZE2").value = document.getElementById("FRAME_SIZE").value;
+        document.getElementById("SERIAL_NUMBER2").value = document.getElementById("SERIAL_NUMBER").value;
+        document.getElementById("CUSTOMER2").value = document.getElementById("CUSTOMER").value;
+        document.getElementById("SITE2").value = document.getElementById("SITE").value;
+        document.getElementById("OPERATOR2").value = document.getElementById("OPERATOR").value;
+        document.getElementById("UNITS2").value = document.getElementById("UNITS").value;
+
         updateSensorHeaderMessage();
         checkSensorSelection();
     }
-    
+
     function updateSensorHeaderMessage() {
         document.getElementById("SL_CONFIG_MSG").innerHTML = sensorSettings.get('sensor_length') + "&quot; SL";
         document.getElementById("SMR_CONFIG_MSG").innerHTML = sensorSettings.get('start_measurement_range') + "mm SMR";
@@ -1250,6 +1304,7 @@ define(function(require, exports, module) {
         }
         var html = html_buf.join('\n');
         document.getElementById("FRAME_SIZE").innerHTML = html;
+        document.getElementById("FRAME_SIZE2").innerHTML = html;
         if (current_frame_data.length != 0) {
           document.getElementById("FRAME_SIZE").selectedIndex = selectedIndex;
           document.getElementById("FRAME_SIZE").value = current_frame_data.frame;
@@ -1529,6 +1584,7 @@ define(function(require, exports, module) {
     function reset_data_collection() {
         E4PTdata.sets = [];
         current_stage_index = 0;
+        // load data for current stage
         current_stage = current_frame_data['stage'][current_stage_index];
         current_position_index = 0;
         current_position = current_frame_data['position'][current_stage][current_position_index];
@@ -1728,14 +1784,14 @@ define(function(require, exports, module) {
         E4PTdata.customer = customer;
         E4PTdata.site = site;
         E4PTdata.operator = document.getElementById("OPERATOR").value;
-        //var header = "<p>" + dateStr + "  -  " + timeStr + "</p><p>" + customer + " - " + site + "</p><p>Frame: " + E4PTdata.frame + "</p><p>S/N: " + E4PTdata.serial_number + "</p>";
+
         document.getElementById("HEADER_DATETIME").innerHTML = dateStr;
-        document.getElementById("HEADER_CUSTOMER").innerHTML = customer + " - " + site;
-        document.getElementById("HEADER_FRAME").innerHTML = E4PTdata.frame;
-        document.getElementById("HEADER_SERIAL").innerHTML = E4PTdata.serial_number + ";  Units: " + E4PTdata.units;
+
         updateSensorHeaderMessage();
+
         document.getElementById("SENSOR_STAGE").selectedIndex = current_stage_index;
         document.getElementById("SENSOR_POSITION").selectedIndex = current_position_index;
+
         var html_buf = [];
         var stage_index = 0;
         var position_index = 0;
@@ -1920,7 +1976,7 @@ define(function(require, exports, module) {
         var stages = current_frame_data['stage'];
         var positions = current_frame_data['position'][current_stage];
         //console.log("@advance_position");
-        //console.log("stages:  ", stages);
+        //console.log("stages: ", stages);
         //console.log("positions: ", positions);
 
         current_position_index = (current_position_index + 1) % positions.length;

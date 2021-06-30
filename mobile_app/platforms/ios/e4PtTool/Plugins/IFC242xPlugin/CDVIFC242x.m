@@ -106,12 +106,14 @@
         if ([command.arguments[0] isKindOfClass:[NSDictionary class]]) {
             [self.manager messageHandler:command.arguments[0] callbackId:command.callbackId];
         } else {
+            // TODO: remove
             //support legacy format of array of strings
             [self.manager messageHandler:[self commandStringToDictionary:command.arguments] callbackId:command.callbackId];
         }
     }];
 }
 
+// TODO: remove
 - (NSDictionary*)commandStringToDictionary:(NSArray*)commands {
     NSLog(@"Detected the use of legacy payload structure, array of strings.  Compatibility with the legacy format will be removed in a future release. Replace the legacy payload with the supported JSON structure.");
     NSMutableDictionary* dict = [NSMutableDictionary new];

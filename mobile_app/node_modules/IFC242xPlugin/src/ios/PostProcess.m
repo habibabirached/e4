@@ -24,6 +24,7 @@
 #define FILTER_EDGE_SIZE_START 1
 #define FILTER_EDGE_SIZE_STOP 1
 #define BIN_MULTIPLIER 4 // This multiplier will change the size & resolution of the histogram.
+#define MIN_BLADE_SAMPLE_COUNT 2 // Require more than 1 sample to identify a blade
 
 @implementation PostProcess {
     NSMutableArray* kernel;
@@ -68,6 +69,7 @@
     int* hBins = [self createHistogramForSegmentation:measurementData.displacements numberOfBins:nbins valueMultiplier:BIN_MULTIPLIER];
     
     // Use Otsu's method to get threshold
+    // TODO: allow for user override
     clearanceData.shelfThreshold = [self otsuSegmentation:hBins nbins:nbins maxBin:self.outOfRange];
     free(hBins);
     
@@ -158,7 +160,7 @@
                 if (isnan(clearance)) {
                     clearance = -9.995;  // nan has happened before.
                 }
-                if (count > 1) {
+                if (count >= MIN_BLADE_SAMPLE_COUNT) {
                     if (self.useMinimumClearance)
                         [clearanceData.bladeClearances addObject:[NSNumber numberWithFloat:min_clearance]];
                     else {
@@ -172,7 +174,7 @@
                 }
                 //NSLog(@"Clearance: %f; Quality: %@", clearance, [clearanceData.quality lastObject]);
                 for (int j=start; j<=stop; j++) {
-                    if (count > 1 && [measurementData.displacements[j] floatValue] < self.outOfRange) {
+                    if (count >= MIN_BLADE_SAMPLE_COUNT && [measurementData.displacements[j] floatValue] < self.outOfRange) {
                         [clearanceData.filtered addObject:[NSNumber numberWithFloat:clearance]];
                     } else {
                         [clearanceData.filtered addObject:outOfRangeNumber];
