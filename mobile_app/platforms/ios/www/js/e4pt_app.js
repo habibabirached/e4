@@ -54,6 +54,18 @@ define(function(require, exports, module) {
 
     var local_db = new PouchDB('e4ptdb', {revs_limit: 1, auto_compaction: true});
     var archive_db = new PouchDB('e4ptarchive', {revs_limit: 1, auto_compaction: true});
+    
+    var POSITION_DISPLAY_MODE = 'TEXT'; // TEXT, ICON, BOTH
+    var ARROW_ICONS = {
+        "TOP": '<i class="fas fa-arrow-up"></i>',
+        "BOTTOM": '<i class="fas fa-arrow-down"></i>',
+        "LEFT": '<i class="fas fa-arrow-left"></i>',
+        "RIGHT": '<i class="fas fa-arrow-right"></i>',
+        "TOP LEFT": '<i class="fas fa-arrow-left" data-fa-transform="rotate-45"></i>',
+        "TOP RIGHT": '<i class="fas fa-arrow-up" data-fa-transform="rotate-45"></i>',
+        "BOTTOM LEFT": '<i class="fas fa-arrow-down" data-fa-transform="rotate-45"></i>',
+        "BOTTOM RIGHT": '<i class="fas fa-arrow-right" data-fa-transform="rotate-45"></i>',
+    };
 
     // Replace with remote instance when we get to that point.
     //var remoteCouch = 'http://xxx.xxx.xxx.xxx/remote_e4ptdb';
@@ -820,15 +832,21 @@ define(function(require, exports, module) {
             console.log("stageText:  ", stageText);
             console.log("current_frame_data.position: ", p);
             htmlStr = htmlStr + '<tr>';
-            htmlStr = htmlStr + '<th>' + stageText + '</th>';
+            htmlStr = htmlStr + '<th class="align-middle">' + stageText + '</th>';
             stageText = "";
             for (let j=0; j<pos[p].length; j++) {
-                htmlStr = htmlStr + '<th scope="row">' + pos[p][j] + '</th>';
+                if (POSITION_DISPLAY_MODE == 'TEXT') {
+                    htmlStr = htmlStr + '<th class="align-middle" scope="row">' + pos[p][j] + '</th>';
+                } else if (POSITION_DISPLAY_MODE == 'ICON') {
+                    htmlStr = htmlStr + '<th class="align-middle">' + ARROW_ICONS[pos[p][j]] + '</th>';
+                } else if (POSITION_DISPLAY_MODE == 'BOTH') {
+                    htmlStr = htmlStr + '<th class="align-middle" scope="row">' + ARROW_ICONS[pos[p][j]] + '&nbsp;' + pos[p][j] + '</th>';
+                }
                 console.log("pos[p][j]: ", pos[p][j]);
             }
             htmlStr = htmlStr + '</tr>';
             htmlStr = htmlStr + '<tr>';
-            htmlStr = htmlStr + '<td>' + p + '</td>';
+            htmlStr = htmlStr + '<td scope="row">' + p + '</td>';
             for (let j=0; j<pos[p].length; j++) {
                 let casingThickness_el_id = p + '_' + pos[p][j];
                 htmlStr = htmlStr + '<td><input class="form-control" type="text" id="' + casingThickness_el_id + '" value=""/></td>';
@@ -1805,13 +1823,19 @@ define(function(require, exports, module) {
         for (stage_index = 0; stage_index < stages.length; stage_index++) {
             var stage = stages[stage_index];
             var positions = current_frame_data['position'][stage];
-            html_buf.push("<td><table class=\"table table-bordered table-sm\">");
-            var header_row = "<thead class=\"table-light\"><tr><th class=\"text-center\" scope=\"col\">POSITION</th><th class=\"text-center\" scope=\"col\">";
+            html_buf.push("<td><table class=\"table table-bordered border-secondary table-sm\">");
+            var header_row = "<thead class=\"table-light table-bordered border-secondary align-middle text-center\"><tr><th scope=\"col\">POSITION</th><th scope=\"col\">";
             header_row = header_row + "STAGE " + stages[stage_index];
             header_row = header_row + "</th></tr></thead><tbody>";
             html_buf.push(header_row);
             for (position_index = 0; position_index < positions.length; position_index++) {
-                html_buf.push("<tr><td>" + positions[position_index] + "</td>");
+                if (POSITION_DISPLAY_MODE == 'TEXT') {
+                    html_buf.push("<tr><td>" + positions[position_index] + "</td>");
+                } else if (POSITION_DISPLAY_MODE == 'ICON') {
+                    html_buf.push('<tr><td class="text-center">' + ARROW_ICONS[positions[position_index]] + '</td>');
+                } else if (POSITION_DISPLAY_MODE == 'BOTH') {
+                    html_buf.push('<tr><td class="text-center">' + ARROW_ICONS[positions[position_index]] + '&nbsp;' + positions[position_index] + '</td>');
+                }
                 var el_id = positions[position_index] + stages[stage_index];
                 el_id = el_id.replace(/\s+/g, '_');
                 html_buf.push("<td id='" + el_id +
@@ -2024,13 +2048,13 @@ define(function(require, exports, module) {
             for (position_index = 0; position_index < positions.length; position_index++) {
                 let el_id = positions[position_index] + stages[stage_index];
                 el_id = el_id.replace(/\s+/g, '_');
-                document.getElementById(el_id).classList.remove("table-active", "border", "border-2", "border-primary");
+                document.getElementById(el_id).classList.remove("table-primary", "border", "border-4", "border-primary");
             }
         }
         // now highlight the cell of interest.
         el_id = hi_position+hi_stage;
         el_id = el_id.replace(/\s+/g, '_');
-        document.getElementById(el_id).classList.add("table-active", "border", "border-2", "border-primary");
+        document.getElementById(el_id).classList.add("table-primary", "border", "border-4", "border-primary");
     }
 
     function do_dark_reference() {
