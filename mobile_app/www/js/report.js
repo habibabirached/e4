@@ -106,6 +106,10 @@ function makeCircleTables(stages, positions, data) {
     if ((td_idx % 2) == 0) {
       reportHTML += "<tr>";
     }
+    // horizontal spacing between stages
+    if ((td_idx % 2) == 1) {
+      reportHTML += "<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>";
+    }
     reportHTML += "<td><table>";
     reportHTML += "<tr><td></td><td></td><td></td><td class=\"cCell0\">Probe Hole Check</td><td></td><td></td><td></td></tr>";
     
@@ -187,7 +191,7 @@ function makeCircleTables(stages, positions, data) {
     } else if ((td_idx % 2) == 0) {
       reportHTML += "</tr>";
       // padding between rows
-      for (var k=0; k<12; k++) {
+      for (var k=0; k<8; k++) {
         reportHTML += "<tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>";
       }
     }
