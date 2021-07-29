@@ -117,3 +117,30 @@ footer {
     list-style: none;
     font-size: 1.2rem;
 }
+
+/* data collection bottom buttons */
+.btn-matrix {
+    flex-wrap: wrap;
+}
+.btn-matrix > .btn {
+    width: 33%;
+    margin-bottom: 4px;
+}
+.btn-matrix > .btn:nth-child(3n + 4) {
+    margin-left: 0;
+}
+.btn-matrix > .btn:nth-child(n + 4) {
+    margin-top: -1px;
+}
+.btn-matrix > .btn:first-child {
+    border-bottom-left-radius: 0;
+}
+.btn-matrix > .btn:nth-child(3) {
+    border-top-right-radius: 4px !important;
+}
+.btn-matrix > .btn:nth-last-child(3) {
+    border-bottom-left-radius: 4px !important;
+}
+.btn-matrix > .btn:last-child {
+    border-top-right-radius: 0;
+}

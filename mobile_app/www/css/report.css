@@ -1,70 +1,91 @@
+body {
+    font-family: Arial, Helvetica, sans-serif;
+}
 .banner {
     border: none;
+    width: 100%;
 }
 .header {
     border-collapse: collapse;
-    border:1px solid black;
+    border: 1px solid black;
+    width: 100%;
 }
-.hcell {
+.notice {
+    text-align: center;
+    font-size: 100%;
+    color: orange;
+    font-style: italic;
+}
+.hCell {
     border-collapse: collapse;
-    border:1px solid black;
-    font-family: Arial, Helvetica, sans-serif;
-    font-weight:bold;
-    font-size:12px;
+    border: 1px solid black;
+    font-weight: bold;
+    font-size: 12px;
+}
+.hCellOverride {
+    border-collapse: collapse;
+    border: 1px solid black;
+    color: red;
+    font-weight: bold;
+    font-size: 12px;
 }
 .cCell0 {
     border: none;
-    font-family: Arial, Helvetica, sans-serif;
-    font-weight:bold;
-    font-size:12px;
-    text-align:center;
+    font-weight: bold;
+    font-size: 12px;
+    text-align: center;
 }
 .cCell1 {
     border: none;
-    font-family: Arial, Helvetica, sans-serif;
-    font-size:12px;
+    font-size: 12px;
 }
 .cCell2 {
     border-collapse: collapse;
-    border:1px solid black;
-    width:80px;
-    font-family: Arial, Helvetica, sans-serif;
-    font-size:12px;
+    border: 1px solid black;
+    width: 80px;
+    font-size: 12px;
     text-align: center;
 }
-.cCell3 {
-    border: none;
-    font-family: Arial, Helvetica, sans-serif;
+.cCell2Override {
+    /*color: red;*/
+    border-collapse: collapse;
+    border: 2px solid red;
+    width: 80px;
+    font-size: 12px;
+    text-align: center;
 }
 .circleCell {
-    border: solid 2px black;
+    border: 2px solid black;
     width: 150px;
-    height: 150px;
-    border-radius: 75px;
+    height: 130px;
+    border-radius: 50%;
     text-align: center;
     line-height: 60px;
-    font-family: Arial, Helvetica, sans-serif;
-    font-size:12px;
+    font-size: 12px;
 }
 .tCell1 {
     border-collapse: collapse;
-    border: solid 1px black;
+    border: 1px solid black;
     text-align: center;
-    font-family: Arial, Helvetica, sans-serif;
-    font-size:12px;
+    font-size: 12px;
 }
 .tCell2 {
-    border: solid 1px black;
-    height:22px;
+    border: 1px solid black;
+    height: 22px;
     text-align: center;
-    font-family: Arial, Helvetica, sans-serif
-    font-size:12px;
+    font-size: 12px;
+}
+.tCell2Override {
+    /*color: red;*/
+    border: 2px solid red;
+    height: 22px;
+    text-align: center;
+    font-size: 12px;
 }
 .pText0 {
     text-align: left;
-    font-family: Arial, Helvetica, sans-serif;
-    font-weight:bold;
-    font-size:12px;
+    font-weight: bold;
+    font-size: 12px;
 }
 @media print {
   .break_line {

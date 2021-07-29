@@ -43,8 +43,8 @@ define(function(require, exports, module) {
     var SSO_CLIENT_ID = "GEPW_FFA_TRACC_01";
     var SSO_REDIRECT_URI = "TRaCC://authorization_grant/";
     
-    var LABEL_GO = "GO!";
-    var LABEL_ABORT = "ABORT!";
+    var LABEL_GO = "COLLECT";
+    var LABEL_ABORT = "ABORT";
     var LABEL_START_DARK = "START DARK REFERENCE";
     var LABEL_DARK = "PERFORMING DARK REFERENCE";
     var LABEL_CALCULATE = "CALCULATE";
@@ -54,6 +54,22 @@ define(function(require, exports, module) {
 
     var local_db = new PouchDB('e4ptdb', {revs_limit: 1, auto_compaction: true});
     var archive_db = new PouchDB('e4ptarchive', {revs_limit: 1, auto_compaction: true});
+    
+    var editModal = new bootstrap.Modal(document.getElementById('EDIT_MODAL'));
+    var clearanceOverrideModal = new bootstrap.Modal(document.getElementById('CLEARANCE_OVERRIDE_MODAL'));
+    var spacerModal = new bootstrap.Modal(document.getElementById('SPACER_MODAL'));
+    
+    var POSITION_DISPLAY_MODE = 'TEXT'; // TEXT, ICON, BOTH
+    var ARROW_ICONS = {
+        "TOP": '<i class="fas fa-arrow-up"></i>',
+        "BOTTOM": '<i class="fas fa-arrow-down"></i>',
+        "LEFT": '<i class="fas fa-arrow-left"></i>',
+        "RIGHT": '<i class="fas fa-arrow-right"></i>',
+        "TOP LEFT": '<i class="fas fa-arrow-left" data-fa-transform="rotate-45"></i>',
+        "TOP RIGHT": '<i class="fas fa-arrow-up" data-fa-transform="rotate-45"></i>',
+        "BOTTOM LEFT": '<i class="fas fa-arrow-down" data-fa-transform="rotate-45"></i>',
+        "BOTTOM RIGHT": '<i class="fas fa-arrow-right" data-fa-transform="rotate-45"></i>',
+    };
 
     // Replace with remote instance when we get to that point.
     //var remoteCouch = 'http://xxx.xxx.xxx.xxx/remote_e4ptdb';
@@ -68,6 +84,9 @@ define(function(require, exports, module) {
         this.case_thickness = null;
         //this.pts = null;
         this.clearance = null;
+        this.manualOverride = false;
+        this.overrideName = null;
+        this.overrideSSO = null;
         this.max_clr = null;
         this.min_clr = null;
         this.med_clr = null;
@@ -81,12 +100,15 @@ define(function(require, exports, module) {
         this.ambient_temperature = null;
     };
 
-    Data_Set.prototype.add_data = function(state, stage, position, case_thickness, blade_number, pts, used_in_avg, clearance, max_clr, min_clr, med_clr, std_clr, quality, intensity_threshold, measurement_rate, dateStr, filename, ambient_temperature) {
+    Data_Set.prototype.add_data = function(state, stage, position, case_thickness, blade_number, pts, used_in_avg, clearance, manualOverride, overrideName, overrideSSO, max_clr, min_clr, med_clr, std_clr, quality, intensity_threshold, measurement_rate, dateStr, filename, ambient_temperature) {
         this.stage = stage;
         this.position = position;
         this.case_thickness = case_thickness;
         //this.pts = pts;
         this.clearance = clearance;
+        this.manualOverride = manualOverride;
+        this.overrideName = overrideName;
+        this.overrideSSO = overrideSSO;
         this.max_clr = max_clr;
         this.min_clr = min_clr;
         this.med_clr = med_clr;
@@ -125,6 +147,9 @@ define(function(require, exports, module) {
         "quality":[],
         "turbine_casing_thicknesses":{},
         "clearance":"",
+        "manualOverride":false,
+        "overrideName":"",
+        "overrideSSO":"",
         "max_clr":"",
         "min_clr":"",
         "med_clr":"",
@@ -205,43 +230,6 @@ define(function(require, exports, module) {
         document.getElementById("FRAME_SIZE").addEventListener('change', function() {
             setupCasingThicknessTable(null);
             document.getElementById("FRAME_DEFAULT_SENSOR").value = current_frame_data.default_sensor;
-        }, {passive: true});
-        document.getElementById("FRAME_SIZE2").addEventListener('change', function() {
-            document.getElementById("FRAME_SIZE").value = document.getElementById("FRAME_SIZE2").value
-            document.getElementById("FRAME_SIZE").selectedIndex = document.getElementById("FRAME_SIZE2").selectedIndex;
-            setupCasingThicknessTable(null);
-            document.getElementById("FRAME_DEFAULT_SENSOR").value = current_frame_data.default_sensor;
-            record_casing_thickness();
-            send_scan_metadata(true, true);
-            turbine_setup();
-            fadeOutAll();
-            $("#TURBINE_SETUP_PAGE").fadeIn();
-        }, {passive: true});
-        document.getElementById("SERIAL_NUMBER2").addEventListener('change', function() {
-            document.getElementById("SERIAL_NUMBER").value = document.getElementById("SERIAL_NUMBER2").value;
-            send_scan_metadata(true, true);
-            $("#TURBINE_SETUP_PAGE").fadeIn();
-        }, {passive: true});
-
-        document.getElementById("CUSTOMER2").addEventListener('change', function() {
-            document.getElementById("CUSTOMER").value = document.getElementById("CUSTOMER2").value;
-            send_scan_metadata(true, true);
-            $("#TURBINE_SETUP_PAGE").fadeIn();
-        }, {passive: true});
-        document.getElementById("SITE2").addEventListener('change', function() {
-            document.getElementById("SITE").value = document.getElementById("SITE2").value;
-            send_scan_metadata(true, true);
-            $("#TURBINE_SETUP_PAGE").fadeIn();
-        }, {passive: true});
-        document.getElementById("OPERATOR2").addEventListener('change', function() {
-            document.getElementById("OPERATOR").value = document.getElementById("OPERATOR2").value;
-            send_scan_metadata(true, true);
-            $("#TURBINE_SETUP_PAGE").fadeIn();
-        }, {passive: true});
-        document.getElementById("UNITS2").addEventListener('change', function() {
-            document.getElementById("UNITS").value = document.getElementById("UNITS2").value;
-            send_scan_metadata(true, true);
-            $("#TURBINE_SETUP_PAGE").fadeIn();
         }, {passive: true});
         document.getElementById("SN_SUBMIT_BUTTON").addEventListener('click', function() {
             record_casing_thickness();
@@ -563,8 +551,17 @@ define(function(require, exports, module) {
         document.getElementById("CALCULATE_RPM_BUTTON").addEventListener('click', function() {
              calculateRPM();
         }, {passive: true});
-        document.getElementById("OFFSET_ADJUSTMENT_BUTTON").addEventListener('click', function() {
-            getOffsetAdjustment();
+        document.getElementById("EDIT_BUTTON").addEventListener('click', function() {
+            edit();
+        }, {passive: true});
+        document.getElementById("EDIT_SAVE_BUTTON").addEventListener('click', function() {
+            edit_save();
+        }, {passive: true});
+        document.getElementById("CLEARANCE_OVERRIDE_BUTTON").addEventListener('click', function() {
+            clearance_override();
+        }, {passive: true});
+        document.getElementById("CLEARANCE_OVERRIDE_SAVE_BUTTON").addEventListener('click', function() {
+            clearance_override_save();
         }, {passive: true});
         document.getElementById("FRAME_DATA_CLEAR_BUTTON").addEventListener('click', function() {
             clearFrameData();
@@ -662,20 +659,71 @@ define(function(require, exports, module) {
         // replace spaces with _ and : with -
         return s.replace(/\s+/g, '_').replace(/:/g, '-');
     }
+    
+    function edit() {
+        console.log("@edit");
+        // update values from
+        document.getElementById("FRAME_SIZE_EDIT").value = document.getElementById("FRAME_SIZE").value;
+        document.getElementById("SERIAL_NUMBER_EDIT").value = document.getElementById("SERIAL_NUMBER").value;
+        document.getElementById("CUSTOMER_EDIT").value = document.getElementById("CUSTOMER").value;
+        document.getElementById("SITE_EDIT").value = document.getElementById("SITE").value;
+        document.getElementById("OPERATOR_EDIT").value = document.getElementById("OPERATOR").value;
+        document.getElementById("UNITS_EDIT").value = document.getElementById("UNITS").value;
+        editModal.show();
+    }
+    
+    function edit_save() {
+        console.log("@edit_save");
+        // changing frame will erase data
+        if (document.getElementById("FRAME_SIZE_EDIT").value != document.getElementById("FRAME_SIZE").value) {
+            document.getElementById("FRAME_SIZE").value = document.getElementById("FRAME_SIZE_EDIT").value;
+            document.getElementById("FRAME_SIZE").selectedIndex = document.getElementById("FRAME_SIZE_EDIT").selectedIndex;
+            document.getElementById("HEADER_FRAME").innerHTML = document.getElementById("FRAME_SIZE_EDIT").value;
+            setupCasingThicknessTable(null);
+            document.getElementById("FRAME_DEFAULT_SENSOR").value = current_frame_data.default_sensor;
+            record_casing_thickness();
+            send_scan_metadata(true, true);
+            turbine_setup();
+        }
+        if (document.getElementById("SERIAL_NUMBER_EDIT").value != document.getElementById("SERIAL_NUMBER").value) {
+            document.getElementById("SERIAL_NUMBER").value = document.getElementById("SERIAL_NUMBER_EDIT").value;
+            document.getElementById("HEADER_SERIAL").innerHTML = document.getElementById("SERIAL_NUMBER_EDIT").value;
+            send_scan_metadata(true, true);
+        }
+        if (document.getElementById("CUSTOMER_EDIT").value != document.getElementById("CUSTOMER").value) {
+            document.getElementById("CUSTOMER").value = document.getElementById("CUSTOMER_EDIT").value;
+            document.getElementById("HEADER_CUSTOMER").innerHTML = document.getElementById("CUSTOMER_EDIT").value;
+            send_scan_metadata(true, true);
+        }
+        if (document.getElementById("SITE_EDIT").value != document.getElementById("SITE").value) {
+            document.getElementById("SITE").value = document.getElementById("SITE_EDIT").value;
+            document.getElementById("HEADER_SITE").innerHTML = document.getElementById("SITE_EDIT").value;
+            send_scan_metadata(true, true);
+        }
+        if (document.getElementById("OPERATOR_EDIT").value != document.getElementById("OPERATOR").value) {
+            document.getElementById("OPERATOR").value = document.getElementById("OPERATOR_EDIT").value;
+            document.getElementById("HEADER_SITE").innerHTML = document.getElementById("OPERATOR_EDIT").value;
+            send_scan_metadata(true, true);
+        }
+        if (document.getElementById("UNITS_EDIT").value != document.getElementById("UNITS").value) {
+            document.getElementById("UNITS").value = document.getElementById("UNITS_EDIT").value;
+            document.getElementById("HEADER_UNITS").innerHTML = document.getElementById("UNITS_EDIT").value;
+            send_scan_metadata(true, true);
+        }
+        editModal.hide();
+        $("#TURBINE_SETUP_PAGE").fadeIn();
+    }
 
     function showSpacerImage() {
+        console.log("@showSpacerImage");
         let imageName = document.getElementById("SPACER_THUMBNAIL").getAttribute("src");
         let spacerName = document.getElementById("SPACER_THUMBNAIL").getAttribute("alt");
         console.log("imageName: ", imageName);
         console.log("spacerName: ", spacerName);
-        let spacerImageRef = cordova.InAppBrowser.open('imageView.html', '_blank', 'location=no');
-        spacerImageRef.addEventListener('loadstop', function() {
-            spacerImageRef.executeScript({code:
-                'document.getElementById("IMAGE_TITLE").innerHTML = "' + spacerName + '"'
-            });spacerImageRef.executeScript({code:
-                'document.getElementById("IMAGE_VIEW").setAttribute("src","' + imageName + '")'
-            });
-        });
+        document.getElementById("SPACER_NAME").innerHTML = spacerName;
+        document.getElementById("SPACER_IMAGE").setAttribute("src", imageName);
+        document.getElementById("SPACER_IMAGE").setAttribute("alt", spacerName);
+        spacerModal.show();
     }
     
     function calculateRPM() {
@@ -778,6 +826,9 @@ define(function(require, exports, module) {
                      E4PTdata.data = [];
                      E4PTdata.quality = [];
                      E4PTdata.clearance = "";
+                     E4PTdata.manualOverride = false;
+                     E4PTdata.overrideName = "";
+                     E4PTdata.overrideSSO = "";
                      E4PTdata.max_clr = "";
                      E4PTdata.min_clr = "";
                      E4PTdata.med_clr = "";
@@ -820,15 +871,21 @@ define(function(require, exports, module) {
             console.log("stageText:  ", stageText);
             console.log("current_frame_data.position: ", p);
             htmlStr = htmlStr + '<tr>';
-            htmlStr = htmlStr + '<th>' + stageText + '</th>';
+            htmlStr = htmlStr + '<th class="align-middle">' + stageText + '</th>';
             stageText = "";
             for (let j=0; j<pos[p].length; j++) {
-                htmlStr = htmlStr + '<th scope="row">' + pos[p][j] + '</th>';
+                if (POSITION_DISPLAY_MODE == 'TEXT') {
+                    htmlStr = htmlStr + '<th class="align-middle" scope="row">' + pos[p][j] + '</th>';
+                } else if (POSITION_DISPLAY_MODE == 'ICON') {
+                    htmlStr = htmlStr + '<th class="align-middle">' + ARROW_ICONS[pos[p][j]] + '</th>';
+                } else if (POSITION_DISPLAY_MODE == 'BOTH') {
+                    htmlStr = htmlStr + '<th class="align-middle" scope="row">' + ARROW_ICONS[pos[p][j]] + '&nbsp;' + pos[p][j] + '</th>';
+                }
                 console.log("pos[p][j]: ", pos[p][j]);
             }
             htmlStr = htmlStr + '</tr>';
             htmlStr = htmlStr + '<tr>';
-            htmlStr = htmlStr + '<td>' + p + '</td>';
+            htmlStr = htmlStr + '<td scope="row">' + p + '</td>';
             for (let j=0; j<pos[p].length; j++) {
                 let casingThickness_el_id = p + '_' + pos[p][j];
                 htmlStr = htmlStr + '<td><input class="form-control" type="text" id="' + casingThickness_el_id + '" value=""/></td>';
@@ -968,6 +1025,7 @@ define(function(require, exports, module) {
         fileviewer2.dismiss();
     }
     
+    // unused
     function getOffsetAdjustment() {
         console.log("@getOffsetAdjustment");
         messaging.sendMessage({args:[{command:'get_offset_adjustment'}]});
@@ -1242,13 +1300,20 @@ define(function(require, exports, module) {
             dateStr = monthNames[d.getMonth()] + "-" + d.getDate() + "-" + d.getFullYear();
         }
         document.getElementById("HEADER_DATETIME").innerHTML = dateStr;
+
+        document.getElementById("HEADER_FRAME").innerHTML = E4PTdata.frame;
+        document.getElementById("HEADER_SERIAL").innerHTML = E4PTdata.serial_number;
+        document.getElementById("HEADER_CUSTOMER").innerHTML = customer;
+        document.getElementById("HEADER_SITE").innerHTML = site;
+        document.getElementById("HEADER_OPERATOR").innerHTML = E4PTdata.operator;
+        document.getElementById("HEADER_UNITS").innerHTML = E4PTdata.units;
         
-        document.getElementById("FRAME_SIZE2").value = document.getElementById("FRAME_SIZE").value;
-        document.getElementById("SERIAL_NUMBER2").value = document.getElementById("SERIAL_NUMBER").value;
-        document.getElementById("CUSTOMER2").value = document.getElementById("CUSTOMER").value;
-        document.getElementById("SITE2").value = document.getElementById("SITE").value;
-        document.getElementById("OPERATOR2").value = document.getElementById("OPERATOR").value;
-        document.getElementById("UNITS2").value = document.getElementById("UNITS").value;
+        document.getElementById("FRAME_SIZE_EDIT").value = document.getElementById("FRAME_SIZE").value;
+        document.getElementById("SERIAL_NUMBER_EDIT").value = document.getElementById("SERIAL_NUMBER").value;
+        document.getElementById("CUSTOMER_EDIT").value = document.getElementById("CUSTOMER").value;
+        document.getElementById("SITE_EDIT").value = document.getElementById("SITE").value;
+        document.getElementById("OPERATOR_EDIT").value = document.getElementById("OPERATOR").value;
+        document.getElementById("UNITS_EDIT").value = document.getElementById("UNITS").value;
 
         updateSensorHeaderMessage();
         checkSensorSelection();
@@ -1304,7 +1369,7 @@ define(function(require, exports, module) {
         }
         var html = html_buf.join('\n');
         document.getElementById("FRAME_SIZE").innerHTML = html;
-        document.getElementById("FRAME_SIZE2").innerHTML = html;
+        document.getElementById("FRAME_SIZE_EDIT").innerHTML = html;
         if (current_frame_data.length != 0) {
           document.getElementById("FRAME_SIZE").selectedIndex = selectedIndex;
           document.getElementById("FRAME_SIZE").value = current_frame_data.frame;
@@ -1491,6 +1556,7 @@ define(function(require, exports, module) {
             .html(text);
     }
 
+    // TODO: use default calculation method
     function confirm_collect_stage_data() {
         // Disable prompt since offset calculation is disabled
         e4PtPrompt('Original calculation assumes master fixture height is SMR+SL+5mm, New calculation uses MV=fixture height - sensor length', function(calcMethod) {
@@ -1582,6 +1648,7 @@ define(function(require, exports, module) {
     }
 
     function reset_data_collection() {
+        console.log("@reset_data_collection");
         E4PTdata.sets = [];
         current_stage_index = 0;
         // load data for current stage
@@ -1805,13 +1872,19 @@ define(function(require, exports, module) {
         for (stage_index = 0; stage_index < stages.length; stage_index++) {
             var stage = stages[stage_index];
             var positions = current_frame_data['position'][stage];
-            html_buf.push("<td><table class=\"table table-bordered table-sm\">");
-            var header_row = "<thead class=\"table-light\"><tr><th class=\"text-center\" scope=\"col\">POSITION</th><th class=\"text-center\" scope=\"col\">";
+            html_buf.push("<td><table class=\"table table-bordered border-secondary table-sm\">");
+            var header_row = "<thead class=\"table-light table-bordered border-secondary align-middle text-center\"><tr><th scope=\"col\">POSITION</th><th scope=\"col\">";
             header_row = header_row + "STAGE " + stages[stage_index];
             header_row = header_row + "</th></tr></thead><tbody>";
             html_buf.push(header_row);
             for (position_index = 0; position_index < positions.length; position_index++) {
-                html_buf.push("<tr><td>" + positions[position_index] + "</td>");
+                if (POSITION_DISPLAY_MODE == 'TEXT') {
+                    html_buf.push("<tr><td>" + positions[position_index] + "</td>");
+                } else if (POSITION_DISPLAY_MODE == 'ICON') {
+                    html_buf.push('<tr><td class="text-center">' + ARROW_ICONS[positions[position_index]] + '</td>');
+                } else if (POSITION_DISPLAY_MODE == 'BOTH') {
+                    html_buf.push('<tr><td class="text-center">' + ARROW_ICONS[positions[position_index]] + '&nbsp;' + positions[position_index] + '</td>');
+                }
                 var el_id = positions[position_index] + stages[stage_index];
                 el_id = el_id.replace(/\s+/g, '_');
                 html_buf.push("<td id='" + el_id +
@@ -1957,6 +2030,7 @@ define(function(require, exports, module) {
         });
       } else {
           document.getElementById("SPACER_THUMBNAIL").setAttribute("src",imageName);
+          document.getElementById("SPACER_THUMBNAIL").setAttribute("alt",'Unknown');
       }
 
       document.getElementById("SPACER_THICKNESS").value = spacer_value;
@@ -1975,9 +2049,6 @@ define(function(require, exports, module) {
         // Auto-advance
         var stages = current_frame_data['stage'];
         var positions = current_frame_data['position'][current_stage];
-        //console.log("@advance_position");
-        //console.log("stages: ", stages);
-        //console.log("positions: ", positions);
 
         current_position_index = (current_position_index + 1) % positions.length;
         current_position = positions[current_position_index];
@@ -1985,12 +2056,16 @@ define(function(require, exports, module) {
             current_stage_index = (current_stage_index + 1) % stages.length;
             current_stage = stages[current_stage_index];
             set_position_information();
+            // update positions for new stage
+            positions = current_frame_data['position'][current_stage];
+            current_position = positions[current_position_index];
         }
         document.getElementById("SENSOR_STAGE").selectedIndex = current_stage_index;
         document.getElementById("SENSOR_POSITION").selectedIndex = current_position_index;
         let ct_id = current_stage + "_" + current_position;
         document.getElementById("CURR_CASE_THICKNESS").value = E4PTdata.turbine_casing_thicknesses[ct_id];
         highlight_cell(current_position, current_stage);
+        update_spacer_value();
     }
 
     function set_grid_position(position, stage) {
@@ -2008,14 +2083,82 @@ define(function(require, exports, module) {
         el_id = el_id.replace(/\s+/g, '_');
         var clearance = document.getElementById(el_id).innerHTML;
         clearance = parseFloat(clearance);
-        update_clearance(clearance);
+        update_clearance(clearance, true);
         let ct_id = current_stage + "_" + current_position;
         document.getElementById("CURR_CASE_THICKNESS").value = E4PTdata.turbine_casing_thicknesses[ct_id];
         highlight_cell(position, stage);
         update_spacer_value();
     }
+    
+    function clearance_override() {
+        console.log("@clearance_override");
+        var el_id = current_position + current_stage;
+        el_id = el_id.replace(/\s+/g, '_');
+        var clearance = document.getElementById(el_id).innerHTML;
+        if (E4PTdata.units.toUpperCase().includes("IN") && clearance != "") {
+          clearance = sensorSettings.toMMs(clearance);
+          clearance = checkValue(clearance, 4);
+        }
+        document.getElementById("CLEARANCE_OVERRIDE_STAGE").innerHTML = current_stage;
+        document.getElementById("CLEARANCE_OVERRIDE_POSITION").innerHTML = current_position;
+        // get values for Name and SSO from current measurement
+        let priorSet = E4PTdata.sets.find(o => ((o.stage === current_stage) && (o.position === current_position)));
+        let overrideName = document.getElementById("OPERATOR_EDIT").value;
+        let overrideSSO = "";
+        if (typeof priorSet !== 'undefined' && priorSet.overrideName != "") {
+          overrideName = priorSet.overrideName;
+          overrideSSO = priorSet.overrideSSO;
+        }
+        document.getElementById("CLEARANCE_OVERRIDE_NAME").value = overrideName;
+        document.getElementById("CLEARANCE_OVERRIDE_SSO").value = overrideSSO;
+        document.getElementById("CLEARANCE_OVERRIDE_VALUE").value = clearance;
+        document.getElementById("CLEARANCE_OVERRIDE_CERTIFY").checked = false;
+        clearanceOverrideModal.show();
+    }
+    
+    function clearance_override_save() {
+        console.log("@clearance_override_save");
+        charting.clearChartData(document.getElementById('DATA_PLOT2'));
+        document.getElementById("DATA_PLOT2").innerHTML = "";
+        clearanceOverrideModal.hide();
+        var clearanceOverrideName = document.getElementById("CLEARANCE_OVERRIDE_NAME").value;
+        var clearanceOverrideSSO = document.getElementById("CLEARANCE_OVERRIDE_SSO").value;
+        var clearanceOverrideValue = document.getElementById("CLEARANCE_OVERRIDE_VALUE").value;
+        var clearanceOverrideCertify = document.getElementById("CLEARANCE_OVERRIDE_CERTIFY").checked;
+        if (clearanceOverrideCertify) {
+            var clearance = parseFloat(clearanceOverrideValue);
+            if (clearanceOverrideName != "" && clearanceOverrideSSO != "") {
+                if (!isNaN(clearance)) {
+                    E4PTdata.manualOverride = true;
+                    E4PTdata.overrideName = clearanceOverrideName;
+                    E4PTdata.overrideSSO = clearanceOverrideSSO;
+                    E4PTdata.clearance = clearanceOverrideValue;
+                    E4PTdata.max_clr = clearanceOverrideValue;
+                    E4PTdata.min_clr = clearanceOverrideValue;
+                    E4PTdata.med_clr = clearanceOverrideValue;
+                    E4PTdata.std_clr = 0.0;
+                    E4PTdata.intensity_threshold = null;
+                    E4PTdata.measurement_rate = null;
+                    E4PTdata.filename = null;
+
+                    doDBSave = true;
+
+                    parse_data();
+                    flag_override_cell(current_position, current_stage);
+                    advance_position();
+                } else {
+                    e4PtAlert('Invalid clearance measurement');
+                }
+            } else {
+                e4PtAlert('Please enter name and SSO');
+            }
+        } else {
+            e4PtAlert("Please certify the manual clearance override");
+        }
+    }
 
     function highlight_cell(hi_position, hi_stage) {
+        console.log('@highlight_cell: pos: ' + hi_position, '; stage: ', hi_stage);
         // first un-highlight all cells.
         let stages = current_frame_data['stage'];
         for (stage_index = 0; stage_index < stages.length; stage_index++) {
@@ -2024,13 +2167,38 @@ define(function(require, exports, module) {
             for (position_index = 0; position_index < positions.length; position_index++) {
                 let el_id = positions[position_index] + stages[stage_index];
                 el_id = el_id.replace(/\s+/g, '_');
-                document.getElementById(el_id).classList.remove("table-active", "border", "border-2", "border-primary");
+                document.getElementById(el_id).classList.remove("table-primary", "border-primary", "border-2");
+                document.getElementById(el_id).classList.add("border-secondary");
             }
         }
         // now highlight the cell of interest.
         el_id = hi_position+hi_stage;
         el_id = el_id.replace(/\s+/g, '_');
-        document.getElementById(el_id).classList.add("table-active", "border", "border-2", "border-primary");
+        document.getElementById(el_id).classList.remove("border-secondary");
+        document.getElementById(el_id).classList.add("table-primary", "border-primary", "border-2");
+    }
+    
+    function flag_override_cell(hi_position, hi_stage) {
+        console.log('@flag_override_cell: pos: ' + hi_position, '; stage: ', hi_stage);
+        // first un-highlight all cells.
+        let stages = current_frame_data['stage'];
+        for (stage_index = 0; stage_index < stages.length; stage_index++) {
+            let stage = stages[stage_index];
+            let positions = current_frame_data['position'][stage];
+            for (position_index = 0; position_index < positions.length; position_index++) {
+                let el_id = positions[position_index] + stages[stage_index];
+                el_id = el_id.replace(/\s+/g, '_');
+                if (document.getElementById(el_id).innerHTML == "") {
+                    document.getElementById(el_id).classList.remove("table-danger");
+                }
+            }
+        }
+        // now highlight the cell of interest.
+        el_id = hi_position+hi_stage;
+        el_id = el_id.replace(/\s+/g, '_');
+        if (document.getElementById(el_id).innerHTML != "") {
+            document.getElementById(el_id).classList.add("table-danger");
+        }
     }
 
     function do_dark_reference() {
@@ -2168,8 +2336,7 @@ define(function(require, exports, module) {
             }
             break;
           case "status":
-            console.log("Received Status Message");
-            console.log(msg);
+            console.log("Received Status Message: ", JSON.stringify(msg));
             if (msg.status == "acquiring") {
                 setIndicatorColor("red");
                 displayAbortButton();
@@ -2235,8 +2402,7 @@ define(function(require, exports, module) {
                 update_connection_mode(msg.mode);
                 break;
             case "status":
-                console.log("Received Status Message");
-                console.log(msg);
+                console.log("Received Status Message: ", JSON.stringify(msg));
                 if (msg.status == "connected") {
                     setIndicatorColor("green");
                     document.getElementById("STATUS_DISPLAY").innerHTML = "Connected";
@@ -2283,6 +2449,10 @@ define(function(require, exports, module) {
                     msg.overall_avg = JSON.parse(msg.overall_avg);
                     msg.blades = JSON.parse(msg.blades);
                     msg.blade_samples_avg = JSON.parse(msg.blade_samples_avg);
+                    // set to false since data came from controller
+                    msg.manualOverride = false;
+                    msg.overrideName = "";
+                    msg.overrideSSO = "";
 
                     if (fromCalculateRPM) {
                         console.log('calculating RPM');
@@ -2330,6 +2500,7 @@ define(function(require, exports, module) {
             case "alert":
                 console.log("Received an alert message: ", msg.message);
                 e4PtAlert(msg.message);
+                // TODO: reset if alert during collection
                 break;
             case "progress":
                 console.log("Progress: ", msg.progress);
@@ -2789,6 +2960,7 @@ define(function(require, exports, module) {
         tbody.setAttribute("id","DATA_DETAILS_TABLE_BODY");
         // Create the table body.
         let tmp = "";
+        // TODO: order by stage/position
         for (let i=0; i<E4PTdata.sets.length; i++) {
             let clickFn = "toggleDetailsSelected(\"" + i + "\")";
             var new_row = tbody.insertRow(-1);
@@ -2804,8 +2976,10 @@ define(function(require, exports, module) {
             cell2.innerHTML = tmp;
             var cell3 = new_row.insertCell(-1);
             cell3.setAttribute("onclick",clickFn);
-            tmp = E4PTdata.sets[i].clearance;
             cell3.innerHTML = checkValue(E4PTdata.sets[i].clearance,3);
+            if (E4PTdata.sets[i].manualOverride) {
+              cell3.classList.add("table-danger");
+            }
             var cell4 = new_row.insertCell(-1);
             cell4.setAttribute("onclick",clickFn);
             cell4.innerHTML = checkValue(E4PTdata.sets[i].max_clr,3);
@@ -2842,15 +3016,23 @@ define(function(require, exports, module) {
     // the details for the data collected.
     function writeDetailsFile() {
         // Construct a string containing the file contents.
-        let contents = "stage,position,clearance,max_clr,min_clr,med_clr,std_clr\n";
+        let contents = "stage,position,clearance,max_clr,min_clr,med_clr,std_clr,override,name,sso\n";
         for (let i=0; i<E4PTdata.sets.length; i++) {
-            contents = contents + E4PTdata.sets[i].stage + ","
-                                + E4PTdata.sets[i].position +  ","
-                                + checkValue(E4PTdata.sets[i].clearance,3) + ","
-                                + checkValue(E4PTdata.sets[i].max_clr,3) + ","
-                                + checkValue(E4PTdata.sets[i].min_clr,3) + ","
-                                + checkValue(E4PTdata.sets[i].med_clr,3) + ","
-                                + checkValue(E4PTdata.sets[i].std_clr,3) + "\n";
+            contents += E4PTdata.sets[i].stage + ","
+                + E4PTdata.sets[i].position +  ","
+                + checkValue(E4PTdata.sets[i].clearance,3) + ","
+                + checkValue(E4PTdata.sets[i].max_clr,3) + ","
+                + checkValue(E4PTdata.sets[i].min_clr,3) + ","
+                + checkValue(E4PTdata.sets[i].med_clr,3) + ","
+                + checkValue(E4PTdata.sets[i].std_clr,3) + ","
+                + E4PTdata.sets[i].manualOverride + ",";
+            if (E4PTdata.sets[i].manualOverride) {
+                contents += E4PTdata.sets[i].overrideName + ","
+                    + E4PTdata.sets[i].overrideSSO;
+            } else {
+                contents += ",";
+            }
+            contents += "\n";
         }
         let targetFolder = "data"; // default directory
         let fileName = "details_e4pt.csv";
@@ -3038,10 +3220,14 @@ define(function(require, exports, module) {
                 blade_width = stage_details.blade_width;
                 tip_diameter = stage_details.tip_diameter;
                 if (num_blades == 0) {
-                    e4PtAlert("This stage and casing thickness do not match. Please check the casing thickness and try again.");
+                    e4PtAlert("This stage and casing thickness do not match. Please check the casing thickness and try again.\nIf the casing thickness is verified, you may perform a manual drop check (do not insert the probe) and provide an override measurement.");
                     return;
                 }
+            } else {
+                console.log('UNDEFINED STAGE INFO FOR TYPE: current_stage_type=' + current_stage_type);
             }
+        } else {
+            console.log('UNDEFINED STAGE INFO: frame=' + frame + ', stage=' + stage + ', position=' + position);
         }
         //charting.clearChartData(document.getElementById('DATA_PLOT'));
         charting.clearChartData(document.getElementById('DATA_PLOT2'));
@@ -3146,7 +3332,7 @@ define(function(require, exports, module) {
                 E4PTdata.med_clr = sensorSettings.toInches(parseFloat(E4PTdata.med_clr)).toString(10);
                 E4PTdata.std_clr = sensorSettings.toInches(parseFloat(E4PTdata.std_clr)).toString(10);
             }
-          update_clearance(clearance_f);
+            update_clearance(clearance_f, E4PTdata.manualOverride);
         }
 
         E4PTdata.frame = document.getElementById("FRAME_SIZE").value;
@@ -3155,8 +3341,11 @@ define(function(require, exports, module) {
         var set = new Data_Set();
         set.stage = current_stage;
         set.position = current_position;
-        set.case_thickness = E4PTdata.casing_thickness;
+        set.case_thickness = document.getElementById("CURR_CASE_THICKNESS").value;
         set.clearance = E4PTdata.clearance;
+        set.manualOverride = E4PTdata.manualOverride;
+        set.overrideName = E4PTdata.overrideName;
+        set.overrideSSO = E4PTdata.overrideSSO;
         set.state = E4PTdata.state;
         set.max_clr = E4PTdata.max_clr;
         set.min_clr = E4PTdata.min_clr;
@@ -3176,6 +3365,7 @@ define(function(require, exports, module) {
     // addOrReplace(set) will check existing data to see if there is already data for this
     // stage & position.  If not, it will add it.  If so, it will replace it.
     function addOrReplaceSet(set) {
+        console.log("@addOrReplaceSet");
         // This next line looks up any previous data set for this stage and position.  If it is not
         // found the result will be undefined.
         let priorSet = E4PTdata.sets.find(o => ((o.stage === set.stage) && (o.position === set.position)));
@@ -3190,6 +3380,9 @@ define(function(require, exports, module) {
         priorSet.position = set.position;
         priorSet.case_thickness = set.case_thickness;
         priorSet.clearance = set.clearance;
+        priorSet.manualOverride = set.manualOverride;
+        priorSet.overrideName = set.overrideName;
+        priorSet.overrideSSO = set.overrideSSO;
         priorSet.state = set.state;
         priorSet.max_clr = set.max_clr;
         priorSet.min_clr = set.min_clr;
@@ -3203,7 +3396,8 @@ define(function(require, exports, module) {
         console.log("priorSet after:  ", JSON.stringify(priorSet));
     }
 
-    function update_clearance(clearance) {
+    function update_clearance(clearance, manual_clearance = false) {
+        console.log("@update_clearance: clearance:", clearance, "; manual_clearance:", manual_clearance);
         if (current_frame_data.length == 0) {
             return;
         }
@@ -3265,10 +3459,16 @@ define(function(require, exports, module) {
         }
         err_id.innerHTML = err_str;
 
+        // reset cell in case it was previously overridden
+        if (!manual_clearance) {
+            document.getElementById(el_id).classList.remove("table-danger");
+        }
+
         document.getElementById(el_id).innerHTML = clearance_f.toFixed(4);
     }
 
     function plot_non_calibrated_acquire() {
+      console.log("@plot_non_calibrated_acquire");
       let chartConfig = charting.createChartConfig(E4PTdata.data, E4PTdata.minima);
       //chartConfig.chart.backgroundColor = 'white';
       chartConfig.chart.panning = true;
@@ -3281,6 +3481,7 @@ define(function(require, exports, module) {
     }
 
     function plot_calibrated_acquire() {
+      console.log("@plot_calibrated_acquire");
       let chartConfig = charting.createChartConfig(E4PTdata.data, E4PTdata.minima);
       chartConfig.tooltip.enabled = false;
       chartConfig.series[0].name = 'Filtered ' + chartConfig.series[0].name;
@@ -3368,6 +3569,7 @@ define(function(require, exports, module) {
     }
 
     function addDBEntry(e4pt_data, db=local_db) {
+      console.log("@addDBEntry");
       var entry = {
         ofs_id: e4pt_data.ofs_id,
         frame: e4pt_data.frame,
@@ -3490,7 +3692,7 @@ define(function(require, exports, module) {
       prev_tbody.parentNode.replaceChild(tbody, prev_tbody);
     }
 
-    // TODO: unused
+    // unused
     function addDBDummyData() {
       var tmpData1 = {};
       tmpData1.pouchdb_id = "";
@@ -3514,10 +3716,12 @@ define(function(require, exports, module) {
       set1.position = "TOP";
       set1.case_thickness = 4.967;
       set1.clearance = 3.1415;
+      set1.manualOverride = false;
       set1.state = "opening";
       set1.ambient_temperature = 70;
       tmpData1.sets = [set1];
       addDBEntry(tmpData1);
+
       var tmpData2 = {};
       tmpData2.pouchdb_id = "";
       tmpData2.ofs_id = 67890;
@@ -3540,6 +3744,7 @@ define(function(require, exports, module) {
       set2.position = "BOTTOM";
       set2.case_thickness = 4.321;
       set2.clearance = 1.4142;
+      set2.manualOverride = false;
       set2.state = "closing";
       set2.ambient_temperature = 70;
       tmpData2.sets = [set2];
@@ -3957,6 +4162,7 @@ define(function(require, exports, module) {
           var pos = doc.sets[i].position;
           var stg = doc.sets[i].stage;
           var clr = doc.sets[i].clearance;
+          var manOvr = doc.sets[i].manualOverride;
           var clr_f = 0;
           if ((typeof clr) == "string") {
             clr_f = parseFloat(clr)
@@ -3980,6 +4186,9 @@ define(function(require, exports, module) {
           var el_id = positions[position_index] + stages[stage_index];
           el_id = el_id.replace(/\s+/g, '_');
           document.getElementById(el_id).innerHTML = clr_f.toFixed(4);
+          if (manOvr) {
+            document.getElementById(el_id).classList.add("table-danger");
+          }
         }
 
         turbine_setup();
@@ -4024,6 +4233,7 @@ define(function(require, exports, module) {
         loadArchiveData:loadArchiveData,
         pluginMessage:pluginMessage,
         set_grid_position:set_grid_position,
+        clearance_override:clearance_override,
         toggleFileSelected:toggleFileSelected,
         toggleDetailsSelected:toggleDetailsSelected,
         deleteEntry:deleteEntry,
