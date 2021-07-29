@@ -713,58 +713,39 @@
                     <div class="col-lg-12">
                       <!-- Turbine Data Collection -->
                       <div class="text-center">
-                          <span class="badge bg-light text-dark">Date: <span id="HEADER_DATETIME"></span></span>
+                          <h5>
+                              <span class="badge bg-light text-dark">Collection Date:&nbsp;<span id="HEADER_DATETIME"></span></span>
+                          </h5>
                       </div>
-
-                      <form class="row g-3">
-                          <div class="col-md-6 text-center">
-                              <label for="FRAME_SIZE2" class="form-label">Frame</label>
-                              <select id="FRAME_SIZE2" class="form-select">
-                                  <!-- These values are overwritten by javascript -->
-                                  <option value="6B">6B</option>
-                                  <option value="6FA">6FA</option>
-                                  <option value="7E">7E</option>
-                                  <option value="7FA">7FA</option>
-                                  <option value="7FA.05">7FA.05</option>
-                                  <option value="9E">9E</option>
-                                  <option value="LMS">LMS</option>
-                              </select>
-                          </div>
-                          <div class="col-md-6 text-center">
-                              <label for="SERIAL_NUMBER2" class="form-label">Serial Number</label>
-                              <div class="input-group mb-2">
-                                <input type="text" class="form-control" id="SERIAL_NUMBER2">
-                              </div>
-                          </div>
-                          <div class="col-md-6 text-center">
-                              <label for="CUSTOMER2" class="form-label">Customer</label>
-                              <div class="input-group mb-2">
-                                <input type="text" class="form-control" id="CUSTOMER2">
-                              </div>
-                          </div>
-                          <div class="col-md-6 text-center">
-                              <label for="SITE2" class="form-label">Site</label>
-                              <div class="input-group mb-2">
-                                <input type="text" class="form-control" id="SITE2">
-                              </div>
-                          </div>
-                          <div class="col-md-6 text-center">
-                              <label for="OPERATOR2" class="form-label">Operator</label>
-                              <div class="input-group mb-2">
-                                <input type="text" class="form-control" id="OPERATOR2">
-                              </div>
-                          </div>
-                          <div class="col-md-6 text-center">
-                              <label for="UNITS2" class="form-label">Units</label>
-                              <select id="UNITS2" class="form-select">
-                                  <option value="In">Inches</option>
-                                  <option value="MM">Millimeters</option>
-                              </select>
-                          </div>
-                      </form>
+                      
+                      <table class="table table-borderless table-sm">
+                        <tbody>
+                          <tr>
+                            <td>Frame:</td>
+                            <th scope="row" id="HEADER_FRAME"></th>
+                            <td>S/N:</td>
+                            <th scope="row" id="HEADER_SERIAL"></th>
+                            <td>Customer:</td>
+                            <th scope="row" id="HEADER_CUSTOMER"></th>
+                            <td rowspan="2">
+                                <button class="btn btn-primary" type="button" id="EDIT_BUTTON">EDIT</button>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td>Site:</td>
+                            <th scope="row" id="HEADER_SITE"></th>
+                            <td>Operator:</td>
+                            <th scope="row" id="HEADER_OPERATOR"></th>
+                            <td>Units:</td>
+                            <th scope="row" id="HEADER_UNITS"></th>
+                          </tr>
+                        </tbody>
+                      </table>
 
                       <div class="text-center my-4">
-                          <span id="SENSOR_PARAMS_CONFIG_MSG" class="badge bg-secondary"></span>
+                          <h5>
+                              <span id="SENSOR_PARAMS_CONFIG_MSG" class="badge bg-secondary"></span>
+                          </h5>
                           <span class="badge bg-light text-dark">
                               <span id="SL_CONFIG_MSG"></span>,
                               <span id="SMR_CONFIG_MSG"></span>,
@@ -792,7 +773,7 @@
                                 <option value="RIGHT">Right</option>
                             </select>
                         </div>
-                        <div class="col-md-5 text-center">
+                        <div class="col-md-4 text-center">
                             <label for="SENSOR_STAGE" class="form-label">Stage</label>
                             <select id="SENSOR_STAGE" class="form-select" aria-label="Sensor Stage">
                                 <!-- These values are updated by javascript -->
@@ -800,21 +781,21 @@
                                 <option value="S2">Stage 2</option>
                             </select>
                         </div>
-                        <div class="col-md-2 text-center">
-                            <label class="form-check-label" for="MANUAL_OVERRIDE">Override</label>
+                        <div class="col-md-3 text-center">
+                            <label class="form-check-label" for="MANUAL_OVERRIDE">Sensor Override</label>
                             <br/>
                             <input type="checkbox" class="form-check-input form-control-lg" id="MANUAL_OVERRIDE" name="manualOverride">
                         </div>
                         <div class="col-md-5 text-center">
                             <label for="CURR_CASE_THICKNESS" class="form-label">Casing Thickness</label>
-                            <div class="input-group mb-3">
+                            <div class="input-group mb-0">
                               <input type="text" class="form-control" id="CURR_CASE_THICKNESS" aria-describedby="CURR_CASE_THICKNESS_LABEL">
                               <span class="input-group-text" id="CURR_CASE_THICKNESS_LABEL">in</span>
                             </div>
                         </div>
                         <div class="col-md-5 text-center">
                             <label for="SPACER_THICKNESS" class="form-label">Spacer Thickness</label>
-                            <div class="input-group mb-3">
+                            <div class="input-group mb-0">
                               <input type="text" class="form-control" id="SPACER_THICKNESS" aria-describedby="SPACER_THICKNESS_LABEL">
                               <span class="input-group-text" id="SPACER_THICKNESS_LABEL">in</span>
                             </div>
@@ -824,25 +805,24 @@
                         </div>
                         <div class="col-md-5 text-center">
                             <label for="AMBIENT_TEMPERATURE" class="form-label">Ambient Temperature</label>
-                            <div class="input-group mb-3">
+                            <div class="input-group mb-0">
                               <input type="text" class="form-control" id="AMBIENT_TEMPERATURE" aria-describedby="AMBIENT_TEMPERATURE_LABEL">
                               <span class="input-group-text" id="AMBIENT_TEMPERATURE_LABEL">°F</span>
                             </div>
                         </div>
                         <div class="col-md-5 text-center">
                             <label for="MEASUREMENT_RPM" class="form-label">RPM</label>
-                            <div class="input-group mb-3">
+                            <div class="input-group mb-0">
                               <input type="text" class="form-control" id="MEASUREMENT_RPM">
                               <button class="btn btn-success" type="button" id="CALCULATE_RPM_BUTTON">CALCULATE</button>
                             </div>
                         </div>
                         <div class="col-md-2 text-center">
-                            <!-- TODO: remove -->
-                            <button id="OFFSET_ADJUSTMENT_BUTTON" type="button" class="btn btn-secondary">EXPLAIN OFFSET</button>
+                            <!-- -->
                         </div>
                       </form>
 
-                      <table class="table table-borderless table-sm">
+                      <table class="table table-borderless table-sm mt-3">
                           <tbody>
                               <tr>
                                   <th scope="row" id="CLEARANCE_ERROR"></th>
@@ -851,17 +831,18 @@
                           </tbody>
                       </table>
 
-                      <div class="d-grid gap-2">
-                          <div class="btn-group" role="group" aria-label="Measurement Buttons">
-                            <button id="STAGE_COLLECT_BUTTON" type="button" class="btn btn-success">GO!</button>
-                            <span>&nbsp;</span>
-                            <button id="COLLECTION_RESET_BUTTON" type="button" class="btn btn-danger">RESET</button>
-                            <span>&nbsp;</span>
-                            <button id="CUSTOMER_REPORT_BUTTON" type="button" class="btn btn-primary">REPORT</button>
-                            <span>&nbsp;</span>
-                            <button id="EXPORT_DATA_BUTTON_02" type="button" class="btn btn-primary">EXPORT</button>
-                            <span>&nbsp;</span>
-                            <button id="DATA_DETAILS_BUTTON" type="button" class="btn btn-primary">DETAILS</button>
+                      <div class="d-grid gap-2 mb-1">
+                          <div class="btn-group btn-matrix" role="group">
+                              <button id="STAGE_COLLECT_BUTTON" type="button" class="btn btn-success">COLLECT</button>
+                              <span>&nbsp;</span>
+                              <button id="CLEARANCE_OVERRIDE_BUTTON" type="button" class="btn btn-warning">OVERRIDE</button>
+                              <span>&nbsp;</span>
+                              <button id="COLLECTION_RESET_BUTTON" type="button" class="btn btn-danger">RESET</button>
+                              <button id="CUSTOMER_REPORT_BUTTON" type="button" class="btn btn-primary">REPORT</button>
+                              <span>&nbsp;</span>
+                              <button id="EXPORT_DATA_BUTTON_02" type="button" class="btn btn-primary">EXPORT</button>
+                              <span>&nbsp;</span>
+                              <button id="DATA_DETAILS_BUTTON" type="button" class="btn btn-primary">DETAILS</button>
                           </div>
                       </div>
                       <!-- -->
@@ -874,6 +855,149 @@
                   </div>
               </div>
             </div>
+        </div>
+        
+        <!-- Edit Collection Details Modal -->
+        <div class="modal fade" id="EDIT_MODAL" tabindex="-1">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Edit Collection Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <div class="container-fluid text-center">
+                    <!-- -->
+                    <form class="row g-3">
+                        <div class="col-md-6 text-center">
+                            <label for="FRAME_SIZE_EDIT" class="form-label">Frame</label>
+                            <select id="FRAME_SIZE_EDIT" class="form-select">
+                                <!-- These values are overwritten by javascript -->
+                                <option value="6B">6B</option>
+                                <option value="6FA">6FA</option>
+                                <option value="7E">7E</option>
+                                <option value="7FA">7FA</option>
+                                <option value="7FA.05">7FA.05</option>
+                                <option value="9E">9E</option>
+                                <option value="LMS">LMS</option>
+                            </select>
+                            <div class="form-text"><span class="text-danger">WARNING:</span>&nbsp;changing frame will erase existing data</div>
+                        </div>
+                        <div class="col-md-6 text-center">
+                            <label for="SERIAL_NUMBER_EDIT" class="form-label">Serial Number</label>
+                            <div class="input-group mb-0">
+                              <input type="text" class="form-control" id="SERIAL_NUMBER_EDIT">
+                            </div>
+                        </div>
+                        <div class="col-md-6 text-center">
+                            <label for="CUSTOMER_EDIT" class="form-label">Customer</label>
+                            <div class="input-group mb-0">
+                              <input type="text" class="form-control" id="CUSTOMER_EDIT">
+                            </div>
+                        </div>
+                        <div class="col-md-6 text-center">
+                            <label for="SITE_EDIT" class="form-label">Site</label>
+                            <div class="input-group mb-0">
+                              <input type="text" class="form-control" id="SITE_EDIT">
+                            </div>
+                        </div>
+                        <div class="col-md-6 text-center">
+                            <label for="OPERATOR_EDIT" class="form-label">Operator</label>
+                            <div class="input-group mb-0">
+                              <input type="text" class="form-control" id="OPERATOR_EDIT">
+                            </div>
+                        </div>
+                        <div class="col-md-6 text-center">
+                            <label for="UNITS_EDIT" class="form-label">Units</label>
+                            <select id="UNITS_EDIT" class="form-select">
+                                <option value="In">Inches</option>
+                                <option value="MM">Millimeters</option>
+                            </select>
+                        </div>
+                    </form>
+                    <!-- -->
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">CANCEL</button>
+                <button type="button" class="btn btn-primary" id="EDIT_SAVE_BUTTON">UPDATE</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Manual Clearance Override Modal -->
+        <div class="modal fade" id="CLEARANCE_OVERRIDE_MODAL" tabindex="-1">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Clearance Override for Stage <span id="CLEARANCE_OVERRIDE_STAGE"></span>&nbsp;<span id="CLEARANCE_OVERRIDE_POSITION"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <div class="container-fluid">
+                    <!-- -->
+                    <div class="row">
+                      <div class="col-lg-12">
+                        <form>
+                          <div class="row mb-2">
+                            <label for="CLEARANCE_OVERRIDE_NAME" class="col-sm-5 col-form-label">Name</label>
+                            <div class="col-sm-7">
+                                <input class="form-control" type="text" id="CLEARANCE_OVERRIDE_NAME" value=""/>
+                            </div>
+                          </div>
+                          <div class="row mb-2">
+                            <label for="CLEARANCE_OVERRIDE_SSO" class="col-sm-5 col-form-label">SSO</label>
+                            <div class="col-sm-7">
+                                <input class="form-control" type="text" id="CLEARANCE_OVERRIDE_SSO" value=""/>
+                            </div>
+                          </div>
+                          <div class="row mb-2">
+                            <label for="CLEARANCE_OVERRIDE_VALUE" class="col-sm-5 col-form-label">Clearance</label>
+                            <div class="col-sm-7">
+                                <input class="form-control" type="text" id="CLEARANCE_OVERRIDE_VALUE" value=""/>
+                            </div>
+                          </div>
+                          <div class="row mb-2">
+                            <label for="CLEARANCE_OVERRIDE_CERTIFY" class="col-sm-5 col-form-label">I certify than an ER case will be initiated based on manual clearance measurement</label>
+                            <div class="col-sm-3">
+                                <input class="form-check-input form-control-lg" type="checkbox" value="" id="CLEARANCE_OVERRIDE_CERTIFY"/>
+                            </div>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
+                    <!-- -->
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">CANCEL</button>
+                <button type="button" class="btn btn-primary" id="CLEARANCE_OVERRIDE_SAVE_BUTTON">SAVE</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Spacer Modal -->
+        <div class="modal fade" id="SPACER_MODAL" tabindex="-1">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title"><span id="SPACER_NAME"></span>&nbsp;Spacer</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <div class="container-fluid text-center">
+                    <!-- -->
+                    <img id="SPACER_IMAGE" class="img-fluid" alt="Spacer" src="img/spacers/Unknown.gif">
+                    <!-- -->
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">CLOSE</button>
+              </div>
+            </div>
+          </div>
         </div>
         
         <!-- Sensor Mastering & Dark Referencing Page -->
@@ -1336,13 +1460,14 @@
     <script src="./js/lib/require.js"></script>
     
     <script>
-        var loadExternalFile, loadLocalData, loadArchiveData, pluginMessage, set_grid_position, toggleFileSelected, toggleDetailsSelected, deleteEntry, sortTable;
+        var loadExternalFile, loadLocalData, loadArchiveData, pluginMessage, set_grid_position, clearance_override, toggleFileSelected, toggleDetailsSelected, deleteEntry, sortTable;
         require(['js/e4pt_app'], function(app){
             loadExternalFile = app.loadExternalFile;
             loadLocalData = app.loadLocalData;
             loadArchiveData = app.loadArchiveData;
             pluginMessage = app.pluginMessage;
             set_grid_position = app.set_grid_position;
+            clearance_override = app.clearance_override;
             toggleFileSelected = app.toggleFileSelected;
             toggleDetailsSelected = app.toggleDetailsSelected;
             deleteEntry = app.deleteEntry;
