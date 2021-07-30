@@ -33,6 +33,11 @@ define(function(require, exports, module) {
     var DEFAULT_SPACER_FILE = 'img/spacers/Unknown.gif';
     var MIN_RPM = 0.5;
     var MAX_RPM = 15.0;
+    
+    var CUSTOMER_REPORT_FILE_PREFIX = "customer_report_e4Pt";
+    var DETAILS_FILE_PREFIX = "details_e4pt";
+    var EMAIL_FILE_PREFIX = "e4pt";
+    var DATA_FILE_PREFIX = "data";
 
     // This is the obscure address of the e4Pt field data Box folder.
     var FIELD_DATA_BOX_FOLDER = "Field_D.c55377p707j2cweu@u.box.com";
@@ -158,7 +163,10 @@ define(function(require, exports, module) {
         "blades":"",
         "blade_samples_avg":"",
         "alreadyOnLDB":"false",
-        "pouchdb_id": ""
+        "pouchdb_id": "",
+        "details_filename": "",
+        "report_filename": "",
+        "email_filename": ""
     };
 
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -835,6 +843,9 @@ define(function(require, exports, module) {
                      E4PTdata.std_clr = "";
                      E4PTdata.alreadyOnLDB = "false";
                      E4PTdata.pouchdb_id =  "";
+                     E4PTdata.details_filename = "";
+                     E4PTdata.report_filename = "";
+                     E4PTdata.email_filename = "";
                      // Clear the entries on the page
                      document.getElementById("FRAME_SIZE").selectedIndex = 0;
                      document.getElementById("SERIAL_NUMBER").value = "";
@@ -868,11 +879,12 @@ define(function(require, exports, module) {
         let stageText = "STAGE";
         let htmlStr = "";
         for (let p of Object.keys(pos)) {
-            console.log("stageText:  ", stageText);
+            //console.log("stageText:  ", stageText);
             console.log("current_frame_data.position: ", p);
             htmlStr = htmlStr + '<tr>';
             htmlStr = htmlStr + '<th class="align-middle">' + stageText + '</th>';
             stageText = "";
+            console.log("pos[p]: ", pos[p]);
             for (let j=0; j<pos[p].length; j++) {
                 if (POSITION_DISPLAY_MODE == 'TEXT') {
                     htmlStr = htmlStr + '<th class="align-middle" scope="row">' + pos[p][j] + '</th>';
@@ -881,7 +893,6 @@ define(function(require, exports, module) {
                 } else if (POSITION_DISPLAY_MODE == 'BOTH') {
                     htmlStr = htmlStr + '<th class="align-middle" scope="row">' + ARROW_ICONS[pos[p][j]] + '&nbsp;' + pos[p][j] + '</th>';
                 }
-                console.log("pos[p][j]: ", pos[p][j]);
             }
             htmlStr = htmlStr + '</tr>';
             htmlStr = htmlStr + '<tr>';
@@ -1702,7 +1713,10 @@ define(function(require, exports, module) {
             // This method generates a PDF, then exports it.
             let sn = processString(E4PTdata.serial_number);
             let fileDate = processString(E4PTdata.date);
-            let cust_rpt_fileName = "customer_report_e4Pt_" + sn + "_" + fileDate + ".pdf";
+            let cust_rpt_fileName = CUSTOMER_REPORT_FILE_PREFIX + "_" + sn + "_" + fileDate + ".pdf";
+            E4PTdata.report_filename = cust_rpt_fileName;
+            console.log("CUSTOMER REPORT FILE: ", cust_rpt_fileName);
+            addDBEntry(E4PTdata); // update filename
             baseURL = appDir + "www";
             var options = {
                 documentSize: 'Letter',
@@ -1736,6 +1750,7 @@ define(function(require, exports, module) {
     }
 
     function emailJSONData(toAddress, data) {
+        console.log("@emailJSONData");
         // first write the data to a file...
         let json_data = JSON.stringify(data);
         var json_blob = new Blob( [json_data], { type: 'application/json'} );
@@ -1745,9 +1760,12 @@ define(function(require, exports, module) {
         if ((typeof E4PTdata.serial_number !== 'undefined') || ( E4PTdata.serial_number.length > 0 )) {
             let sn = processString(E4PTdata.serial_number);
             targetFolder = sn;
-            fileName = processString("e4pt_" + sn + "_" + E4PTdata.date + ".json");
+            fileName = processString(EMAIL_FILE_PREFIX + "_" + sn + "_" + E4PTdata.date + ".json");
             subject = subject + " SN: " + E4PTdata.serial_number + " " + E4PTdata.date;
         }
+        E4PTdata.email_filename = fileName;
+        console.log("EMAIL FILE: ", fileName);
+        addDBEntry(E4PTdata); // update filename
         writeToFile(targetFolder, fileName, json_blob, function() {
             let fileURL = cordova.file.documentsDirectory + targetFolder + "/" + fileName;
             let attachment = [fileURL];
@@ -2683,11 +2701,11 @@ define(function(require, exports, module) {
 
     function exportDetailsFile(option) {
         let targetFolder = "data";
-        let details_file_name = "details_e4pt.csv";
+        let details_file_name = DETAILS_FILE_PREFIX + ".csv";
         let sn = processString(E4PTdata.serial_number);
         let fileDate = processString(E4PTdata.date);
         if ((typeof E4PTdata.serial_number !== 'undefined') || ( E4PTdata.serial_number.length > 0 )) {
-            details_file_name = "details_e4pt_" + sn + "_" + fileDate + ".csv";
+            details_file_name = DETAILS_FILE_PREFIX + "_" + sn + "_" + fileDate + ".csv";
             targetFolder = cordova.file.documentsDirectory + sn;
         }
         details_file_name = targetFolder + "/" + details_file_name;
@@ -2719,7 +2737,7 @@ define(function(require, exports, module) {
             let row = tbl.rows[i];
             let cell = row.cells[0]; // Should only be one cell.
             for (let j=0; j<cell.classList.length; j++) {
-                if (cell.classList[j] = "table-active") {
+                if (cell.classList[j] == "table-active") {
                     console.log("exportFiles: Appending " + cell.attributes.nativeURL.value);
                     attachmentList.push(cell.attributes.nativeURL.value);
                 }
@@ -2877,12 +2895,7 @@ define(function(require, exports, module) {
         });
     }
 
-    function toggleFileSelected(fileName, idx) {
-        /*let tbl = document.getElementById("LOCAL_FILE_TABLE_BODY");
-        let row = tbl.rows[idx];
-        let cell = row.cells[0]; // Should only be one cell.
-        cell.classList.toggle("table-active"); */
-
+    function toggleFileSelected(fileName) {
         var table = document.getElementById("LOCAL_FILE_TABLE_BODY");
         for (var i = 0; i <  table.rows.length; i++) {
             row = table.rows[i]
@@ -2927,26 +2940,64 @@ define(function(require, exports, module) {
         tbody.setAttribute("id","LOCAL_FILE_TABLE_BODY");
         // Create the table body.
         window.entries = entries;
-        for (var i=0; i<entries.length; i++) {
-            if (!entries[i].isFile) continue;  // ignore any non-file entries
-            if (entries[i].name == ".DS_Store") continue;
-            let fileSelectFn = "toggleFileSelected(\"" + entries[i].name + "\"," + i + ")";
-            let deleteEntryFn = "deleteEntry(\"" + entries[i].nativeURL +  "\"," + i + ")";
+        let fileEntries = entries.filter(element => element.isFile); // ignore any non-file entries
+        console.log("fileEntries: " + fileEntries.length);
+        var sortedFileEntries = fileEntries.sort(function (a, b) {
+            if (a.name < b.name) return -1;
+            if (a.name > b.name) return 1;
+            return 0;
+        });
+        sortedFileEntries.forEach((entry, index, array) => {
+            if (entry.name == ".DS_Store") return;
+            let sn = processString(E4PTdata.serial_number);
+            let fileSelectFn = "toggleFileSelected(\"" + entry.name + "\")";
+            let deleteEntryFn = "deleteEntry(\"" + entry.nativeURL +  "\"," + index + ")";
             var new_row = tbody.insertRow(-1);
             var cell0 = new_row.insertCell(-1);
-            cell0.innerHTML = entries[i].name;
+            cell0.innerHTML = entry.name;
             cell0.setAttribute("onclick",fileSelectFn);
-            cell0.setAttribute("nativeURL",entries[i].nativeURL);
+            cell0.setAttribute("nativeURL",entry.nativeURL);
+            // apply color coding to 'final' files
+            if (entry.name.startsWith(DETAILS_FILE_PREFIX)) {
+                if (entry.name == E4PTdata.details_filename) {
+                    cell0.classList.add("table-success");
+                } else {
+                    cell0.classList.add("table-warning");
+                }
+            } else if (entry.name.startsWith(CUSTOMER_REPORT_FILE_PREFIX)) {
+                if (entry.name == E4PTdata.report_filename) {
+                    cell0.classList.add("table-success");
+                } else {
+                    cell0.classList.add("table-warning");
+                }
+            } else if (entry.name.startsWith(EMAIL_FILE_PREFIX)) {
+                if (entry.name == E4PTdata.email_filename) {
+                    cell0.classList.add("table-success");
+                } else {
+                    cell0.classList.add("table-warning");
+                }
+            } else if (entry.name.startsWith(DATA_FILE_PREFIX)) {
+                console.log("TODO: handle GET DATA file coloring");
+            } else if (entry.name.startsWith(sn)) {
+                let dataSet = E4PTdata.sets.find(o => (o.filename === sn + '/' + entry.name));
+                if (typeof dataSet !== 'undefined') {
+                    cell0.classList.add("table-success");
+                } else {
+                    cell0.classList.add("table-warning");
+                }
+            } else {
+                console.log("Unknown file entry: ", entry);
+            }
             // disabled due to performance with large amount of records
             /*var cell1 = new_row.insertCell(-1);
             cell1.classList.add("text-center");
             cell1.innerHTML = '<i class="fas fa-trash-alt fa-lg text-danger"></i>';
             //cell1.innerHTML = '<button type="button" class="btn btn-danger">DELETE</button>';
             cell1.setAttribute("onclick",deleteEntryFn);*/
-            //cell1.setAttribute("nativeURL",entries[i].nativeURL);
-        }
+            //cell1.setAttribute("nativeURL",entry.nativeURL);
+        });
         prev_tbody.parentNode.replaceChild(tbody, prev_tbody);
-        sortTable('LOCAL_FILE_TABLE', 0);
+        //sortTable('LOCAL_FILE_TABLE', 0); // not needed due to sorting of entries
         $("#FILE_CHOOSER_PAGE").fadeIn();
     }
 
@@ -2960,39 +3011,71 @@ define(function(require, exports, module) {
         tbody.setAttribute("id","DATA_DETAILS_TABLE_BODY");
         // Create the table body.
         let tmp = "";
-        // TODO: order by stage/position
-        for (let i=0; i<E4PTdata.sets.length; i++) {
-            let clickFn = "toggleDetailsSelected(\"" + i + "\")";
+        var sortedSets = E4PTdata.sets.sort(function (a, b) {
+            let aStageArr = a.stage.split(".");
+            let aStage = parseInt(aStageArr[0]);
+            let aSubStage = 0;
+            if (aStageArr.length > 1) {
+                aSubStage = parseInt(aStageArr[1]);
+            }
+            aStage = (10 * aStage) + aSubStage;
+            let bStageArr = b.stage.split(".");
+            let bStage = parseInt(bStageArr[0]);
+            let bSubStage = 0;
+            if (bStageArr.length > 1) {
+                bSubStage = parseInt(bStageArr[1]);
+            }
+            bStage = (10 * bStage) + bSubStage;
+
+            if (aStage < bStage) {
+                return -1;
+            } else if (aStage > bStage) {
+                return 1;
+            } else {
+                // compare position index for same stage/substage
+                let aPosIdx = current_frame_data.position[a.stage].indexOf(a.position);
+                let bPosIdx = current_frame_data.position[b.stage].indexOf(b.position);
+                if (aPosIdx < bPosIdx) {
+                    return -1;
+                } else if (aPosIdx > bPosIdx) {
+                    return 1;
+                } else {
+                    return 0;
+                }
+            }
+        });
+        sortedSets.forEach((entry, index, array) => {
+            let clickFn = "toggleDetailsSelected(\"" + index + "\")";
             var new_row = tbody.insertRow(-1);
             var cell1 = new_row.insertCell(-1);
             cell1.setAttribute("onclick",clickFn);
-            tmp = E4PTdata.sets[i].stage;
+            tmp = entry.stage;
             if (typeof tmp == 'undefined') tmp = "";
             cell1.innerHTML = tmp;
             var cell2 = new_row.insertCell(-1);
             cell2.setAttribute("onclick",clickFn);
-            tmp = E4PTdata.sets[i].position;
+            tmp = entry.position;
             if (typeof tmp == 'undefined') tmp = "";
             cell2.innerHTML = tmp;
             var cell3 = new_row.insertCell(-1);
             cell3.setAttribute("onclick",clickFn);
-            cell3.innerHTML = checkValue(E4PTdata.sets[i].clearance,3);
-            if (E4PTdata.sets[i].manualOverride) {
+            cell3.innerHTML = checkValue(entry.clearance,3);
+            if (entry.manualOverride) {
               cell3.classList.add("table-danger");
             }
             var cell4 = new_row.insertCell(-1);
             cell4.setAttribute("onclick",clickFn);
-            cell4.innerHTML = checkValue(E4PTdata.sets[i].max_clr,3);
+            cell4.innerHTML = checkValue(entry.max_clr,3);
             var cell5 = new_row.insertCell(-1);
             cell5.setAttribute("onclick",clickFn);
-            cell5.innerHTML = checkValue(E4PTdata.sets[i].min_clr,3);
+            cell5.innerHTML = checkValue(entry.min_clr,3);
             var cell6 = new_row.insertCell(-1);
             cell6.setAttribute("onclick",clickFn);
-            cell6.innerHTML = checkValue(E4PTdata.sets[i].med_clr,3);
+            cell6.innerHTML = checkValue(entry.med_clr,3);
             var cell7 = new_row.insertCell(-1);
             cell7.setAttribute("onclick",clickFn);
-            cell7.innerHTML = checkValue(E4PTdata.sets[i].std_clr,3);
-        }
+            cell7.innerHTML = checkValue(entry.std_clr,3);
+        });
         prev_tbody.parentNode.replaceChild(tbody, prev_tbody);
     }
 
@@ -3015,6 +3098,7 @@ define(function(require, exports, module) {
     // writeDetailsFile() does just that.  It writes a CSV file containing
     // the details for the data collected.
     function writeDetailsFile() {
+        console.log("@writeDetailsFile");
         // Construct a string containing the file contents.
         let contents = "stage,position,clearance,max_clr,min_clr,med_clr,std_clr,override,name,sso\n";
         for (let i=0; i<E4PTdata.sets.length; i++) {
@@ -3035,13 +3119,16 @@ define(function(require, exports, module) {
             contents += "\n";
         }
         let targetFolder = "data"; // default directory
-        let fileName = "details_e4pt.csv";
+        let fileName = DETAILS_FILE_PREFIX + ".csv";
         if ((typeof E4PTdata.serial_number !== 'undefined') || ( E4PTdata.serial_number.length > 0 )) {
             let sn = processString(E4PTdata.serial_number);
             targetFolder = sn;
             let fileDate = processString(E4PTdata.date);
-            fileName = "details_e4pt_" + sn + "_" + fileDate + ".csv";
+            fileName = DETAILS_FILE_PREFIX + "_" + sn + "_" + fileDate + ".csv";
         }
+        E4PTdata.details_filename = fileName;
+        console.log("DETAILS FILE: ", fileName);
+        addDBEntry(E4PTdata); // update filename
         writeToFile(targetFolder, fileName, contents, null);
     }
 
@@ -3080,7 +3167,7 @@ define(function(require, exports, module) {
             let row = tbl.rows[i];
             let cell = row.cells[0]; // Should only be one cell.
             for (let j=0; j<cell.classList.length; j++) {
-                if (cell.classList[j] = "table-active") {
+                if (cell.classList[j] == "table-active") {
                     let dirArr = cell.attributes.nativeURL.value.split('/');
                     let filename = dirArr[dirArr.length - 1];
                     console.log("deleteMultipleFiles: Appending " + filename);
@@ -3588,7 +3675,10 @@ define(function(require, exports, module) {
         time: e4pt_data.time,
         sets: e4pt_data.sets,
         turbine_casing_thicknesses: e4pt_data.turbine_casing_thicknesses,
-        alreadyOnLDB: e4pt_data.alreadyOnLDB
+        alreadyOnLDB: e4pt_data.alreadyOnLDB,
+        details_filename: e4pt_data.details_filename,
+        report_filename: e4pt_data.report_filename,
+        email_filename: e4pt_data.email_filename
         // We don't save the locs, minima, or data elements of e4pt_data because it
         // contains dense data and could overwhelm the database & browser memory.
         // We also don't save the clearance element because it is saved in the sets
@@ -3977,6 +4067,7 @@ define(function(require, exports, module) {
 
     // sortTable(n) is lifted straight from https://www.w3schools.com/howto/howto_js_sort_table.asp
     function sortTable(srtTable, n) {
+      console.log("@sortTable");
       var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
       table = document.getElementById(srtTable);
       switching = true;
@@ -4117,6 +4208,15 @@ define(function(require, exports, module) {
         E4PTdata.sets = doc.sets;
         if (typeof doc.turbine_casing_thicknesses !== 'undefined') {
             E4PTdata.turbine_casing_thicknesses = doc.turbine_casing_thicknesses;
+        }
+        if (typeof doc.details_filename !== 'undefined') {
+            E4PTdata.details_filename = doc.details_filename;
+        }
+        if (typeof doc.report_filename !== 'undefined') {
+            E4PTdata.report_filename = doc.report_filename;
+        }
+        if (typeof doc.email_filename !== 'undefined') {
+            E4PTdata.email_filename = doc.email_filename;
         }
 
         current_frame_data = frame_data[frm_idx];
