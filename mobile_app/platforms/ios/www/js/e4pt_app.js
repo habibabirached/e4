@@ -226,6 +226,9 @@ define(function(require, exports, module) {
             fadeOutAll();
             $("#FRD_PAGE").fadeIn();
         }, {passive: true});
+        document.getElementById("TOOL_BUTTON").addEventListener('click', function() {
+            authorizeControllerSettingsUpdate();
+        }, {passive: true});
         document.getElementById("FRD_VIEW_BUTTON").addEventListener('click', function() {
             show_FRD();
         }, {passive: true});
@@ -365,7 +368,7 @@ define(function(require, exports, module) {
             set_connection_mode();
         }, {passive: true});
         document.getElementById("CONFIGURE_CONTROLLER_BUTTON").addEventListener('click', function() {
-            authorizeControllerSettingsUpdate();
+            configureController();
         }, {passive: true});
         document.getElementById("READ_SENSOR_PARAMETERS_BUTTON").addEventListener('click', function() {
             readSensorParameters();
@@ -386,6 +389,9 @@ define(function(require, exports, module) {
         }, {passive: true});
         document.getElementById("FRD_CLOSE_BUTTON").addEventListener('click', function() {
             $("#FRD_PAGE").fadeOut();
+        }, {passive: true});
+        document.getElementById("TOOL_CLOSE_BUTTON").addEventListener('click', function() {
+            $("#TOOL_PAGE").fadeOut();
         }, {passive: true});
         document.getElementById("INITIALIZE_SENSOR_CLOSE_BUTTON").addEventListener('click', function() {
             $("#INITIALIZE_SENSOR_PAGE").fadeOut();
@@ -550,9 +556,9 @@ define(function(require, exports, module) {
             let prompt = "Email or Upload Files?";
             e4PtPrompt(prompt, exportDetailsFile, "Get File", ["Email","Upload to Box","Cancel"]);
         }, {passive: true});
-        document.getElementById("MANUAL_OVERRIDE").addEventListener('click', function() {
+        /*document.getElementById("MANUAL_OVERRIDE").addEventListener('click', function() {
             overrideSettings();
-        }, {passive: true});
+        }, {passive: true});*/
         document.getElementById("SPACER_THUMBNAIL").addEventListener('click', function() {
             showSpacerImage();
         }, {passive: true });
@@ -622,6 +628,7 @@ define(function(require, exports, module) {
     function fadeOutAll() {
         $("#DATA_PLOT_PAGE").fadeOut();
         $("#FRD_PAGE").fadeOut();
+        $("#TOOL_PAGE").fadeOut();
         $("#SETUP_PAGE").fadeOut();
         $("#SCAN_INFO_PAGE").fadeOut();
         $("#RESULTS_PAGE").fadeOut();
@@ -670,7 +677,6 @@ define(function(require, exports, module) {
     
     function edit() {
         console.log("@edit");
-        // update values from
         document.getElementById("FRAME_SIZE_EDIT").value = document.getElementById("FRAME_SIZE").value;
         document.getElementById("SERIAL_NUMBER_EDIT").value = document.getElementById("SERIAL_NUMBER").value;
         document.getElementById("CUSTOMER_EDIT").value = document.getElementById("CUSTOMER").value;
@@ -682,8 +688,9 @@ define(function(require, exports, module) {
     
     function edit_save() {
         console.log("@edit_save");
+        editModal.hide();
         // changing frame will erase data
-        if (document.getElementById("FRAME_SIZE_EDIT").value != document.getElementById("FRAME_SIZE").value) {
+        if (document.getElementById("FRAME_SIZE_EDIT").value !== document.getElementById("FRAME_SIZE").value) {
             document.getElementById("FRAME_SIZE").value = document.getElementById("FRAME_SIZE_EDIT").value;
             document.getElementById("FRAME_SIZE").selectedIndex = document.getElementById("FRAME_SIZE_EDIT").selectedIndex;
             document.getElementById("HEADER_FRAME").innerHTML = document.getElementById("FRAME_SIZE_EDIT").value;
@@ -693,32 +700,27 @@ define(function(require, exports, module) {
             send_scan_metadata(true, true);
             turbine_setup();
         }
-        if (document.getElementById("SERIAL_NUMBER_EDIT").value != document.getElementById("SERIAL_NUMBER").value) {
+        if (document.getElementById("SERIAL_NUMBER_EDIT").value !== document.getElementById("SERIAL_NUMBER").value) {
             document.getElementById("SERIAL_NUMBER").value = document.getElementById("SERIAL_NUMBER_EDIT").value;
             document.getElementById("HEADER_SERIAL").innerHTML = document.getElementById("SERIAL_NUMBER_EDIT").value;
-            send_scan_metadata(true, true);
         }
-        if (document.getElementById("CUSTOMER_EDIT").value != document.getElementById("CUSTOMER").value) {
+        if (document.getElementById("CUSTOMER_EDIT").value !== document.getElementById("CUSTOMER").value) {
             document.getElementById("CUSTOMER").value = document.getElementById("CUSTOMER_EDIT").value;
             document.getElementById("HEADER_CUSTOMER").innerHTML = document.getElementById("CUSTOMER_EDIT").value;
-            send_scan_metadata(true, true);
         }
-        if (document.getElementById("SITE_EDIT").value != document.getElementById("SITE").value) {
+        if (document.getElementById("SITE_EDIT").value !== document.getElementById("SITE").value) {
             document.getElementById("SITE").value = document.getElementById("SITE_EDIT").value;
             document.getElementById("HEADER_SITE").innerHTML = document.getElementById("SITE_EDIT").value;
-            send_scan_metadata(true, true);
         }
-        if (document.getElementById("OPERATOR_EDIT").value != document.getElementById("OPERATOR").value) {
+        if (document.getElementById("OPERATOR_EDIT").value !== document.getElementById("OPERATOR").value) {
             document.getElementById("OPERATOR").value = document.getElementById("OPERATOR_EDIT").value;
-            document.getElementById("HEADER_SITE").innerHTML = document.getElementById("OPERATOR_EDIT").value;
-            send_scan_metadata(true, true);
+            document.getElementById("HEADER_OPERATOR").innerHTML = document.getElementById("OPERATOR_EDIT").value;
         }
-        if (document.getElementById("UNITS_EDIT").value != document.getElementById("UNITS").value) {
+        if (document.getElementById("UNITS_EDIT").value !== document.getElementById("UNITS").value) {
             document.getElementById("UNITS").value = document.getElementById("UNITS_EDIT").value;
             document.getElementById("HEADER_UNITS").innerHTML = document.getElementById("UNITS_EDIT").value;
-            send_scan_metadata(true, true);
         }
-        editModal.hide();
+        send_scan_metadata(false, true);
         $("#TURBINE_SETUP_PAGE").fadeIn();
     }
 
@@ -1090,7 +1092,7 @@ define(function(require, exports, module) {
         } else {
             // No plugins, so we must not be in Cordova. Use a standard prompt.
             let pw = window.prompt("Please enter the password.", "1");
-            confirmSensorParamsPassword({"input1":pw});
+            confirmControllerSettingsPassword({"input1":pw});
         }
     }
 
@@ -1099,7 +1101,9 @@ define(function(require, exports, module) {
             return;
         }
         if (results.input1 == UPDATE_SETTINGS_PASSWORD) {
-            configureController();
+            toggleMenu();
+            fadeOutAll();
+            $("#TOOL_PAGE").fadeIn();
         } else {
             e4PtAlert("Invalid password.");
         }
@@ -1154,8 +1158,9 @@ define(function(require, exports, module) {
     }
 
     function send_scan_metadata(reset, updatingExisting = false) {
+      console.log('@send_scan_metadata');
       // Set element suffix if we are updating existing measurement
-      var suffix = (updatingExisting ? '2' : '');
+      var suffix = (updatingExisting ? '_EDIT' : '');
 
       // First make sure the user has input some metadata.
       E4PTdata.serial_number = document.getElementById("SERIAL_NUMBER" + suffix).value;
