@@ -407,6 +407,10 @@ define(function(require, exports, module) {
         document.getElementById("SETUP_CLOSE_BUTTON").addEventListener('click', function() {
             $("#SETUP_PAGE").fadeOut();
         }, {passive: true});
+        document.getElementById("LOCATION_CLOSE_BUTTON").addEventListener('click', function() {
+            $("#LOCATION_PAGE").fadeOut();
+            $("#TURBINE_SETUP_PAGE").fadeIn();
+        }, {passive: true});
         document.getElementById("LOCAL_DATA_CLOSE_BUTTON").addEventListener('click', function() {
             $("#LOCAL_DATA_PAGE").fadeOut();
             $("#TITLE_BAR").text(APP_NAME);
@@ -565,6 +569,9 @@ define(function(require, exports, module) {
         document.getElementById("CALCULATE_RPM_BUTTON").addEventListener('click', function() {
              calculateRPM();
         }, {passive: true});
+        document.getElementById("LOCATION_BUTTON").addEventListener('click', function() {
+            showLocationImages();
+        }, {passive: true});
         document.getElementById("EDIT_BUTTON").addEventListener('click', function() {
             edit();
         }, {passive: true});
@@ -641,6 +648,7 @@ define(function(require, exports, module) {
         $("#ARCHIVED_DATA_PAGE").fadeOut();
         $("#FILE_CHOOSER_PAGE").fadeOut();
         $("#DATA_DETAILS_PAGE").fadeOut();
+        $("#LOCATION_PAGE").fadeOut();
     }
 
     function gotFS(fileSystem) {
@@ -734,6 +742,45 @@ define(function(require, exports, module) {
         document.getElementById("SPACER_IMAGE").setAttribute("src", imageName);
         document.getElementById("SPACER_IMAGE").setAttribute("alt", spacerName);
         spacerModal.show();
+    }
+    
+    function showLocationImages() {
+        console.log("@showLocationImages");
+        let locationName = document.getElementById("FRAME_SIZE").value;
+        // frame image
+        let locationImage = document.getElementById("LOCATION_IMAGE");
+        let imageStr = "";
+        if (typeof current_frame_data.image !== 'undefined') {
+            let frameImageName = 'img/frames/' + current_frame_data.image + '.png';
+            imageStr = '<img class="img-fluid" src="' + frameImageName + '">';
+        } else {
+            imageStr += '<h5><span class="badge bg-warning text-dark">No Frame Image</span></h5>';
+        }
+        locationImage.innerHTML = imageStr;
+        // stage images
+        let tabs = document.getElementById("LOCATION_TABS");
+        let content = document.getElementById("LOCATION_CONTENT");
+        let tabStr = "";
+        let contentStr = "";
+        let isFirst = true;
+        for (let s of Object.keys(current_frame_data.stage_info)) {
+            let sId = s.replace('.', '');
+            let stageInfo = current_frame_data.stage_info[s];
+            tabStr += '<li class="nav-item" role="presentation"><button class="nav-link' + (isFirst ? ' active' : '') + '" id="tab' + sId + '" data-bs-toggle="tab" data-bs-target="#content' + sId + '" type="button" role="tab" aria-controls="content' + sId + '" aria-selected="' + isFirst + '">Stage ' + s + '</button></li>';
+            contentStr += '<div class="tab-pane show' + (isFirst ? ' active' : '') + '" id="content' + sId + '" role="tabpanel" aria-labelledby="tab' + sId + '">';
+            if (stageInfo.image) {
+                let stageImageName = 'img/frames/' + stageInfo.image + '.png';
+                contentStr += '<img class="img-fluid" src="' + stageImageName + '">';
+            } else {
+                contentStr += '<h5><span class="badge bg-warning text-dark">No Stage Image</span></h5>';
+            }
+            contentStr += '</div>';
+            isFirst = false;
+        }
+        tabs.innerHTML = tabStr;
+        content.innerHTML = contentStr;
+        $("#TURBINE_SETUP_PAGE").fadeOut();
+        $("#LOCATION_PAGE").fadeIn();
     }
     
     function calculateRPM() {
@@ -883,27 +930,27 @@ define(function(require, exports, module) {
         for (let p of Object.keys(pos)) {
             //console.log("stageText:  ", stageText);
             console.log("current_frame_data.position: ", p);
-            htmlStr = htmlStr + '<tr>';
-            htmlStr = htmlStr + '<th class="align-middle">' + stageText + '</th>';
+            htmlStr += '<tr>';
+            htmlStr += '<th class="align-middle">' + stageText + '</th>';
             stageText = "";
             console.log("pos[p]: ", pos[p]);
             for (let j=0; j<pos[p].length; j++) {
                 if (POSITION_DISPLAY_MODE == 'TEXT') {
-                    htmlStr = htmlStr + '<th class="align-middle" scope="row">' + pos[p][j] + '</th>';
+                    htmlStr += '<th class="align-middle" scope="row">' + pos[p][j] + '</th>';
                 } else if (POSITION_DISPLAY_MODE == 'ICON') {
-                    htmlStr = htmlStr + '<th class="align-middle">' + ARROW_ICONS[pos[p][j]] + '</th>';
+                    htmlStr += '<th class="align-middle">' + ARROW_ICONS[pos[p][j]] + '</th>';
                 } else if (POSITION_DISPLAY_MODE == 'BOTH') {
-                    htmlStr = htmlStr + '<th class="align-middle" scope="row">' + ARROW_ICONS[pos[p][j]] + '&nbsp;' + pos[p][j] + '</th>';
+                    htmlStr += '<th class="align-middle" scope="row">' + ARROW_ICONS[pos[p][j]] + '&nbsp;' + pos[p][j] + '</th>';
                 }
             }
-            htmlStr = htmlStr + '</tr>';
-            htmlStr = htmlStr + '<tr>';
-            htmlStr = htmlStr + '<td scope="row">' + p + '</td>';
+            htmlStr += '</tr>';
+            htmlStr += '<tr>';
+            htmlStr += '<td scope="row">' + p + '</td>';
             for (let j=0; j<pos[p].length; j++) {
                 let casingThickness_el_id = p + '_' + pos[p][j];
-                htmlStr = htmlStr + '<td><input class="form-control" type="text" id="' + casingThickness_el_id + '" value=""/></td>';
+                htmlStr += '<td><input class="form-control" type="text" id="' + casingThickness_el_id + '" value=""/></td>';
             }
-            htmlStr = htmlStr + '</tr>';
+            htmlStr += '</tr>';
         }
         tbl.innerHTML = htmlStr;
         if (callback != null) {
@@ -2046,7 +2093,7 @@ define(function(require, exports, module) {
                 document.getElementById("SPACER_THUMBNAIL").setAttribute("src",imageName);
                 document.getElementById("SPACER_THUMBNAIL").setAttribute("alt",spacer.image);
             }, function() {
-                imageName = 'img/spacers/Unknown.gif';
+                imageName = DEFAULT_SPACER_FILE;
                 document.getElementById("SPACER_THUMBNAIL").setAttribute("src",imageName);
                 document.getElementById("SPACER_THUMBNAIL").setAttribute("alt",'Unknown');
             });

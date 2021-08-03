@@ -869,13 +869,19 @@
                 <div class="row">
                     <div class="col-lg-12">
                       <!-- Turbine Data Collection -->
-                      <div class="text-center">
-                          <h5>
-                              <span class="badge bg-light text-dark">Collection Date:&nbsp;<span id="HEADER_DATETIME"></span></span>
-                          </h5>
-                      </div>
-                      
-                      <table class="table table-borderless table-sm">
+                      <table class="table table-borderless table-sm align-middle text-center">
+                        <tbody>
+                          <tr>
+                            <td colspan="2">Collection Date:</td>
+                            <th scope="row" colspan="2" id="HEADER_DATETIME"></th>
+                            <td colspan="3">
+                                <button class="btn btn-primary" type="button" id="LOCATION_BUTTON">MEASUREMENT LOCATIONS</button>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                      <hr/>
+                      <table class="table table-borderless table-sm align-middle">
                         <tbody>
                           <tr>
                             <td>Frame:</td>
@@ -1133,6 +1139,35 @@
               </div>
             </div>
           </div>
+        </div>
+        
+        <!-- Measurement Location Modal -->
+        <div id="LOCATION_PAGE" class="container-fluid my-2">
+            <div class="card">
+              <div class="card-header">
+                <div class="row">
+                  <div class="col-auto me-auto pt-1">
+                    <h4><span id="LOCATION_NAME"></span>&nbsp;Measurement Locations</h4>
+                  </div>
+                  <div class="col-auto">
+                    <button id="LOCATION_CLOSE_BUTTON" type="button" class="btn btn-dark"><i class="fas fa-times"></i></button>
+                  </div>
+                </div>
+              </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                    <div class="col-lg-12">
+                        <!-- -->
+                        <div id="LOCATION_IMAGE" class="py-2"></div>
+                        <hr/>
+                        <!-- These tabs get constructed by javascript -->
+                        <ul class="nav nav-pills nav-fill" id="LOCATION_TABS" role="tablist"></ul>
+                        <div class="tab-content py-2" id="LOCATION_CONTENT"></div>
+                        <!-- -->
+                    </div>
+                  </div>
+                </div>
+            </div>
         </div>
         
         <!-- Spacer Modal -->

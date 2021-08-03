@@ -653,6 +653,7 @@ frame_data = [
     'default_sensor':'LONG'
     },
     {'frame':'7HA.02-FL18',
+    'image':'7HA02-18',
     'stage':['1', '6', '10', '14'],
     'position':{'1':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
                 '6':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
@@ -673,7 +674,8 @@ frame_data = [
             'BOTTOM':['D', 270.0, 270.0, 4.959],
             'blade_count':24,
             'tip_diameter':95.296,
-            'blade_width':0.075
+            'blade_width':0.075,
+            'image':'7HA02-18-R1'
               },
         '6':{
             'RIGHT':['A', 0.0, 0.0, 2.641],
@@ -682,7 +684,8 @@ frame_data = [
             'BOTTOM':['D', 270.0, 270.0, 2.641],
             'blade_count':72,
             'tip_diameter':78.632,
-            'blade_width':0.06
+            'blade_width':0.06,
+            'image':'7HA02-18-R6'
         },
         '10':{
             'RIGHT':['A', 0.0, 0.0, 1.870],
@@ -691,7 +694,8 @@ frame_data = [
             'BOTTOM':['D', 270.0, 270.0, 1.870],
             'blade_count':85,
             'tip_diameter':72.22,
-            'blade_width':0.06
+            'blade_width':0.06,
+            'image':'7HA02-18-R10'
         },
         '14':{
             'TOP RIGHT':['A', 0.0, 0.0, 1.860],
@@ -700,7 +704,8 @@ frame_data = [
             'BOTTOM LEFT':['D', 270.0, 270.0, 1.860],
             'blade_count':92,
             'tip_diameter':69.814,
-            'blade_width':0.060
+            'blade_width':0.060,
+            'image':'7HA02-18-R14'
         },
     },
     'turning_gear_rpm':6.9,
