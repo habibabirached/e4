@@ -226,6 +226,9 @@ define(function(require, exports, module) {
             fadeOutAll();
             $("#FRD_PAGE").fadeIn();
         }, {passive: true});
+        document.getElementById("TOOL_BUTTON").addEventListener('click', function() {
+            authorizeControllerSettingsUpdate();
+        }, {passive: true});
         document.getElementById("FRD_VIEW_BUTTON").addEventListener('click', function() {
             show_FRD();
         }, {passive: true});
@@ -365,7 +368,7 @@ define(function(require, exports, module) {
             set_connection_mode();
         }, {passive: true});
         document.getElementById("CONFIGURE_CONTROLLER_BUTTON").addEventListener('click', function() {
-            authorizeControllerSettingsUpdate();
+            configureController();
         }, {passive: true});
         document.getElementById("READ_SENSOR_PARAMETERS_BUTTON").addEventListener('click', function() {
             readSensorParameters();
@@ -387,6 +390,9 @@ define(function(require, exports, module) {
         document.getElementById("FRD_CLOSE_BUTTON").addEventListener('click', function() {
             $("#FRD_PAGE").fadeOut();
         }, {passive: true});
+        document.getElementById("TOOL_CLOSE_BUTTON").addEventListener('click', function() {
+            $("#TOOL_PAGE").fadeOut();
+        }, {passive: true});
         document.getElementById("INITIALIZE_SENSOR_CLOSE_BUTTON").addEventListener('click', function() {
             $("#INITIALIZE_SENSOR_PAGE").fadeOut();
         }, {passive: true});
@@ -400,6 +406,10 @@ define(function(require, exports, module) {
         }, {passive: true});
         document.getElementById("SETUP_CLOSE_BUTTON").addEventListener('click', function() {
             $("#SETUP_PAGE").fadeOut();
+        }, {passive: true});
+        document.getElementById("LOCATION_CLOSE_BUTTON").addEventListener('click', function() {
+            $("#LOCATION_PAGE").fadeOut();
+            $("#TURBINE_SETUP_PAGE").fadeIn();
         }, {passive: true});
         document.getElementById("LOCAL_DATA_CLOSE_BUTTON").addEventListener('click', function() {
             $("#LOCAL_DATA_PAGE").fadeOut();
@@ -550,14 +560,17 @@ define(function(require, exports, module) {
             let prompt = "Email or Upload Files?";
             e4PtPrompt(prompt, exportDetailsFile, "Get File", ["Email","Upload to Box","Cancel"]);
         }, {passive: true});
-        document.getElementById("MANUAL_OVERRIDE").addEventListener('click', function() {
+        /*document.getElementById("MANUAL_OVERRIDE").addEventListener('click', function() {
             overrideSettings();
-        }, {passive: true});
+        }, {passive: true});*/
         document.getElementById("SPACER_THUMBNAIL").addEventListener('click', function() {
             showSpacerImage();
         }, {passive: true });
         document.getElementById("CALCULATE_RPM_BUTTON").addEventListener('click', function() {
              calculateRPM();
+        }, {passive: true});
+        document.getElementById("LOCATION_BUTTON").addEventListener('click', function() {
+            showLocationImages();
         }, {passive: true});
         document.getElementById("EDIT_BUTTON").addEventListener('click', function() {
             edit();
@@ -622,6 +635,7 @@ define(function(require, exports, module) {
     function fadeOutAll() {
         $("#DATA_PLOT_PAGE").fadeOut();
         $("#FRD_PAGE").fadeOut();
+        $("#TOOL_PAGE").fadeOut();
         $("#SETUP_PAGE").fadeOut();
         $("#SCAN_INFO_PAGE").fadeOut();
         $("#RESULTS_PAGE").fadeOut();
@@ -634,6 +648,7 @@ define(function(require, exports, module) {
         $("#ARCHIVED_DATA_PAGE").fadeOut();
         $("#FILE_CHOOSER_PAGE").fadeOut();
         $("#DATA_DETAILS_PAGE").fadeOut();
+        $("#LOCATION_PAGE").fadeOut();
     }
 
     function gotFS(fileSystem) {
@@ -670,7 +685,6 @@ define(function(require, exports, module) {
     
     function edit() {
         console.log("@edit");
-        // update values from
         document.getElementById("FRAME_SIZE_EDIT").value = document.getElementById("FRAME_SIZE").value;
         document.getElementById("SERIAL_NUMBER_EDIT").value = document.getElementById("SERIAL_NUMBER").value;
         document.getElementById("CUSTOMER_EDIT").value = document.getElementById("CUSTOMER").value;
@@ -682,8 +696,9 @@ define(function(require, exports, module) {
     
     function edit_save() {
         console.log("@edit_save");
+        editModal.hide();
         // changing frame will erase data
-        if (document.getElementById("FRAME_SIZE_EDIT").value != document.getElementById("FRAME_SIZE").value) {
+        if (document.getElementById("FRAME_SIZE_EDIT").value !== document.getElementById("FRAME_SIZE").value) {
             document.getElementById("FRAME_SIZE").value = document.getElementById("FRAME_SIZE_EDIT").value;
             document.getElementById("FRAME_SIZE").selectedIndex = document.getElementById("FRAME_SIZE_EDIT").selectedIndex;
             document.getElementById("HEADER_FRAME").innerHTML = document.getElementById("FRAME_SIZE_EDIT").value;
@@ -693,32 +708,27 @@ define(function(require, exports, module) {
             send_scan_metadata(true, true);
             turbine_setup();
         }
-        if (document.getElementById("SERIAL_NUMBER_EDIT").value != document.getElementById("SERIAL_NUMBER").value) {
+        if (document.getElementById("SERIAL_NUMBER_EDIT").value !== document.getElementById("SERIAL_NUMBER").value) {
             document.getElementById("SERIAL_NUMBER").value = document.getElementById("SERIAL_NUMBER_EDIT").value;
             document.getElementById("HEADER_SERIAL").innerHTML = document.getElementById("SERIAL_NUMBER_EDIT").value;
-            send_scan_metadata(true, true);
         }
-        if (document.getElementById("CUSTOMER_EDIT").value != document.getElementById("CUSTOMER").value) {
+        if (document.getElementById("CUSTOMER_EDIT").value !== document.getElementById("CUSTOMER").value) {
             document.getElementById("CUSTOMER").value = document.getElementById("CUSTOMER_EDIT").value;
             document.getElementById("HEADER_CUSTOMER").innerHTML = document.getElementById("CUSTOMER_EDIT").value;
-            send_scan_metadata(true, true);
         }
-        if (document.getElementById("SITE_EDIT").value != document.getElementById("SITE").value) {
+        if (document.getElementById("SITE_EDIT").value !== document.getElementById("SITE").value) {
             document.getElementById("SITE").value = document.getElementById("SITE_EDIT").value;
             document.getElementById("HEADER_SITE").innerHTML = document.getElementById("SITE_EDIT").value;
-            send_scan_metadata(true, true);
         }
-        if (document.getElementById("OPERATOR_EDIT").value != document.getElementById("OPERATOR").value) {
+        if (document.getElementById("OPERATOR_EDIT").value !== document.getElementById("OPERATOR").value) {
             document.getElementById("OPERATOR").value = document.getElementById("OPERATOR_EDIT").value;
-            document.getElementById("HEADER_SITE").innerHTML = document.getElementById("OPERATOR_EDIT").value;
-            send_scan_metadata(true, true);
+            document.getElementById("HEADER_OPERATOR").innerHTML = document.getElementById("OPERATOR_EDIT").value;
         }
-        if (document.getElementById("UNITS_EDIT").value != document.getElementById("UNITS").value) {
+        if (document.getElementById("UNITS_EDIT").value !== document.getElementById("UNITS").value) {
             document.getElementById("UNITS").value = document.getElementById("UNITS_EDIT").value;
             document.getElementById("HEADER_UNITS").innerHTML = document.getElementById("UNITS_EDIT").value;
-            send_scan_metadata(true, true);
         }
-        editModal.hide();
+        send_scan_metadata(false, true);
         $("#TURBINE_SETUP_PAGE").fadeIn();
     }
 
@@ -732,6 +742,45 @@ define(function(require, exports, module) {
         document.getElementById("SPACER_IMAGE").setAttribute("src", imageName);
         document.getElementById("SPACER_IMAGE").setAttribute("alt", spacerName);
         spacerModal.show();
+    }
+    
+    function showLocationImages() {
+        console.log("@showLocationImages");
+        let locationName = document.getElementById("FRAME_SIZE").value;
+        // frame image
+        let locationImage = document.getElementById("LOCATION_IMAGE");
+        let imageStr = "";
+        if (typeof current_frame_data.image !== 'undefined') {
+            let frameImageName = 'img/frames/' + current_frame_data.image + '.png';
+            imageStr = '<img class="img-fluid" src="' + frameImageName + '">';
+        } else {
+            imageStr += '<h5><span class="badge bg-warning text-dark">No Frame Image</span></h5>';
+        }
+        locationImage.innerHTML = imageStr;
+        // stage images
+        let tabs = document.getElementById("LOCATION_TABS");
+        let content = document.getElementById("LOCATION_CONTENT");
+        let tabStr = "";
+        let contentStr = "";
+        let isFirst = true;
+        for (let s of Object.keys(current_frame_data.stage_info)) {
+            let sId = s.replace('.', '');
+            let stageInfo = current_frame_data.stage_info[s];
+            tabStr += '<li class="nav-item" role="presentation"><button class="nav-link' + (isFirst ? ' active' : '') + '" id="tab' + sId + '" data-bs-toggle="tab" data-bs-target="#content' + sId + '" type="button" role="tab" aria-controls="content' + sId + '" aria-selected="' + isFirst + '">Stage ' + s + '</button></li>';
+            contentStr += '<div class="tab-pane show' + (isFirst ? ' active' : '') + '" id="content' + sId + '" role="tabpanel" aria-labelledby="tab' + sId + '">';
+            if (stageInfo.image) {
+                let stageImageName = 'img/frames/' + stageInfo.image + '.png';
+                contentStr += '<img class="img-fluid" src="' + stageImageName + '">';
+            } else {
+                contentStr += '<h5><span class="badge bg-warning text-dark">No Stage Image</span></h5>';
+            }
+            contentStr += '</div>';
+            isFirst = false;
+        }
+        tabs.innerHTML = tabStr;
+        content.innerHTML = contentStr;
+        $("#TURBINE_SETUP_PAGE").fadeOut();
+        $("#LOCATION_PAGE").fadeIn();
     }
     
     function calculateRPM() {
@@ -881,27 +930,27 @@ define(function(require, exports, module) {
         for (let p of Object.keys(pos)) {
             //console.log("stageText:  ", stageText);
             console.log("current_frame_data.position: ", p);
-            htmlStr = htmlStr + '<tr>';
-            htmlStr = htmlStr + '<th class="align-middle">' + stageText + '</th>';
+            htmlStr += '<tr>';
+            htmlStr += '<th class="align-middle">' + stageText + '</th>';
             stageText = "";
             console.log("pos[p]: ", pos[p]);
             for (let j=0; j<pos[p].length; j++) {
                 if (POSITION_DISPLAY_MODE == 'TEXT') {
-                    htmlStr = htmlStr + '<th class="align-middle" scope="row">' + pos[p][j] + '</th>';
+                    htmlStr += '<th class="align-middle" scope="row">' + pos[p][j] + '</th>';
                 } else if (POSITION_DISPLAY_MODE == 'ICON') {
-                    htmlStr = htmlStr + '<th class="align-middle">' + ARROW_ICONS[pos[p][j]] + '</th>';
+                    htmlStr += '<th class="align-middle">' + ARROW_ICONS[pos[p][j]] + '</th>';
                 } else if (POSITION_DISPLAY_MODE == 'BOTH') {
-                    htmlStr = htmlStr + '<th class="align-middle" scope="row">' + ARROW_ICONS[pos[p][j]] + '&nbsp;' + pos[p][j] + '</th>';
+                    htmlStr += '<th class="align-middle" scope="row">' + ARROW_ICONS[pos[p][j]] + '&nbsp;' + pos[p][j] + '</th>';
                 }
             }
-            htmlStr = htmlStr + '</tr>';
-            htmlStr = htmlStr + '<tr>';
-            htmlStr = htmlStr + '<td scope="row">' + p + '</td>';
+            htmlStr += '</tr>';
+            htmlStr += '<tr>';
+            htmlStr += '<td scope="row">' + p + '</td>';
             for (let j=0; j<pos[p].length; j++) {
                 let casingThickness_el_id = p + '_' + pos[p][j];
-                htmlStr = htmlStr + '<td><input class="form-control" type="text" id="' + casingThickness_el_id + '" value=""/></td>';
+                htmlStr += '<td><input class="form-control" type="text" id="' + casingThickness_el_id + '" value=""/></td>';
             }
-            htmlStr = htmlStr + '</tr>';
+            htmlStr += '</tr>';
         }
         tbl.innerHTML = htmlStr;
         if (callback != null) {
@@ -1090,7 +1139,7 @@ define(function(require, exports, module) {
         } else {
             // No plugins, so we must not be in Cordova. Use a standard prompt.
             let pw = window.prompt("Please enter the password.", "1");
-            confirmSensorParamsPassword({"input1":pw});
+            confirmControllerSettingsPassword({"input1":pw});
         }
     }
 
@@ -1099,7 +1148,9 @@ define(function(require, exports, module) {
             return;
         }
         if (results.input1 == UPDATE_SETTINGS_PASSWORD) {
-            configureController();
+            toggleMenu();
+            fadeOutAll();
+            $("#TOOL_PAGE").fadeIn();
         } else {
             e4PtAlert("Invalid password.");
         }
@@ -1154,8 +1205,9 @@ define(function(require, exports, module) {
     }
 
     function send_scan_metadata(reset, updatingExisting = false) {
+      console.log('@send_scan_metadata');
       // Set element suffix if we are updating existing measurement
-      var suffix = (updatingExisting ? '2' : '');
+      var suffix = (updatingExisting ? '_EDIT' : '');
 
       // First make sure the user has input some metadata.
       E4PTdata.serial_number = document.getElementById("SERIAL_NUMBER" + suffix).value;
@@ -2041,7 +2093,7 @@ define(function(require, exports, module) {
                 document.getElementById("SPACER_THUMBNAIL").setAttribute("src",imageName);
                 document.getElementById("SPACER_THUMBNAIL").setAttribute("alt",spacer.image);
             }, function() {
-                imageName = 'img/spacers/Unknown.gif';
+                imageName = DEFAULT_SPACER_FILE;
                 document.getElementById("SPACER_THUMBNAIL").setAttribute("src",imageName);
                 document.getElementById("SPACER_THUMBNAIL").setAttribute("alt",'Unknown');
             });
