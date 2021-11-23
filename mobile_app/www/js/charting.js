@@ -10,7 +10,7 @@ define(function(require, exports, module, sensorSettings) {
   const renderChart = (chartConfig, target, chartFilename, writeToFileFunc) => {
     let html = createSavedChartHTML(chartConfig);
     let chart = Highcharts.chart(target, chartConfig);
-    chart.renderer.button('Save',chart.plotWidth-10,50,function(){
+    chart.renderer.button('Save',chart.plotWidth+20,0,function(){
           writeToFileFunc(chartFilename.substring(0,chartFilename.indexOf('_')), chartFilename, html);
           this.attr({text: 'Saved'});
           this.setState(3);

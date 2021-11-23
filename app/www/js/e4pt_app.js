@@ -33,6 +33,8 @@ define(function(require, exports, module) {
     var DEFAULT_SPACER_FILE = 'img/spacers/Unknown.gif';
     var MIN_RPM = 0.5;
     var MAX_RPM = 15.0;
+    var CLEARANCE_OVERRIDE_PRECISION = 4;
+    var DETAILS_PRECISION = 4;
     
     var CUSTOMER_REPORT_FILE_PREFIX = "customer_report_e4Pt";
     var DETAILS_FILE_PREFIX = "details_e4pt";
@@ -763,19 +765,23 @@ define(function(require, exports, module) {
         let tabStr = "";
         let contentStr = "";
         let isFirst = true;
-        for (let s of Object.keys(current_frame_data.stage_info)) {
-            let sId = s.replace('.', '');
-            let stageInfo = current_frame_data.stage_info[s];
-            tabStr += '<li class="nav-item" role="presentation"><button class="nav-link' + (isFirst ? ' active' : '') + '" id="tab' + sId + '" data-bs-toggle="tab" data-bs-target="#content' + sId + '" type="button" role="tab" aria-controls="content' + sId + '" aria-selected="' + isFirst + '">Stage ' + s + '</button></li>';
-            contentStr += '<div class="tab-pane show' + (isFirst ? ' active' : '') + '" id="content' + sId + '" role="tabpanel" aria-labelledby="tab' + sId + '">';
-            if (stageInfo.image) {
-                let stageImageName = 'img/frames/' + stageInfo.image + '.png';
-                contentStr += '<img class="img-fluid" src="' + stageImageName + '">';
-            } else {
-                contentStr += '<h5><span class="badge bg-warning text-dark">No Stage Image</span></h5>';
+        // only include one tab/image per stage
+        if (typeof current_frame_data.stage_images !== 'undefined') {
+            for (let stageId of Object.keys(current_frame_data.stage_images)) {
+                let stageImage = current_frame_data.stage_images[stageId];
+                tabStr += '<li class="nav-item" role="presentation"><button class="nav-link' + (isFirst ? ' active' : '') + '" id="tab' + stageId + '" data-bs-toggle="tab" data-bs-target="#content' + stageId + '" type="button" role="tab" aria-controls="content' + stageId + '" aria-selected="' + isFirst + '">Stage ' + stageId + '</button></li>';
+                contentStr += '<div class="tab-pane show' + (isFirst ? ' active' : '') + '" id="content' + stageId + '" role="tabpanel" aria-labelledby="tab' + stageId + '">';
+                if (stageImage) {
+                    let stageImageName = 'img/frames/' + stageImage + '.png';
+                    contentStr += '<img class="img-fluid" src="' + stageImageName + '">';
+                } else {
+                    contentStr += '<h5><span class="badge bg-warning text-dark">No Stage Image</span></h5>';
+                }
+                contentStr += '</div>';
+                isFirst = false;
             }
-            contentStr += '</div>';
-            isFirst = false;
+        } else {
+            contentStr += '<h5><span class="badge bg-warning text-dark">No Stage Images</span></h5>';
         }
         tabs.innerHTML = tabStr;
         content.innerHTML = contentStr;
@@ -958,6 +964,7 @@ define(function(require, exports, module) {
         }
     }
 
+    // unused, was called on MANUAL_OVERRIDE checked
     function overrideSettings() {
         manualOverride = document.getElementById("MANUAL_OVERRIDE").checked;
         console.log("@overrideSettings: ", manualOverride);
@@ -1316,6 +1323,7 @@ define(function(require, exports, module) {
     }
 
     function turbine_setup() {
+        console.log('@turbine_setup');
         $("#TITLE_BAR").text("Data Collection");
         $("#TURBINE_SETUP_PAGE").fadeIn();
         savedRPM = computedRPM;
@@ -1457,9 +1465,9 @@ define(function(require, exports, module) {
         var html = html_buf.join('\n');
         document.getElementById("SENSOR_POSITION").innerHTML = html;
         
-        selected_frame_data.stageInfoIdx = current_stage_index;
-        selected_frame_data.stageName = current_stage;
-        selected_frame_data.bladeCount = current_frame_data.stage_info[current_stage].blade_count;
+        // update in set_stage_information
+        //selected_frame_data.stageInfoIdx = current_stage_index;
+        //selected_frame_data.stageName = current_stage;
     }
 
     function set_stage_information() {
@@ -1473,10 +1481,15 @@ define(function(require, exports, module) {
         document.getElementById("SENSOR_STAGE").innerHTML = html;
         document.getElementById("SENSOR_STAGE").selectedIndex = selected_frame_data.stageInfoIdx;
         selected_frame_data.stageName = Object.keys(frame_data[selected_frame_data.frameIdx].stage_info)[selected_frame_data.stageInfoIdx]
-        document.getElementById("SENSOR_STAGE").value = selected_frame_data.stageName;
+        // don't use stage name due to x.x formats
+        //document.getElementById("SENSOR_STAGE").value = selected_frame_data.stageName;
         console.log ("selected_frame_data.stageName  , index= ", selected_frame_data.stageName, selected_frame_data.stageInfoIdx);
         current_stage_index = document.getElementById("SENSOR_STAGE").selectedIndex;
         current_stage = stages[current_stage_index];
+        
+        selected_frame_data.stageInfoIdx = current_stage_index;
+        selected_frame_data.stageName = current_stage;
+        
         set_position_information(); // When you change the stage, the position information changes too.
         current_position_index = 0;
     }
@@ -1542,7 +1555,9 @@ define(function(require, exports, module) {
                   }
               });
         } else {
+            console.log('Setting manual override');
             messaging.sendMessage({args:[cmd]});
+            messaging.sendMessage({args:[{command:'set_manual_override',value:true}]});
         }
     }
     
@@ -1564,9 +1579,9 @@ define(function(require, exports, module) {
           case "red":
             targetColor = "btn-danger";
             break;
-            case "blue":
-              targetColor = "btn-primary";
-              break;
+          case "blue":
+            targetColor = "btn-primary";
+            break;
           case "green":
             targetColor = "btn-success";
             break;
@@ -1900,6 +1915,7 @@ define(function(require, exports, module) {
     }
                   
     function setup_data_collection_page(dateStr, timeStr, update_position) {
+        console.log('@setup_data_collection_page');
         // Fill in the header
         var customer = document.getElementById("CUSTOMER").value;
         var site = document.getElementById("SITE").value;
@@ -2167,7 +2183,7 @@ define(function(require, exports, module) {
         var clearance = document.getElementById(el_id).innerHTML;
         if (E4PTdata.units.toUpperCase().includes("IN") && clearance != "") {
           clearance = sensorSettings.toMMs(clearance);
-          clearance = checkValue(clearance, 4);
+          clearance = checkValue(clearance, CLEARANCE_OVERRIDE_PRECISION);
         }
         document.getElementById("CLEARANCE_OVERRIDE_STAGE").innerHTML = current_stage;
         document.getElementById("CLEARANCE_OVERRIDE_POSITION").innerHTML = current_position;
@@ -2532,9 +2548,11 @@ define(function(require, exports, module) {
                             stage_details = get_stage_details(position, casing_thickness);
                             console.log(stage_details);
                             let rotor_blades = stage_details.blade_count;
+                            selected_frame_data.bladeCount = rotor_blades;
                             let observed_blades = parseFloat(msg.blades);
                             console.log('rotor_blades = ' + rotor_blades + ', observed_blades = ' + observed_blades);
                             if (observed_blades > 0) {
+                                // TODO: test
                                 let calculated_rpm = observed_blades / rotor_blades;
                                 console.log('calculated_rpm = ' + calculated_rpm);
                                 document.getElementById("MEASUREMENT_RPM").value = calculated_rpm.toFixed(3);
@@ -3111,22 +3129,22 @@ define(function(require, exports, module) {
             cell2.innerHTML = tmp;
             var cell3 = new_row.insertCell(-1);
             cell3.setAttribute("onclick",clickFn);
-            cell3.innerHTML = checkValue(entry.clearance,3);
+            cell3.innerHTML = checkValue(entry.clearance, DETAILS_PRECISION);
             if (entry.manualOverride) {
               cell3.classList.add("table-danger");
             }
             var cell4 = new_row.insertCell(-1);
             cell4.setAttribute("onclick",clickFn);
-            cell4.innerHTML = checkValue(entry.max_clr,3);
+            cell4.innerHTML = checkValue(entry.max_clr, DETAILS_PRECISION);
             var cell5 = new_row.insertCell(-1);
             cell5.setAttribute("onclick",clickFn);
-            cell5.innerHTML = checkValue(entry.min_clr,3);
+            cell5.innerHTML = checkValue(entry.min_clr, DETAILS_PRECISION);
             var cell6 = new_row.insertCell(-1);
             cell6.setAttribute("onclick",clickFn);
-            cell6.innerHTML = checkValue(entry.med_clr,3);
+            cell6.innerHTML = checkValue(entry.med_clr, DETAILS_PRECISION);
             var cell7 = new_row.insertCell(-1);
             cell7.setAttribute("onclick",clickFn);
-            cell7.innerHTML = checkValue(entry.std_clr,3);
+            cell7.innerHTML = checkValue(entry.std_clr, DETAILS_PRECISION);
         });
         prev_tbody.parentNode.replaceChild(tbody, prev_tbody);
     }
@@ -3156,11 +3174,11 @@ define(function(require, exports, module) {
         for (let i=0; i<E4PTdata.sets.length; i++) {
             contents += E4PTdata.sets[i].stage + ","
                 + E4PTdata.sets[i].position +  ","
-                + checkValue(E4PTdata.sets[i].clearance,3) + ","
-                + checkValue(E4PTdata.sets[i].max_clr,3) + ","
-                + checkValue(E4PTdata.sets[i].min_clr,3) + ","
-                + checkValue(E4PTdata.sets[i].med_clr,3) + ","
-                + checkValue(E4PTdata.sets[i].std_clr,3) + ","
+                + checkValue(E4PTdata.sets[i].clearance, 4) + ","
+                + checkValue(E4PTdata.sets[i].max_clr, 4) + ","
+                + checkValue(E4PTdata.sets[i].min_clr, 4) + ","
+                + checkValue(E4PTdata.sets[i].med_clr, 4) + ","
+                + checkValue(E4PTdata.sets[i].std_clr, 4) + ","
                 + E4PTdata.sets[i].manualOverride + ",";
             if (E4PTdata.sets[i].manualOverride) {
                 contents += E4PTdata.sets[i].overrideName + ","
@@ -3328,6 +3346,7 @@ define(function(require, exports, module) {
     }
 
     function requestE4PtData(acquisitionTime) {
+        console.log("@requestE4PtData");
         console.log("Requesting " + acquisitionTime + " seconds of data");
         charting.clearChartData(document.getElementById('DATA_PLOT'));
         startProgressBar();
@@ -3341,6 +3360,7 @@ define(function(require, exports, module) {
     }
 
     function requestE4PtDataWithMetaData(acquisitionTime, frame, sn, stage, position, casing_thickness, spacer_thickness, master_offset, clearance_calc_selection) {
+        console.log("@requestE4PtDataWithMetaData");
         console.log("Requesting " + acquisitionTime + "s data");
         console.log("Meta data: " + frame + "; " + sn + "; " + stage + "; " + position);
         frame = frame.replace(/\s+/g, '_'); // replace all the spaces with underscores
@@ -4211,6 +4231,7 @@ define(function(require, exports, module) {
     }
 
     function initializeFromDocument(doc) {
+        console.log('@initializeFromDocument');
         if (doc._id) {
             E4PTdata.pouchdb_id = doc._id;
         } else if (doc.pouchdb_id) {
@@ -4281,7 +4302,9 @@ define(function(require, exports, module) {
         selected_frame_data.stageInfoIdx = current_stage_index;
         selected_frame_data.frameName = current_frame_data.frame;
         selected_frame_data.stageName = current_stage;
-        selected_frame_data.bladeCount = current_frame_data.stage_info[current_stage].blade_count;
+        // use index instead of name due to *.* stages
+        //selected_frame_data.bladeCount = current_frame_data.stage_info[current_stage].blade_count;
+        selected_frame_data.bladeCount = Object.values(current_frame_data.stage_info)[current_stage_index].blade_count;
 
         $("#LOCAL_DATA_PAGE").fadeOut();
         $("#ARCHIVED_DATA_PAGE").fadeOut();

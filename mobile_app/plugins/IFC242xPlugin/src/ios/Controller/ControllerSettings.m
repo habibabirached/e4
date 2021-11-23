@@ -40,11 +40,17 @@
 }
 
 -(NSString*)calculate:(float)rpm forBladeWidth:(float)bladeWidth forTipDiameter:(float)tipDiameter updateRateAndIntensity:(BOOL)rateAndIntensity {
-    
+    NSLog(@"@calculate: rpm=%f, bladeWidth=%f, tipDiameter=%f, rateAndIntensity=%s", rpm, bladeWidth, tipDiameter, rateAndIntensity ? "true" : "false");
     NSString* errorMessage = @"";
+    if (bladeWidth == 0) {
+        errorMessage = @"Error: Blade Width = 0, ";
+    }
+    if (tipDiameter == 0) {
+        errorMessage = [errorMessage stringByAppendingString:@"Error: Tip Diameter = 0, "];
+    }
     float circumference = [self calculateCircumferenceFromTipDiameterInches:tipDiameter];
     if (circumference == 0) {
-        errorMessage = @"Error: Circumference = 0, ";
+        errorMessage = [errorMessage stringByAppendingString:@"Error: Circumference = 0, "];
     }
     float inchesPerSecond = [self calculateSpeedForCircumference:circumference withRPM:rpm];
     self.acquisitionTime = [self calculateAcquisitionTimeForCircumference:circumference atSpeed:inchesPerSecond];
