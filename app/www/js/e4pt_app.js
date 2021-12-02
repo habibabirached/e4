@@ -1517,9 +1517,10 @@ define(function(require, exports, module) {
     }
     
     function set_measurement_and_intensity_value(el_id, label, minVal, maxVal, cmd) {
+        console.log("@set_measurement_and_intensity_value");
         var input_f = parseFloat(document.getElementById(el_id).value);
         // Make sure the text is a number
-        if ( (isNaN(input_f)) || (typeof(input_f) != 'number')) {
+        if ((isNaN(input_f)) || (typeof(input_f) != 'number')) {
             e4PtAlert(label + ' is not a number.');
             return;
         }
@@ -2924,7 +2925,7 @@ define(function(require, exports, module) {
     function deleteFile(dir, fileName) {
         console.log("@deleteFile: dir=" + JSON.stringify(dir) + ", fileName=" + fileName);
         dir.getFile(fileName, { create: false }, function (fileEntry) {
-            console.log("fileEntry=", fileEntry);
+            console.log("fileEntry=", JSON.stringify(fileEntry));
             fileEntry.remove(function (file) {
                 console.log("file removed");
             }, function (error) {
@@ -3323,6 +3324,17 @@ define(function(require, exports, module) {
       try {
         update_scan_info(); // currently does nothing
         parse_data();
+
+        /*if (E4PTdata.data.length > 0) {
+            var d0 = E4PTdata.data[0];
+            var allEqual = E4PTdata.data.every(function(d) {
+                return d === d0;
+            });
+            if (allEqual) {
+                e4PtAlert("Invalid data, all clearance values are identical: " + d0);
+            }
+        }*/
+
         document.getElementById('MEASUREMENT_RATE_1').value = E4PTdata.measurement_rate;
         document.getElementById('THRESHOLD_1').value = E4PTdata.intensity_threshold;
         
@@ -3468,12 +3480,14 @@ define(function(require, exports, module) {
     function parse_data() {
         console.log("@parse_data");
         if (E4PTdata.locs.length > 0) {
+            console.log("minima: ", E4PTdata.locs.length);
             var minima = new Array(E4PTdata.locs.length);
             for (var i=0; i<E4PTdata.locs.length; i++) {
                 minima[i] = [E4PTdata.locs[i], E4PTdata.gaps[i]];
             }
             E4PTdata.minima = minima;
         } else {
+            console.log("no minima");
             E4PTdata.minima = [];
         }
         console.log("Clearance average: ", E4PTdata.clearance);
