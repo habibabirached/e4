@@ -8,7 +8,7 @@
 
 #import "SensorSettings.h"
 
-#define DESIRED_POINTS_PER_BLADE 4
+#define DESIRED_POINTS_PER_BLADE 16
 
 @interface ControllerSettings : NSObject
 @property (strong, nonatomic) SensorSettings* sensor;
