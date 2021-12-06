@@ -158,7 +158,11 @@
     [self->telnetCmds addObject:@"LANGUAGE EN\n"];
     [self->telnetCmds addObject:@"BAUDRATE 460800\n"];
     [self->telnetCmds addObject:@"IPCONFIG STATIC 192.168.168.150 255.255.0.0 192.168.1.1\n"];
+    // send multiple times to ensure settings are stored
     [self->telnetCmds addObject:@"BASICSETTINGS STORE\n"];
+    [self->telnetCmds addObject:@"BASICSETTINGS STORE\n"];
+    [self->telnetCmds addObject:@"BASICSETTINGS STORE\n"];
+    // TODO: settings not saved after controller power cycle
     [self->telnetCmds addObject:@"RESET\n"];
     
     [self sendTelnetCommand];

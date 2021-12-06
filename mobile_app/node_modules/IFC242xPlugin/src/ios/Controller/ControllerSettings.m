@@ -7,6 +7,7 @@
 //
 
 #import "math.h"
+#import "AppDelegate.h"
 #import "ControllerSettings.h"
 
 @implementation ControllerSettings
@@ -20,6 +21,10 @@
 
 -(instancetype)init {
     if (self = [super init]) {
+        dispatch_sync(dispatch_get_main_queue(), ^{
+            self.pointsPerBlade = [((AppDelegate *)[UIApplication sharedApplication].delegate).pointsPerBlade intValue];
+        });
+        NSLog(@"@init: pointsPerBlade=%d", self.pointsPerBlade);
         self.measurementRate = 1.0;
         self.intensityThreshold = [self calculateIntensityThresholdFromMeasurementRateKHz:self.measurementRate];
     }
@@ -55,7 +60,7 @@
     float inchesPerSecond = [self calculateSpeedForCircumference:circumference withRPM:rpm];
     self.acquisitionTime = [self calculateAcquisitionTimeForCircumference:circumference atSpeed:inchesPerSecond];
     if (rateAndIntensity) {
-        self.measurementRate = [self calculateKHzFrequencyForSamplesPerInch:(DESIRED_POINTS_PER_BLADE / bladeWidth) atSpeed:inchesPerSecond];
+        self.measurementRate = [self calculateKHzFrequencyForSamplesPerInch:(self.pointsPerBlade / bladeWidth) atSpeed:inchesPerSecond];
         self.intensityThreshold = [self calculateIntensityThresholdFromMeasurementRateKHz:self.measurementRate];
     }
     
