@@ -7,7 +7,6 @@
 //
 
 #import "math.h"
-#import "AppDelegate.h"
 #import "ControllerSettings.h"
 
 @implementation ControllerSettings
@@ -21,10 +20,6 @@
 
 -(instancetype)init {
     if (self = [super init]) {
-        dispatch_sync(dispatch_get_main_queue(), ^{
-            self.pointsPerBlade = [((AppDelegate *)[UIApplication sharedApplication].delegate).pointsPerBlade intValue];
-        });
-        NSLog(@"@init: pointsPerBlade=%d", self.pointsPerBlade);
         self.measurementRate = 1.0;
         self.intensityThreshold = [self calculateIntensityThresholdFromMeasurementRateKHz:self.measurementRate];
     }
@@ -45,22 +40,16 @@
 }
 
 -(NSString*)calculate:(float)rpm forBladeWidth:(float)bladeWidth forTipDiameter:(float)tipDiameter updateRateAndIntensity:(BOOL)rateAndIntensity {
-    NSLog(@"@calculate: rpm=%f, bladeWidth=%f, tipDiameter=%f, rateAndIntensity=%s", rpm, bladeWidth, tipDiameter, rateAndIntensity ? "true" : "false");
+    
     NSString* errorMessage = @"";
-    if (bladeWidth == 0) {
-        errorMessage = @"Error: Blade Width = 0, ";
-    }
-    if (tipDiameter == 0) {
-        errorMessage = [errorMessage stringByAppendingString:@"Error: Tip Diameter = 0, "];
-    }
     float circumference = [self calculateCircumferenceFromTipDiameterInches:tipDiameter];
     if (circumference == 0) {
-        errorMessage = [errorMessage stringByAppendingString:@"Error: Circumference = 0, "];
+        errorMessage = @"Error: Circumference = 0, ";
     }
     float inchesPerSecond = [self calculateSpeedForCircumference:circumference withRPM:rpm];
     self.acquisitionTime = [self calculateAcquisitionTimeForCircumference:circumference atSpeed:inchesPerSecond];
     if (rateAndIntensity) {
-        self.measurementRate = [self calculateKHzFrequencyForSamplesPerInch:(self.pointsPerBlade / bladeWidth) atSpeed:inchesPerSecond];
+        self.measurementRate = [self calculateKHzFrequencyForSamplesPerInch:(DESIRED_POINTS_PER_BLADE / bladeWidth) atSpeed:inchesPerSecond];
         self.intensityThreshold = [self calculateIntensityThresholdFromMeasurementRateKHz:self.measurementRate];
     }
     

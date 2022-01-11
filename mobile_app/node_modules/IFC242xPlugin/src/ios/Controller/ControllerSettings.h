@@ -8,8 +8,7 @@
 
 #import "SensorSettings.h"
 
-// moved to app settings
-//#define DESIRED_POINTS_PER_BLADE 16
+#define DESIRED_POINTS_PER_BLADE 4
 
 @interface ControllerSettings : NSObject
 @property (strong, nonatomic) SensorSettings* sensor;
@@ -19,7 +18,6 @@
 @property (nonatomic) float intensityThreshold;
 @property (nonatomic) BOOL overrideRateAndIntensity;
 @property (nonatomic) BOOL sensorParamsProvided;
-@property (nonatomic) int pointsPerBlade;
 
 -(NSString*)calculateAcquisitionTimeFromRPM:(float)rpm forBladeWidth:(float)bladeWidth forTipDiameter:(float)tipDiameter;
 -(NSString*)calculateAcquisitionTimeAndSamplingFrequencyAndIntensityThresholdFromRPM:(float)rpm forBladeWidth:(float)bladeWidth forTipDiameter:(float)tipDiameter;

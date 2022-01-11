@@ -35,6 +35,5 @@
 @property NSNumber *baudRate;
 @property BOOL useSerialBuffer;
 @property BOOL useSensorParams;
-@property NSNumber *pointsPerBlade;
 
 @end

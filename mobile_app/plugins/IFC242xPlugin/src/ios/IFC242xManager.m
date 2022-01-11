@@ -261,7 +261,7 @@
     int expectedBlades = roundf(self->metaData.numberOfBlades * rotations);
     
     //  Write the sensor parameters and app version to the CSV file.
-    dataStr = [NSString stringWithFormat:@"\n - Sensor Parameters,,,,,,,,,,,,\nSensor Selection,Sensor Length (in),MR (mm),SMR (mm),Mastering Fixture Height (in),Mastering Value (mm),Master Offset (in),Casing Thickness (in),Spacer Thickness (in),Shelf Threshold (mm),Measurement Rate (kHz),Intensity Threshold (%%),Clearance Override,Expected Blades,Observed Blades,Avg Samples per Blade,Applied Offset,Applied Offset Formula\n%@,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%s,%d,%d,%@,%f,%@\n",
+    dataStr = [NSString stringWithFormat:@"\n - Sensor Parameters,,,,,,,,,,,,\nSensor Selection,Sensor Length (in),MR (mm),SMR (mm),Mastering Fixture Height (in),Mastering Value (mm),Master Offset (in),Spacer Thickness (in),Shelf Threshold (mm),Expected Blades,Observed Blades,Avg Samples per Blade,Applied Offset Formula\n%@,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%@,%@\n",
                self->controller.settings.sensor.name,
                self->controller.settings.sensor.length,
                self->controller.settings.sensor.mr,
@@ -269,16 +269,11 @@
                self->controller.settings.sensor.hmf,
                self->controller.settings.sensor.mv,
                self->controller.settings.sensor.mo,
-               self->metaData.casingThickness,
                self->metaData.spacerThickness,
                clearanceData.shelfThreshold,
-               self->controller.settings.measurementRate,
-               self->controller.settings.intensityThreshold,
-               self->controller.settings.overrideRateAndIntensity ? "true" : "false",
                expectedBlades,
                clearanceData.blades,
                [NSString stringWithFormat:@"%.02f", clearanceData.averageBladeSamples],
-               clearanceData.offsetAdjustmentFactor,
                self->controller.settings.sensor.offsetAdjustmentFormula];
     [handle writeData:[dataStr dataUsingEncoding:NSUTF8StringEncoding]];
 
@@ -431,7 +426,7 @@
     } else if ([cmd containsString:@"read_sensor_parameters"]) {
         [self->controller readSensorParameters];
     } else if ([cmd containsString:@"get_sensor_parameters"]) {
-        NSDictionary* jsonDict = @{@"type":@"sensor_params", @"master_fixture_height":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.hmf], @"mastering_value":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.mv], @"master_offset":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.mo], @"sensor_selection":self->controller.settings.sensor.name, @"sensor_length":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.length], @"start_measurement_range":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.smr], @"sensor_measurement_range":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.mr], @"from_controller":@(self->controller.settings.sensorParamsProvided), @"measurement_rate":[NSString stringWithFormat:@"%f", self->controller.settings.measurementRate], @"intensity_threshold":[NSString stringWithFormat:@"%f", self->controller.settings.intensityThreshold]
+        NSDictionary* jsonDict = @{@"type":@"sensor_params", @"master_fixture_height":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.hmf], @"mastering_value":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.mv], @"master_offset":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.mo], @"sensor_selection":self->controller.settings.sensor.name, @"sensor_length":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.length], @"start_measurement_range":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.smr], @"sensor_measurement_range":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.mr], @"from_controller":@(self->controller.settings.sensorParamsProvided)
         };
         [self returnPluginResponse:jsonDict];
     } else if ([cmd containsString:@"set_sensor_parameters"]) {
