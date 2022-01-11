@@ -33,8 +33,14 @@ define(function(require, exports, module) {
     var DEFAULT_SPACER_FILE = 'img/spacers/Unknown.gif';
     var MIN_RPM = 0.5;
     var MAX_RPM = 15.0;
+    var MIN_SAMPLING_RATE = 0.1;
+    var MAX_SAMPLING_RATE = 6.5;
     var CLEARANCE_OVERRIDE_PRECISION = 4;
     var DETAILS_PRECISION = 4;
+    
+    var CALC_METHOD_ORIGINAL = 1;
+    var CALC_METHOD_NEW = 2;
+    var CALC_METHOD_NONE = 3;
     
     var CUSTOMER_REPORT_FILE_PREFIX = "customer_report_e4Pt";
     var DETAILS_FILE_PREFIX = "details_e4pt";
@@ -218,6 +224,21 @@ define(function(require, exports, module) {
         setButtonProperties($("#START_DARK_REFERENCE_BUTTON"), LABEL_START_DARK, 'blue');
         setButtonProperties($("#CALCULATE_RPM_BUTTON"), LABEL_CALCULATE, 'green');
         setButtonProperties($("#READ_SENSOR_PARAMETERS_BUTTON"), LABEL_LOAD_PARAMS, 'blue');
+        
+        // update default sensor alerts
+        var infoShort = sensorSettings.getSensorType('SHORT');
+        var smf = sensorSettings.toInches(infoShort['measured_mastering_fixture_height_mm']).toFixed(3);
+        var ss = sensorSettings.toInches(infoShort['measured_length_mm']).toFixed(3);
+        var infoLong = sensorSettings.getSensorType('LONG');
+        var lmf = sensorSettings.toInches(infoLong['measured_mastering_fixture_height_mm']).toFixed(3);
+        var ls = sensorSettings.toInches(infoLong['measured_length_mm']).toFixed(3);
+        $("#DEFAULT_SMF").text(smf);
+        $("#DEFAULT_SS").text(ss);
+        $("#DEFAULT_LMF").text(lmf);
+        $("#DEFAULT_LS").text(ls);
+        
+        $("#MIN_SAMPLING_RATE").text(MIN_SAMPLING_RATE.toFixed(3));
+        $("#MAX_SAMPLING_RATE").text(MAX_SAMPLING_RATE.toFixed(3));
         
         document.getElementById("MAIN_MENU").addEventListener('click', function() {
             $("#TITLE_BAR").text(APP_NAME);
@@ -480,17 +501,21 @@ define(function(require, exports, module) {
                 console.log('already performing dark reference');
             }
         }, {passive: true});
-        document.getElementById("MEASUREMENT_RATE_1").addEventListener('input', function() {
-            var sf = parseFloat(document.getElementById('MEASUREMENT_RATE_1').value);
+        document.getElementById("MEASUREMENT_RATE").addEventListener('input', function() {
+            var sf = parseFloat(document.getElementById('MEASUREMENT_RATE').value);
             // Make sure the text is a number
             if (isNaN(sf) || typeof(sf) !== 'number') {
-                document.getElementById('THRESHOLD_1').value = "";
+                document.getElementById('THRESHOLD').value = "";
             } else {
                 messaging.sendMessage({args:[{command:'get_threshold_for_rate',rate:sf.toFixed(3)}]});
             }
         }, {passive: true});
         document.getElementById("SET_MEASUREMENT_RATE_BUTTON").addEventListener('click', function() {
-            set_measurement_and_intensity_value('MEASUREMENT_RATE_1', 'Measurement rate', 0.1, 6.5, {command:'set_measuring_rate_and_threshold',threshold:parseFloat(document.getElementById('THRESHOLD_1').value).toFixed(3),rate:parseFloat(document.getElementById('MEASUREMENT_RATE_1').value)});
+            set_measurement_and_intensity_value('MEASUREMENT_RATE', 'Measurement rate', MIN_SAMPLING_RATE, MAX_SAMPLING_RATE, {command:'set_measuring_rate_and_threshold',threshold:parseFloat(document.getElementById('THRESHOLD').value).toFixed(3),rate:parseFloat(document.getElementById('MEASUREMENT_RATE').value)});
+        }, {passive: true});
+        document.getElementById("RESET_MEASUREMENT_RATE_BUTTON").addEventListener('click', function() {
+            messaging.sendMessage({args:[{command:'set_manual_override',value:false}]});
+            setSpanProperties($("#measurement_override_message"), "AUTOMATIC CALCULATION", 'green');
         }, {passive: true});
         document.getElementById("EXPORT_DATA_BUTTON").addEventListener('click', function() {
             fromDataPlotPage = true;
@@ -635,6 +660,7 @@ define(function(require, exports, module) {
     });
 
     function fadeOutAll() {
+        $("#PROCESSING_PAGE").fadeOut();
         $("#DATA_PLOT_PAGE").fadeOut();
         $("#FRD_PAGE").fadeOut();
         $("#TOOL_PAGE").fadeOut();
@@ -924,11 +950,21 @@ define(function(require, exports, module) {
         console.log('@setupCasingThicknessTable');
         // Get frame type
         let frm_idx = document.getElementById("FRAME_SIZE").selectedIndex;
+        current_frame_data = frame_data[frm_idx];
+        current_stage_index = 0;
+        current_stage = current_frame_data.stage[current_stage_index];
+        current_position_index = 0;
+        current_position = current_frame_data.position[current_stage][current_position_index];
         
         // Memorise selected_frame_data for computing RPM and remembering it when we come back to the page
         selected_frame_data.frameIdx = frm_idx;
+        selected_frame_data.stageInfoIdx = current_stage_index;
+        selected_frame_data.frameName = current_frame_data.frame;
+        selected_frame_data.stageName = current_stage;
+        // use index instead of name due to *.* stages
+        //selected_frame_data.bladeCount = current_frame_data.stage_info[current_stage].blade_count;
+        selected_frame_data.bladeCount = Object.values(current_frame_data.stage_info)[current_stage_index].blade_count;
         
-        current_frame_data = frame_data[frm_idx];
         let pos = current_frame_data.position;
         let tbl = document.getElementById("CASING_THICKNESS_TABLE");
         let stageText = "STAGE";
@@ -1278,7 +1314,6 @@ define(function(require, exports, module) {
       addDBEntry(E4PTdata); // Save to the database here so we don't lose this data.
         
       initialize_sensor();
-        
     }
 
     function initialize_sensor() {
@@ -1536,7 +1571,7 @@ define(function(require, exports, module) {
                       input_f = maxVal;
                       document.getElementById(el_id).value = input_f.toFixed(3);
                       cmd.rate = input_f;
-                      messaging.sendMessage({args:[cmd]});
+                      override_measurement_rate(cmd);
                   } else if (buttonIndex==2) {//Cancel
                       document.getElementById(el_id).value = '';
                       return;
@@ -1549,17 +1584,22 @@ define(function(require, exports, module) {
                       input_f = minVal;
                       document.getElementById(el_id).value = input_f.toFixed(3);
                       cmd.rate = input_f;
-                      messaging.sendMessage({args:[cmd]});
+                      override_measurement_rate(cmd);
                   } else if (buttonIndex==2) {//Cancel
                       document.getElementById(el_id).value = '';
                       return;
                   }
               });
         } else {
-            console.log('Setting manual override');
-            messaging.sendMessage({args:[cmd]});
-            messaging.sendMessage({args:[{command:'set_manual_override',value:true}]});
+            override_measurement_rate(cmd);
         }
+    }
+    
+    function override_measurement_rate(cmd) {
+        console.log('@override_measurement_rate');
+        messaging.sendMessage({args:[cmd]});
+        messaging.sendMessage({args:[{command:'set_manual_override',value:true}]});
+        setSpanProperties($("#measurement_override_message"), "MANUAL OVERRIDE", 'yellow');
     }
     
     function displayGoButton() {
@@ -1635,10 +1675,10 @@ define(function(require, exports, module) {
             .html(text);
     }
 
-    // TODO: use default calculation method
     function confirm_collect_stage_data() {
-        // Disable prompt since offset calculation is disabled
-        e4PtPrompt('Original calculation assumes master fixture height is SMR+SL+5mm, New calculation uses MV=fixture height - sensor length', function(calcMethod) {
+        // Disable prompt since offset calculation is disabled, default to Original
+        let calcMethod = CALC_METHOD_ORIGINAL;
+        //e4PtPrompt('Original calculation assumes master fixture height is SMR+SL+5mm, New calculation uses MV=fixture height - sensor length', function(calcMethod) {
             document.getElementById("CLEARANCE_CALCULATION_METHOD").value = calcMethod;
             // Here we check to see if data is in the cell that is about to be populated.
             // If there is already data there then we confirm with the user to overwrite it.
@@ -1660,8 +1700,8 @@ define(function(require, exports, module) {
                 collect_stage_data();
             }
             return;
-        }, 'Select Clearance Calculation', ['Original','New','None']);
-        return;
+        //}, 'Select Clearance Calculation', ['Original','New','None']);
+        //return;
     }
 
     function collect_stage_data() {
@@ -2163,6 +2203,13 @@ define(function(require, exports, module) {
         current_stage_index = stages.indexOf(stage);
         current_stage = stages[current_stage_index];
         current_position = positions[current_position_index];
+
+        selected_frame_data.stageInfoIdx = current_stage_index;
+        selected_frame_data.stageName = current_stage;
+        // use index instead of name due to *.* stages
+        //selected_frame_data.bladeCount = current_frame_data.stage_info[current_stage].blade_count;
+        selected_frame_data.bladeCount = Object.values(current_frame_data.stage_info)[current_stage_index].blade_count;
+
         set_position_information();
         document.getElementById("SENSOR_STAGE").selectedIndex = current_stage_index;
         document.getElementById("SENSOR_POSITION").selectedIndex = current_position_index;
@@ -2480,7 +2527,7 @@ define(function(require, exports, module) {
                 console.log("Received Setting Message");
                 console.log(msg);
                 if (msg.varName === 'intensity_threshold') {
-                    document.getElementById('THRESHOLD_1').value = msg.value;
+                    document.getElementById('THRESHOLD').value = msg.value;
                 }
                 break;
             case "connection":
@@ -2525,9 +2572,10 @@ define(function(require, exports, module) {
                 }
                 break;
             case "data":
-                resetDataCollection();
+                //resetDataCollection();
                 console.log("Received Data Message");
                 if (!collectionAborted) {
+                    //$("#PROCESSING_PAGE").fadeIn();
                     msg.data = JSON.parse(msg.data);
                     msg.intensity = JSON.parse(msg.intensity);
                     msg.locs = JSON.parse(msg.locs);
@@ -2570,9 +2618,11 @@ define(function(require, exports, module) {
                     } else {
                         processE4PtData(msg);
                     }
+                    $("#PROCESSING_PAGE").fadeOut();
                 } else {
                     console.log("Data collection was aborted");
                 }
+                resetDataCollection();
                 break;
             case "filename":
                 console.log("Recieved Filename Message: ", msg.fname);
@@ -2599,7 +2649,7 @@ define(function(require, exports, module) {
                       .text(msg.progress + "%");
                 break;
             case "sensor_params":
-                console.log("Received sensor parameters message: ", msg.master_fixture_height, ", ", msg.mastering_value, ", ", msg.master_offset, ", ", msg.sensor_selection, ", ", msg.sensor_length, ", ", msg.start_measurement_range, ", ", msg.sensor_measurement_range);
+                console.log("Received sensor parameters message: ", msg.master_fixture_height, ", ", msg.mastering_value, ", ", msg.master_offset, ", ", msg.sensor_selection, ", ", msg.sensor_length, ", ", msg.start_measurement_range, ", ", msg.sensor_measurement_range, ", ", msg.from_controller, ", ", msg.measurement_rate, ", ", msg.intensity_threshold);
                 
                 sensorParamsFromController = msg.from_controller;
                 if (sensorParamsFromController) {
@@ -2631,6 +2681,9 @@ define(function(require, exports, module) {
                 
                 // TODO: implement
                 //document.getElementById("CALIBRATION_DATE").innerHTML = new Date().toLocaleDateString();
+                
+                document.getElementById("MEASUREMENT_RATE").value = JSON.parse(msg.measurement_rate).toFixed(3);
+                document.getElementById("THRESHOLD").value = JSON.parse(msg.intensity_threshold).toFixed(3);
                 
                 getConnectionMode();
                 checkConnectionStatus();
@@ -3175,11 +3228,11 @@ define(function(require, exports, module) {
         for (let i=0; i<E4PTdata.sets.length; i++) {
             contents += E4PTdata.sets[i].stage + ","
                 + E4PTdata.sets[i].position +  ","
-                + checkValue(E4PTdata.sets[i].clearance, 4) + ","
-                + checkValue(E4PTdata.sets[i].max_clr, 4) + ","
-                + checkValue(E4PTdata.sets[i].min_clr, 4) + ","
-                + checkValue(E4PTdata.sets[i].med_clr, 4) + ","
-                + checkValue(E4PTdata.sets[i].std_clr, 4) + ","
+                + checkValue(E4PTdata.sets[i].clearance, DETAILS_PRECISION) + ","
+                + checkValue(E4PTdata.sets[i].max_clr, DETAILS_PRECISION) + ","
+                + checkValue(E4PTdata.sets[i].min_clr, DETAILS_PRECISION) + ","
+                + checkValue(E4PTdata.sets[i].med_clr, DETAILS_PRECISION) + ","
+                + checkValue(E4PTdata.sets[i].std_clr, DETAILS_PRECISION) + ","
                 + E4PTdata.sets[i].manualOverride + ",";
             if (E4PTdata.sets[i].manualOverride) {
                 contents += E4PTdata.sets[i].overrideName + ","
@@ -3335,8 +3388,8 @@ define(function(require, exports, module) {
             }
         }*/
 
-        document.getElementById('MEASUREMENT_RATE_1').value = E4PTdata.measurement_rate;
-        document.getElementById('THRESHOLD_1').value = E4PTdata.intensity_threshold;
+        document.getElementById('MEASUREMENT_RATE').value = E4PTdata.measurement_rate;
+        document.getElementById('THRESHOLD').value = E4PTdata.intensity_threshold;
         
         // only display the DATA PLOT page for GET DATA or SENSOR SETUP and not from DATA COLLECTION
         if (fromGetData || fromSensorSetupPage) {
@@ -3418,6 +3471,7 @@ define(function(require, exports, module) {
         setIndicatorColor("red");
         startProgressBar();
 
+        $("#PROCESSING_PAGE").fadeIn();
         messaging.sendMessage({args:[{
             command:'send_data',
             rpms:acquisitionTime,

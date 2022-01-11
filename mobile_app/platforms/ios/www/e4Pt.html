@@ -540,29 +540,37 @@
                                   <!-- Measurement Rate and Intensity Threshold -->
                                   <form class="row g-3">
                                     <div class="col-md-6">
-                                        <p>The app will automatically calculate the measurement (sampling) rate, and it is set in kHz between 0.100 and 6.500. A maximum of 3 decimal places may be specified.</p>
+                                        <p>The app will automatically calculate the measurement (sampling) rate by default, and it is set in kHz between <span id="MIN_SAMPLING_RATE"></span> and <span id="MAX_SAMPLING_RATE"></span>. A maximum of 3 decimal places may be specified.</p>
                                     </div>
                                     <div class="col-md-6">
                                         <p>The intensity threshold is automatically calculated from the measurement (sampling) rate.</p>
                                     </div>
                                     <div class="col-md-6 text-center">
-                                        <label for="MEASUREMENT_RATE_1" class="form-label">Measurement Rate</label>
+                                        <label for="MEASUREMENT_RATE" class="form-label">Measurement Rate</label>
                                         <div class="input-group mb-3">
-                                          <input id="MEASUREMENT_RATE_1" type="text" class="form-control" placeholder="" aria-label="Measurement Rate" aria-describedby="MEASUREMENT_RATE_1_TEXT">
-                                          <span class="input-group-text" id="MEASUREMENT_RATE_1_TEXT">kHz</span>
+                                          <input id="MEASUREMENT_RATE" type="text" class="form-control" placeholder="" aria-label="Measurement Rate" aria-describedby="MEASUREMENT_RATE_TEXT">
+                                          <span class="input-group-text" id="MEASUREMENT_RATE_TEXT">kHz</span>
                                         </div>
                                     </div>
                                     <div class="col-md-6 text-center">
-                                        <label for="THRESHOLD_1" class="form-label">Intensity Threshold</label>
+                                        <label for="THRESHOLD" class="form-label">Intensity Threshold</label>
                                         <div class="input-group mb-3">
-                                          <input id="THRESHOLD_1" type="text" class="form-control" placeholder="" aria-label="Intensity Threshold" aria-describedby="THRESHOLD_1_TEXT" disabled>
-                                          <span class="input-group-text" id="THRESHOLD_1_TEXT">%</span>
+                                          <input id="THRESHOLD" type="text" class="form-control" placeholder="" aria-label="Intensity Threshold" aria-describedby="THRESHOLD_TEXT" disabled>
+                                          <span class="input-group-text" id="THRESHOLD_TEXT">%</span>
                                         </div>
                                     </div>
                                   </form>
 
+                                  <div class="text-center">
+                                      <span id="measurement_override_message" class="badge bg-success">AUTOMATIC CALCULATION</span>
+                                  </div>
+                                  <br/>
                                   <div class="d-grid gap-2" hidden>
-                                      <button id="SET_MEASUREMENT_RATE_BUTTON" type="button" class="btn btn-primary">SET</button>
+                                      <div class="btn-group" role="group" aria-label="Measurment Rate and Intensity Buttons">
+                                        <button id="SET_MEASUREMENT_RATE_BUTTON" type="button" class="btn btn-danger">OVERRIDE</button>
+                                        <span>&nbsp;</span>
+                                        <button id="RESET_MEASUREMENT_RATE_BUTTON" type="button" class="btn btn-primary">RESET</button>
+                                      </div>
                                   </div>
                                   <br/>
                                   <div class="alert alert-warning pb-0" role="alert">
@@ -666,9 +674,9 @@
                                     <hr>
                                     <dl class="row">
                                         <dt class="col-sm-6">Short Master Fixture</dt>
-                                        <dd class="col-sm-6">3.568&quot; +/- 0.0005in</dd>
+                                        <dd class="col-sm-6"><span id="DEFAULT_SMF"></span>&quot; +/- 0.0005in</dd>
                                         <dt class="col-sm-6">Long Master Fixture</dt>
-                                        <dd class="col-sm-6">9.463&quot; +/- 0.0005in</dd>
+                                        <dd class="col-sm-6"><span id="DEFAULT_LMF"></span>&quot; +/- 0.0005in</dd>
                                     </dl>
                                   </div>
                                   <div class="alert alert-warning pb-0" role="alert">
@@ -676,9 +684,9 @@
                                     <hr>
                                     <dl class="row">
                                         <dt class="col-sm-6">Short Sensor</dt>
-                                        <dd class="col-sm-6">2.979&quot; +/- 0.0005in</dd>
+                                        <dd class="col-sm-6"><span id="DEFAULT_SS"></span>&quot; +/- 0.0005in</dd>
                                         <dt class="col-sm-6">Long Sensor</dt>
-                                        <dd class="col-sm-6">8.825&quot; +/- 0.0005in</dd>
+                                        <dd class="col-sm-6"><span id="DEFAULT_LS"></span>&quot; +/- 0.0005in</dd>
                                     </dl>
                                   </div>
                                   <!-- -->
@@ -1016,6 +1024,18 @@
                   <div class="container-fluid">
                       <div id="DATA_PLOT2" class="h-100"></div>
                   </div>
+              </div>
+            </div>
+        </div>
+        
+        <!-- Processing Page -->
+        <div id="PROCESSING_PAGE" class="container-fluid my-2">
+            <div id="overlay" class="bg-transparent text-dark text-center position-absolute top-50 start-50 translate-middle">
+              <div class="card text-white bg-dark">
+                <div class="card-header">Processing</div>
+                <div class="card-body">
+                  <div class="spinner-border text-light" style="width: 3rem; height: 3rem;" role="status"></div>
+                </div>
               </div>
             </div>
         </div>

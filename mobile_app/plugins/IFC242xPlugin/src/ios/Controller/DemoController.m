@@ -48,6 +48,7 @@
     [self->delegate startProgressReporting];
     [self loadCSVFile:@""];
     [self->delegate returnPluginResponse:@{@"type":@"status",@"status":@"processing"} keepOpen:YES];
+    //[NSThread sleepForTimeInterval:5.0f];
     self->delegate.progress = 1.0;
     if (self.state == collectingDataInProgress)
         self.state = halted;
@@ -79,6 +80,7 @@
         }
 
         NSArray* lineArray = [row componentsSeparatedByString:@","]; // Split up the line
+        // TODO: update for new data format, count = 10, remove text at bottom of CSV file
         if (lineArray.count < 8) {
             NSLog(@"Skipping line %d",r);
             r++;
