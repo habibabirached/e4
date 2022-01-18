@@ -10,7 +10,7 @@ define(function(require, exports, module, sensorSettings) {
   const renderChart = (chartConfig, target, chartFilename, writeToFileFunc) => {
     let html = createSavedChartHTML(chartConfig);
     let chart = Highcharts.chart(target, chartConfig);
-    chart.renderer.button('Save',chart.plotWidth-10,50,function(){
+    chart.renderer.button('Save',chart.plotWidth+20,0,function(){
           writeToFileFunc(chartFilename.substring(0,chartFilename.indexOf('_')), chartFilename, html);
           this.attr({text: 'Saved'});
           this.setState(3);
@@ -41,7 +41,7 @@ define(function(require, exports, module, sensorSettings) {
   }
       
   const createSavedChartHTML = (chartConfig) => {
-    return "<html><head><script src='https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js'></script><script src='https://code.highcharts.com/highcharts.js'></script><style>.COL_FL{float:left}.COL_FR{float:right}.FONT_BLACK{color:black}.FONT_RED{color:red}.FONT_TRANSPARENT{color: rgba(0, 0, 0, 0)}.highcharts-subtitle {text-align: center;width: 100%;}</style></head><body><div style='width:100%'></div><script>$(function () {$('div').highcharts(" + JSON.stringify(chartConfig) + ");});</script></body></html>";
+      return "<html><head><script src='https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js'></script><script src='https://code.highcharts.com/highcharts.js'></script><style>.FONT_BLACK{color:black}.FONT_RED{color:red}.highcharts-subtitle {text-align: center;width: 100%;}</style></head><body><div style='width:100%'></div><script>$(function () {$('div').highcharts(" + JSON.stringify(chartConfig) + ");});</script></body></html>";
   }
   
   const addChartSubtitle = (chartConfig, acquisition_date, overall_clearance, blades, blade_samples_avg, avg_displacement, selected_frame_data) => {
@@ -53,14 +53,20 @@ define(function(require, exports, module, sensorSettings) {
       subtitle += '<br/>';
     }
 
-    subtitle += 'Avg. Samples/Blade: ' + blade_samples_avg.toFixed(1) + ';&nbsp;Avg. Tip Dist: ' + parseFloat(overall_clearance).toFixed(3);
+    subtitle += 'Avg Samples/Blade: ' + blade_samples_avg.toFixed(1) + ';&nbsp;Avg Tip Dist: ' + parseFloat(overall_clearance).toFixed(3);
 
     if (avg_displacement) {
-      if (sensorSettings.doesMeasurementExceedTolerance(avg_displacement)) {
-          subtitle = '<span class="FONT_BLACK">' + subtitle + ';&nbsp;</span>' + '<span class="FONT_RED">Overall Avg: ' + avg_displacement.toFixed(3) + '</span>';
+      // value could be number or "\"--\""
+      if (isNaN(avg_displacement) || sensorSettings.doesMeasurementExceedTolerance(avg_displacement)) {
+        if (!isNaN(avg_displacement)) {
+          avg_displacement = avg_displacement.toFixed(3);
+        } else {
+          avg_displacement = avg_displacement.replace(/"/g,"");
+        }
+        subtitle = '<span class="FONT_BLACK text-body">' + subtitle + ';&nbsp;</span>' + '<span class="FONT_RED text-danger">Overall Avg: ' + avg_displacement + '</span>';
       }
       else {
-          subtitle += ";&nbsp;Overall Avg: " + avg_displacement.toFixed(3);
+        subtitle += ";&nbsp;Overall Avg: " + avg_displacement.toFixed(3);
       }
     }
       
