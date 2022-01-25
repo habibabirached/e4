@@ -27,6 +27,7 @@
 
 -(instancetype)initWithPlugin:(CDVPlugin*)plugin {
     NSLog(@"@IFC242xManager::initWithPlugin");
+    [self dispatchMessage:@{@"type":@"log",@"message":@"Manager.initWithPlugin"}];
     if (self = [super init]) {
         self->plugin = plugin;
 
@@ -48,10 +49,10 @@
         self->postProcess = [PostProcess new];
         
         // Remove notifications before adding them so they are not added multiple times.
-        //[[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationDidEnterBackgroundNotification object:nil];
-        //[[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationWillEnterForegroundNotification object:nil];
-        //[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(appMovedToBackground:) name:UIApplicationDidEnterBackgroundNotification object:nil];
-        //[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(appMovedToForeground:) name:UIApplicationWillEnterForegroundNotification object:nil];
+        [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationDidEnterBackgroundNotification object:nil];
+        [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationWillEnterForegroundNotification object:nil];
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(appMovedToBackground:) name:UIApplicationDidEnterBackgroundNotification object:nil];
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(appMovedToForeground:) name:UIApplicationWillEnterForegroundNotification object:nil];
     }
     
     dispatch_async(dispatch_get_main_queue(), ^{
@@ -101,6 +102,7 @@
 }
 
 - (void)returnData:(ClearanceData*)clearanceData measurementData:(MeasurementData*)measurementData {
+    [self returnPluginResponse:@{@"type":@"log",@"message":@"Manager.returnData"} keepOpen:YES];
     NSError* error;
     NSData* jsonData;
     // If we've done a calibrated acquisition we pass back the filtered, calibrated data.
@@ -165,6 +167,7 @@
 }
 
 - (void)saveCSVFile:(NSDate*)date clearanceData:(ClearanceData*)clearanceData measurementData:(MeasurementData*)measurementData {
+    [self returnPluginResponse:@{@"type":@"log",@"message":@"Manager.saveCSVFile"} keepOpen:YES];
     // If called with no displacements, don't write a file, just return;
     if (measurementData.displacements.count == 0) {
         return;
@@ -291,6 +294,7 @@
 
 - (void)appMovedToBackground:(NSNotification*)note {
     NSLog(@"App moved to background.");
+    [self dispatchMessage:@{@"type":@"log",@"message":@"Manager.appMovedToBackground"}];
     // Some stuff to stop the serial cable & prepare it to be reconnected.
     //CFRunLoopStop(CFRunLoopGetCurrent());
     [self->controller disconnectDevice];
@@ -300,6 +304,8 @@
 
 - (void)appMovedToForeground:(NSNotification*)note {
     NSLog(@"App moved to foreground.");
+    [self dispatchMessage:@{@"type":@"log",@"message":@"Manager.appMovedToForeground"}];
+    // TODO: reconnect?
 }
 
 - (void)messageHandler:(NSDictionary*)message callbackId:(NSString*)callbackId {
@@ -310,6 +316,7 @@
     
     if ([cmd containsString:@"send_data"]) {
         NSLog(@"Got send_data");
+        [self returnPluginResponse:@{@"type":@"log",@"message":@"Manager.messageHandler: send_data"} keepOpen:YES];
         NSString* acqTime = [message valueForKey:@"acquisitionTime"];
         float rpms = [[message valueForKey:@"rpms"] floatValue];
         self->controller.settings.sensor.offsetSelector = [message valueForKey:@"clearanceCalculationMethod"];
@@ -357,40 +364,51 @@
         }
     } else if ([cmd containsString:@"abort"]) {
         NSLog(@"Got ABORT");
+        [self returnPluginResponse:@{@"type":@"log",@"message":@"Manager.messageHandler: abort"} keepOpen:YES];
         [self->controller abortDataCollection];
     } else if ([cmd containsString:@"get_threshold_for_rate"]) {
         NSLog(@"Got threshold for rate");
+        [self returnPluginResponse:@{@"type":@"log",@"message":@"Manager.messageHandler: get_threshold_for_rate"} keepOpen:YES];
         [self returnPluginResponse:@{@"type":@"setting",@"varName":@"intensity_threshold",@"value":[NSString stringWithFormat:@"%.3f", [self->controller.settings calculateIntensityThresholdFromMeasurementRateKHz:[[message valueForKey:@"rate"] floatValue]]]}];
     } else if ([cmd containsString:@"get_data_file"]) {
         NSLog(@"Got get_data_file");
+        [self returnPluginResponse:@{@"type":@"log",@"message":@"Manager.messageHandler: get_data_file"} keepOpen:YES];
         [self returnPluginResponse:@{@"type":@"filename",@"fname":self->lastSavedFile ?: [NSNull null]}];
     } else if ([cmd containsString:@"do_dark_reference"]) {
         NSLog(@"Got do_dark_reference");
+        [self returnPluginResponse:@{@"type":@"log",@"message":@"Manager.messageHandler: do_dark_reference"} keepOpen:YES];
         self->metaData = [ScanMetaData new];
         [self->controller doDarkReference];
     } else if ([cmd containsString:@"do_mastering"]) {
         NSLog(@"Got do_mastering");
+        [self returnPluginResponse:@{@"type":@"log",@"message":@"Manager.messageHandler: do_mastering"} keepOpen:YES];
         if ([message objectForKey:@"reset"])
             [self->controller masterDevice:nil];
         else
             [self->controller masterDevice:[NSString stringWithFormat:@"%f", self->controller.settings.sensor.mv]];
     } else if ([cmd containsString:@"set_measuring_rate_and_threshold"]) {
         NSLog(@"Got set_measuring_rate_and_threshold");
+        [self returnPluginResponse:@{@"type":@"log",@"message":@"Manager.messageHandler: set_measuring_rate_and_threshold"} keepOpen:YES];
         [self->controller setIntensityThreshold:[[message valueForKey:@"threshold"] floatValue] sendImmediately:NO];
         [self->controller setMeasurementRate:[[message valueForKey:@"rate"] floatValue]];
     } else if ([cmd containsString:@"set_measuring_rate"]) {
         NSLog(@"Got set_measuring_rate");
+        [self returnPluginResponse:@{@"type":@"log",@"message":@"Manager.messageHandler: set_measuring_rate"} keepOpen:YES];
         [self->controller setMeasurementRate:[[message valueForKey:@"rate"] floatValue]];
     } else if ([cmd containsString:@"set_threshold"]) {
         NSLog(@"Got set_threshold");
+        [self returnPluginResponse:@{@"type":@"log",@"message":@"Manager.messageHandler: set_threshold"} keepOpen:YES];
         [self->controller setIntensityThreshold:[[message valueForKey:@"threshold"] floatValue]];
     } else if ([cmd containsString:@"set_manual_override"]) {
         NSLog(@"Got set_manual_override");
+        [self returnPluginResponse:@{@"type":@"log",@"message":@"Manager.messageHandler: set_manual_override"} keepOpen:YES];
         self->controller.settings.overrideRateAndIntensity = [[message objectForKey:@"value"] boolValue];
     } else if ([cmd containsString:@"get_connection_mode"]) {
         NSLog(@"Got get_connection_mode");
+        [self returnPluginResponse:@{@"type":@"log",@"message":@"Manager.messageHandler: get_connection_mode"} keepOpen:YES];
         [self returnPluginResponse:@{@"type":@"connection",@"mode":self->connectionType}];
     } else if ([cmd containsString:@"get_offset_adjustment"]) {
+        [self returnPluginResponse:@{@"type":@"log",@"message":@"Manager.messageHandler: get_offset_adjustment"} keepOpen:YES];
         NSString* offsetFormula = [self->controller.settings.sensor offsetAdjustmentFormula];
         NSString* offsetCalculation = [self->controller.settings.sensor offsetAdjustmentExplanation:self->metaData.spacerThickness casingThickness:self->metaData.casingThickness];
         float offsetValue = [self->controller.settings.sensor calculateOffsetAdjustment:self->metaData.spacerThickness casingThickness:self->metaData.casingThickness];
@@ -398,6 +416,7 @@
     } else if ([cmd containsString:@"set_connection_mode"]) {
         NSString* mode = [message objectForKey:@"mode"];
         NSLog(@"Recieved set_connection_mode:%@",mode);
+        [self returnPluginResponse:@{@"type":@"log",@"message":@"Manager.messageHandler: set_connection_mode"} keepOpen:YES];
         [self->controller disconnectDevice];
         ControllerSettings* controllerSettings = self->controller.settings;
         self->controller = nil;
@@ -413,35 +432,45 @@
             [self returnPluginResponse:@{@"type":@"alert",@"message":@"App is now in demo mode."} keepOpen:YES];
         }
     } else if ([cmd containsString:@"get_version"]) {
+        [self returnPluginResponse:@{@"type":@"log",@"message":@"Manager.messageHandler: get_version"} keepOpen:YES];
+        // TODO: enable?
         //if (self->controller.state == notReady) {
         //    [self->controller initialize];
         //}
         [self returnPluginResponse:@{@"type":@"version",@"version":[[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleShortVersionString"]}];
     } else if ([cmd containsString:@"open_settings"]) {
+        [self returnPluginResponse:@{@"type":@"log",@"message":@"Manager.messageHandler: open_settings"} keepOpen:YES];
         [[UIApplication sharedApplication] openURL:[NSURL URLWithString:UIApplicationOpenSettingsURLString] options:@{} completionHandler:nil];
     } else if ([cmd containsString:@"check_connection_status"]) {
+        [self returnPluginResponse:@{@"type":@"log",@"message":@"Manager.messageHandler: check_connection_status"} keepOpen:YES];
         if (self->controller.state == ready) {
             [self returnPluginResponse:@{@"type":@"status",@"status":@"connected"}];
         } else if (self->controller.state == initializationInProgress) {
             [self returnPluginResponse:@{@"type":@"status",@"status":@"connecting"}];
         }
     } else if ([cmd containsString:@"configure_controller"]) {
+        [self returnPluginResponse:@{@"type":@"log",@"message":@"Manager.messageHandler: configure_controller"} keepOpen:YES];
         [self->controller configureController];
         [self returnPluginResponse:@{@"type":@"alert",@"message":@"Controller configuration is updated, you should shutdown and restart this application."}];
     } else if ([cmd containsString:@"read_sensor_parameters"]) {
+        [self returnPluginResponse:@{@"type":@"log",@"message":@"Manager.messageHandler: read_sensor_parameters"} keepOpen:YES];
         [self->controller readSensorParameters];
     } else if ([cmd containsString:@"get_sensor_parameters"]) {
+        [self returnPluginResponse:@{@"type":@"log",@"message":@"Manager.messageHandler: get_sensor_parameters"} keepOpen:YES];
         NSDictionary* jsonDict = @{@"type":@"sensor_params", @"master_fixture_height":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.hmf], @"mastering_value":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.mv], @"master_offset":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.mo], @"sensor_selection":self->controller.settings.sensor.name, @"sensor_length":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.length], @"start_measurement_range":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.smr], @"sensor_measurement_range":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.mr], @"from_controller":@(self->controller.settings.sensorParamsProvided), @"measurement_rate":[NSString stringWithFormat:@"%f", self->controller.settings.measurementRate], @"intensity_threshold":[NSString stringWithFormat:@"%f", self->controller.settings.intensityThreshold]
         };
         [self returnPluginResponse:jsonDict];
     } else if ([cmd containsString:@"set_sensor_parameters"]) {
+        [self returnPluginResponse:@{@"type":@"log",@"message":@"Manager.messageHandler: set_sensor_parameters"} keepOpen:YES];
         self->controller.settings.sensor = [[SensorSettings alloc] initWithName:[message valueForKey:@"name"] lengthInches:[[message valueForKey:@"length"] floatValue] measurementRangeMM:[[message valueForKey:@"mr"] floatValue] startOfMeasurementRangeMM:[[message valueForKey:@"smr"] floatValue] masterFixtureHeightInches:[[message valueForKey:@"hmf"] floatValue] masteringValueMM:[[message objectForKey:@"mv"] floatValue] masteringOffsetInches:[[message objectForKey:@"mo"] floatValue]];
         
         [self returnPluginResponse:@{@"type":@"alert",@"message":@"Sensor Parameters are Set."}];
     } else if ([cmd containsString:@"shutdown"]) {
+        [self returnPluginResponse:@{@"type":@"log",@"message":@"Manager.messageHandler: shutdown"} keepOpen:YES];
         [self->controller disconnectDevice];
         exit(0);
     } else {
+        [self returnPluginResponse:@{@"type":@"log",@"message":@"Manager.messageHandler: unknown"} keepOpen:YES];
         NSLog(@"Got %@", message);
     }
 }

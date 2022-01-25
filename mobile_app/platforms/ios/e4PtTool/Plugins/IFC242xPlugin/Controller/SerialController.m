@@ -30,6 +30,7 @@
 
 - (void) cableConnected:(NSString *)protocol{
     NSLog(@"SerialController:cableConnected:%@",protocol);
+    [self->delegate dispatchMessage:@{@"type":@"log",@"message":[NSString stringWithFormat:@"SerialController.cableConnected: protocol=%@", protocol]}];
     
     if (self->byteBuffer == nil) {
         self->byteBuffer = (uint8_t *) malloc(BYTE_BUFFER_SIZE);
@@ -53,9 +54,9 @@
     [self->rscMgr setPortConfig:&portConfig requestStatus:NO];
 }
 
-//TODO: disconnectdevice, and cableConnected may need to run initialize
 - (void) cableDisconnected {
     NSLog(@"SerialController:cableDisconnected");
+    [self->delegate dispatchMessage:@{@"type":@"log",@"message":@"SerialController.cableDisconnected"}];
     self.state = notReady;
     self->rscMgr = nil;
     [self->delegate dispatchMessage:@{@"type":@"status",@"status":@"disconnected"}];
@@ -63,6 +64,8 @@
 
 - (void) portStatusChanged{
     NSLog(@"SerialController:portStatusChanged");
+    int modemStatus = [self->rscMgr getModemStatus];
+    [self->delegate dispatchMessage:@{@"type":@"log",@"message":[NSString stringWithFormat:@"SerialController.portStatusChanged: modemStatus=%02x", modemStatus]}];
 }
 
 - (void)sendEmptyCommand {
@@ -74,6 +77,7 @@
 }
 
 - (void)configureOutputSettings {
+    [self->delegate dispatchMessage:@{@"type":@"log",@"message":@"SerialController.configureOutputSettings"}];
     // ifdefs below are structured the way they are because elseif didn't seem to work.
 #ifdef SERIAL_SEND_TIMESTAMP
     // Output TIMESTAMP when using serial connection. This requires more bandwidth.
@@ -88,7 +92,8 @@
 }
 
 - (void)initialize {
-    NSLog(@"@SerialController::initialize");
+    NSLog(@"@SerialController:initialize");
+    [self->delegate dispatchMessage:@{@"type":@"log",@"message":@"SerialController.initialize"}];
     dispatch_sync(dispatch_get_main_queue(), ^{
         self->baudRate = [((AppDelegate *)[UIApplication sharedApplication].delegate).baudRate intValue];
     });
@@ -109,6 +114,8 @@
 }
 
 - (void)disconnectDevice {
+    NSLog(@"@SerialController:disconnectDevice");
+    [self->delegate dispatchMessage:@{@"type":@"log",@"message":@"SerialController.disconnectDevice"}];
     [super disconnectDevice];
     [self->rscMgr setDelegate:nil];
     if (self->networkRunLoop)
@@ -118,7 +125,8 @@
 }
 
 - (void)disconnectData {
-    NSLog(@"@disconnectData.");
+    NSLog(@"@SerialController:disconnectData");
+    [self->delegate dispatchMessage:@{@"type":@"log",@"message":@"SerialController.disconnectData"}];
     [self sendCommand:@"OUTPUT NONE\n"];
     [self resetSerialParams];
 }
@@ -136,6 +144,7 @@
 }
 
 - (void)collectDataSets {
+    [self->delegate dispatchMessage:@{@"type":@"log",@"message":@"SerialController.collectDataSets"}];
     [self clearByteBuffer];
     self->testTime = 0.0;
     [self->telnetCmds addObject:@"OUTPUT RS422\n"];
@@ -155,7 +164,8 @@
 
 // For IFC242x controller user 8N1 configuration.
 - (void)setupSerialCable {
-    NSLog(@"@setupSerialCable");
+    NSLog(@"@SerialController:setupSerialCable");
+    [self->delegate dispatchMessage:@{@"type":@"log",@"message":@"SerialController.setupSerialCable"}];
     
     //if (self->byteBuffer == nil) {
     //    self->byteBuffer = (uint8_t *) malloc(BYTE_BUFFER_SIZE);
@@ -172,6 +182,7 @@
 
 // start the communication thread
 - (void) startCommThread {
+    [self->delegate dispatchMessage:@{@"type":@"log",@"message":@"SerialController.startCommThread"}];
     // Create and start the comm thread.  We'll use this thread so we don't tie up the UI thread.
     dispatch_async(dispatch_queue_create([[NSString stringWithFormat:@"com.ge.ent.e4PtTool.%@.network_comms_queue", NSStringFromClass([self class])] UTF8String], DISPATCH_QUEUE_SERIAL), ^{
         // initialize RscMgr on this thread
@@ -188,6 +199,7 @@
 }
 
 - (void)resetSerialParams {
+    [self->delegate dispatchMessage:@{@"type":@"log",@"message":@"SerialController.resetSerialparams"}];
     // Flush the cable Rx buffer to prepare for next acquisition.
     serialPortControl portCtl;
     portCtl.rxFlush = 1;
@@ -213,7 +225,8 @@
 }
 
 - (void)parseSerialData:(NSData*)data {
-    NSLog(@"@parseSerialData: pState = %d", self.state);
+    NSLog(@"@SerialController:parseSerialData: pState = %d", self.state);
+    [self->delegate dispatchMessage:@{@"type":@"log",@"message":@"SerialController.parseSerialData"}];
     
     if ((self.state == masteringInProgress) ||
         (self.state == darkReferenceInProgress) ||

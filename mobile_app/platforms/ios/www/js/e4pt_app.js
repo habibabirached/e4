@@ -2,6 +2,14 @@ define(function(require, exports, module) {
     const messaging = require('./messaging');
     const sensorSettings = require('./sensor_settings');
     const charting = require('./charting');
+    
+    // override console.log behavior
+    var logMessages = [];
+    var oldLog = console.log;
+    console.log = function() {
+        logMessages.push({"timestamp": new Date().toISOString(), "message": Object.values(arguments).join(" ")});
+        oldLog.apply(null, arguments);
+    }
 
     var menu_open = false;
     var downloadFileName = "";
@@ -33,6 +41,10 @@ define(function(require, exports, module) {
     var DEFAULT_SPACER_FILE = 'img/spacers/Unknown.gif';
     var MIN_RPM = 0.5;
     var MAX_RPM = 15.0;
+    var MIN_SAMPLING_RATE = 0.1;
+    var MAX_SAMPLING_RATE = 6.5;
+    var CLEARANCE_OVERRIDE_PRECISION = 4;
+    var DETAILS_PRECISION = 4;
     
     var CALC_METHOD_ORIGINAL = 1;
     var CALC_METHOD_NEW = 2;
@@ -42,6 +54,7 @@ define(function(require, exports, module) {
     var DETAILS_FILE_PREFIX = "details_e4pt";
     var EMAIL_FILE_PREFIX = "e4pt";
     var DATA_FILE_PREFIX = "data";
+    var LOG_FILE_PREFIX = "log";
 
     // This is the obscure address of the e4Pt field data Box folder.
     var FIELD_DATA_BOX_FOLDER = "Field_D.c55377p707j2cweu@u.box.com";
@@ -67,6 +80,7 @@ define(function(require, exports, module) {
     var editModal = new bootstrap.Modal(document.getElementById('EDIT_MODAL'));
     var clearanceOverrideModal = new bootstrap.Modal(document.getElementById('CLEARANCE_OVERRIDE_MODAL'));
     var spacerModal = new bootstrap.Modal(document.getElementById('SPACER_MODAL'));
+    var logModal = new bootstrap.Modal(document.getElementById('LOG_MODAL'));
     
     var POSITION_DISPLAY_MODE = 'TEXT'; // TEXT, ICON, BOTH
     var ARROW_ICONS = {
@@ -195,6 +209,7 @@ define(function(require, exports, module) {
     var previous_frame = '';
 
     $(document).ready(function() {
+        console.log("@ready");
         var attachFastClick = Origami.fastclick;
         attachFastClick(document.body);
         
@@ -221,6 +236,29 @@ define(function(require, exports, module) {
         setButtonProperties($("#CALCULATE_RPM_BUTTON"), LABEL_CALCULATE, 'green');
         setButtonProperties($("#READ_SENSOR_PARAMETERS_BUTTON"), LABEL_LOAD_PARAMS, 'blue');
         
+        // update default sensor alerts
+        var infoShort = sensorSettings.getSensorType('SHORT');
+        var smf = sensorSettings.toInches(infoShort['measured_mastering_fixture_height_mm']).toFixed(3);
+        var ss = sensorSettings.toInches(infoShort['measured_length_mm']).toFixed(3);
+        var infoLong = sensorSettings.getSensorType('LONG');
+        var lmf = sensorSettings.toInches(infoLong['measured_mastering_fixture_height_mm']).toFixed(3);
+        var ls = sensorSettings.toInches(infoLong['measured_length_mm']).toFixed(3);
+        $("#DEFAULT_SMF").text(smf);
+        $("#DEFAULT_SS").text(ss);
+        $("#DEFAULT_LMF").text(lmf);
+        $("#DEFAULT_LS").text(ls);
+
+        $("#MIN_SAMPLING_RATE").text(MIN_SAMPLING_RATE.toFixed(3));
+        $("#MAX_SAMPLING_RATE").text(MAX_SAMPLING_RATE.toFixed(3));
+        
+        document.addEventListener("pause", function () {
+            console.log("pause");
+            //messaging.sendMessage({args:[{command:'disconnect'}]});
+        }, false);
+        document.addEventListener("resume", function() {
+            console.log("resume");
+            set_connection_mode();
+        }, false);
         document.getElementById("MAIN_MENU").addEventListener('click', function() {
             $("#TITLE_BAR").text(APP_NAME);
             toggleMenu();
@@ -405,6 +443,10 @@ define(function(require, exports, module) {
         document.getElementById("SETUP_CLOSE_BUTTON").addEventListener('click', function() {
             $("#SETUP_PAGE").fadeOut();
         }, {passive: true});
+        document.getElementById("LOCATION_CLOSE_BUTTON").addEventListener('click', function() {
+            $("#LOCATION_PAGE").fadeOut();
+            $("#TURBINE_SETUP_PAGE").fadeIn();
+        }, {passive: true});
         document.getElementById("LOCAL_DATA_CLOSE_BUTTON").addEventListener('click', function() {
             $("#LOCAL_DATA_PAGE").fadeOut();
             $("#TITLE_BAR").text(APP_NAME);
@@ -482,7 +524,12 @@ define(function(require, exports, module) {
             }
         }, {passive: true});
         document.getElementById("SET_MEASUREMENT_RATE_BUTTON").addEventListener('click', function() {
-            set_measurement_and_intensity_value('MEASUREMENT_RATE', 'Measurement rate', 0.1, 6.5, {command:'set_measuring_rate_and_threshold',threshold:parseFloat(document.getElementById('THRESHOLD').value).toFixed(3),rate:parseFloat(document.getElementById('MEASUREMENT_RATE').value)});
+            set_measurement_and_intensity_value('MEASUREMENT_RATE', 'Measurement rate', MIN_SAMPLING_RATE, MAX_SAMPLING_RATE, {command:'set_measuring_rate_and_threshold',threshold:parseFloat(document.getElementById('THRESHOLD').value).toFixed(3),rate:parseFloat(document.getElementById('MEASUREMENT_RATE').value)});
+        }, {passive: true});
+        document.getElementById("RESET_MEASUREMENT_RATE_BUTTON").addEventListener('click', function() {
+            messaging.sendMessage({args:[{command:'set_manual_override',value:false}]});
+            setSpanProperties($("#measurement_override_message"), "AUTOMATIC CALCULATION", 'green');
+            setSpanProperties($("#measurement_override_message_2"), "AUTOMATIC<br/>CALCULATION", 'green');
         }, {passive: true});
         document.getElementById("EXPORT_DATA_BUTTON").addEventListener('click', function() {
             fromDataPlotPage = true;
@@ -518,6 +565,7 @@ define(function(require, exports, module) {
                 messaging.sendMessage({args:[{command:'abort'}]});
                 // ignore data response to hide DATA_PLOT
                 collectionAborted = true;
+                $("#PROCESSING_PAGE").fadeOut();
                 resetDataCollection();
             }
         }, {passive: true});
@@ -554,14 +602,26 @@ define(function(require, exports, module) {
             let prompt = "Email or Upload Files?";
             e4PtPrompt(prompt, exportDetailsFile, "Get File", ["Email","Upload to Box","Cancel"]);
         }, {passive: true});
-        document.getElementById("MANUAL_OVERRIDE").addEventListener('click', function() {
+        /*document.getElementById("MANUAL_OVERRIDE").addEventListener('click', function() {
             overrideSettings();
-        }, {passive: true});
+        }, {passive: true});*/
         document.getElementById("SPACER_THUMBNAIL").addEventListener('click', function() {
             showSpacerImage();
         }, {passive: true });
+        document.getElementById("LOG_BUTTON").addEventListener('click', function() {
+            showLog();
+        }, {passive: true });
+        document.getElementById("LOG_CLEAR_BUTTON").addEventListener('click', function() {
+            clearLog();
+        }, {passive: true});
+        document.getElementById("LOG_EXPORT_BUTTON").addEventListener('click', function() {
+            exportLog();
+        }, {passive: true});
         document.getElementById("CALCULATE_RPM_BUTTON").addEventListener('click', function() {
              calculateRPM();
+        }, {passive: true});
+        document.getElementById("LOCATION_BUTTON").addEventListener('click', function() {
+            showLocationImages();
         }, {passive: true});
         document.getElementById("EDIT_BUTTON").addEventListener('click', function() {
             edit();
@@ -624,6 +684,7 @@ define(function(require, exports, module) {
     });
 
     function fadeOutAll() {
+        $("#PROCESSING_PAGE").fadeOut();
         $("#DATA_PLOT_PAGE").fadeOut();
         $("#FRD_PAGE").fadeOut();
         $("#SETUP_PAGE").fadeOut();
@@ -638,6 +699,7 @@ define(function(require, exports, module) {
         $("#ARCHIVED_DATA_PAGE").fadeOut();
         $("#FILE_CHOOSER_PAGE").fadeOut();
         $("#DATA_DETAILS_PAGE").fadeOut();
+        $("#LOCATION_PAGE").fadeOut();
     }
 
     function gotFS(fileSystem) {
@@ -736,6 +798,87 @@ define(function(require, exports, module) {
         document.getElementById("SPACER_IMAGE").setAttribute("src", imageName);
         document.getElementById("SPACER_IMAGE").setAttribute("alt", spacerName);
         spacerModal.show();
+    }
+    
+    function showLocationImages() {
+        console.log("@showLocationImages");
+        let locationName = document.getElementById("FRAME_SIZE").value;
+        // frame image
+        let locationImage = document.getElementById("LOCATION_IMAGE");
+        let imageStr = "";
+        if (typeof current_frame_data.image !== 'undefined') {
+            let frameImageName = 'img/frames/' + current_frame_data.image + '.png';
+            imageStr = '<img class="img-fluid" src="' + frameImageName + '">';
+        } else {
+            imageStr += '<h5><span class="badge bg-warning text-dark">No Frame Image</span></h5>';
+        }
+        locationImage.innerHTML = imageStr;
+        // stage images
+        let tabs = document.getElementById("LOCATION_TABS");
+        let content = document.getElementById("LOCATION_CONTENT");
+        let tabStr = "";
+        let contentStr = "";
+        let isFirst = true;
+        // only include one tab/image per stage
+        if (typeof current_frame_data.stage_images !== 'undefined') {
+            for (let stageId of Object.keys(current_frame_data.stage_images)) {
+                let stageImage = current_frame_data.stage_images[stageId];
+                tabStr += '<li class="nav-item" role="presentation"><button class="nav-link' + (isFirst ? ' active' : '') + '" id="tab' + stageId + '" data-bs-toggle="tab" data-bs-target="#content' + stageId + '" type="button" role="tab" aria-controls="content' + stageId + '" aria-selected="' + isFirst + '">Stage ' + stageId + '</button></li>';
+                contentStr += '<div class="tab-pane show' + (isFirst ? ' active' : '') + '" id="content' + stageId + '" role="tabpanel" aria-labelledby="tab' + stageId + '">';
+                if (stageImage) {
+                    let stageImageName = 'img/frames/' + stageImage + '.png';
+                    contentStr += '<img class="img-fluid" src="' + stageImageName + '">';
+                } else {
+                    contentStr += '<h5><span class="badge bg-warning text-dark">No Stage Image</span></h5>';
+                }
+                contentStr += '</div>';
+                isFirst = false;
+            }
+        } else {
+            contentStr += '<h5><span class="badge bg-warning text-dark">No Stage Images</span></h5>';
+        }
+        tabs.innerHTML = tabStr;
+        content.innerHTML = contentStr;
+        $("#TURBINE_SETUP_PAGE").fadeOut();
+        $("#LOCATION_PAGE").fadeIn();
+    }
+    
+    function showLog() {
+        var elementID = "LOG_TABLE_BODY";
+        var prev_tbody = document.getElementById(elementID);
+        var tbody = document.createElement("tbody");
+        tbody.setAttribute("id",elementID);
+        for (var i = logMessages.length - 1; i >= 0; i--) {
+            var new_row = tbody.insertRow(-1);
+            
+            var cell1 = new_row.insertCell(-1);
+            cell1.innerHTML = logMessages[i].timestamp;
+
+            var cell3 = new_row.insertCell(-1);
+            cell3.innerHTML = logMessages[i].message;
+        }
+        prev_tbody.parentNode.replaceChild(tbody, prev_tbody);
+        
+        logModal.show();
+    }
+    
+    function clearLog() {
+        logMessages = [];
+        showLog();
+    }
+    
+    function exportLog() {
+        let contents = "";
+        for (let i=0; i<logMessages.length; i++) {
+            contents += logMessages[i].timestamp + ": " + logMessages[i].message;
+            contents += "\n";
+        }
+        let targetFolder = "data"; // default directory
+        let logDate = new Date().toJSON().slice(0, 19).replace(/-/g,'').replace(/:/g,'').replace('T','');
+        let fileName = LOG_FILE_PREFIX + "_" + logDate + ".txt";
+        writeToFile(targetFolder, fileName, contents, function() {
+            fileDownloadFunction(fileName);
+        });
     }
     
     function calculateRPM() {
@@ -873,11 +1016,21 @@ define(function(require, exports, module) {
         console.log('@setupCasingThicknessTable');
         // Get frame type
         let frm_idx = document.getElementById("FRAME_SIZE").selectedIndex;
-        
-        // Memorise selected_frame_data for computing RPM and remembering it when we come back to the page
-        selected_frame_data.frameIdx = frm_idx;
-        
         current_frame_data = frame_data[frm_idx];
+        current_stage_index = 0;
+        current_stage = current_frame_data.stage[current_stage_index];
+        current_position_index = 0;
+        current_position = current_frame_data.position[current_stage][current_position_index];
+        
+        // Update selected_frame_data for computing RPM and remembering it when we come back to the page
+        selected_frame_data.frameIdx = frm_idx;
+        selected_frame_data.stageInfoIdx = current_stage_index;
+        selected_frame_data.frameName = current_frame_data.frame;
+        selected_frame_data.stageName = current_stage;
+        // use index instead of name due to *.* stages
+        //selected_frame_data.bladeCount = current_frame_data.stage_info[current_stage].blade_count;
+        selected_frame_data.bladeCount = Object.values(current_frame_data.stage_info)[current_stage_index].blade_count;
+        
         let pos = current_frame_data.position;
         let tbl = document.getElementById("CASING_THICKNESS_TABLE");
         let stageText = "STAGE";
@@ -903,7 +1056,7 @@ define(function(require, exports, module) {
             htmlStr += '<td scope="row">' + p + '</td>';
             for (let j=0; j<pos[p].length; j++) {
                 let casingThickness_el_id = p + '_' + pos[p][j];
-                htmlStr += '<td><input class="form-control" type="text" id="' + casingThickness_el_id + '" value=""/></td>';
+                htmlStr += '<td><input class="form-control" type="number" inputmode="decimal" id="' + casingThickness_el_id + '" value=""/></td>';
             }
             htmlStr += '</tr>';
         }
@@ -913,7 +1066,8 @@ define(function(require, exports, module) {
         }
     }
 
-    function overrideSettings() {
+    // unused, called on MANUAL_OVERRIDE checked
+    /*function overrideSettings() {
         manualOverride = document.getElementById("MANUAL_OVERRIDE").checked;
         console.log("@overrideSettings: ", manualOverride);
         messaging.sendMessage({args:[{command:'set_manual_override',value:manualOverride}]});
@@ -924,7 +1078,7 @@ define(function(require, exports, module) {
             fromDataCollectionPage = true;
             $("#SENSOR_SETUP_PAGE").fadeIn();
         }
-    }
+    }*/
 
     function acquisitionTimePromptCallback(results) {
         console.log("@acquisitionTimePromptCallback");
@@ -1015,6 +1169,7 @@ define(function(require, exports, module) {
                 checkConnectionStatus();
             }
             messaging.sendMessage({args:[{command:'get_version'}]});
+            //checkConnectionStatus();
         }
         menu_open = !menu_open;
         
@@ -1110,6 +1265,7 @@ define(function(require, exports, module) {
     }
     
     function configureController() {
+        console.log('@configureController');
         if (!serialConnected) {
             e4PtAlert('Please connect to the controller before proceeding.');
         } else {
@@ -1267,6 +1423,7 @@ define(function(require, exports, module) {
     }
 
     function turbine_setup() {
+        console.log('@turbine_setup');
         $("#TITLE_BAR").text("Data Collection");
         $("#TURBINE_SETUP_PAGE").fadeIn();
         savedRPM = computedRPM;
@@ -1408,9 +1565,10 @@ define(function(require, exports, module) {
         var html = html_buf.join('\n');
         document.getElementById("SENSOR_POSITION").innerHTML = html;
         
-        selected_frame_data.stageInfoIdx = current_stage_index;
-        selected_frame_data.stageName = current_stage;
-        selected_frame_data.bladeCount = current_frame_data.stage_info[current_stage].blade_count;
+        // update in set_stage_information
+        //selected_frame_data.stageInfoIdx = current_stage_index;
+        //selected_frame_data.stageName = current_stage;
+        //selected_frame_data.bladeCount = current_frame_data.stage_info[current_stage].blade_count;
     }
 
     function set_stage_information() {
@@ -1423,11 +1581,16 @@ define(function(require, exports, module) {
         html = html_buf.join('\n');
         document.getElementById("SENSOR_STAGE").innerHTML = html;
         document.getElementById("SENSOR_STAGE").selectedIndex = selected_frame_data.stageInfoIdx;
-        selected_frame_data.stageName = Object.keys(frame_data[selected_frame_data.frameIdx].stage_info)[selected_frame_data.stageInfoIdx]
-        document.getElementById("SENSOR_STAGE").value = selected_frame_data.stageName;
+        selected_frame_data.stageName = Object.keys(frame_data[selected_frame_data.frameIdx].stage_info)[selected_frame_data.stageInfoIdx];
+        // don't use stage name due to x.x formats
+        //document.getElementById("SENSOR_STAGE").value = selected_frame_data.stageName;
         console.log ("selected_frame_data.stageName  , index= ", selected_frame_data.stageName, selected_frame_data.stageInfoIdx);
         current_stage_index = document.getElementById("SENSOR_STAGE").selectedIndex;
         current_stage = stages[current_stage_index];
+        
+        selected_frame_data.stageInfoIdx = current_stage_index;
+        selected_frame_data.stageName = current_stage;
+
         set_position_information(); // When you change the stage, the position information changes too.
         current_position_index = 0;
     }
@@ -1455,6 +1618,7 @@ define(function(require, exports, module) {
     }
     
     function set_measurement_and_intensity_value(el_id, label, minVal, maxVal, cmd) {
+        console.log("@set_measurement_and_intensity_value");
         var input_f = parseFloat(document.getElementById(el_id).value);
         // Make sure the text is a number
         if ((isNaN(input_f)) || (typeof(input_f) != 'number')) {
@@ -1473,7 +1637,7 @@ define(function(require, exports, module) {
                       input_f = maxVal;
                       document.getElementById(el_id).value = input_f.toFixed(3);
                       cmd.rate = input_f;
-                      messaging.sendMessage({args:[cmd]});
+                      override_measurement_rate(cmd);
                   } else if (buttonIndex==2) {//Cancel
                       document.getElementById(el_id).value = '';
                       return;
@@ -1486,15 +1650,23 @@ define(function(require, exports, module) {
                       input_f = minVal;
                       document.getElementById(el_id).value = input_f.toFixed(3);
                       cmd.rate = input_f;
-                      messaging.sendMessage({args:[cmd]});
+                      override_measurement_rate(cmd);
                   } else if (buttonIndex==2) {//Cancel
                       document.getElementById(el_id).value = '';
                       return;
                   }
               });
         } else {
-            messaging.sendMessage({args:[cmd]});
+            override_measurement_rate(cmd);
         }
+    }
+    
+    function override_measurement_rate(cmd) {
+        console.log('@override_measurement_rate');
+        messaging.sendMessage({args:[cmd]});
+        messaging.sendMessage({args:[{command:'set_manual_override',value:true}]});
+        setSpanProperties($("#measurement_override_message"), "MANUAL OVERRIDE", 'yellow');
+        setSpanProperties($("#measurement_override_message_2"), "MANUAL<br/>OVERRIDE<br/>" + cmd.rate.toFixed(3) + "kHz", 'yellow');
     }
     
     function displayGoButton() {
@@ -1851,6 +2023,7 @@ define(function(require, exports, module) {
     }
                   
     function setup_data_collection_page(dateStr, timeStr, update_position) {
+        console.log('@setup_data_collection_page');
         // Fill in the header
         var customer = document.getElementById("CUSTOMER").value;
         var site = document.getElementById("SITE").value;
@@ -2097,6 +2270,13 @@ define(function(require, exports, module) {
         current_stage_index = stages.indexOf(stage);
         current_stage = stages[current_stage_index];
         current_position = positions[current_position_index];
+        
+        selected_frame_data.stageInfoIdx = current_stage_index;
+        selected_frame_data.stageName = current_stage;
+        // use index instead of name due to *.* stages
+        //selected_frame_data.bladeCount = current_frame_data.stage_info[current_stage].blade_count;
+        selected_frame_data.bladeCount = Object.values(current_frame_data.stage_info)[current_stage_index].blade_count;
+
         set_position_information();
         document.getElementById("SENSOR_STAGE").selectedIndex = current_stage_index;
         document.getElementById("SENSOR_POSITION").selectedIndex = current_position_index;
@@ -2118,7 +2298,7 @@ define(function(require, exports, module) {
         var clearance = document.getElementById(el_id).innerHTML;
         if (E4PTdata.units.toUpperCase().includes("IN") && clearance != "") {
           clearance = sensorSettings.toMMs(clearance);
-          clearance = checkValue(clearance, 4);
+          clearance = checkValue(clearance, CLEARANCE_OVERRIDE_PRECISION);
         }
         document.getElementById("CLEARANCE_OVERRIDE_STAGE").innerHTML = current_stage;
         document.getElementById("CLEARANCE_OVERRIDE_POSITION").innerHTML = current_position;
@@ -2223,6 +2403,7 @@ define(function(require, exports, module) {
     }
 
     function do_dark_reference() {
+        console.log('@do_dark_reference');
         if (messaging.usesWebSocket()) {
             setIndicatorColor("yellow");
         }
@@ -2268,6 +2449,7 @@ define(function(require, exports, module) {
     }
 
     function failed_mastering() {
+        console.log('@failed_mastering');
         setMasterMessage("red","MASTERING FAILED");
         setMasterMessage2("red","MASTERING FAILED");
         setIndicatorColor("green");
@@ -2292,6 +2474,7 @@ define(function(require, exports, module) {
 
     // alert function to work on iOS and web browser
     function e4PtAlert(msg, callback=null) {
+        console.log('e4PtAlert: ' + msg);
         try{
             navigator.notification.alert(
                 String(msg),            // message
@@ -2306,6 +2489,7 @@ define(function(require, exports, module) {
 
     // confirm function to work on iOS and web browser
     function e4PtConfirm(msg, callback) {
+        console.log('e4PtConfirm: ' + msg);
         try{
             navigator.notification.confirm(
                 String(msg),            // message
@@ -2324,6 +2508,7 @@ define(function(require, exports, module) {
 
     // prompt: function (message, resultCallback, title, buttonLabels, defaultText) {
     function e4PtPrompt(msg, callback, title, buttonLabels) {
+        console.log('e4PtPrompt: ' + msg);
         try {
             navigator.notification.confirm(
             String(msg),
@@ -2411,8 +2596,7 @@ define(function(require, exports, module) {
         console.log("@pluginMessage: msg.type = ", msg.type);
         switch(msg.type) {
             case "setting":
-                console.log("Received Setting Message");
-                console.log(msg);
+                console.log("Received Setting Message: ", JSON.stringify(msg));
                 if (msg.varName === 'intensity_threshold') {
                     document.getElementById('THRESHOLD').value = msg.value;
                 }
@@ -2459,9 +2643,10 @@ define(function(require, exports, module) {
                 }
                 break;
             case "data":
-                resetDataCollection();
+                //resetDataCollection();
                 console.log("Received Data Message");
                 if (!collectionAborted) {
+                    //$("#PROCESSING_PAGE").fadeIn();
                     msg.data = JSON.parse(msg.data);
                     msg.intensity = JSON.parse(msg.intensity);
                     msg.locs = JSON.parse(msg.locs);
@@ -2505,6 +2690,8 @@ define(function(require, exports, module) {
                 } else {
                     console.log("Data collection was aborted");
                 }
+                $("#PROCESSING_PAGE").fadeOut();
+                resetDataCollection();
                 break;
             case "filename":
                 console.log("Recieved Filename Message: ", msg.fname);
@@ -2522,6 +2709,9 @@ define(function(require, exports, module) {
                 console.log("Received an alert message: ", msg.message);
                 e4PtAlert(msg.message);
                 // TODO: reset if alert during collection
+                break;
+            case "log":
+                console.log("[BACKEND]", msg.message);
                 break;
             case "progress":
                 console.log("Progress: ", msg.progress);
@@ -2568,7 +2758,7 @@ define(function(require, exports, module) {
                 document.getElementById("THRESHOLD").value = JSON.parse(msg.intensity_threshold).toFixed(3);
                 
                 getConnectionMode();
-                checkConnectionStatus();
+                //checkConnectionStatus();
                 
                 break;
             default:
@@ -2612,7 +2802,6 @@ define(function(require, exports, module) {
     }
 
     function updateSensorParameters(mfh, mval, mo, sensor, sensor_length, smr, mr) {
-
         // Before updating the values, make sure the user has entered valid numbers.
         let mfh_f = parseFloat(mfh);
         let mstrval_f = parseFloat(mval);
@@ -2982,6 +3171,8 @@ define(function(require, exports, module) {
                 } else {
                     cell0.classList.add("table-warning");
                 }
+            } else if (entry.name.startsWith(LOG_FILE_PREFIX)) {
+                console.log("Ignoring log file");
             } else if (entry.name.startsWith(DATA_FILE_PREFIX)) {
                 console.log("TODO: handle GET DATA file coloring");
             } else if (entry.name.startsWith(sn)) {
@@ -3065,22 +3256,22 @@ define(function(require, exports, module) {
             cell2.innerHTML = tmp;
             var cell3 = new_row.insertCell(-1);
             cell3.setAttribute("onclick",clickFn);
-            cell3.innerHTML = checkValue(entry.clearance,3);
+            cell3.innerHTML = checkValue(entry.clearance, DETAILS_PRECISION);
             if (entry.manualOverride) {
               cell3.classList.add("table-danger");
             }
             var cell4 = new_row.insertCell(-1);
             cell4.setAttribute("onclick",clickFn);
-            cell4.innerHTML = checkValue(entry.max_clr,3);
+            cell4.innerHTML = checkValue(entry.max_clr, DETAILS_PRECISION);
             var cell5 = new_row.insertCell(-1);
             cell5.setAttribute("onclick",clickFn);
-            cell5.innerHTML = checkValue(entry.min_clr,3);
+            cell5.innerHTML = checkValue(entry.min_clr, DETAILS_PRECISION);
             var cell6 = new_row.insertCell(-1);
             cell6.setAttribute("onclick",clickFn);
-            cell6.innerHTML = checkValue(entry.med_clr,3);
+            cell6.innerHTML = checkValue(entry.med_clr, DETAILS_PRECISION);
             var cell7 = new_row.insertCell(-1);
             cell7.setAttribute("onclick",clickFn);
-            cell7.innerHTML = checkValue(entry.std_clr,3);
+            cell7.innerHTML = checkValue(entry.std_clr, DETAILS_PRECISION);
         });
         prev_tbody.parentNode.replaceChild(tbody, prev_tbody);
     }
@@ -3110,11 +3301,11 @@ define(function(require, exports, module) {
         for (let i=0; i<E4PTdata.sets.length; i++) {
             contents += E4PTdata.sets[i].stage + ","
                 + E4PTdata.sets[i].position +  ","
-                + checkValue(E4PTdata.sets[i].clearance,3) + ","
-                + checkValue(E4PTdata.sets[i].max_clr,3) + ","
-                + checkValue(E4PTdata.sets[i].min_clr,3) + ","
-                + checkValue(E4PTdata.sets[i].med_clr,3) + ","
-                + checkValue(E4PTdata.sets[i].std_clr,3) + ","
+                + checkValue(E4PTdata.sets[i].clearance, DETAILS_PRECISION) + ","
+                + checkValue(E4PTdata.sets[i].max_clr, DETAILS_PRECISION) + ","
+                + checkValue(E4PTdata.sets[i].min_clr, DETAILS_PRECISION) + ","
+                + checkValue(E4PTdata.sets[i].med_clr, DETAILS_PRECISION) + ","
+                + checkValue(E4PTdata.sets[i].std_clr, DETAILS_PRECISION) + ","
                 + E4PTdata.sets[i].manualOverride + ",";
             if (E4PTdata.sets[i].manualOverride) {
                 contents += E4PTdata.sets[i].overrideName + ","
@@ -3236,8 +3427,6 @@ define(function(require, exports, module) {
         $("#CONNECTION_INDICATOR")
             .removeClass(allColors)
             .addClass(targetColor);
-        //document.getElementById('CONNECTION_INDICATOR').classList.remove("text-danger", "text-warning", "text-success", "text-primary", "text-light");
-        //document.getElementById('CONNECTION_INDICATOR').classList.add(targetColor);
     }
 
     function setMasterMessage( bgColor, txt ) {
@@ -3259,6 +3448,17 @@ define(function(require, exports, module) {
       try {
         update_scan_info(); // currently does nothing
         parse_data();
+          
+        /*if (E4PTdata.data.length > 0) {
+          var d0 = E4PTdata.data[0];
+          var allEqual = E4PTdata.data.every(function(d) {
+            return d === d0;
+          });
+          if (allEqual) {
+            e4PtAlert("Invalid data, all clearance values are identical: " + d0);
+          }
+        }*/
+
         document.getElementById('MEASUREMENT_RATE').value = E4PTdata.measurement_rate;
         document.getElementById('THRESHOLD').value = E4PTdata.intensity_threshold;
         
@@ -3282,6 +3482,7 @@ define(function(require, exports, module) {
     }
 
     function requestE4PtData(acquisitionTime) {
+        console.log("@requestE4PtData");
         console.log("Requesting " + acquisitionTime + " seconds of data");
         charting.clearChartData(document.getElementById('DATA_PLOT'));
         startProgressBar();
@@ -3295,6 +3496,7 @@ define(function(require, exports, module) {
     }
 
     function requestE4PtDataWithMetaData(acquisitionTime, frame, sn, stage, position, casing_thickness, spacer_thickness, master_offset, clearance_calc_selection) {
+        console.log("@requestE4PtDataWithMetaData");
         console.log("Requesting " + acquisitionTime + "s data");
         console.log("Meta data: " + frame + "; " + sn + "; " + stage + "; " + position);
         frame = frame.replace(/\s+/g, '_'); // replace all the spaces with underscores
@@ -3339,6 +3541,8 @@ define(function(require, exports, module) {
         displayAbortButton();
         setIndicatorColor("red");
         startProgressBar();
+        
+        $("#PROCESSING_PAGE").fadeIn();
 
         messaging.sendMessage({args:[{
             command:'send_data',
@@ -3410,6 +3614,7 @@ define(function(require, exports, module) {
         } else {
             E4PTdata.minima = [];
         }
+        console.log("minima: ", E4PTdata.minima.length);
         console.log("Clearance average: ", E4PTdata.clearance);
         // Only update the clearance(s) info if we have all the data to do so.
         if (current_frame_data['position'] != null) {
@@ -3632,6 +3837,7 @@ define(function(require, exports, module) {
         });
     }
 
+    // TODO: unused
     function doSSO() {
       console.log("@doSSO");
       var authServerUri = SSO_AUTH_URL + "?response_type=" + SSO_RESPONSE_TYPE + "&scope=" + SSO_SCOPE + "&client_id=" + SSO_CLIENT_ID + "&redirect_uri=" + SSO_REDIRECT_URI
@@ -4165,6 +4371,7 @@ define(function(require, exports, module) {
     }
 
     function initializeFromDocument(doc) {
+        console.log("@initializeFromDocument");
         if (doc._id) {
             E4PTdata.pouchdb_id = doc._id;
         } else if (doc.pouchdb_id) {
@@ -4235,7 +4442,9 @@ define(function(require, exports, module) {
         selected_frame_data.stageInfoIdx = current_stage_index;
         selected_frame_data.frameName = current_frame_data.frame;
         selected_frame_data.stageName = current_stage;
-        selected_frame_data.bladeCount = current_frame_data.stage_info[current_stage].blade_count;
+        // use index instead of name due to *.* stages
+        //selected_frame_data.bladeCount = current_frame_data.stage_info[current_stage].blade_count;
+        selected_frame_data.bladeCount = Object.values(current_frame_data.stage_info)[current_stage_index].blade_count;
 
         $("#LOCAL_DATA_PAGE").fadeOut();
         $("#ARCHIVED_DATA_PAGE").fadeOut();

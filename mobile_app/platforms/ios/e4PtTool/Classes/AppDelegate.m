@@ -35,6 +35,7 @@
 @synthesize baudRate = _baudRate;
 @synthesize useSerialBuffer = _useSerialBuffer;
 @synthesize useSensorParams = _useSensorParams;
+@synthesize pointsPerBlade = _pointsPerBlade;
 
 - (BOOL)application:(UIApplication*)application didFinishLaunchingWithOptions:(NSDictionary*)launchOptions
 {
@@ -53,7 +54,9 @@
     NSObject *baudRateObject = [defaults objectForKey:@"baudRate"];
     NSObject *useSerialBufferObject = [defaults objectForKey:@"useSerialBuffer"];
     NSObject *useSensorParamsObject = [defaults objectForKey:@"useSensorParams"];
-    if (connectionTypeObject == nil || ipAddressObject == nil || baudRateObject == nil || useSerialBufferObject == nil || useSensorParamsObject == nil) {
+    NSObject *pointsPerBladeObject = [defaults objectForKey:@"pointsPerBlade"];
+
+    if (connectionTypeObject == nil || ipAddressObject == nil || baudRateObject == nil || useSerialBufferObject == nil || useSensorParamsObject == nil || pointsPerBladeObject == nil) {
         [self registerDefaultsFromSettingsBundle];
     }
 
@@ -62,6 +65,7 @@
     self.baudRate = [NSNumber numberWithInt:[[defaults stringForKey:@"baudRate"] intValue]];
     self.useSerialBuffer = [defaults boolForKey:@"useSerialBuffer"];
     self.useSensorParams = [defaults boolForKey:@"useSensorParams"];
+    self.pointsPerBlade = [NSNumber numberWithInt:[[defaults stringForKey:@"pointsPerBlade"] intValue]];
 }
 
 - (void)registerDefaultsFromSettingsBundle {

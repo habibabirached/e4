@@ -7,6 +7,7 @@
 //
 
 #import "math.h"
+#import "AppDelegate.h"
 #import "ControllerSettings.h"
 
 @implementation ControllerSettings
@@ -17,11 +18,16 @@
 @synthesize intensityThreshold = _intensityThreshold;
 @synthesize overrideRateAndIntensity = _overrideRateAndIntensity;
 @synthesize sensorParamsProvided = _sensorParamsProvided;
+@synthesize pointsPerBlade = _pointsPerBlade;
 
 -(instancetype)init {
     if (self = [super init]) {
         self.measurementRate = 1.0;
         self.intensityThreshold = [self calculateIntensityThresholdFromMeasurementRateKHz:self.measurementRate];
+        dispatch_sync(dispatch_get_main_queue(), ^{
+            self.pointsPerBlade = [((AppDelegate *)[UIApplication sharedApplication].delegate).pointsPerBlade intValue];
+        });
+        NSLog(@"@init: pointsPerBlade=%d", self.pointsPerBlade);
     }
     return self;
 }
@@ -49,7 +55,7 @@
     float inchesPerSecond = [self calculateSpeedForCircumference:circumference withRPM:rpm];
     self.acquisitionTime = [self calculateAcquisitionTimeForCircumference:circumference atSpeed:inchesPerSecond];
     if (rateAndIntensity) {
-        self.measurementRate = [self calculateKHzFrequencyForSamplesPerInch:(DESIRED_POINTS_PER_BLADE / bladeWidth) atSpeed:inchesPerSecond];
+        self.measurementRate = [self calculateKHzFrequencyForSamplesPerInch:(self.pointsPerBlade / bladeWidth) atSpeed:inchesPerSecond];
         self.intensityThreshold = [self calculateIntensityThresholdFromMeasurementRateKHz:self.measurementRate];
     }
     

@@ -1019,7 +1019,7 @@ NSString* const kCDVFilesystemURLPrefix = @"cdvfile";
         } else {
             result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Invalid parameter type"];
         }
-        [self.commandDelegate evalJs:[NSString stringWithFormat:@"fileSaveCallback('true');"]];
+        //[self.commandDelegate evalJs:[NSString stringWithFormat:@"fileSaveCallback('true');"]];
         [weakSelf.commandDelegate sendPluginResult:result callbackId:callbackId];
     }];
 }
