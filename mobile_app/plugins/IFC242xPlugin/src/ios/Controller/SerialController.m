@@ -226,7 +226,7 @@
 
 - (void)parseSerialData:(NSData*)data {
     NSLog(@"@SerialController:parseSerialData: pState = %d", self.state);
-    //[self->delegate dispatchMessage:@{@"type":@"log",@"message":@"SerialController.parseSerialData"}];
+    [self->delegate dispatchMessage:@{@"type":@"log",@"message":@"SerialController.parseSerialData"}];
     
     if ((self.state == masteringInProgress) ||
         (self.state == darkReferenceInProgress) ||
