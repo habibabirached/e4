@@ -56,13 +56,12 @@
             <span id="APP_VERSION" class="badge bg-dark">VERSION 0.0.0.0</span>
           </div>-->
           <div class="d-grid gap-4 p-3">
-            <button id="FRD_BUTTON" class="btn btn-secondary" type="button">FRD Instructions</button>
-            <button id="SENSOR_STARTUP_BUTTON" class="btn btn-secondary" type="button">Sensor Startup</button>
-            <button id="MEASURE_BUTTON" class="btn btn-secondary" type="button">Measure Turbine</button>
+            <button id="FRD_BUTTON" class="btn btn-secondary" type="button">Tool Setup</button>
+            <button id="SENSOR_SETUP_BUTTON" class="btn btn-secondary" type="button">Sensor Setup</button>
+            <button id="SETUP_BUTTON" class="btn btn-secondary" type="button">Measure Turbine</button>
             <button id="OPEN_LOCAL_DATA_BUTTON" class="btn btn-secondary" type="button">Open Local</button>
             <button id="OPEN_ARCHIVE_DATA_BUTTON" class="btn btn-secondary" type="button">Open Archive</button>
             <button id="GET_DATA_BUTTON" class="btn btn-secondary" type="button">Get Data</button>
-            <button id="TOOL_BUTTON" class="btn btn-secondary" type="button">Tool Setup</button>
             <button id="SHUTDOWN_BUTTON" class="btn btn-secondary" type="button">Shutdown</button>
           </div>
           <!--<div class="text-center position-absolute bottom-0 start-50 translate-middle">
@@ -106,7 +105,7 @@
               <div class="card-header">
                   <div class="row">
                     <div class="col-auto me-auto pt-1">
-                      <h4>FRD Instructions</h4>
+                      <h4>Setup</h4>
                     </div>
                     <div class="col-auto">
                       <button id="FRD_CLOSE_BUTTON" type="button" class="btn btn-dark"><i class="fas fa-times"></i></button>
@@ -116,369 +115,354 @@
                 <div class="card-body">
                   <div class="row">
                     <div class="col-lg-12">
-                        <!-- FRD -->
-                        <div class="d-grid gap-2">
-                          <button id="FRD_VIEW_BUTTON" class="btn btn-primary" type="button">Click here to view the FRD</button>
-                        </div>
-                        <br/>
-
-                        <h5>Tools, Equipment, and Materials</h5>
-
-                        <div class="accordion" id="accordionTools">
-
-                          <div class="accordion-item">
-                            <h2 class="accordion-header" id="headingToolsOne">
-                              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseToolsOne" aria-expanded="true" aria-controls="collapseToolsOne">Tools List</button>
-                            </h2>
-                            <div id="collapseToolsOne" class="accordion-collapse collapse" aria-labelledby="headingToolsOne" data-bs-parent="#accordionTools">
-                              <div class="accordion-body">
-                                  <!-- Tools List -->
-                                  <table class="table table-bordered table-sm">
-                                      <thead class="table-light">
-                                          <tr>
-                                              <th scope="col">Component</th>
-                                              <th scope="col">Frame applicability</th>
-                                          </tr>
-                                      </thead>
-                                      <tbody>
-                                          <tr>
-                                              <th scope="row" colspan="2" class="text-center">Sensor Kit</th>
-                                          </tr>
-                                          <tr>
-                                              <td>134T1086</td>
-                                              <td>Short Sensor Probe Kit</td>
-                                          </tr>
-                                          <tr>
-                                              <td>134T1086</td>
-                                              <td>Long Sensor Probe Kit</td>
-                                          </tr>
-                                          <tr>
-                                              <td>Controller</td>
-                                              <td>All- Sensor and Controller are calibrated as a unit. Cannot interchange without proper calibration</td>
-                                          </tr>
-                                          <tr>
-                                              <td>RedPark Cable</td>
-                                              <td>All</td>
-                                          </tr>
-                                          <tr>
-                                              <td>Mastering Fixture</td>
-                                              <td>Sensor Specific</td>
-                                          </tr>
-                                          <tr>
-                                              <td>Dark Reference Cap</td>
-                                              <td>Sensor Specific</td>
-                                          </tr>
-                                          <tr>
-                                              <td>Dummy Sensor Probe</td>
-                                              <td>Sensor and Frame specific</td>
-                                          </tr>
-                                          <tr>
-                                              <th scope="row" colspan="2" class="text-center">Spacer Kits</th>
-                                          </tr>
-                                          <tr>
-                                              <td>840-90-04</td>
-                                              <td>7FA+e</td>
-                                          </tr>
-                                          <tr>
-                                              <td>840-90-07</td>
-                                              <td>9FA</td>
-                                          </tr>
-                                          <tr>
-                                              <td>840-90-11</td>
-                                              <td>9FB</td>
-                                          </tr>
-                                          <tr>
-                                              <td>840-90-12</td>
-                                              <td>7FB</td>
-                                          </tr>
-                                          <tr>
-                                              <td>840-90-13</td>
-                                              <td>6FA</td>
-                                          </tr>
-                                          <tr>
-                                              <td>840-90-14</td>
-                                              <td>6B</td>
-                                          </tr>
-                                          <tr>
-                                              <td>132T7353</td>
-                                              <td>9HA.02</td>
-                                          </tr>
-                                          <tr>
-                                              <td>134T1087</td>
-                                              <td>9HA.01</td>
-                                          </tr>
-                                          <tr>
-                                              <td>134T1082</td>
-                                              <td>7FA.05</td>
-                                          </tr>
-                                          <tr>
-                                              <td>134T1088</td>
-                                              <td>7HA.01</td>
-                                          </tr>
-                                          <tr>
-                                              <td>134T1089</td>
-                                              <td>7HA.02</td>
-                                          </tr>
-                                          <tr>
-                                              <td>134T1089</td>
-                                              <td>7HA.03</td>
-                                          </tr>
-                                      </tbody>
-                                  </table>
-                                  <br/>
-                                  <figure class="text-center">
-                                      <img class="figure-img img-fluid" width="320" src="img/frd/master_5.1.png"/>
-                                      <figcaption class="figure-caption fw-bold">Long Mastering Fixture with Long sensor probe</figcaption>
-                                  </figure>
-                                  <br/>
-                                  <figure class="text-center">
-                                      <img class="figure-img img-fluid" width="320" src="img/frd/7FAE_5.1.png"/>
-                                      <figcaption class="figure-caption fw-bold">7FA+e Spacers and Dummy Sensor Probe</figcaption>
-                                  </figure>
-                                  <br/>
-                                  <figure class="text-center">
-                                      <img class="figure-img img-fluid" width="320" src="img/frd/9FA_spacers_5.1.png"/>
-                                      <figcaption class="figure-caption fw-bold">9FA Spacers and Dummy Sensor Probes</figcaption>
-                                  </figure>
-                                  <br/>
-                                  <figure class="text-center">
-                                      <img class="figure-img img-fluid" width="320" src="img/frd/9FA_spacers_5.1.png"/>
-                                      <figcaption class="figure-caption fw-bold">9FB Spacers and Dummy Sensor Probes</figcaption>
-                                  </figure>
-                                  <br/>
-                                  <figure class="text-center">
-                                      <img class="figure-img img-fluid" width="320" src="img/frd/7FB_5.1.png"/>
-                                      <figcaption class="figure-caption fw-bold">7FB Spacers and Dummy Sensor Probe</figcaption>
-                                  </figure>
-                                  <br/>
-                                  <figure class="text-center">
-                                      <img class="figure-img img-fluid" width="320" src="img/frd/6FA_5.1.png"/>
-                                      <figcaption class="figure-caption fw-bold">6FA Spacers and Dummy Sensor Probe</figcaption>
-                                  </figure>
-                                  <br/>
-                                  <figure class="text-center">
-                                      <img class="figure-img img-fluid" width="320" src="img/frd/6B_5.1.png"/>
-                                      <figcaption class="figure-caption fw-bold">6B Spacers and Dummy Sensor Probe</figcaption>
-                                  </figure>
-                                  <br/>
-                                  <figure class="text-center">
-                                      <img class="figure-img img-fluid" width="320" src="img/frd/9HA.02_5.1.png"/>
-                                      <figcaption class="figure-caption fw-bold">9HA.02 Spacers and Dummy Sensor Probe</figcaption>
-                                  </figure>
-                                  <br/>
-                                  <figure class="text-center">
-                                      <img class="figure-img img-fluid" width="320" src="img/frd/7HA01_5.1.png"/>
-                                      <figcaption class="figure-caption fw-bold">7HA.01 Spacers and Dummy Sensor Probe</figcaption>
-                                  </figure>
-                                  <br/>
-                                  <figure class="text-center">
-                                      <img class="figure-img img-fluid" width="320" src="img/frd/7HA.02-16_5.1.png"/>
-                                      <figcaption class="figure-caption fw-bold">7HA.02-16 Spacers and Dummy Sensor Probe</figcaption>
-                                  </figure>
-                                  <br/>
-                                  <figure class="text-center">
-                                      <img class="figure-img img-fluid" width="320" src="img/frd/7HA.02_R10_R14_5.1.png"/>
-                                      <figcaption class="figure-caption fw-bold">7HA.02-18 R10 and R14 DWC Spacer</figcaption>
-                                  </figure>
-                                  <br/>
-                                  <ol>
-                                      <li>Environmental use and Cleaning Instructions:
-                                          <ol>
-                                              <li>The base station, sensor, and cabling are NOT considered submergible or waterproof. To clean the external features and spacers, use a lint free cloth dampened with water or light duty general purpose cleaner. Wipe residue free and wipe excess liquid. Do not close lid to case before surfaces are dry.</li>
-                                              <li>Dry Cleaning: wipe the face of the sensor lens with an optics anti-static lint-free brush or cloth or blow with dehumidified, clean, oil-free compressed air.</li>
-                                              <li>Wet Cleaning: Use a clean soft, lint-free cloth or lens cleaning paper with pure alcohol (isopropyl)</li>
-                                          </ol>
-                                      </li>
-                                  </ol>
-                                  <!-- -->
-                              </div>
-                            </div>
-                          </div>
-                          <div class="accordion-item">
-                            <h2 class="accordion-header" id="headingToolsTwo">
-                              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseToolsTwo" aria-expanded="false" aria-controls="collapseToolsTwo">E4 Point Procedure</button>
-                            </h2>
-                            <div id="collapseToolsTwo" class="accordion-collapse collapse" aria-labelledby="headingToolsTwo" data-bs-parent="#accordionTools">
-                              <div class="accordion-body">
-                                  <!-- E4 Point Procedure -->
-                                  <ol>
-                                      <li>Pre Set-Up – tool inspection, verify GT assembly configuration.</li>
-                                      <li>Set up base station.</li>
-                                      <li>Remove all clearance hole plugs, including inner casing plugs and clean area around plug hole to ensure proper magnetic mating and FOD prevention into turbine.</li>
-                                      <li>Ensure rotor is on Turning gear or otherwise rotating with Lift Oil if required. Note shaft RPM.</li>
-                                      <li>Install stage and frame specific spacer into clearance probe holes and verify NO sensor interference with turbine blades by inserting the dummy sensor probe. Ensure rotor rotates through multiple airfoils before removing dummy sensor probe to ensure no interference with the turbine blades.</li>
-                                      <li>Failure to check gross clearance with the Dummy Sensor Probe can result in sensor decapitation and FOD introduction to the turbine.</li>
-                                      <li>Install sensor into spacer.</li>
-                                      <li>Follow e4 Point App process for measuring a turbine for specific stage and location.</li>
-                                      <li>When data has been recorded for current location, measurement can then be performed at next location on the same stageby performing the above procedure from step <strong>5</strong> above.</li>
-                                      <li>When all locations for current stage have been measured repeat procedure for next stage starting with step <strong>5</strong> above.
-                                          <ol>
-                                              <li>The correct spacer must be used for each stage. Failure to use correct spacer can cause sensor decapitation, FOD introduction to the turbine, or failure to accurately measure clearances.</li>
-                                          </ol>
-                                      </li>
-                                      <li>When all stages and locations have been measured load all raw data files to GE Box.</li>
-                                      <li>Generate the customer report and load to GE box and send to customer if applicable.</li>
-                                      <li>Disassemble tool and package back into appropriate containers.</li>
-                                  </ol>
-                                  <!-- -->
-                              </div>
-                            </div>
-                          </div>
-                          <div class="accordion-item">
-                            <h2 class="accordion-header" id="headingToolsThree">
-                              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseToolsThree" aria-expanded="false" aria-controls="collapseToolsThree">Pre Set-up</button>
-                            </h2>
-                            <div id="collapseToolsThree" class="accordion-collapse collapse" aria-labelledby="headingToolsThree" data-bs-parent="#accordionTools">
-                              <div class="accordion-body">
-                                  <!-- Pre Set-up -->
-                                  <ol>
-                                      <li>E4 point Tool Inspection
-                                          <ol>
-                                              <li>Verify all the parts listed above are in the kit and appear to be in good condition. Only spacers for desired frame will be included in shipped kit. Dark Reference cap should fit snuggly over sensor tip. Mastering fixture should be clear of debris or blockages. The magnets should not be cracked or broken on either the sensor or spacers</li>
-                                              <li>Electrical and sensor connections should be clear of debris.</li>
-                                          </ol>
-                                      </li>
-                                      <li>System Test
-                                          <ol>
-                                              <li>Follow the procedure in the <strong>E4 Point Procedure</strong> section to set up the unit and verify connectivity with the sensor.</li>
-                                              <li>An iPad or iPhone with GE mobile Iron installed is required in order to install the e4Point tool from the GE Apps Store.</li>
-                                          </ol>
-                                      </li>
-                                      <li>Gas Turbine Setup
-                                          <ol>
-                                              <li>The upper GT cases are installed and fully torqued - All cases must be installed and tensioned including the mini-case.</li>
-                                              <li>All Clearance probe plugs are removes and surfaces cleaned, including inner compressor case/Double Wall Casing Plugs.</li>
-                                          </ol>
-                                      </li>
-                                      <li>Lift oil and turning gear
-                                          <ol>
-                                              <li>The rotor will need to be turned between 0.5 -15 RPM using the turning gear or some other method that will turn the rotor at a constant speed. (Some sites have used an air motor attached to the manual input on the turning gear.)</li>
-                                              <li>The rotor will also need to be on lift oil.
-                                                  <ol>
-                                                      <li>(Note that it is possible that the measurement of the rotor lift due to lift oil will be needed and the deviation will need to be included on the alignment diagram.)</li>
-                                                      <li>Some sites do not have lift oil; in this case, consult the MLI 0404 for that target without lift oil. (nearly every site will use lift oil, currently only a few early 7HA01 sites do not have lift oil)</li>
-                                                  </ol>
-                                              </li>
-                                          </ol>
-                                      </li>
-                                  </ol>
-                                  <!-- -->
-                              </div>
-                            </div>
-                          </div>
-                          <div class="accordion-item">
-                            <h2 class="accordion-header" id="headingToolsFour">
-                              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseToolsFour" aria-expanded="false" aria-controls="collapseToolsFour">System Setup</button>
-                            </h2>
-                            <div id="collapseToolsFour" class="accordion-collapse collapse" aria-labelledby="headingToolsFour" data-bs-parent="#accordionTools">
-                              <div class="accordion-body">
-                                  <!-- System Setup -->
-                                  <ol>
-                                      <li>Download the “e4 Point” app from the GE app store to a GE iPad or iPhone.</li>
-                                      <li>Connect the fiber optic cable to the controller. Connect the RedPark power Cable to the Redpark Power supply on the Base Station and the RedPark Serial Adapter to the controller. Connect Base station power supply cable to the Base Station and to a 120V power source.</li>
-                                      <li>Position the base station near the gas turbine compressor section. Keep in mind that the sensor cable, Redpark Cables, and Power Cables constitute a tripping hazard. Care should be made to position the base station close to the compressor casing. Additionally, the Fiber Optic cable has a 3x maximum radius and should never be kinked.</li>
-                                      <li>Power on the Base station (120/220 Vac, 50/60Hz). An adaptor may be needed. Turn the base station on by flipping the single rocker switch.</li>
-                                      <li>Connect iPad or iPhone to the armored lightning cable, and then open the e4 point App. You can confirm that the app has connected via the SERIAL indicator circle in the top right corner of the app. The indicator circle should be GREEN as shown below</li>
-                                      <li>Sensor and controller warmup time is 30 minutes. Measurement prior to 30 minute warm up period will result in erroneous dark reference, mastering, and clearance data.
-                                          <ol>
-                                              <li>Good practice is to set up and turn on the e4 point tool and then remove clearance hole plugs and note casing thicknesses. While this may not take full 30 minutes, it will reduce idle time.</li>
-                                          </ol>
-                                      </li>
-                                      <li>Once 30 minute warm up time has elapsed open the Menu page and select “Sensor Setup” Submenu.
-                                          <br/>
-                                          <figure class="text-center mt-2">
-                                              <!--<img class="figure-img img-fluid" width="320" src="img/frd/app_home.png"/>-->
-                                              <img class="figure-img img-fluid" width="320" src="img/frd/app_menu.png"/>
-                                          </figure>
-                                      </li>
-                                      <li>Ensure the dark refence cap is snuggly fit over the end of the sensor and then select the “Dark reference” submenu. Follow the on-screen instructions to perform dark-referencing of the sensor.
-                                          <br/>
-                                          <figure class="text-center mt-2">
-                                              <img class="figure-img img-fluid" width="320" src="img/frd/app_dark.png"/>
-                                          </figure>
-                                      </li>
-                                      <li>Remove dark reference cap from sensor. Clean the sensor mating surfaces and lens as directed above and carefully insert the sensor into the mastering fixture.
-                                          <br/>
-                                          <figure class="text-center mt-2">
-                                              <img class="figure-img img-fluid" width="320" src="img/frd/master_5.1.png"/>
-                                          </figure>
-                                      </li>
-                                      <li>Select “Sensor Probe Mastering” from the submenu and follow on screen instructions for mastering the sensor. When Mastering has been completed the green “Ready Button” will transition to “Mastering Complete.”
-                                          <br/>
-                                          <figure class="text-center mt-2">
-                                             <img class="figure-img img-fluid" width="320" src="img/frd/app_master.png"/>
-                                         </figure>
-                                      </li>
-                                      <li>Verify that sensor mastering is acceptable by navigating to the main menu and selecting the “Get Data” submenu. Collect data for a short amount of time with the sensor probe still placed in the mastering fixture. The display should be a constant line at 15mm.
-                                          <br/>
-                                          <figure class="text-center mt-2">
-                                              <img class="figure-img img-fluid" width="320" src="img/frd/app_data.png"/>
-                                          </figure>
-                                      </li>
-                                      <li>The sensor is now ready to use. Do not turn power off until all measurements are complete, data has been saved to GE Box, and a Customer report has been generated.</li>
-                                  </ol>
-                                  <!-- -->
-                              </div>
-                            </div>
-                          </div>
-
-                        </div>
-                        <br/>
-                        
-                        <h5>Troubleshooting</h5>
-                        
-                        <div class="accordion" id="accordionTroubleshooting">
-
-                          <div class="accordion-item">
-                            <h2 class="accordion-header" id="headingTroubleshootingOne">
-                              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTroubleshootingOne" aria-expanded="true" aria-controls="collapseTroubleshootingOne">Overrides</button>
-                            </h2>
-                            <div id="collapseTroubleshootingOne" class="accordion-collapse collapse" aria-labelledby="headingTroubleshootingOne" data-bs-parent="#accordionTroubleshooting">
-                              <div class="accordion-body">
-                                  <!-- Overrides -->
-                                  <figure class="text-center">
-                                      <img class="figure-img img-fluid" width="320" alt="Table values" src="img/frd/Sampling_Rate_vs_Intensity_20201119.gif"/>
-                                      <figcaption class="figure-caption fw-bold">Valid settings for sampling rate and intensity</figcaption>
-                                  </figure>
-                                  <!-- -->
-                              </div>
-                            </div>
-                          </div>
-
-                        </div>
-                        <!-- -->
-                        
-                    </div>
-                  </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- TOOL SETUP PAGE -->
-        <div id="TOOL_PAGE" class="container-fluid my-2">
-            <div class="card">
-              <div class="card-header">
-                  <div class="row">
-                    <div class="col-auto me-auto pt-1">
-                      <h4>Tool Setup</h4>
-                    </div>
-                    <div class="col-auto">
-                      <button id="TOOL_CLOSE_BUTTON" type="button" class="btn btn-dark"><i class="fas fa-times"></i></button>
-                    </div>
-                  </div>
-              </div>
-                <div class="card-body">
-                  <div class="row">
-                    <div class="col-lg-12">
                         <!-- Setup -->
-                        <div class="accordion" id="accordionToolSetup">
+                        <div class="accordion" id="accordionSetup">
+
+                          <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingSetupOne">
+                              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSetupOne" aria-expanded="false" aria-controls="collapseSetupOne">FRD Instructions</button>
+                            </h2>
+                            <div id="collapseSetupOne" class="accordion-collapse collapse" aria-labelledby="headingSetupOne" data-bs-parent="#accordionSetup">
+                              <div class="accordion-body">
+                                  <div class="d-grid gap-2">
+                                    <button id="FRD_VIEW_BUTTON" class="btn btn-primary" type="button">Click here to view the FRD</button>
+                                  </div>
+                                  <br/>
+
+                                  <h5>Tools, Equipment, and Materials</h5>
+
+                                  <div class="accordion" id="accordionTools">
+
+                                    <div class="accordion-item">
+                                      <h2 class="accordion-header" id="headingToolsOne">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseToolsOne" aria-expanded="true" aria-controls="collapseToolsOne">Tools List</button>
+                                      </h2>
+                                      <div id="collapseToolsOne" class="accordion-collapse collapse" aria-labelledby="headingToolsOne" data-bs-parent="#accordionTools">
+                                        <div class="accordion-body">
+                                            <!-- Tools List -->
+                                            <table class="table table-bordered table-sm">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th scope="col">Component</th>
+                                                        <th scope="col">Frame applicability</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <th scope="row" colspan="2" class="text-center">Sensor Kit</th>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>134T1086</td>
+                                                        <td>Short Sensor Probe Kit</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>134T1086</td>
+                                                        <td>Long Sensor Probe Kit</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>Controller</td>
+                                                        <td>All- Sensor and Controller are calibrated as a unit. Cannot interchange without proper calibration</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>RedPark Cable</td>
+                                                        <td>All</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>Mastering Fixture</td>
+                                                        <td>Sensor Specific</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>Dark Reference Cap</td>
+                                                        <td>Sensor Specific</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>Dummy Sensor Probe</td>
+                                                        <td>Sensor and Frame specific</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th scope="row" colspan="2" class="text-center">Spacer Kits</th>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>840-90-04</td>
+                                                        <td>7FA+e</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>840-90-07</td>
+                                                        <td>9FA</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>840-90-11</td>
+                                                        <td>9FB</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>840-90-12</td>
+                                                        <td>7FB</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>840-90-13</td>
+                                                        <td>6FA</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>840-90-14</td>
+                                                        <td>6B</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>132T7353</td>
+                                                        <td>9HA.02</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>134T1087</td>
+                                                        <td>9HA.01</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>134T1082</td>
+                                                        <td>7FA.05</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>134T1088</td>
+                                                        <td>7HA.01</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>134T1089</td>
+                                                        <td>7HA.02</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>134T1089</td>
+                                                        <td>7HA.03</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                            <br/>
+                                            <figure class="text-center">
+                                                <img class="figure-img img-fluid" width="320" src="img/frd/master_5.1.png"/>
+                                                <figcaption class="figure-caption fw-bold">Long Mastering Fixture with Long sensor probe</figcaption>
+                                            </figure>
+                                            <br/>
+                                            <figure class="text-center">
+                                                <img class="figure-img img-fluid" width="320" src="img/frd/7FAE_5.1.png"/>
+                                                <figcaption class="figure-caption fw-bold">7FA+e Spacers and Dummy Sensor Probe</figcaption>
+                                            </figure>
+                                            <br/>
+                                            <figure class="text-center">
+                                                <img class="figure-img img-fluid" width="320" src="img/frd/9FA_spacers_5.1.png"/>
+                                                <figcaption class="figure-caption fw-bold">9FA Spacers and Dummy Sensor Probes</figcaption>
+                                            </figure>
+                                            <br/>
+                                            <figure class="text-center">
+                                                <img class="figure-img img-fluid" width="320" src="img/frd/9FA_spacers_5.1.png"/>
+                                                <figcaption class="figure-caption fw-bold">9FB Spacers and Dummy Sensor Probes</figcaption>
+                                            </figure>
+                                            <br/>
+                                            <figure class="text-center">
+                                                <img class="figure-img img-fluid" width="320" src="img/frd/7FB_5.1.png"/>
+                                                <figcaption class="figure-caption fw-bold">7FB Spacers and Dummy Sensor Probe</figcaption>
+                                            </figure>
+                                            <br/>
+                                            <figure class="text-center">
+                                                <img class="figure-img img-fluid" width="320" src="img/frd/6FA_5.1.png"/>
+                                                <figcaption class="figure-caption fw-bold">6FA Spacers and Dummy Sensor Probe</figcaption>
+                                            </figure>
+                                            <br/>
+                                            <figure class="text-center">
+                                                <img class="figure-img img-fluid" width="320" src="img/frd/6B_5.1.png"/>
+                                                <figcaption class="figure-caption fw-bold">6B Spacers and Dummy Sensor Probe</figcaption>
+                                            </figure>
+                                            <br/>
+                                            <figure class="text-center">
+                                                <img class="figure-img img-fluid" width="320" src="img/frd/9HA.02_5.1.png"/>
+                                                <figcaption class="figure-caption fw-bold">9HA.02 Spacers and Dummy Sensor Probe</figcaption>
+                                            </figure>
+                                            <br/>
+                                            <figure class="text-center">
+                                                <img class="figure-img img-fluid" width="320" src="img/frd/7HA01_5.1.png"/>
+                                                <figcaption class="figure-caption fw-bold">7HA.01 Spacers and Dummy Sensor Probe</figcaption>
+                                            </figure>
+                                            <br/>
+                                            <figure class="text-center">
+                                                <img class="figure-img img-fluid" width="320" src="img/frd/7HA.02-16_5.1.png"/>
+                                                <figcaption class="figure-caption fw-bold">7HA.02-16 Spacers and Dummy Sensor Probe</figcaption>
+                                            </figure>
+                                            <br/>
+                                            <figure class="text-center">
+                                                <img class="figure-img img-fluid" width="320" src="img/frd/7HA.02_R10_R14_5.1.png"/>
+                                                <figcaption class="figure-caption fw-bold">7HA.02-18 R10 and R14 DWC Spacer</figcaption>
+                                            </figure>
+                                            <br/>
+                                            <ol>
+                                                <li>Environmental use and Cleaning Instructions:
+                                                    <ol>
+                                                        <li>The base station, sensor, and cabling are NOT considered submergible or waterproof. To clean the external features and spacers, use a lint free cloth dampened with water or light duty general purpose cleaner. Wipe residue free and wipe excess liquid. Do not close lid to case before surfaces are dry.</li>
+                                                        <li>Dry Cleaning: wipe the face of the sensor lens with an optics anti-static lint-free brush or cloth or blow with dehumidified, clean, oil-free compressed air.</li>
+                                                        <li>Wet Cleaning: Use a clean soft, lint-free cloth or lens cleaning paper with pure alcohol (isopropyl)</li>
+                                                    </ol>
+                                                </li>
+                                            </ol>
+                                            <!-- -->
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div class="accordion-item">
+                                      <h2 class="accordion-header" id="headingToolsTwo">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseToolsTwo" aria-expanded="false" aria-controls="collapseToolsTwo">E4 Point Procedure</button>
+                                      </h2>
+                                      <div id="collapseToolsTwo" class="accordion-collapse collapse" aria-labelledby="headingToolsTwo" data-bs-parent="#accordionTools">
+                                        <div class="accordion-body">
+                                            <!-- E4 Point Procedure -->
+                                            <ol>
+                                                <li>Pre Set-Up – tool inspection, verify GT assembly configuration.</li>
+                                                <li>Set up base station.</li>
+                                                <li>Remove all clearance hole plugs, including inner casing plugs and clean area around plug hole to ensure proper magnetic mating and FOD prevention into turbine.</li>
+                                                <li>Ensure rotor is on Turning gear or otherwise rotating with Lift Oil if required. Note shaft RPM.</li>
+                                                <li>Install stage and frame specific spacer into clearance probe holes and verify NO sensor interference with turbine blades by inserting the dummy sensor probe. Ensure rotor rotates through multiple airfoils before removing dummy sensor probe to ensure no interference with the turbine blades.</li>
+                                                <li>Failure to check gross clearance with the Dummy Sensor Probe can result in sensor decapitation and FOD introduction to the turbine.</li>
+                                                <li>Install sensor into spacer.</li>
+                                                <li>Follow e4 Point App process for measuring a turbine for specific stage and location.</li>
+                                                <li>When data has been recorded for current location, measurement can then be performed at next location on the same stageby performing the above procedure from step <strong>5</strong> above.</li>
+                                                <li>When all locations for current stage have been measured repeat procedure for next stage starting with step <strong>5</strong> above.
+                                                    <ol>
+                                                        <li>The correct spacer must be used for each stage. Failure to use correct spacer can cause sensor decapitation, FOD introduction to the turbine, or failure to accurately measure clearances.</li>
+                                                    </ol>
+                                                </li>
+                                                <li>When all stages and locations have been measured load all raw data files to GE Box.</li>
+                                                <li>Generate the customer report and load to GE box and send to customer if applicable.</li>
+                                                <li>Disassemble tool and package back into appropriate containers.</li>
+                                            </ol>
+                                            <!-- -->
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div class="accordion-item">
+                                      <h2 class="accordion-header" id="headingToolsThree">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseToolsThree" aria-expanded="false" aria-controls="collapseToolsThree">Pre Set-up</button>
+                                      </h2>
+                                      <div id="collapseToolsThree" class="accordion-collapse collapse" aria-labelledby="headingToolsThree" data-bs-parent="#accordionTools">
+                                        <div class="accordion-body">
+                                            <!-- Pre Set-up -->
+                                            <ol>
+                                                <li>E4 point Tool Inspection
+                                                    <ol>
+                                                        <li>Verify all the parts listed above are in the kit and appear to be in good condition. Only spacers for desired frame will be included in shipped kit. Dark Reference cap should fit snuggly over sensor tip. Mastering fixture should be clear of debris or blockages. The magnets should not be cracked or broken on either the sensor or spacers</li>
+                                                        <li>Electrical and sensor connections should be clear of debris.</li>
+                                                    </ol>
+                                                </li>
+                                                <li>System Test
+                                                    <ol>
+                                                        <li>Follow the procedure in the <strong>E4 Point Procedure</strong> section to set up the unit and verify connectivity with the sensor.</li>
+                                                        <li>An iPad or iPhone with GE mobile Iron installed is required in order to install the e4Point tool from the GE Apps Store.</li>
+                                                    </ol>
+                                                </li>
+                                                <li>Gas Turbine Setup
+                                                    <ol>
+                                                        <li>The upper GT cases are installed and fully torqued - All cases must be installed and tensioned including the mini-case.</li>
+                                                        <li>All Clearance probe plugs are removes and surfaces cleaned, including inner compressor case/Double Wall Casing Plugs.</li>
+                                                    </ol>
+                                                </li>
+                                                <li>Lift oil and turning gear
+                                                    <ol>
+                                                        <li>The rotor will need to be turned between 0.5 -15 RPM using the turning gear or some other method that will turn the rotor at a constant speed. (Some sites have used an air motor attached to the manual input on the turning gear.)</li>
+                                                        <li>The rotor will also need to be on lift oil.
+                                                            <ol>
+                                                                <li>(Note that it is possible that the measurement of the rotor lift due to lift oil will be needed and the deviation will need to be included on the alignment diagram.)</li>
+                                                                <li>Some sites do not have lift oil; in this case, consult the MLI 0404 for that target without lift oil. (nearly every site will use lift oil, currently only a few early 7HA01 sites do not have lift oil)</li>
+                                                            </ol>
+                                                        </li>
+                                                    </ol>
+                                                </li>
+                                            </ol>
+                                            <!-- -->
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div class="accordion-item">
+                                      <h2 class="accordion-header" id="headingToolsFour">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseToolsFour" aria-expanded="false" aria-controls="collapseToolsFour">System Setup</button>
+                                      </h2>
+                                      <div id="collapseToolsFour" class="accordion-collapse collapse" aria-labelledby="headingToolsFour" data-bs-parent="#accordionTools">
+                                        <div class="accordion-body">
+                                            <!-- System Setup -->
+                                            <ol>
+                                                <li>Download the “e4 Point” app from the GE app store to a GE iPad or iPhone.</li>
+                                                <li>Connect the fiber optic cable to the controller. Connect the RedPark power Cable to the Redpark Power supply on the Base Station and the RedPark Serial Adapter to the controller. Connect Base station power supply cable to the Base Station and to a 120V power source.</li>
+                                                <li>Position the base station near the gas turbine compressor section. Keep in mind that the sensor cable, Redpark Cables, and Power Cables constitute a tripping hazard. Care should be made to position the base station close to the compressor casing. Additionally, the Fiber Optic cable has a 3x maximum radius and should never be kinked.</li>
+                                                <li>Power on the Base station (120/220 Vac, 50/60Hz). An adaptor may be needed. Turn the base station on by flipping the single rocker switch.</li>
+                                                <li>Connect iPad or iPhone to the armored lightning cable, and then open the e4 point App. You can confirm that the app has connected via the SERIAL indicator circle in the top right corner of the app. The indicator circle should be GREEN as shown below</li>
+                                                <li>Sensor and controller warmup time is 30 minutes. Measurement prior to 30 minute warm up period will result in erroneous dark reference, mastering, and clearance data.
+                                                    <ol>
+                                                        <li>Good practice is to set up and turn on the e4 point tool and then remove clearance hole plugs and note casing thicknesses. While this may not take full 30 minutes, it will reduce idle time.</li>
+                                                    </ol>
+                                                </li>
+                                                <li>Once 30 minute warm up time has elapsed open the Menu page and select “Sensor Setup” Submenu.
+                                                    <br/>
+                                                    <figure class="text-center mt-2">
+                                                        <!--<img class="figure-img img-fluid" width="320" src="img/frd/app_home.png"/>-->
+                                                        <img class="figure-img img-fluid" width="320" src="img/frd/app_menu.png"/>
+                                                    </figure>
+                                                </li>
+                                                <li>Ensure the dark refence cap is snuggly fit over the end of the sensor and then select the “Dark reference” submenu. Follow the on-screen instructions to perform dark-referencing of the sensor.
+                                                    <br/>
+                                                    <figure class="text-center mt-2">
+                                                        <img class="figure-img img-fluid" width="320" src="img/frd/app_dark.png"/>
+                                                    </figure>
+                                                </li>
+                                                <li>Remove dark reference cap from sensor. Clean the sensor mating surfaces and lens as directed above and carefully insert the sensor into the mastering fixture.
+                                                    <br/>
+                                                    <figure class="text-center mt-2">
+                                                        <img class="figure-img img-fluid" width="320" src="img/frd/master_5.1.png"/>
+                                                    </figure>
+                                                </li>
+                                                <li>Select “Sensor Probe Mastering” from the submenu and follow on screen instructions for mastering the sensor. When Mastering has been completed the green “Ready Button” will transition to “Mastering Complete.”
+                                                    <br/>
+                                                    <figure class="text-center mt-2">
+                                                       <img class="figure-img img-fluid" width="320" src="img/frd/app_master.png"/>
+                                                   </figure>
+                                                </li>
+                                                <li>Verify that sensor mastering is acceptable by navigating to the main menu and selecting the “Get Data” submenu. Collect data for a short amount of time with the sensor probe still placed in the mastering fixture. The display should be a constant line at 15mm.
+                                                    <br/>
+                                                    <figure class="text-center mt-2">
+                                                        <img class="figure-img img-fluid" width="320" src="img/frd/app_data.png"/>
+                                                    </figure>
+                                                </li>
+                                                <li>The sensor is now ready to use. Do not turn power off until all measurements are complete, data has been saved to GE Box, and a Customer report has been generated.</li>
+                                            </ol>
+                                            <!-- -->
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                  </div>
+                                  <br/>
+                                  
+                                  <h5>Troubleshooting</h5>
+                                  
+                                  <div class="accordion" id="accordionTroubleshooting">
+
+                                    <div class="accordion-item">
+                                      <h2 class="accordion-header" id="headingTroubleshootingOne">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTroubleshootingOne" aria-expanded="true" aria-controls="collapseTroubleshootingOne">Overrides</button>
+                                      </h2>
+                                      <div id="collapseTroubleshootingOne" class="accordion-collapse collapse" aria-labelledby="headingTroubleshootingOne" data-bs-parent="#accordionTroubleshooting">
+                                        <div class="accordion-body">
+                                            <!-- Overrides -->
+                                            <figure class="text-center">
+                                                <img class="figure-img img-fluid" width="320" alt="Table values" src="img/frd/Sampling_Rate_vs_Intensity_20201119.gif"/>
+                                                <figcaption class="figure-caption fw-bold">Valid settings for sampling rate and intensity</figcaption>
+                                            </figure>
+                                            <!-- -->
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                  </div>
+                              </div>
+                            </div>
+                          </div>
 
                           <!-- TODO: disable -->
                           <div class="accordion-item">
-                            <h2 class="accordion-header" id="headingToolSetupOne">
-                              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseToolSetupOne" aria-expanded="false" aria-controls="collapseToolSetupOne">Sensor Connection</button>
+                            <h2 class="accordion-header" id="headingSetupTwo">
+                              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSetupTwo" aria-expanded="false" aria-controls="collapseSetupTwo">Sensor Connection</button>
                             </h2>
-                            <div id="collapseToolSetupOne" class="accordion-collapse collapse" aria-labelledby="headingToolSetupOne" data-bs-parent="#accordionToolSetup">
+                            <div id="collapseSetupTwo" class="accordion-collapse collapse" aria-labelledby="headingSetupTwo" data-bs-parent="#accordionSetup">
                               <div class="accordion-body">
                                   <!-- Sensor Connection -->
                                   <div class="alert alert-warning pb-0" role="alert">
@@ -505,10 +489,10 @@
                           </div>
                           
                           <div class="accordion-item">
-                            <h2 class="accordion-header" id="headingToolSetupTwo">
-                              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseToolSetupTwo" aria-expanded="false" aria-controls="collapseToolSetupTwo">Controller Configuration</button>
+                            <h2 class="accordion-header" id="headingSetupThree">
+                              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSetupThree" aria-expanded="false" aria-controls="collapseSetupThree">Controller Configuration</button>
                             </h2>
-                            <div id="collapseToolSetupTwo" class="accordion-collapse collapse" aria-labelledby="headingToolSetupTwo" data-bs-parent="#accordionToolSetup">
+                            <div id="collapseSetupThree" class="accordion-collapse collapse" aria-labelledby="headingSetupThree" data-bs-parent="#accordionSetup">
                               <div class="accordion-body">
                                   
                                   <h5>Update Controller Configuration</h5>
@@ -532,177 +516,13 @@
                             </div>
                           </div>
                           
-                          <div class="accordion-item">
-                            <h2 class="accordion-header" id="headingToolSetupThree">
-                              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseToolSetupThree" aria-expanded="true" aria-controls="collapseToolSetupThree">Measurement Rate and Intensity Threshold</button>
-                            </h2>
-                            <div id="collapseToolSetupThree" class="accordion-collapse collapse" aria-labelledby="headingToolSetupThree" data-bs-parent="#accordionToolSetup">
-                              <div class="accordion-body">
-                                  <!-- Measurement Rate and Intensity Threshold -->
-                                  <form class="row g-3">
-                                    <div class="col-md-6">
-                                        <p>The app will automatically calculate the measurement (sampling) rate by default, and it is set in kHz between <span id="MIN_SAMPLING_RATE"></span> and <span id="MAX_SAMPLING_RATE"></span>. A maximum of 3 decimal places may be specified.</p>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <p>The intensity threshold is automatically calculated from the measurement (sampling) rate.</p>
-                                    </div>
-                                    <div class="col-md-6 text-center">
-                                        <label for="MEASUREMENT_RATE" class="form-label">Measurement Rate</label>
-                                        <div class="input-group mb-3">
-                                          <input id="MEASUREMENT_RATE" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Measurement Rate" aria-describedby="MEASUREMENT_RATE_TEXT">
-                                          <span class="input-group-text" id="MEASUREMENT_RATE_TEXT">kHz</span>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6 text-center">
-                                        <label for="THRESHOLD" class="form-label">Intensity Threshold</label>
-                                        <div class="input-group mb-3">
-                                          <input id="THRESHOLD" type="text" class="form-control" placeholder="" aria-label="Intensity Threshold" aria-describedby="THRESHOLD_TEXT" disabled>
-                                          <span class="input-group-text" id="THRESHOLD_TEXT">%</span>
-                                        </div>
-                                    </div>
-                                  </form>
-
-                                  <div class="text-center">
-                                    <span id="measurement_override_message" class="badge bg-success">AUTOMATIC CALCULATION</span>
-                                  </div>
-                                  <br/>
-                                  <div class="d-grid gap-2" hidden>
-                                    <div class="btn-group" role="group" aria-label="Measurment Rate and Intensity Buttons">
-                                      <button id="RESET_MEASUREMENT_RATE_BUTTON" type="button" class="btn btn-danger">RESET</button>
-                                      <span>&nbsp;</span>
-                                      <button id="SET_MEASUREMENT_RATE_BUTTON" type="button" class="btn btn-primary">OVERRIDE</button>
-                                    </div>
-                                  </div>
-                                  <br/>
-                                  <div class="alert alert-warning pb-0" role="alert">
-                                    <p>Increasing measurement rate is needed with higher RPM to ensure enough data points per blade tip, however increased measuring rate is a tradeoff requiring a lower intensity threshold (a lower sensitivity of the sensor) and blades could be missed entirely.</p>
-                                  </div>
-                                  <!-- -->
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div class="accordion-item">
-                            <h2 class="accordion-header" id="headingToolSetupFour">
-                              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseToolSetupFour" aria-expanded="true" aria-controls="collapseToolSetupFour">Sensor Parameters</button>
-                            </h2>
-                            <div id="collapseToolSetupFour" class="accordion-collapse collapse" aria-labelledby="headingToolSetupFour" data-bs-parent="#accordionToolSetup">
-                              <div class="accordion-body">
-                                  <!-- Sensor Parameters -->
-                                  <form class="row g-3">
-                                    <div class="col-md-4 text-center"></div>
-                                    <div class="col-md-4 text-center">
-                                        <label for="SENSOR_SELECTION" class="form-label">Sensor Selection</label>
-                                        <select id="SENSOR_SELECTION" class="form-select" aria-label="Sensor Selection">
-                                            <option>LONG</option>
-                                            <option>SHORT</option>
-                                            <option>PROTOTYPE</option>
-                                            <option>CUSTOM</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-4 text-center"></div>
-                                    <div class="col-md-4 text-center">
-                                        <label for="SENSOR_LENGTH" class="form-label">Measured Sensor Length</label>
-                                        <div class="input-group mb-3">
-                                          <input id="SENSOR_LENGTH" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Sensor Length" aria-describedby="SENSOR_LENGTH_TEXT">
-                                          <span class="input-group-text" id="SENSOR_LENGTH_TEXT">in</span>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4 text-center">
-                                        <label for="SMR" class="form-label">Start of Measure Range</label>
-                                        <div class="input-group mb-3">
-                                          <input id="SMR" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Start of Measure Range" aria-describedby="SMR_TEXT">
-                                          <span class="input-group-text" id="SMR_TEXT">mm</span>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4 text-center">
-                                        <label for="SENSOR_MR" class="form-label">Measurement Range</label>
-                                        <div class="input-group mb-3">
-                                          <input id="SENSOR_MR" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Measurement Range" aria-describedby="SENSOR_MR_TEXT">
-                                          <span class="input-group-text" id="SENSOR_MR_TEXT">mm</span>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4 text-center">
-                                        <label for="MASTER_FIXTURE_HEIGHT" class="form-label">Mastering Fixture Height</label>
-                                        <div class="input-group mb-3">
-                                          <input id="MASTER_FIXTURE_HEIGHT" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Mastering Fixture Height" aria-describedby="MASTER_FIXTURE_HEIGHT_TEXT">
-                                          <span class="input-group-text" id="MASTER_FIXTURE_HEIGHT_TEXT">in</span>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4 text-center">
-                                        <label for="MASTERING_VALUE" class="form-label">Mastering Value</label>
-                                        <div class="input-group mb-3">
-                                          <input id="MASTERING_VALUE" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Mastering Value" aria-describedby="MASTERING_VALUE_TEXT">
-                                          <span class="input-group-text" id="MASTERING_VALUE_TEXT">mm</span>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4 text-center">
-                                        <label for="MASTER_OFFSET" class="form-label">Master Offset</label>
-                                        <div class="input-group mb-3">
-                                          <input id="MASTER_OFFSET" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Master Offset" aria-describedby="MASTER_OFFSET_TEXT">
-                                          <span class="input-group-text" id="MASTER_OFFSET_TEXT">in</span>
-                                        </div>
-                                    </div>
-                                  </form>
-
-                                  <div class="alert alert-danger text-center pb-0" role="alert">
-                                    <p>Only authorized users should change the sensor parameters here.</p>
-                                  </div>
-
-                                  <div class="d-grid gap-2" hidden>
-                                      <div class="btn-group" role="group" aria-label="Sensor Parameters Buttons">
-                                        <button id="SENSOR_PARAMS_UPDATE_BUTTON" type="button" class="btn btn-danger">UPDATE</button>
-                                        <span>&nbsp;</span>
-                                        <button id="READ_SENSOR_PARAMETERS_BUTTON" type="button" class="btn btn-primary">LOAD FROM CONTROLLER</button>
-                                      </div>
-                                  </div>
-                                  <br/>
-
-                                  <!-- TODO: implement
-                                  <div class="text-center mt-2">
-                                      <span class="badge bg-secondary fs-6">Last Calibration:&nbsp;<span id="CALIBRATION_DATE"></span></span>
-                                  </div>
-                                  <br/>-->
-                                  
-                                  <div class="alert alert-warning pb-0" role="alert">
-                                    <p>When changing the Mastering Value here be certain to perform Mastering before collecting data, else clearances may be calculated incorrectly.</p>
-                                  </div>
-                                  <div class="alert alert-warning pb-0" role="alert">
-                                    <p>The Master Offset is the delta calculated: (measured sensor length + SMR + Mastering Value) - measured mastering fixture height. This should be 0.</p>
-                                  </div>
-                                  <div class="alert alert-warning pb-0" role="alert">
-                                    <p>The Mastering Fixture height defaults are:</p>
-                                    <hr>
-                                    <dl class="row">
-                                        <dt class="col-sm-6">Short Master Fixture</dt>
-                                        <dd class="col-sm-6"><span id="DEFAULT_SMF"></span>&quot; +/- 0.0005in</dd>
-                                        <dt class="col-sm-6">Long Master Fixture</dt>
-                                        <dd class="col-sm-6"><span id="DEFAULT_LMF"></span>&quot; +/- 0.0005in</dd>
-                                    </dl>
-                                  </div>
-                                  <div class="alert alert-warning pb-0" role="alert">
-                                    <p>The production sensor default lengths are:</p>
-                                    <hr>
-                                    <dl class="row">
-                                        <dt class="col-sm-6">Short Sensor</dt>
-                                        <dd class="col-sm-6"><span id="DEFAULT_SS"></span>&quot; +/- 0.0005in</dd>
-                                        <dt class="col-sm-6">Long Sensor</dt>
-                                        <dd class="col-sm-6"><span id="DEFAULT_LS"></span>&quot; +/- 0.0005in</dd>
-                                    </dl>
-                                  </div>
-                                  <!-- -->
-                              </div>
-                            </div>
-                          </div>
-                          
                         </div>
                         <!-- -->
                     </div>
                   </div>
                 </div>
-              </div>
             </div>
-        <!-- -->
+        </div>
         
         <!-- Frame Select Page -->
         <div id="SETUP_PAGE" class="container-fluid my-2">
@@ -826,7 +646,7 @@
               <div class="card-header">
                 <div class="row">
                   <div class="col-auto me-auto pt-1">
-                    <h4>Sensor Setup</h4>
+                    <h4>Setup</h4>
                   </div>
                   <div class="col-auto">
                     <button id="INITIALIZE_SENSOR_CLOSE_BUTTON" type="button" class="btn btn-dark"><i class="fas fa-times"></i></button>
@@ -837,33 +657,46 @@
                     <div class="row">
                     <div class="col-lg-12">
                       <!-- Sensor Probe Mastering Before Data Collection -->
-                      <div class="alert alert-danger pb-0" role="alert">
-                          <p><b>Be sure to master the sensor before collecting data.</b></p>
-                      </div>
-                      <p>When collecting data on the next page, the user is prompted for the rotor RPM. RPM is used to optimize the data acquisition rate to ensure at least 4 points are acquired per blade tip. It is best to estimate within +/- 1 RPM if possible.</p>
-                      <div class="d-grid gap-2">
-                            <button id="COLLECT_DATA_BUTTON" type="button" class="btn btn-primary btn-lg">COLLECT DATA</button>
+                      <div class="accordion" id="accordionMastering">
+                        <div class="accordion-item">
+                          <h2 class="accordion-header" id="headingMasteringOne">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMasteringOne" aria-expanded="true" aria-controls="collapseMasteringOne">Sensor Probe Mastering</button>
+                          </h2>
+                          <div id="collapseMasteringOne" class="accordion-collapse collapse show" aria-labelledby="headingMasteringOne" data-bs-parent="#accordionMastering">
+                            <div class="accordion-body">
+                              <!-- Sensor Probe Mastering -->
+                              <p>Before collecting data be sure to master the sensor.</p>
+                              <br/>
+                              <p>Mastering in the mastering fixture sets the value of the target distance for the calculation of the clearance.  The mastering fixture is machined to hold the sensor so that the base surface of the fixture (target surface) is at the center of the sensor measuring range.</p>
+                              <br/>
+                              <p class="text-decoration-underline">Instructions:</p>
+                              <ol>
+                                  <li>Clean mating surfaces of the Sensor Probe and the Set Master.</li>
+                                  <li>Insert Sensor Probe into the Set Master.</li>
+                                  <li>Press Start.</li>
+                                  <li>Wait until the screen changes.</li>
+                              </ol>
+                              <br/>
+                              <div class="d-grid gap-2">
+                                  <div class="btn-group" role="group" aria-label="Mastering Buttons">
+                                    <button id="RESET_MASTER_BUTTON_2" type="button" class="btn btn-danger">RESET</button>
+                                    <span>&nbsp;</span>
+                                    <button id="START_MASTER_BUTTON_2" type="button" class="btn btn-primary">START</button>
+                                  </div>
+                              </div>
+                              <div class="text-center">
+                                  <span id="master_message_2" class="badge bg-success">READY</span>
+                              </div>
+                              <!-- -->
+                            </div>
+                          </div>
                         </div>
-                        <hr/>
-                        <!-- Sensor Probe Mastering -->
-                        <p>Mastering in the mastering fixture sets the value of the target distance for the calculation of the clearance.  The mastering fixture is machined to hold the sensor so that the base surface of the fixture (target surface) is at the center of the sensor measuring range.</p>
-                        <p class="text-decoration-underline">Instructions:</p>
-                        <ol>
-                            <li>Clean mating surfaces of the Sensor Probe and the Set Master.</li>
-                            <li>Insert Sensor Probe into the Set Master.</li>
-                            <li>Press Start.</li>
-                            <li>Wait until the screen changes.</li>
-                        </ol>
+                      </div>
+                      <br/>
+                      <p>When collecting data on the next page, the user is prompted for the rotor RPM. RPM is used to optimize the data acquisition rate to ensure enough points are acquired per blade tip.  It is best to estimate within +/- 1 RPM if possible.</p>
                       <br/>
                       <div class="d-grid gap-2">
-                          <div class="btn-group" role="group" aria-label="Mastering Buttons">
-                              <button id="RESET_MASTER_BUTTON_2" type="button" class="btn btn-danger">RESET</button>
-                              <span>&nbsp;</span>
-                              <button id="START_MASTER_BUTTON_2" type="button" class="btn btn-primary">START</button>
-                            </div>
-                        </div>
-                        <div class="text-center">
-                            <span id="master_message_2" class="badge bg-success">READY</span>
+                          <button id="COLLECT_DATA_BUTTON" type="button" class="btn btn-primary">COLLECT DATA</button>
                       </div>
                       <!-- -->
                     </div>
@@ -915,7 +748,7 @@
                         </tbody>
                       </table>
 
-                      <div class="text-center my-3">
+                      <div class="text-center my-4">
                           <h5>
                               <span id="SENSOR_PARAMS_CONFIG_MSG" class="badge bg-secondary"></span>
                           </h5>
@@ -978,7 +811,7 @@
                             </div>
                         </div>
                         <div class="col-md-2 text-center">
-                            <img id="SPACER_THUMBNAIL" class="img-thumbnail" alt="Unknown" src="img/spacers/Unknown.gif" width="80" height="80">
+                            <img id="SPACER_THUMBNAIL" class="img-thumbnail" alt="Unknown" src="img/spacers/Unknown.gif" width="75" height="75">
                         </div>
                         <div class="col-md-5 text-center">
                             <label for="AMBIENT_TEMPERATURE" class="form-label">Ambient Temperature</label>
@@ -1219,15 +1052,15 @@
         </div>
         
         <!-- Sensor Mastering & Dark Referencing Page -->
-        <div id="SENSOR_STARTUP_PAGE" class="container-fluid my-2">
+        <div id="SENSOR_SETUP_PAGE" class="container-fluid my-2">
             <div class="card">
               <div class="card-header">
                 <div class="row">
                   <div class="col-auto me-auto pt-1">
-                    <h4>Sensor Startup</h4>
+                    <h4>Sensor Controls</h4>
                   </div>
                   <div class="col-auto">
-                    <button id="SENSOR_STARTUP_CLOSE_BUTTON" type="button" class="btn btn-dark"><i class="fas fa-times"></i></button>
+                    <button id="SENSOR_SETUP_CLOSE_BUTTON" type="button" class="btn btn-dark"><i class="fas fa-times"></i></button>
                   </div>
                 </div>
               </div>
@@ -1287,6 +1120,169 @@
                             </div>
                             <div class="text-center">
                                 <span id="master_message" class="badge bg-success">READY</span>
+                            </div>
+                            <!-- -->
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div class="accordion-item">
+                      <h2 class="accordion-header" id="headingSensorControlsThree">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSensorControlsThree" aria-expanded="true" aria-controls="collapseSensorControlsThree">Measurement Rate and Intensity Threshold</button>
+                      </h2>
+                      <div id="collapseSensorControlsThree" class="accordion-collapse collapse" aria-labelledby="headingSensorControlsThree" data-bs-parent="#accordionSensorControls">
+                        <div class="accordion-body">
+                            <!-- Measurement Rate and Intensity Threshold -->
+                            <form class="row g-3">
+                              <div class="col-md-6">
+                                  <p>The app will automatically calculate the measurement (sampling) rate by default, and it is set in kHz between <span id="MIN_SAMPLING_RATE"></span> and <span id="MAX_SAMPLING_RATE"></span>. A maximum of 3 decimal places may be specified.</p>
+                              </div>
+                              <div class="col-md-6">
+                                  <p>The intensity threshold is automatically calculated from the measurement (sampling) rate.</p>
+                              </div>
+                              <div class="col-md-6 text-center">
+                                  <label for="MEASUREMENT_RATE" class="form-label">Measurement Rate</label>
+                                  <div class="input-group mb-3">
+                                    <input id="MEASUREMENT_RATE" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Measurement Rate" aria-describedby="MEASUREMENT_RATE_TEXT">
+                                    <span class="input-group-text" id="MEASUREMENT_RATE_TEXT">kHz</span>
+                                  </div>
+                              </div>
+                              <div class="col-md-6 text-center">
+                                  <label for="THRESHOLD" class="form-label">Intensity Threshold</label>
+                                  <div class="input-group mb-3">
+                                    <input id="THRESHOLD" type="text" class="form-control" placeholder="" aria-label="Intensity Threshold" aria-describedby="THRESHOLD_TEXT" disabled>
+                                    <span class="input-group-text" id="THRESHOLD_TEXT">%</span>
+                                  </div>
+                              </div>
+                            </form>
+
+                            <div class="text-center">
+                              <span id="measurement_override_message" class="badge bg-success">AUTOMATIC CALCULATION</span>
+                            </div>
+                            <br/>
+                            <div class="d-grid gap-2" hidden>
+                              <div class="btn-group" role="group" aria-label="Measurment Rate and Intensity Buttons">
+                                <button id="RESET_MEASUREMENT_RATE_BUTTON" type="button" class="btn btn-danger">RESET</button>
+                                <span>&nbsp;</span>
+                                <button id="SET_MEASUREMENT_RATE_BUTTON" type="button" class="btn btn-primary">OVERRIDE</button>
+                              </div>
+                            </div>
+                            <br/>
+                            <div class="alert alert-warning pb-0" role="alert">
+                              <p>Increasing measurement rate is needed with higher RPM to ensure enough data points per blade tip, however increased measuring rate is a tradeoff requiring a lower intensity threshold (a lower sensitivity of the sensor) and blades could be missed entirely.</p>
+                            </div>
+                            <!-- -->
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div class="accordion-item">
+                      <h2 class="accordion-header" id="headingSensorControlsFive">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSensorControlsFive" aria-expanded="true" aria-controls="collapseSensorControlsFive">Sensor Parameters</button>
+                      </h2>
+                      <div id="collapseSensorControlsFive" class="accordion-collapse collapse" aria-labelledby="headingSensorControlsFive" data-bs-parent="#accordionSensorControls">
+                        <div class="accordion-body">
+                            <!-- Sensor Parameters -->
+                            <form class="row g-3">
+                              <div class="col-md-4 text-center"></div>
+                              <div class="col-md-4 text-center">
+                                  <label for="SENSOR_SELECTION" class="form-label">Sensor Selection</label>
+                                  <select id="SENSOR_SELECTION" class="form-select" aria-label="Sensor Selection">
+                                      <option>LONG</option>
+                                      <option>SHORT</option>
+                                      <option>PROTOTYPE</option>
+                                      <option>CUSTOM</option>
+                                  </select>
+                              </div>
+                              <div class="col-md-4 text-center"></div>
+                              <div class="col-md-4 text-center">
+                                  <label for="SENSOR_LENGTH" class="form-label">Measured Sensor Length</label>
+                                  <div class="input-group mb-3">
+                                    <input id="SENSOR_LENGTH" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Sensor Length" aria-describedby="SENSOR_LENGTH_TEXT">
+                                    <span class="input-group-text" id="SENSOR_LENGTH_TEXT">in</span>
+                                  </div>
+                              </div>
+                              <div class="col-md-4 text-center">
+                                  <label for="SMR" class="form-label">Start of Measure Range</label>
+                                  <div class="input-group mb-3">
+                                    <input id="SMR" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Start of Measure Range" aria-describedby="SMR_TEXT">
+                                    <span class="input-group-text" id="SMR_TEXT">mm</span>
+                                  </div>
+                              </div>
+                              <div class="col-md-4 text-center">
+                                  <label for="SENSOR_MR" class="form-label">Measurement Range</label>
+                                  <div class="input-group mb-3">
+                                    <input id="SENSOR_MR" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Measurement Range" aria-describedby="SENSOR_MR_TEXT">
+                                    <span class="input-group-text" id="SENSOR_MR_TEXT">mm</span>
+                                  </div>
+                              </div>
+                              <div class="col-md-4 text-center">
+                                  <label for="MASTER_FIXTURE_HEIGHT" class="form-label">Mastering Fixture Height</label>
+                                  <div class="input-group mb-3">
+                                    <input id="MASTER_FIXTURE_HEIGHT" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Mastering Fixture Height" aria-describedby="MASTER_FIXTURE_HEIGHT_TEXT">
+                                    <span class="input-group-text" id="MASTER_FIXTURE_HEIGHT_TEXT">in</span>
+                                  </div>
+                              </div>
+                              <div class="col-md-4 text-center">
+                                  <label for="MASTERING_VALUE" class="form-label">Mastering Value</label>
+                                  <div class="input-group mb-3">
+                                    <input id="MASTERING_VALUE" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Mastering Value" aria-describedby="MASTERING_VALUE_TEXT">
+                                    <span class="input-group-text" id="MASTERING_VALUE_TEXT">mm</span>
+                                  </div>
+                              </div>
+                              <div class="col-md-4 text-center">
+                                  <label for="MASTER_OFFSET" class="form-label">Master Offset</label>
+                                  <div class="input-group mb-3">
+                                    <input id="MASTER_OFFSET" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Master Offset" aria-describedby="MASTER_OFFSET_TEXT">
+                                    <span class="input-group-text" id="MASTER_OFFSET_TEXT">in</span>
+                                  </div>
+                              </div>
+                            </form>
+
+                            <div class="alert alert-danger text-center pb-0" role="alert">
+                              <p>Only authorized users should change the sensor parameters here.</p>
+                            </div>
+
+                            <div class="d-grid gap-2" hidden>
+                                <div class="btn-group" role="group" aria-label="Sensor Parameters Buttons">
+                                  <button id="SENSOR_PARAMS_UPDATE_BUTTON" type="button" class="btn btn-danger">UPDATE</button>
+                                  <span>&nbsp;</span>
+                                  <button id="READ_SENSOR_PARAMETERS_BUTTON" type="button" class="btn btn-primary">LOAD FROM CONTROLLER</button>
+                                </div>
+                            </div>
+                            <br/>
+
+                            <!-- TODO: implement
+                            <div class="text-center mt-2">
+                                <span class="badge bg-secondary fs-6">Last Calibration:&nbsp;<span id="CALIBRATION_DATE"></span></span>
+                            </div>
+                            <br/>-->
+                            
+                            <div class="alert alert-warning pb-0" role="alert">
+                              <p>When changing the Mastering Value here be certain to perform Mastering before collecting data, else clearances may be calculated incorrectly.</p>
+                            </div>
+                            <div class="alert alert-warning pb-0" role="alert">
+                              <p>The Master Offset is the delta calculated: (measured sensor length + SMR + Mastering Value) - measured mastering fixture height. This should be 0.</p>
+                            </div>
+                            <div class="alert alert-warning pb-0" role="alert">
+                              <p>The Mastering Fixture height defaults are:</p>
+                              <hr>
+                              <dl class="row">
+                                  <dt class="col-sm-6">Short Master Fixture</dt>
+                                  <dd class="col-sm-6"><span id="DEFAULT_SMF"></span>&quot; +/- 0.0005in</dd>
+                                  <dt class="col-sm-6">Long Master Fixture</dt>
+                                  <dd class="col-sm-6"><span id="DEFAULT_LMF"></span>&quot; +/- 0.0005in</dd>
+                              </dl>
+                            </div>
+                            <div class="alert alert-warning pb-0" role="alert">
+                              <p>The production sensor default lengths are:</p>
+                              <hr>
+                              <dl class="row">
+                                  <dt class="col-sm-6">Short Sensor</dt>
+                                  <dd class="col-sm-6"><span id="DEFAULT_SS"></span>&quot; +/- 0.0005in</dd>
+                                  <dt class="col-sm-6">Long Sensor</dt>
+                                  <dd class="col-sm-6"><span id="DEFAULT_LS"></span>&quot; +/- 0.0005in</dd>
+                              </dl>
                             </div>
                             <!-- -->
                         </div>
@@ -1501,7 +1497,7 @@
         
         <!-- Log Modal -->
         <div class="modal fade" id="LOG_MODAL" tabindex="-1">
-          <div class="modal-dialog modal-dialog-scrollable">
+          <div class="modal-dialog modal-fullscreen modal-dialog-scrollable">
             <div class="modal-content">
               <div class="modal-header">
                 <h5 class="modal-title">Log</h5>
@@ -1510,9 +1506,6 @@
               <div class="modal-body m-0 p-0">
                 <div class="container-fluid" style="font-size: 12px">
                     <!-- -->
-                    <div class="alert alert-warning pb-0 mt-3" role="alert">
-                      <p>Displaying the most recent <span id="MAX_MESSAGE_COUNT"></span>/<span id ="LOG_MESSAGE_COUNT"></span> log message(s).</p>
-                    </div>
                     <table id="LOG_TABLE" class="table table-sm table-striped table-bordered">
                       <thead>
                         <tr>
@@ -1528,7 +1521,7 @@
               <div class="modal-footer">
                 <!--<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">CLOSE</button>-->
                 <button type="button" class="btn btn-danger" id="LOG_CLEAR_BUTTON">CLEAR</button>
-                <button type="button" class="btn btn-primary" id="LOG_EXPORT_BUTTON">EXPORT ALL</button>
+                <button type="button" class="btn btn-primary" id="LOG_EXPORT_BUTTON">EXPORT</button>
               </div>
             </div>
           </div>

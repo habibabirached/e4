@@ -50,8 +50,6 @@ define(function(require, exports, module) {
     var CALC_METHOD_NEW = 2;
     var CALC_METHOD_NONE = 3;
     
-    var MAX_LOG_MESSAGES = 10;
-    
     var CUSTOMER_REPORT_FILE_PREFIX = "customer_report_e4Pt";
     var DETAILS_FILE_PREFIX = "details_e4pt";
     var EMAIL_FILE_PREFIX = "e4pt";
@@ -270,13 +268,10 @@ define(function(require, exports, module) {
             fadeOutAll();
             $("#FRD_PAGE").fadeIn();
         }, {passive: true});
-        document.getElementById("TOOL_BUTTON").addEventListener('click', function() {
-            authorizeControllerSettingsUpdate();
-        }, {passive: true});
         document.getElementById("FRD_VIEW_BUTTON").addEventListener('click', function() {
             show_FRD();
         }, {passive: true});
-        document.getElementById("MEASURE_BUTTON").addEventListener('click', function() {
+        document.getElementById("SETUP_BUTTON").addEventListener('click', function() {
             toggleMenu();
             fadeOutAll();
             $("#SETUP_PAGE").fadeIn();
@@ -412,7 +407,7 @@ define(function(require, exports, module) {
             set_connection_mode();
         }, {passive: true});
         document.getElementById("CONFIGURE_CONTROLLER_BUTTON").addEventListener('click', function() {
-            configureController();
+            authorizeControllerSettingsUpdate();
         }, {passive: true});
         document.getElementById("READ_SENSOR_PARAMETERS_BUTTON").addEventListener('click', function() {
             readSensorParameters();
@@ -421,7 +416,7 @@ define(function(require, exports, module) {
             $("#DATA_PLOT_PAGE").fadeOut();
             // re-open previous page
             if (fromSensorSetupPage) {
-                $("#SENSOR_STARTUP_PAGE").fadeIn();
+                $("#SENSOR_SETUP_PAGE").fadeIn();
             }
             // disabled since showing data on plot2
             /* else if (fromDataCollectionPage) {
@@ -434,14 +429,11 @@ define(function(require, exports, module) {
         document.getElementById("FRD_CLOSE_BUTTON").addEventListener('click', function() {
             $("#FRD_PAGE").fadeOut();
         }, {passive: true});
-        document.getElementById("TOOL_CLOSE_BUTTON").addEventListener('click', function() {
-            $("#TOOL_PAGE").fadeOut();
-        }, {passive: true});
         document.getElementById("INITIALIZE_SENSOR_CLOSE_BUTTON").addEventListener('click', function() {
             $("#INITIALIZE_SENSOR_PAGE").fadeOut();
         }, {passive: true});
-        document.getElementById("SENSOR_STARTUP_CLOSE_BUTTON").addEventListener('click', function() {
-            $("#SENSOR_STARTUP_PAGE").fadeOut();
+        document.getElementById("SENSOR_SETUP_CLOSE_BUTTON").addEventListener('click', function() {
+            $("#SENSOR_SETUP_PAGE").fadeOut();
             // re-open DATA COLLECTION page
             if (fromDataCollectionPage) {
                 $("#TURBINE_SETUP_PAGE").fadeIn();
@@ -497,10 +489,10 @@ define(function(require, exports, module) {
                 getData();
             }
         }, {passive: true});
-        document.getElementById("SENSOR_STARTUP_BUTTON").addEventListener('click', function() {
+        document.getElementById("SENSOR_SETUP_BUTTON").addEventListener('click', function() {
             toggleMenu();
             fadeOutAll();
-            $("#SENSOR_STARTUP_PAGE").fadeIn();
+            $("#SENSOR_SETUP_PAGE").fadeIn();
             setMasterMessage("green","READY");
         }, {passive: true});
         document.getElementById("START_MASTER_BUTTON").addEventListener('click', function() {
@@ -695,13 +687,12 @@ define(function(require, exports, module) {
         $("#PROCESSING_PAGE").fadeOut();
         $("#DATA_PLOT_PAGE").fadeOut();
         $("#FRD_PAGE").fadeOut();
-        $("#TOOL_PAGE").fadeOut();
         $("#SETUP_PAGE").fadeOut();
         $("#SCAN_INFO_PAGE").fadeOut();
         $("#RESULTS_PAGE").fadeOut();
         $("#FILE_LOADING_PAGE").fadeOut();
         $("#DB_LOADING_PAGE").fadeOut();
-        $("#SENSOR_STARTUP_PAGE").fadeOut();
+        $("#SENSOR_SETUP_PAGE").fadeOut();
         $("#INITIALIZE_SENSOR_PAGE").fadeOut();
         $("#TURBINE_SETUP_PAGE").fadeOut();
         $("#LOCAL_DATA_PAGE").fadeOut();
@@ -757,9 +748,8 @@ define(function(require, exports, module) {
     
     function edit_save() {
         console.log("@edit_save");
-        editModal.hide();
         // changing frame will erase data
-        if (document.getElementById("FRAME_SIZE_EDIT").value !== document.getElementById("FRAME_SIZE").value) {
+        if (document.getElementById("FRAME_SIZE_EDIT").value != document.getElementById("FRAME_SIZE").value) {
             document.getElementById("FRAME_SIZE").value = document.getElementById("FRAME_SIZE_EDIT").value;
             document.getElementById("FRAME_SIZE").selectedIndex = document.getElementById("FRAME_SIZE_EDIT").selectedIndex;
             document.getElementById("HEADER_FRAME").innerHTML = document.getElementById("FRAME_SIZE_EDIT").value;
@@ -769,32 +759,32 @@ define(function(require, exports, module) {
             send_scan_metadata(true, true);
             turbine_setup();
         }
-        if (document.getElementById("SERIAL_NUMBER_EDIT").value !== document.getElementById("SERIAL_NUMBER").value) {
+        if (document.getElementById("SERIAL_NUMBER_EDIT").value != document.getElementById("SERIAL_NUMBER").value) {
             document.getElementById("SERIAL_NUMBER").value = document.getElementById("SERIAL_NUMBER_EDIT").value;
             document.getElementById("HEADER_SERIAL").innerHTML = document.getElementById("SERIAL_NUMBER_EDIT").value;
             send_scan_metadata(true, true);
         }
-        if (document.getElementById("CUSTOMER_EDIT").value !== document.getElementById("CUSTOMER").value) {
+        if (document.getElementById("CUSTOMER_EDIT").value != document.getElementById("CUSTOMER").value) {
             document.getElementById("CUSTOMER").value = document.getElementById("CUSTOMER_EDIT").value;
             document.getElementById("HEADER_CUSTOMER").innerHTML = document.getElementById("CUSTOMER_EDIT").value;
             send_scan_metadata(true, true);
         }
-        if (document.getElementById("SITE_EDIT").value !== document.getElementById("SITE").value) {
+        if (document.getElementById("SITE_EDIT").value != document.getElementById("SITE").value) {
             document.getElementById("SITE").value = document.getElementById("SITE_EDIT").value;
             document.getElementById("HEADER_SITE").innerHTML = document.getElementById("SITE_EDIT").value;
             send_scan_metadata(true, true);
         }
-        if (document.getElementById("OPERATOR_EDIT").value !== document.getElementById("OPERATOR").value) {
+        if (document.getElementById("OPERATOR_EDIT").value != document.getElementById("OPERATOR").value) {
             document.getElementById("OPERATOR").value = document.getElementById("OPERATOR_EDIT").value;
             document.getElementById("HEADER_SITE").innerHTML = document.getElementById("OPERATOR_EDIT").value;
             send_scan_metadata(true, true);
         }
-        if (document.getElementById("UNITS_EDIT").value !== document.getElementById("UNITS").value) {
+        if (document.getElementById("UNITS_EDIT").value != document.getElementById("UNITS").value) {
             document.getElementById("UNITS").value = document.getElementById("UNITS_EDIT").value;
             document.getElementById("HEADER_UNITS").innerHTML = document.getElementById("UNITS_EDIT").value;
             send_scan_metadata(true, true);
         }
-        send_scan_metadata(false, true);
+        editModal.hide();
         $("#TURBINE_SETUP_PAGE").fadeIn();
     }
 
@@ -854,15 +844,11 @@ define(function(require, exports, module) {
     }
     
     function showLog() {
-        $("#PROCESSING_PAGE").fadeIn();
-        $("#LOG_MESSAGE_COUNT").text(logMessages.length);
-        var displayCount = Math.min(logMessages.length, MAX_LOG_MESSAGES);
-        $("#MAX_MESSAGE_COUNT").text(displayCount);
         var elementID = "LOG_TABLE_BODY";
         var prev_tbody = document.getElementById(elementID);
         var tbody = document.createElement("tbody");
         tbody.setAttribute("id",elementID);
-        for (var i = displayCount - 1; i >= 0; i--) {
+        for (var i = logMessages.length - 1; i >= 0; i--) {
             var new_row = tbody.insertRow(-1);
             
             var cell1 = new_row.insertCell(-1);
@@ -872,10 +858,8 @@ define(function(require, exports, module) {
             cell3.innerHTML = logMessages[i].message;
         }
         prev_tbody.parentNode.replaceChild(tbody, prev_tbody);
-        setTimeout(function() {
-            $("#PROCESSING_PAGE").fadeOut();
-            logModal.show();
-        }, 500);
+        
+        logModal.show();
     }
     
     function clearLog() {
@@ -884,7 +868,6 @@ define(function(require, exports, module) {
     }
     
     function exportLog() {
-        $("#PROCESSING_PAGE").fadeIn();
         let contents = "";
         for (let i=0; i<logMessages.length; i++) {
             contents += logMessages[i].timestamp + ": " + logMessages[i].message;
@@ -893,10 +876,8 @@ define(function(require, exports, module) {
         let targetFolder = "data"; // default directory
         let logDate = new Date().toJSON().slice(0, 19).replace(/-/g,'').replace(/:/g,'').replace('T','');
         let fileName = LOG_FILE_PREFIX + "_" + logDate + ".txt";
-        let fileUrl = cordova.file.documentsDirectory + targetFolder + "/" + fileName;
         writeToFile(targetFolder, fileName, contents, function() {
-            $("#PROCESSING_PAGE").fadeOut();
-            fileDownloadFunction(fileUrl);
+            fileDownloadFunction(fileName);
         });
     }
     
@@ -1095,7 +1076,7 @@ define(function(require, exports, module) {
             // set flag to show DATA COLLECTION page on close
             fromGetData = false;
             fromDataCollectionPage = true;
-            $("#SENSOR_STARTUP_PAGE").fadeIn();
+            $("#SENSOR_SETUP_PAGE").fadeIn();
         }
     }*/
 
@@ -1268,7 +1249,7 @@ define(function(require, exports, module) {
         } else {
             // No plugins, so we must not be in Cordova. Use a standard prompt.
             let pw = window.prompt("Please enter the password.", "1");
-            confirmControllerSettingsPassword({"input1":pw});
+            confirmSensorParamsPassword({"input1":pw});
         }
     }
 
@@ -1277,9 +1258,7 @@ define(function(require, exports, module) {
             return;
         }
         if (results.input1 == UPDATE_SETTINGS_PASSWORD) {
-            toggleMenu();
-            fadeOutAll();
-            $("#TOOL_PAGE").fadeIn();
+            configureController();
         } else {
             e4PtAlert("Invalid password.");
         }
@@ -1335,7 +1314,6 @@ define(function(require, exports, module) {
     }
 
     function send_scan_metadata(reset, updatingExisting = false) {
-      console.log('@send_scan_metadata');
       // Set element suffix if we are updating existing measurement
       var suffix = (updatingExisting ? '_EDIT' : '');
 
@@ -1971,7 +1949,7 @@ define(function(require, exports, module) {
     }
 
     function writeToFile(folder, fileName, fileData, callback=null) {
-        console.log("@writeToFile: folder=" + folder + ", fileName=" + fileName);
+        console.log("@writeToFile: fileName = ", fileName);
         var targetFolder = cordova.file.documentsDirectory + folder + "/";
         window.resolveLocalFileSystemURL(targetFolder, function(dir) {
             dir.getFile(fileName, {create:true, exclusive: false}, function(file) {
@@ -2163,7 +2141,7 @@ define(function(require, exports, module) {
           if ((casing_thickness <= max) && (casing_thickness >= min)) {
             for(var j=0; j<spacers[i].position.length; j++) {
               if (position == spacers[i].position[j]) {
-                console.log(JSON.stringify(spacers[i]));
+                console.log(spacers[i]);
                 spacer = {'size':spacers[i].size, 'color':spacers[i].color, 'image':spacers[i].image};
                 current_stage_type = spacers[i].stage;
                 spacer_found = true;
@@ -2684,12 +2662,9 @@ define(function(require, exports, module) {
 
                     if (fromCalculateRPM) {
                         console.log('calculating RPM');
-                        // TODO: duplicated?
                         position = document.getElementById("SENSOR_POSITION").value;
                         casing_thickness = document.getElementById("CURR_CASE_THICKNESS").value;
                         if (position && casing_thickness) {
-                            console.log('position:', position);
-                            console.log('casing_thickness:', casing_thickness);
                             stage_details = get_stage_details(position, casing_thickness);
                             console.log(stage_details);
                             let rotor_blades = stage_details.blade_count;
