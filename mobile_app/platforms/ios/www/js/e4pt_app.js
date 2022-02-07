@@ -273,7 +273,10 @@ define(function(require, exports, module) {
         document.getElementById("FRD_VIEW_BUTTON").addEventListener('click', function() {
             show_FRD();
         }, {passive: true});
-        document.getElementById("SETUP_BUTTON").addEventListener('click', function() {
+        document.getElementById("TOOL_BUTTON").addEventListener('click', function() {
+            authorizeControllerSettingsUpdate();
+        }, {passive: true});
+        document.getElementById("MEASURE_BUTTON").addEventListener('click', function() {
             toggleMenu();
             fadeOutAll();
             $("#SETUP_PAGE").fadeIn();
@@ -409,7 +412,7 @@ define(function(require, exports, module) {
             set_connection_mode();
         }, {passive: true});
         document.getElementById("CONFIGURE_CONTROLLER_BUTTON").addEventListener('click', function() {
-            authorizeControllerSettingsUpdate();
+            configureController();
         }, {passive: true});
         document.getElementById("READ_SENSOR_PARAMETERS_BUTTON").addEventListener('click', function() {
             readSensorParameters();
@@ -418,7 +421,7 @@ define(function(require, exports, module) {
             $("#DATA_PLOT_PAGE").fadeOut();
             // re-open previous page
             if (fromSensorSetupPage) {
-                $("#SENSOR_SETUP_PAGE").fadeIn();
+                $("#SENSOR_STARTUP_PAGE").fadeIn();
             }
             // disabled since showing data on plot2
             /* else if (fromDataCollectionPage) {
@@ -431,11 +434,14 @@ define(function(require, exports, module) {
         document.getElementById("FRD_CLOSE_BUTTON").addEventListener('click', function() {
             $("#FRD_PAGE").fadeOut();
         }, {passive: true});
+        document.getElementById("TOOL_CLOSE_BUTTON").addEventListener('click', function() {
+            $("#TOOL_PAGE").fadeOut();
+        }, {passive: true});
         document.getElementById("INITIALIZE_SENSOR_CLOSE_BUTTON").addEventListener('click', function() {
             $("#INITIALIZE_SENSOR_PAGE").fadeOut();
         }, {passive: true});
-        document.getElementById("SENSOR_SETUP_CLOSE_BUTTON").addEventListener('click', function() {
-            $("#SENSOR_SETUP_PAGE").fadeOut();
+        document.getElementById("SENSOR_STARTUP_CLOSE_BUTTON").addEventListener('click', function() {
+            $("#SENSOR_STARTUP_PAGE").fadeOut();
             // re-open DATA COLLECTION page
             if (fromDataCollectionPage) {
                 $("#TURBINE_SETUP_PAGE").fadeIn();
@@ -491,10 +497,10 @@ define(function(require, exports, module) {
                 getData();
             }
         }, {passive: true});
-        document.getElementById("SENSOR_SETUP_BUTTON").addEventListener('click', function() {
+        document.getElementById("SENSOR_STARTUP_BUTTON").addEventListener('click', function() {
             toggleMenu();
             fadeOutAll();
-            $("#SENSOR_SETUP_PAGE").fadeIn();
+            $("#SENSOR_STARTUP_PAGE").fadeIn();
             setMasterMessage("green","READY");
         }, {passive: true});
         document.getElementById("START_MASTER_BUTTON").addEventListener('click', function() {
@@ -689,12 +695,13 @@ define(function(require, exports, module) {
         $("#PROCESSING_PAGE").fadeOut();
         $("#DATA_PLOT_PAGE").fadeOut();
         $("#FRD_PAGE").fadeOut();
+        $("#TOOL_PAGE").fadeOut();
         $("#SETUP_PAGE").fadeOut();
         $("#SCAN_INFO_PAGE").fadeOut();
         $("#RESULTS_PAGE").fadeOut();
         $("#FILE_LOADING_PAGE").fadeOut();
         $("#DB_LOADING_PAGE").fadeOut();
-        $("#SENSOR_SETUP_PAGE").fadeOut();
+        $("#SENSOR_STARTUP_PAGE").fadeOut();
         $("#INITIALIZE_SENSOR_PAGE").fadeOut();
         $("#TURBINE_SETUP_PAGE").fadeOut();
         $("#LOCAL_DATA_PAGE").fadeOut();
@@ -1088,7 +1095,7 @@ define(function(require, exports, module) {
             // set flag to show DATA COLLECTION page on close
             fromGetData = false;
             fromDataCollectionPage = true;
-            $("#SENSOR_SETUP_PAGE").fadeIn();
+            $("#SENSOR_STARTUP_PAGE").fadeIn();
         }
     }*/
 
@@ -1261,7 +1268,7 @@ define(function(require, exports, module) {
         } else {
             // No plugins, so we must not be in Cordova. Use a standard prompt.
             let pw = window.prompt("Please enter the password.", "1");
-            confirmSensorParamsPassword({"input1":pw});
+            confirmControllerSettingsPassword({"input1":pw});
         }
     }
 
@@ -1270,7 +1277,9 @@ define(function(require, exports, module) {
             return;
         }
         if (results.input1 == UPDATE_SETTINGS_PASSWORD) {
-            configureController();
+            toggleMenu();
+            fadeOutAll();
+            $("#TOOL_PAGE").fadeIn();
         } else {
             e4PtAlert("Invalid password.");
         }
