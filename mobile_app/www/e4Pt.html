@@ -9,6 +9,7 @@
     <!--<link href="./css/bootstrap_cosmo.min.css" rel="stylesheet">-->
     <!--<link href="./css/bootstrap_slate.min.css" rel="stylesheet">-->
     <!--<link href="./css/bootstrap_spacelab.min.css" rel="stylesheet">-->
+    <!--<link href="./css/mdb.min.css" rel="stylesheet">-->
     <link href="./css/e4pt_bootstrap.css" rel="stylesheet">
     <link rel="stylesheet" href="./css/fontAwesome.css"></link>
 
@@ -516,6 +517,7 @@
                   </div>
                   <!-- END ITEM: Sensor Connection -->
                   
+                  <!-- TODO: move to TOOL_PAGE -->
                   <!-- START ITEM: Controller Configuration -->
                   <div class="accordion-item">
                     <h2 class="accordion-header" id="headingToolSetupTwo">
@@ -546,172 +548,7 @@
                   </div>
                   <!-- END ITEM: Controller Configuration -->
                   
-                  <!-- START ITEM: Measurement Rate/Intensity Threshold -->
-                  <div class="accordion-item">
-                    <h2 class="accordion-header" id="headingToolSetupThree">
-                      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseToolSetupThree" aria-expanded="true" aria-controls="collapseToolSetupThree">Measurement Rate and Intensity Threshold</button>
-                    </h2>
-                    <div id="collapseToolSetupThree" class="accordion-collapse collapse" aria-labelledby="headingToolSetupThree" data-bs-parent="#accordionToolSetup">
-                      <div class="accordion-body">
-                          <!-- Measurement Rate and Intensity Threshold -->
-                          <form class="row g-3">
-                            <div class="col-md-6">
-                                <p>The app will automatically calculate the measurement (sampling) rate by default, and it is set in kHz between <span id="MIN_SAMPLING_RATE"></span> and <span id="MAX_SAMPLING_RATE"></span>. A maximum of 3 decimal places may be specified.</p>
-                            </div>
-                            <div class="col-md-6">
-                                <p>The intensity threshold is automatically calculated from the measurement (sampling) rate.</p>
-                            </div>
-                            <div class="col-md-6 text-center">
-                                <label for="MEASUREMENT_RATE" class="form-label">Measurement Rate</label>
-                                <div class="input-group mb-3">
-                                  <input id="MEASUREMENT_RATE" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Measurement Rate" aria-describedby="MEASUREMENT_RATE_TEXT">
-                                  <span class="input-group-text" id="MEASUREMENT_RATE_TEXT">kHz</span>
-                                </div>
-                            </div>
-                            <div class="col-md-6 text-center">
-                                <label for="THRESHOLD" class="form-label">Intensity Threshold</label>
-                                <div class="input-group mb-3">
-                                  <input id="THRESHOLD" type="text" class="form-control" placeholder="" aria-label="Intensity Threshold" aria-describedby="THRESHOLD_TEXT" disabled>
-                                  <span class="input-group-text" id="THRESHOLD_TEXT">%</span>
-                                </div>
-                            </div>
-                          </form>
-
-                          <div class="text-center">
-                            <span id="measurement_override_message" class="badge bg-success">AUTOMATIC CALCULATION</span>
-                          </div>
-                          <br/>
-                          <div class="d-grid gap-2" hidden>
-                            <div class="btn-group" role="group" aria-label="Measurment Rate and Intensity Buttons">
-                              <button id="RESET_MEASUREMENT_RATE_BUTTON" type="button" class="btn btn-danger">RESET</button>
-                              <span>&nbsp;</span>
-                              <button id="SET_MEASUREMENT_RATE_BUTTON" type="button" class="btn btn-primary">OVERRIDE</button>
-                            </div>
-                          </div>
-                          <br/>
-                          <div class="alert alert-warning pb-0" role="alert">
-                            <p>Increasing measurement rate is needed with higher RPM to ensure enough data points per blade tip, however increased measuring rate is a tradeoff requiring a lower intensity threshold (a lower sensitivity of the sensor) and blades could be missed entirely.</p>
-                          </div>
-                          <!-- -->
-                      </div>
-                    </div>
-                  </div>
-                  <!-- END ITEM: Measurement Rate/Intensity Threshold -->
-                  
-                  <!-- START ITEM: Sensor Parameters -->
-                  <div class="accordion-item">
-                    <h2 class="accordion-header" id="headingToolSetupFour">
-                      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseToolSetupFour" aria-expanded="true" aria-controls="collapseToolSetupFour">Sensor Parameters</button>
-                    </h2>
-                    <div id="collapseToolSetupFour" class="accordion-collapse collapse" aria-labelledby="headingToolSetupFour" data-bs-parent="#accordionToolSetup">
-                      <div class="accordion-body">
-                          <!-- Sensor Parameters -->
-                          <form class="row g-3">
-                            <div class="col-md-4 text-center"></div>
-                            <div class="col-md-4 text-center">
-                                <label for="SENSOR_SELECTION" class="form-label">Sensor Selection</label>
-                                <select id="SENSOR_SELECTION" class="form-select" aria-label="Sensor Selection">
-                                    <option>LONG</option>
-                                    <option>SHORT</option>
-                                    <option>PROTOTYPE</option>
-                                    <option>CUSTOM</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4 text-center"></div>
-                            <div class="col-md-4 text-center">
-                                <label for="SENSOR_LENGTH" class="form-label">Measured Sensor Length</label>
-                                <div class="input-group mb-3">
-                                  <input id="SENSOR_LENGTH" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Sensor Length" aria-describedby="SENSOR_LENGTH_TEXT">
-                                  <span class="input-group-text" id="SENSOR_LENGTH_TEXT">in</span>
-                                </div>
-                            </div>
-                            <div class="col-md-4 text-center">
-                                <label for="SMR" class="form-label">Start of Measure Range</label>
-                                <div class="input-group mb-3">
-                                  <input id="SMR" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Start of Measure Range" aria-describedby="SMR_TEXT">
-                                  <span class="input-group-text" id="SMR_TEXT">mm</span>
-                                </div>
-                            </div>
-                            <div class="col-md-4 text-center">
-                                <label for="SENSOR_MR" class="form-label">Measurement Range</label>
-                                <div class="input-group mb-3">
-                                  <input id="SENSOR_MR" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Measurement Range" aria-describedby="SENSOR_MR_TEXT">
-                                  <span class="input-group-text" id="SENSOR_MR_TEXT">mm</span>
-                                </div>
-                            </div>
-                            <div class="col-md-4 text-center">
-                                <label for="MASTER_FIXTURE_HEIGHT" class="form-label">Mastering Fixture Height</label>
-                                <div class="input-group mb-3">
-                                  <input id="MASTER_FIXTURE_HEIGHT" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Mastering Fixture Height" aria-describedby="MASTER_FIXTURE_HEIGHT_TEXT">
-                                  <span class="input-group-text" id="MASTER_FIXTURE_HEIGHT_TEXT">in</span>
-                                </div>
-                            </div>
-                            <div class="col-md-4 text-center">
-                                <label for="MASTERING_VALUE" class="form-label">Mastering Value</label>
-                                <div class="input-group mb-3">
-                                  <input id="MASTERING_VALUE" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Mastering Value" aria-describedby="MASTERING_VALUE_TEXT">
-                                  <span class="input-group-text" id="MASTERING_VALUE_TEXT">mm</span>
-                                </div>
-                            </div>
-                            <div class="col-md-4 text-center">
-                                <label for="MASTER_OFFSET" class="form-label">Master Offset</label>
-                                <div class="input-group mb-3">
-                                  <input id="MASTER_OFFSET" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Master Offset" aria-describedby="MASTER_OFFSET_TEXT">
-                                  <span class="input-group-text" id="MASTER_OFFSET_TEXT">in</span>
-                                </div>
-                            </div>
-                          </form>
-
-                          <div class="alert alert-danger text-center pb-0" role="alert">
-                            <p>Only authorized users should change the sensor parameters here.</p>
-                          </div>
-
-                          <div class="d-grid gap-2" hidden>
-                              <div class="btn-group" role="group" aria-label="Sensor Parameters Buttons">
-                                <button id="SENSOR_PARAMS_UPDATE_BUTTON" type="button" class="btn btn-danger">UPDATE</button>
-                                <span>&nbsp;</span>
-                                <button id="READ_SENSOR_PARAMETERS_BUTTON" type="button" class="btn btn-primary">LOAD FROM CONTROLLER</button>
-                              </div>
-                          </div>
-                          <br/>
-
-                          <!-- not implemented
-                          <div class="text-center mt-2">
-                              <span class="badge bg-secondary fs-6">Last Calibration:&nbsp;<span id="CALIBRATION_DATE"></span></span>
-                          </div>
-                          <br/>-->
-                          
-                          <div class="alert alert-warning pb-0" role="alert">
-                            <p>When changing the Mastering Value here be certain to perform Mastering before collecting data, else clearances may be calculated incorrectly.</p>
-                          </div>
-                          <div class="alert alert-warning pb-0" role="alert">
-                            <p>The Master Offset is the delta calculated: (measured sensor length + SMR + Mastering Value) - measured mastering fixture height. This should be 0.</p>
-                          </div>
-                          <div class="alert alert-warning pb-0" role="alert">
-                            <p>The Mastering Fixture height defaults are:</p>
-                            <hr>
-                            <dl class="row">
-                                <dt class="col-sm-6">Short Master Fixture</dt>
-                                <dd class="col-sm-6"><span id="DEFAULT_SMF"></span>&quot; +/- 0.0005in</dd>
-                                <dt class="col-sm-6">Long Master Fixture</dt>
-                                <dd class="col-sm-6"><span id="DEFAULT_LMF"></span>&quot; +/- 0.0005in</dd>
-                            </dl>
-                          </div>
-                          <div class="alert alert-warning pb-0" role="alert">
-                            <p>The production sensor default lengths are:</p>
-                            <hr>
-                            <dl class="row">
-                                <dt class="col-sm-6">Short Sensor</dt>
-                                <dd class="col-sm-6"><span id="DEFAULT_SS"></span>&quot; +/- 0.0005in</dd>
-                                <dt class="col-sm-6">Long Sensor</dt>
-                                <dd class="col-sm-6"><span id="DEFAULT_LS"></span>&quot; +/- 0.0005in</dd>
-                            </dl>
-                          </div>
-                          <!-- -->
-                      </div>
-                    </div>
-                  </div>
-                  <!-- END ITEM: Sensor Parameters -->
+                  <!-- TODO: move items here -->
                   
                   </div> <!-- END ACCORDION: Tool Setup -->
                   <!-- -->
@@ -1316,6 +1153,175 @@
                       </div>
                     </div>
                     <!-- END ITEM: Mastering -->
+                    
+                    <!-- TODO: move to TOOL_PAGE -->
+                    <!-- START ITEM: Measurement Rate/Intensity Threshold -->
+                    <div class="accordion-item">
+                      <h2 class="accordion-header" id="headingSensorControlsThree">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSensorControlsThree" aria-expanded="true" aria-controls="collapseSensorControlsThree">Measurement Rate and Intensity Threshold</button>
+                      </h2>
+                      <div id="collapseSensorControlsThree" class="accordion-collapse collapse" aria-labelledby="headingSensorControlsThree" data-bs-parent="#accordionSensorControls">
+                        <div class="accordion-body">
+                            <!-- Measurement Rate and Intensity Threshold -->
+                            <form class="row g-3">
+                              <div class="col-md-6">
+                                  <p>The app will automatically calculate the measurement (sampling) rate by default, and it is set in kHz between <span id="MIN_SAMPLING_RATE"></span> and <span id="MAX_SAMPLING_RATE"></span>. A maximum of 3 decimal places may be specified.</p>
+                              </div>
+                              <div class="col-md-6">
+                                  <p>The intensity threshold is automatically calculated from the measurement (sampling) rate.</p>
+                              </div>
+                              <div class="col-md-6 text-center">
+                                  <label for="MEASUREMENT_RATE" class="form-label">Measurement Rate</label>
+                                  <div class="input-group mb-3">
+                                    <input id="MEASUREMENT_RATE" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Measurement Rate" aria-describedby="MEASUREMENT_RATE_TEXT">
+                                    <span class="input-group-text" id="MEASUREMENT_RATE_TEXT">kHz</span>
+                                  </div>
+                              </div>
+                              <div class="col-md-6 text-center">
+                                  <label for="THRESHOLD" class="form-label">Intensity Threshold</label>
+                                  <div class="input-group mb-3">
+                                    <input id="THRESHOLD" type="text" class="form-control" placeholder="" aria-label="Intensity Threshold" aria-describedby="THRESHOLD_TEXT" disabled>
+                                    <span class="input-group-text" id="THRESHOLD_TEXT">%</span>
+                                  </div>
+                              </div>
+                            </form>
+
+                            <div class="text-center">
+                              <span id="measurement_override_message" class="badge bg-success">AUTOMATIC CALCULATION</span>
+                            </div>
+                            <br/>
+                            <div class="d-grid gap-2" hidden>
+                              <div class="btn-group" role="group" aria-label="Measurment Rate and Intensity Buttons">
+                                <button id="RESET_MEASUREMENT_RATE_BUTTON" type="button" class="btn btn-danger">RESET</button>
+                                <span>&nbsp;</span>
+                                <button id="SET_MEASUREMENT_RATE_BUTTON" type="button" class="btn btn-primary">OVERRIDE</button>
+                              </div>
+                            </div>
+                            <br/>
+                            <div class="alert alert-warning pb-0" role="alert">
+                              <p>Increasing measurement rate is needed with higher RPM to ensure enough data points per blade tip, however increased measuring rate is a tradeoff requiring a lower intensity threshold (a lower sensitivity of the sensor) and blades could be missed entirely.</p>
+                            </div>
+                            <!-- -->
+                        </div>
+                      </div>
+                    </div>
+                    <!-- END ITEM: Measurement Rate/Intensity Threshold -->
+                    
+                    <!-- TODO: move to TOOL_PAGE -->
+                    <!-- START ITEM: Sensor Parameters -->
+                    <div class="accordion-item">
+                      <h2 class="accordion-header" id="headingSensorControlsFive">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSensorControlsFive" aria-expanded="true" aria-controls="collapseSensorControlsFive">Sensor Parameters</button>
+                      </h2>
+                      <div id="collapseSensorControlsFive" class="accordion-collapse collapse" aria-labelledby="headingSensorControlsFive" data-bs-parent="#accordionSensorControls">
+                        <div class="accordion-body">
+                            <!-- Sensor Parameters -->
+                            <form class="row g-3">
+                              <div class="col-md-4 text-center"></div>
+                              <div class="col-md-4 text-center">
+                                  <label for="SENSOR_SELECTION" class="form-label">Sensor Selection</label>
+                                  <select id="SENSOR_SELECTION" class="form-select" aria-label="Sensor Selection">
+                                      <option>LONG</option>
+                                      <option>SHORT</option>
+                                      <option>PROTOTYPE</option>
+                                      <option>CUSTOM</option>
+                                  </select>
+                              </div>
+                              <div class="col-md-4 text-center"></div>
+                              <div class="col-md-4 text-center">
+                                  <label for="SENSOR_LENGTH" class="form-label">Measured Sensor Length</label>
+                                  <div class="input-group mb-3">
+                                    <input id="SENSOR_LENGTH" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Sensor Length" aria-describedby="SENSOR_LENGTH_TEXT">
+                                    <span class="input-group-text" id="SENSOR_LENGTH_TEXT">in</span>
+                                  </div>
+                              </div>
+                              <div class="col-md-4 text-center">
+                                  <label for="SMR" class="form-label">Start of Measure Range</label>
+                                  <div class="input-group mb-3">
+                                    <input id="SMR" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Start of Measure Range" aria-describedby="SMR_TEXT">
+                                    <span class="input-group-text" id="SMR_TEXT">mm</span>
+                                  </div>
+                              </div>
+                              <div class="col-md-4 text-center">
+                                  <label for="SENSOR_MR" class="form-label">Measurement Range</label>
+                                  <div class="input-group mb-3">
+                                    <input id="SENSOR_MR" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Measurement Range" aria-describedby="SENSOR_MR_TEXT">
+                                    <span class="input-group-text" id="SENSOR_MR_TEXT">mm</span>
+                                  </div>
+                              </div>
+                              <div class="col-md-4 text-center">
+                                  <label for="MASTER_FIXTURE_HEIGHT" class="form-label">Mastering Fixture Height</label>
+                                  <div class="input-group mb-3">
+                                    <input id="MASTER_FIXTURE_HEIGHT" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Mastering Fixture Height" aria-describedby="MASTER_FIXTURE_HEIGHT_TEXT">
+                                    <span class="input-group-text" id="MASTER_FIXTURE_HEIGHT_TEXT">in</span>
+                                  </div>
+                              </div>
+                              <div class="col-md-4 text-center">
+                                  <label for="MASTERING_VALUE" class="form-label">Mastering Value</label>
+                                  <div class="input-group mb-3">
+                                    <input id="MASTERING_VALUE" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Mastering Value" aria-describedby="MASTERING_VALUE_TEXT">
+                                    <span class="input-group-text" id="MASTERING_VALUE_TEXT">mm</span>
+                                  </div>
+                              </div>
+                              <div class="col-md-4 text-center">
+                                  <label for="MASTER_OFFSET" class="form-label">Master Offset</label>
+                                  <div class="input-group mb-3">
+                                    <input id="MASTER_OFFSET" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Master Offset" aria-describedby="MASTER_OFFSET_TEXT">
+                                    <span class="input-group-text" id="MASTER_OFFSET_TEXT">in</span>
+                                  </div>
+                              </div>
+                            </form>
+
+                            <div class="alert alert-danger text-center pb-0" role="alert">
+                              <p>Only authorized users should change the sensor parameters here.</p>
+                            </div>
+
+                            <div class="d-grid gap-2" hidden>
+                                <div class="btn-group" role="group" aria-label="Sensor Parameters Buttons">
+                                  <button id="SENSOR_PARAMS_UPDATE_BUTTON" type="button" class="btn btn-danger">UPDATE</button>
+                                  <span>&nbsp;</span>
+                                  <button id="READ_SENSOR_PARAMETERS_BUTTON" type="button" class="btn btn-primary">LOAD FROM CONTROLLER</button>
+                                </div>
+                            </div>
+                            <br/>
+
+                            <!-- TODO: implement
+                            <div class="text-center mt-2">
+                                <span class="badge bg-secondary fs-6">Last Calibration:&nbsp;<span id="CALIBRATION_DATE"></span></span>
+                            </div>
+                            <br/>-->
+                            
+                            <div class="alert alert-warning pb-0" role="alert">
+                              <p>When changing the Mastering Value here be certain to perform Mastering before collecting data, else clearances may be calculated incorrectly.</p>
+                            </div>
+                            <div class="alert alert-warning pb-0" role="alert">
+                              <p>The Master Offset is the delta calculated: (measured sensor length + SMR + Mastering Value) - measured mastering fixture height. This should be 0.</p>
+                            </div>
+                            <div class="alert alert-warning pb-0" role="alert">
+                              <p>The Mastering Fixture height defaults are:</p>
+                              <hr>
+                              <dl class="row">
+                                  <dt class="col-sm-6">Short Master Fixture</dt>
+                                  <dd class="col-sm-6"><span id="DEFAULT_SMF"></span>&quot; +/- 0.0005in</dd>
+                                  <dt class="col-sm-6">Long Master Fixture</dt>
+                                  <dd class="col-sm-6"><span id="DEFAULT_LMF"></span>&quot; +/- 0.0005in</dd>
+                              </dl>
+                            </div>
+                            <div class="alert alert-warning pb-0" role="alert">
+                              <p>The production sensor default lengths are:</p>
+                              <hr>
+                              <dl class="row">
+                                  <dt class="col-sm-6">Short Sensor</dt>
+                                  <dd class="col-sm-6"><span id="DEFAULT_SS"></span>&quot; +/- 0.0005in</dd>
+                                  <dt class="col-sm-6">Long Sensor</dt>
+                                  <dd class="col-sm-6"><span id="DEFAULT_LS"></span>&quot; +/- 0.0005in</dd>
+                              </dl>
+                            </div>
+                            <!-- -->
+                        </div>
+                      </div>
+                    </div>
+                    <!-- END ITEM: Sensor Parameters -->
 
                   </div> <!-- END ACCORDION: Sensor -->
                   <!-- -->
