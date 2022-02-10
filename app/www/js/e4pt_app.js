@@ -1254,6 +1254,7 @@ define(function(require, exports, module) {
         messaging.sendMessage({args:[{command:'set_connection_mode',mode:mode}]});
     }
 
+    
     function authorizeControllerSettingsUpdate() {
         // Prompt user for password.
         var nav = navigator.notification;
@@ -1330,7 +1331,7 @@ define(function(require, exports, module) {
         // This is needed to break a cycle where previous data in this element prevents
         // new data from E4PTdata.turbine_casing_thicknesses from updating it.
         document.getElementById("CURR_CASE_THICKNESS").value = "";
-        console.log("E4PTdata.turbine_casing_thicknesses: ", JSON.stringify(E4PTdata.turbine_casing_thicknesses));
+        console.log("E4PTdata.turbine_casing_thicknesses: ", E4PTdata.turbine_casing_thicknesses);
     }
 
     function send_scan_metadata(reset, updatingExisting = false) {
@@ -3972,7 +3973,7 @@ define(function(require, exports, module) {
       tbody.setAttribute("id",elementID);
       // Create the table body.
       for (var i=0; i<rows.length; i++) {
-        console.log("Row: id:" + rows[i].doc._id + "; rev: " + rows[i].doc._rev + "; frame: " + rows[i].doc.frame + "; serial: " + rows[i].doc.serial_number);
+        console.log("Row: id:" + rows[i].doc._id + "; rev: " + rows[i].doc._rev);
         var new_row = tbody.insertRow(-1);
         // save the ID in a hidden column so we can get it to retrieve the data.
         // The first column is hidden.
@@ -4381,7 +4382,7 @@ define(function(require, exports, module) {
     function loadLocalData(id) {
       console.log("@loadLocalData: id = ", id);
       local_db.get(id, function(err, doc) {
-          //console.log("Row: ", doc);
+          console.log("Row: ", doc);
           initializeFromDocument(doc);
       });
     }
@@ -4389,7 +4390,7 @@ define(function(require, exports, module) {
     function loadArchiveData(id) {
       console.log("@loadArchiveData: id = ", id);
       archive_db.get(id, function(err, doc) {
-          //console.log("Row: ", doc);
+          console.log("Row: ", doc);
           initializeFromDocument(doc);
       });
     }
