@@ -50,6 +50,8 @@ define(function(require, exports, module) {
     var CALC_METHOD_NEW = 2;
     var CALC_METHOD_NONE = 3;
     
+    var MAX_LOG_MESSAGES = 10;
+    
     var CUSTOMER_REPORT_FILE_PREFIX = "customer_report_e4Pt";
     var DETAILS_FILE_PREFIX = "details_e4pt";
     var EMAIL_FILE_PREFIX = "e4pt";
@@ -748,8 +750,9 @@ define(function(require, exports, module) {
     
     function edit_save() {
         console.log("@edit_save");
+        editModal.hide();
         // changing frame will erase data
-        if (document.getElementById("FRAME_SIZE_EDIT").value != document.getElementById("FRAME_SIZE").value) {
+        if (document.getElementById("FRAME_SIZE_EDIT").value !== document.getElementById("FRAME_SIZE").value) {
             document.getElementById("FRAME_SIZE").value = document.getElementById("FRAME_SIZE_EDIT").value;
             document.getElementById("FRAME_SIZE").selectedIndex = document.getElementById("FRAME_SIZE_EDIT").selectedIndex;
             document.getElementById("HEADER_FRAME").innerHTML = document.getElementById("FRAME_SIZE_EDIT").value;
@@ -759,32 +762,32 @@ define(function(require, exports, module) {
             send_scan_metadata(true, true);
             turbine_setup();
         }
-        if (document.getElementById("SERIAL_NUMBER_EDIT").value != document.getElementById("SERIAL_NUMBER").value) {
+        if (document.getElementById("SERIAL_NUMBER_EDIT").value !== document.getElementById("SERIAL_NUMBER").value) {
             document.getElementById("SERIAL_NUMBER").value = document.getElementById("SERIAL_NUMBER_EDIT").value;
             document.getElementById("HEADER_SERIAL").innerHTML = document.getElementById("SERIAL_NUMBER_EDIT").value;
             send_scan_metadata(true, true);
         }
-        if (document.getElementById("CUSTOMER_EDIT").value != document.getElementById("CUSTOMER").value) {
+        if (document.getElementById("CUSTOMER_EDIT").value !== document.getElementById("CUSTOMER").value) {
             document.getElementById("CUSTOMER").value = document.getElementById("CUSTOMER_EDIT").value;
             document.getElementById("HEADER_CUSTOMER").innerHTML = document.getElementById("CUSTOMER_EDIT").value;
             send_scan_metadata(true, true);
         }
-        if (document.getElementById("SITE_EDIT").value != document.getElementById("SITE").value) {
+        if (document.getElementById("SITE_EDIT").value !== document.getElementById("SITE").value) {
             document.getElementById("SITE").value = document.getElementById("SITE_EDIT").value;
             document.getElementById("HEADER_SITE").innerHTML = document.getElementById("SITE_EDIT").value;
             send_scan_metadata(true, true);
         }
-        if (document.getElementById("OPERATOR_EDIT").value != document.getElementById("OPERATOR").value) {
+        if (document.getElementById("OPERATOR_EDIT").value !== document.getElementById("OPERATOR").value) {
             document.getElementById("OPERATOR").value = document.getElementById("OPERATOR_EDIT").value;
             document.getElementById("HEADER_SITE").innerHTML = document.getElementById("OPERATOR_EDIT").value;
             send_scan_metadata(true, true);
         }
-        if (document.getElementById("UNITS_EDIT").value != document.getElementById("UNITS").value) {
+        if (document.getElementById("UNITS_EDIT").value !== document.getElementById("UNITS").value) {
             document.getElementById("UNITS").value = document.getElementById("UNITS_EDIT").value;
             document.getElementById("HEADER_UNITS").innerHTML = document.getElementById("UNITS_EDIT").value;
             send_scan_metadata(true, true);
         }
-        editModal.hide();
+        send_scan_metadata(false, true);
         $("#TURBINE_SETUP_PAGE").fadeIn();
     }
 
@@ -844,22 +847,28 @@ define(function(require, exports, module) {
     }
     
     function showLog() {
+        $("#PROCESSING_PAGE").fadeIn();
+        $("#LOG_MESSAGE_COUNT").text(logMessages.length);
+        var displayCount = Math.min(logMessages.length, MAX_LOG_MESSAGES);
+        var startIndex = logMessages.length - 1;
+        var endIndex = startIndex - displayCount;
+        $("#MAX_MESSAGE_COUNT").text(displayCount);
         var elementID = "LOG_TABLE_BODY";
         var prev_tbody = document.getElementById(elementID);
         var tbody = document.createElement("tbody");
         tbody.setAttribute("id",elementID);
-        for (var i = logMessages.length - 1; i >= 0; i--) {
+        for (var i = startIndex; i > endIndex; i--) {
             var new_row = tbody.insertRow(-1);
-            
             var cell1 = new_row.insertCell(-1);
             cell1.innerHTML = logMessages[i].timestamp;
-
-            var cell3 = new_row.insertCell(-1);
-            cell3.innerHTML = logMessages[i].message;
+            var cell2 = new_row.insertCell(-1);
+            cell2.innerHTML = logMessages[i].message;
         }
         prev_tbody.parentNode.replaceChild(tbody, prev_tbody);
-        
-        logModal.show();
+        setTimeout(function() {
+            $("#PROCESSING_PAGE").fadeOut();
+            logModal.show();
+        }, 500);
     }
     
     function clearLog() {
@@ -868,6 +877,7 @@ define(function(require, exports, module) {
     }
     
     function exportLog() {
+        $("#PROCESSING_PAGE").fadeIn();
         let contents = "";
         for (let i=0; i<logMessages.length; i++) {
             contents += logMessages[i].timestamp + ": " + logMessages[i].message;
@@ -876,8 +886,10 @@ define(function(require, exports, module) {
         let targetFolder = "data"; // default directory
         let logDate = new Date().toJSON().slice(0, 19).replace(/-/g,'').replace(/:/g,'').replace('T','');
         let fileName = LOG_FILE_PREFIX + "_" + logDate + ".txt";
+        let fileUrl = cordova.file.documentsDirectory + targetFolder + "/" + fileName;
         writeToFile(targetFolder, fileName, contents, function() {
-            fileDownloadFunction(fileName);
+            $("#PROCESSING_PAGE").fadeOut();
+            fileDownloadFunction(fileUrl);
         });
     }
     
@@ -1235,7 +1247,6 @@ define(function(require, exports, module) {
         messaging.sendMessage({args:[{command:'set_connection_mode',mode:mode}]});
     }
 
-    
     function authorizeControllerSettingsUpdate() {
         // Prompt user for password.
         var nav = navigator.notification;
@@ -1310,10 +1321,11 @@ define(function(require, exports, module) {
         // This is needed to break a cycle where previous data in this element prevents
         // new data from E4PTdata.turbine_casing_thicknesses from updating it.
         document.getElementById("CURR_CASE_THICKNESS").value = "";
-        console.log("E4PTdata.turbine_casing_thicknesses: ", E4PTdata.turbine_casing_thicknesses);
+        console.log("E4PTdata.turbine_casing_thicknesses: ", JSON.stringify(E4PTdata.turbine_casing_thicknesses));
     }
 
     function send_scan_metadata(reset, updatingExisting = false) {
+      console.log('@send_scan_metadata');
       // Set element suffix if we are updating existing measurement
       var suffix = (updatingExisting ? '_EDIT' : '');
 
@@ -1949,7 +1961,7 @@ define(function(require, exports, module) {
     }
 
     function writeToFile(folder, fileName, fileData, callback=null) {
-        console.log("@writeToFile: fileName = ", fileName);
+        console.log("@writeToFile: folder=" + folder + ", fileName=" + fileName);
         var targetFolder = cordova.file.documentsDirectory + folder + "/";
         window.resolveLocalFileSystemURL(targetFolder, function(dir) {
             dir.getFile(fileName, {create:true, exclusive: false}, function(file) {
@@ -2141,7 +2153,7 @@ define(function(require, exports, module) {
           if ((casing_thickness <= max) && (casing_thickness >= min)) {
             for(var j=0; j<spacers[i].position.length; j++) {
               if (position == spacers[i].position[j]) {
-                console.log(spacers[i]);
+                console.log(JSON.stringify(spacers[i]));
                 spacer = {'size':spacers[i].size, 'color':spacers[i].color, 'image':spacers[i].image};
                 current_stage_type = spacers[i].stage;
                 spacer_found = true;
@@ -2662,9 +2674,12 @@ define(function(require, exports, module) {
 
                     if (fromCalculateRPM) {
                         console.log('calculating RPM');
+                        // TODO: already set in calculateRPM function
                         position = document.getElementById("SENSOR_POSITION").value;
                         casing_thickness = document.getElementById("CURR_CASE_THICKNESS").value;
                         if (position && casing_thickness) {
+                            console.log('position:', position);
+                            console.log('casing_thickness:', casing_thickness);
                             stage_details = get_stage_details(position, casing_thickness);
                             console.log(stage_details);
                             let rotor_blades = stage_details.blade_count;
@@ -3948,7 +3963,7 @@ define(function(require, exports, module) {
       tbody.setAttribute("id",elementID);
       // Create the table body.
       for (var i=0; i<rows.length; i++) {
-        console.log("Row: id:" + rows[i].doc._id + "; rev: " + rows[i].doc._rev);
+        console.log("Row: id:" + rows[i].doc._id + "; rev: " + rows[i].doc._rev + "; frame: " + rows[i].doc.frame + "; serial: " + rows[i].doc.serial_number);
         var new_row = tbody.insertRow(-1);
         // save the ID in a hidden column so we can get it to retrieve the data.
         // The first column is hidden.
@@ -4357,7 +4372,7 @@ define(function(require, exports, module) {
     function loadLocalData(id) {
       console.log("@loadLocalData: id = ", id);
       local_db.get(id, function(err, doc) {
-          console.log("Row: ", doc);
+          //console.log("Row: ", doc);
           initializeFromDocument(doc);
       });
     }
@@ -4365,7 +4380,7 @@ define(function(require, exports, module) {
     function loadArchiveData(id) {
       console.log("@loadArchiveData: id = ", id);
       archive_db.get(id, function(err, doc) {
-          console.log("Row: ", doc);
+          //console.log("Row: ", doc);
           initializeFromDocument(doc);
       });
     }

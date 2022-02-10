@@ -6,10 +6,6 @@
     <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, width=device-width">
 
     <link href="./css/bootstrap.min.css" rel="stylesheet">
-    <!--<link href="./css/bootstrap_cosmo.min.css" rel="stylesheet">-->
-    <!--<link href="./css/bootstrap_slate.min.css" rel="stylesheet">-->
-    <!--<link href="./css/bootstrap_spacelab.min.css" rel="stylesheet">-->
-    <!--<link href="./css/mdb.min.css" rel="stylesheet">-->
     <link href="./css/e4pt_bootstrap.css" rel="stylesheet">
     <link rel="stylesheet" href="./css/fontAwesome.css"></link>
 
@@ -748,7 +744,7 @@
                         </tbody>
                       </table>
 
-                      <div class="text-center my-4">
+                      <div class="text-center my-3">
                           <h5>
                               <span id="SENSOR_PARAMS_CONFIG_MSG" class="badge bg-secondary"></span>
                           </h5>
@@ -811,7 +807,7 @@
                             </div>
                         </div>
                         <div class="col-md-2 text-center">
-                            <img id="SPACER_THUMBNAIL" class="img-thumbnail" alt="Unknown" src="img/spacers/Unknown.gif" width="75" height="75">
+                            <img id="SPACER_THUMBNAIL" class="img-thumbnail" alt="Unknown" src="img/spacers/Unknown.gif" width="80" height="80">
                         </div>
                         <div class="col-md-5 text-center">
                             <label for="AMBIENT_TEMPERATURE" class="form-label">Ambient Temperature</label>
@@ -1497,16 +1493,20 @@
         
         <!-- Log Modal -->
         <div class="modal fade" id="LOG_MODAL" tabindex="-1">
-          <div class="modal-dialog modal-fullscreen modal-dialog-scrollable">
+          <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content">
               <div class="modal-header">
                 <h5 class="modal-title">Log</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
               </div>
-              <div class="modal-body m-0 p-0">
-                <div class="container-fluid" style="font-size: 12px">
+              <div class="modal-body">
+                <div class="container-fluid">
                     <!-- -->
-                    <table id="LOG_TABLE" class="table table-sm table-striped table-bordered">
+                    <div class="text-center">
+                      <span class="badge bg-primary">Displaying the most recent <span id="MAX_MESSAGE_COUNT"></span>/<span id ="LOG_MESSAGE_COUNT"></span> log message(s)</span>
+                    </div>
+                    <br/>
+                    <table id="LOG_TABLE" class="table table-sm table-striped table-bordered" style="font-size: 12px">
                       <thead>
                         <tr>
                           <th scope="col">Timestamp</th>
@@ -1521,7 +1521,7 @@
               <div class="modal-footer">
                 <!--<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">CLOSE</button>-->
                 <button type="button" class="btn btn-danger" id="LOG_CLEAR_BUTTON">CLEAR</button>
-                <button type="button" class="btn btn-primary" id="LOG_EXPORT_BUTTON">EXPORT</button>
+                <button type="button" class="btn btn-primary" id="LOG_EXPORT_BUTTON">EXPORT ALL</button>
               </div>
             </div>
           </div>

@@ -7,6 +7,7 @@
 //
 
 #import "math.h"
+#import "AppDelegate.h"
 #import "ControllerSettings.h"
 
 @implementation ControllerSettings
@@ -17,11 +18,16 @@
 @synthesize intensityThreshold = _intensityThreshold;
 @synthesize overrideRateAndIntensity = _overrideRateAndIntensity;
 @synthesize sensorParamsProvided = _sensorParamsProvided;
+@synthesize pointsPerBlade = _pointsPerBlade;
 
 -(instancetype)init {
     if (self = [super init]) {
         self.measurementRate = 1.0;
         self.intensityThreshold = [self calculateIntensityThresholdFromMeasurementRateKHz:self.measurementRate];
+        dispatch_sync(dispatch_get_main_queue(), ^{
+            self.pointsPerBlade = [((AppDelegate *)[UIApplication sharedApplication].delegate).pointsPerBlade intValue];
+        });
+        NSLog(@"@init: pointsPerBlade=%d", self.pointsPerBlade);
     }
     return self;
 }
@@ -40,18 +46,8 @@
 }
 
 -(NSString*)calculate:(float)rpm forBladeWidth:(float)bladeWidth forTipDiameter:(float)tipDiameter updateRateAndIntensity:(BOOL)rateAndIntensity {
-    
+    NSLog(@"@calculate: rpm=%f, bladeWidth=%f, tipDiameter=%f, rateAndIntensity=%s", rpm, bladeWidth, tipDiameter, rateAndIntensity ? "true" : "false");
     NSString* errorMessage = @"";
-    float circumference = [self calculateCircumferenceFromTipDiameterInches:tipDiameter];
-    if (circumference == 0) {
-        errorMessage = @"Error: Circumference = 0, ";
-    }
-    float inchesPerSecond = [self calculateSpeedForCircumference:circumference withRPM:rpm];
-    self.acquisitionTime = [self calculateAcquisitionTimeForCircumference:circumference atSpeed:inchesPerSecond];
-    if (rateAndIntensity) {
-        self.measurementRate = [self calculateKHzFrequencyForSamplesPerInch:(DESIRED_POINTS_PER_BLADE / bladeWidth) atSpeed:inchesPerSecond];
-        self.intensityThreshold = [self calculateIntensityThresholdFromMeasurementRateKHz:self.measurementRate];
-    }
     
     if (rpm == 0) {
         errorMessage = [errorMessage stringByAppendingString:@"Error: RPM = 0, "];
@@ -60,16 +56,40 @@
     } else if (rpm > 15.0) {
         errorMessage = [errorMessage stringByAppendingFormat:@"Error: RPM High %f, ", rpm];
     }
-
+    
+    if (bladeWidth == 0) {
+        errorMessage = [errorMessage stringByAppendingString:@"Error: Blade Width = 0, "];
+    }
+    
+    if (tipDiameter == 0) {
+        errorMessage = [errorMessage stringByAppendingString:@"Error: Tip Diameter = 0, "];
+    }
+    
+    float circumference = [self calculateCircumferenceFromTipDiameterInches:tipDiameter];
+    if (circumference == 0) {
+        errorMessage = @"Error: Circumference = 0, ";
+    }
+    
+    float inchesPerSecond = [self calculateSpeedForCircumference:circumference withRPM:rpm];
+    if (inchesPerSecond == 0) {
+        errorMessage = [errorMessage stringByAppendingString:@"Error: Inches Per Second = 0, "];
+    }
+    
+    self.acquisitionTime = [self calculateAcquisitionTimeForCircumference:circumference atSpeed:inchesPerSecond];
     if (self.acquisitionTime <= 0) {
         errorMessage = [errorMessage stringByAppendingFormat:@"Error: Time Low %f, ", self.acquisitionTime];
     } else if (self.acquisitionTime > 1800) {
         errorMessage = [errorMessage stringByAppendingFormat:@"Error: Time High %f, ", self.acquisitionTime];
     }
 
+    if (rateAndIntensity) {
+        self.measurementRate = [self calculateKHzFrequencyForSamplesPerInch:(self.pointsPerBlade / bladeWidth) atSpeed:inchesPerSecond];
+        self.intensityThreshold = [self calculateIntensityThresholdFromMeasurementRateKHz:self.measurementRate];
+    }
     if (self.measurementRate >= 6.5) {
         errorMessage = [errorMessage stringByAppendingFormat:@"Error: Rate High %f", self.measurementRate];
     }
+    
     return errorMessage;
 }
 
