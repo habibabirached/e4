@@ -2700,6 +2700,19 @@ define(function(require, exports, module) {
                         setButtonProperties($("#CALCULATE_RPM_BUTTON"), LABEL_CALCULATE, 'green');
                         fromCalculateRPM = false;
                     } else {
+                        var dataStr = "Avg Clearance: " + msg.clearance + "mm\n";
+                        dataStr += "Min Clearance: " + msg.min_clr + "mm\n";
+                        dataStr += "Med Clearance: " + msg.med_clr + "mm\n";
+                        dataStr += "Max Clearance: " + msg.max_clr + "mm\n";
+                        dataStr += "Std Dev Clearance: " + msg.std_clr + "mm\n";
+                        dataStr += "Overall Avg: " + msg.overall_avg + "mm\n";
+                        dataStr += "Observed Blades: " + msg.blades + "\n";
+                        dataStr += "Avg Samples/Blade: " + msg.blade_samples_avg + "\n";
+                        dataStr += "Casing Thickness: " + msg.casing_thickness + "in\n";
+                        dataStr += "Spacer Thickness: " + msg.spacer_thickness + "in\n";
+                        dataStr += "Measurement Rate: " + msg.measurement_rate + "kHz\n";
+                        dataStr += "Intensity Threshold: " + msg.intensity_threshold + "%\n";
+                        e4PtAlert(dataStr);
                         processE4PtData(msg);
                     }
                 } else {

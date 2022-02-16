@@ -58,7 +58,9 @@ define(function(require, exports, module) {
     }
                                                   
     const calculateMasteringOffsetInches = (lengthIn, heightIn, masteringValueMM, smrMM) => {
-        return (lengthIn + toInches(smrMM + masteringValueMM)) - heightIn;
+        var mo = (lengthIn + toInches(smrMM + masteringValueMM)) - heightIn;
+        console.log('@calculateMasteringOffsetInches: MO set to 0, was calculated as ' + mo + '=' + lengthIn + '+(' + smrMM + '+' + masteringValueMM + ')/25.4-' + heightIn);
+        return 0.0;
     }
     
     const calculateMasteringValueMM = (lengthIn, heightIn, smrMM) => {

@@ -98,6 +98,7 @@
     if (self->calibratedAcquire) {
         offsetAdjustment = [self->controller.settings.sensor calculateOffsetAdjustment:self->metaData.spacerThickness casingThickness:self->metaData.casingThickness];
     }
+    [self returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"Manager.computeClearance: offsetAdjustment=%f", offsetAdjustment]} keepOpen:YES];
     return [self->postProcess computeClearance:measurementData bladeCount:self->metaData.numberOfBlades usingAdjustmentFactor:offsetAdjustment];
 }
 
@@ -134,6 +135,8 @@
     NSString* overall_avg = isnan(clearanceData.averageDisplacement) ? @"\"--\"" : [NSString stringWithFormat:@"%f", clearanceData.averageDisplacement];
     NSString* blades = [NSString stringWithFormat:@"%d", clearanceData.blades];
     NSString* blade_samples_avg = [NSString stringWithFormat:@"%f", clearanceData.averageBladeSamples];
+    
+    //[self returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"Manager.computeClearance: offsetAdjustment=%f", offsetAdjustment]} keepOpen:YES];
     
     [self saveCSVFile:date clearanceData:clearanceData measurementData:measurementData];
     NSArray* savedFilepath;
