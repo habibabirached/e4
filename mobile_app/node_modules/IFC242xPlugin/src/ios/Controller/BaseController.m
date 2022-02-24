@@ -119,7 +119,6 @@
 
 - (void)initialize {
     NSLog(@"@BaseController::initialize");
-    [self->delegate dispatchMessage:@{@"type":@"log",@"message":@"BaseController.initialize"}];
     self.state = initializationInProgress;
     self->telnetIsReady = NO;
     self->controllerType = @"";
@@ -154,17 +153,11 @@
 }
 
 - (void)configureController {
-    NSLog(@"@configureController");
-    [self->delegate dispatchMessage:@{@"type":@"log",@"message":@"BaseController.configureController"}];
     // update controller configuration to GE defaults
     [self->telnetCmds addObject:@"LANGUAGE EN\n"];
     [self->telnetCmds addObject:@"BAUDRATE 460800\n"];
     [self->telnetCmds addObject:@"IPCONFIG STATIC 192.168.168.150 255.255.0.0 192.168.1.1\n"];
-    // send multiple times to ensure settings are stored
     [self->telnetCmds addObject:@"BASICSETTINGS STORE\n"];
-    [self->telnetCmds addObject:@"BASICSETTINGS STORE\n"];
-    [self->telnetCmds addObject:@"BASICSETTINGS STORE\n"];
-    // TODO: settings not saved after controller power cycle
     [self->telnetCmds addObject:@"RESET\n"];
     
     [self sendTelnetCommand];
@@ -172,7 +165,6 @@
 
 - (void)readSensorParameters {
     NSLog(@"@readSensorParameters");
-    [self->delegate dispatchMessage:@{@"type":@"log",@"message":@"BaseController.readSensorParameters"}];
     if ([self->controllerType containsString:@"IFC2422"]) {
         self.state = initializationInProgress;
         [self->telnetCmds addObject:@"SENSORINFO_CH01\n"];
@@ -191,7 +183,6 @@
         return;
     }
     NSLog(@"@masteringDevice: %@", masteringValue);
-    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"BaseController.masterDevice %@", masteringValue]} keepOpen:YES];
 
     self.state = masteringInProgress;
     [self->delegate returnPluginResponse:@{@"type":@"status",@"status":@"mastering_in_progress"} keepOpen:YES];
@@ -219,7 +210,6 @@
 - (void)doDarkReference {
     if (![self checkReady]) return;
     NSLog(@"@doDarkReference");
-    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":@"BaseController.doDarkReference"} keepOpen:YES];
     self.state = darkReferenceInProgress;
     [self->delegate returnPluginResponse:@{@"type":@"status",@"status":@"waiting"} keepOpen:YES];
 
@@ -257,8 +247,6 @@
 
 - (void)setMeasurementRate:(float)rate reportStatus:(bool)report {
     if (![self checkReady]) return;
-    NSLog(@"@setMeasurementRate: %.3f", rate);
-    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"BaseController.setMeasurementRate %.3f", rate]} keepOpen:YES];
     self.state = setMeasurementRateInProgress;
     self.settings.measurementRate = rate;
     [self->telnetCmds addObject:[NSString stringWithFormat:@"MEASRATE %.3f\n", self.settings.measurementRate]];
@@ -280,8 +268,6 @@
 
 - (void)setIntensityThreshold:(float)threshold sendImmediately:(bool)send {
     if (![self checkReady]) return;
-    NSLog(@"@setIntensityThreshold: %.3f", threshold);
-    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"BaseController.setIntensityThreshold: %.3f", threshold]} keepOpen:YES];
     if (send) self.state = setThresholdInProgress;
     self.settings.intensityThreshold = threshold;
     if ([self->controllerType containsString:@"IFC2422"]) {
@@ -307,15 +293,12 @@
 
 // disconnectDevice stops both data and telnet streams.
 - (void)disconnectDevice {
-    NSLog(@"@disconnectDevice");
-    [self->delegate dispatchMessage:@{@"type":@"log",@"message":@"BaseController.disconnectDevice"}];
     [self disconnectData];
     [self disconnectTelnet];
 }
 
 - (void)disconnectTelnet {
-    NSLog(@"@disconnectTelnet");
-    [self->delegate dispatchMessage:@{@"type":@"log",@"message":@"BaseController.disconnectTelnet"}];
+    NSLog(@"@disconnectTelnet.");
     [self->telnetCmds removeAllObjects];
     dispatch_async(dispatch_get_main_queue(), ^{
         [self->timerSendTelnetCommand invalidate];
@@ -323,7 +306,6 @@
 }
 
 - (void)abortDataCollection {
-    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":@"BaseController.abortDataCollection"} keepOpen:YES];
     if (self.state == collectingDataInProgress) {
         self.state = clearanceComputationInProgress;
         self->delegate.progress = 1.0;
@@ -335,7 +317,6 @@
 }
 
 - (void)queueDataCollection:(float)timeoutSecondsForPrep {
-    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":@"BaseController.queueDataCollection"} keepOpen:YES];
     [self recordStartTime]; // start timeout timer
 
     dispatch_async(dispatch_get_main_queue(), ^{
@@ -351,7 +332,6 @@
 }
 
 - (void)doDataCollection {
-    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":@"BaseController.doDataCollection"} keepOpen:YES];
     [self prepareDataForCollection];
 
     // Update the status in the HTML page.
@@ -360,7 +340,6 @@
 }
 
 - (void)prepareDataForCollection {
-    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":@"BaseController.prepareDataForCollection"} keepOpen:YES];
     [self.measurementData clear];
     self->set_count = 0;
     self->num_sets = [self calculateNumberOfDatasetsToAcquireForTime:self.settings.acquisitionTime atRateInHertz:self.settings.measurementRate * 1000];
@@ -373,7 +352,6 @@
 
 - (void)processResponse:(NSString*)rxData {
     NSLog(@"@processResponse");
-    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":@"BaseController.processResponse"} keepOpen:YES];
     // TODO: remove old processing logic after we are satisfied with the updated logic
     NSString* prompt = @"";
     if (rxData.length > 1) {
@@ -503,7 +481,6 @@
             case masteringInProgress:
                 if (self->telnetCmds.count == 0) {
                     NSLog(@"Mastering Complete.");
-                    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":@"BaseController.processResponse: mastering complete"} keepOpen:YES];
                     [self->delegate processComplete:@"done_mastering"];
                     self.state = ready;
                 }
@@ -570,7 +547,6 @@
                 // update then hide the progress bar.
                 self->delegate.progress = 1.0;
                 [self->delegate dispatchMessage:@{@"type":@"alert",@"message":@"Dark referencing complete."}];
-                [self->delegate returnPluginResponse:@{@"type":@"log",@"message":@"BaseController.timeoutWaitTimer: dark referencing complete"} keepOpen:YES];
                 if ([nextProc containsString:@"doDataCollection"]) {
                     NSLog(@"Dark reference complete. Do data collection. %fs", self.settings.acquisitionTime);
                     [self doDataCollection];

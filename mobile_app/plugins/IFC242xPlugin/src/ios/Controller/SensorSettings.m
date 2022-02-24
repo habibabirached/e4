@@ -25,7 +25,7 @@
 @synthesize offsetAdjustmentFormula = _offsetAdjustmentFormula;
 
 +(SensorSettings*) LONG {
-    return [[SensorSettings alloc] initWithName:@"LONG" lengthInches:8.7512 measurementRangeMM:11.0 startOfMeasurementRangeMM:11.94 masterFixtureHeightInches:9.463];
+    return [[SensorSettings alloc] initWithName:@"LONG" lengthInches:8.825 measurementRangeMM:11.0 startOfMeasurementRangeMM:11.94 masterFixtureHeightInches:9.463];
 }
 
 +(SensorSettings*) SHORT {
@@ -58,8 +58,7 @@
 
 +(float) moFromLength:(float)length hmf:(float)hmf smr:(float)smr mv:(float)mv {
     // should always be 0.0
-    //return length + (smr + mv)/IN_to_MM - hmf;
-    return 0.0;
+    return length + (smr + mv)/IN_to_MM - hmf;
 }
 
 -(instancetype)initWithName:(NSString*)name {

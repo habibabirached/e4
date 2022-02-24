@@ -17,7 +17,7 @@ define(function(require, exports, module) {
         master_offset: 0 //in
     };
     const sensor_types = {
-        'LONG': {'measured_length_mm': 222.28048, 'measured_mastering_fixture_height_mm': 240.3602, 'measured_start_measurement_range_mm': 11.94, 'measured_mastering_value_mm': 6.0802, 'measurement_range_mm': 11.0},
+        'LONG': {'measured_length_mm': 224.164, 'measured_mastering_fixture_height_mm': 240.3602, 'measured_start_measurement_range_mm': 11.94, 'measured_mastering_value_mm': 4.2567, 'measurement_range_mm': 11.0},
         'SHORT': {'measured_length_mm': 75.667, 'measured_mastering_fixture_height_mm': 90.6272, 'measured_start_measurement_range_mm': 11.94, 'measured_mastering_value_mm': 3.0205, 'measurement_range_mm': 11.0},
         'PROTOTYPE': {'measured_length_mm': 226.898, 'measured_mastering_fixture_height_mm': 243.0018, 'measured_start_measurement_range_mm': 10.998, 'measured_mastering_value_mm': 5.1054, 'measurement_range_mm': 10.0},
         'CUSTOM': {}
@@ -58,9 +58,7 @@ define(function(require, exports, module) {
     }
                                                   
     const calculateMasteringOffsetInches = (lengthIn, heightIn, masteringValueMM, smrMM) => {
-        var mo = (lengthIn + toInches(smrMM + masteringValueMM)) - heightIn;
-        console.log('@calculateMasteringOffsetInches: MO set to 0, was calculated as ' + mo + '=' + lengthIn + '+(' + smrMM + '+' + masteringValueMM + ')/25.4-' + heightIn);
-        return 0.0;
+        return (lengthIn + toInches(smrMM + masteringValueMM)) - heightIn;
     }
     
     const calculateMasteringValueMM = (lengthIn, heightIn, smrMM) => {

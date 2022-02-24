@@ -122,28 +122,6 @@
             <key>FalseValue</key>
             <false/>
         </dict>
-        <dict>
-            <key>Type</key>
-            <string>PSMultiValueSpecifier</string>
-            <key>Title</key>
-            <string>Points Per Blade</string>
-            <key>Key</key>
-            <string>pointsPerBlade</string>
-            <key>DefaultValue</key>
-            <integer>16</integer>
-            <key>Values</key>
-            <array>
-                <integer>4</integer>
-                <integer>8</integer>
-                <integer>16</integer>
-            </array>
-            <key>Titles</key>
-            <array>
-                <string>4</string>
-                <string>8</string>
-                <string>16</string>
-            </array>
-        </dict>
 	</array>
 </dict>
 </plist>

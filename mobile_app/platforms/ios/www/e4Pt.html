@@ -6,6 +6,10 @@
     <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, width=device-width">
 
     <link href="./css/bootstrap.min.css" rel="stylesheet">
+    <!--<link href="./css/bootstrap_cosmo.min.css" rel="stylesheet">-->
+    <!--<link href="./css/bootstrap_slate.min.css" rel="stylesheet">-->
+    <!--<link href="./css/bootstrap_spacelab.min.css" rel="stylesheet">-->
+    <!--<link href="./css/mdb.min.css" rel="stylesheet">-->
     <link href="./css/e4pt_bootstrap.css" rel="stylesheet">
     <link rel="stylesheet" href="./css/fontAwesome.css"></link>
 
@@ -32,10 +36,10 @@
                       <i class="fas fa-bars"></i><span class="ps-2">MENU</span>
                   </button>
                   <a id="TITLE_BAR" class="navbar-brand" href="#">e-4Pt Tool</a>
+                  
                   <span class="navbar-text">
                     <span id="CONNECTION_NAME" class="align-middle pe-2">SERIAL</span>
                     <span id="CONNECTION_INDICATOR" class="spinner-grow spinner-grow-sm text-light align-middle" role="status"></span>
-                    <button id="LOG_BUTTON" class="btn btn-secondary btn-sm ms-2" type="button">LOG</button>
                   </span>
               </div>
           </nav>
@@ -675,9 +679,9 @@
                               <br/>
                               <div class="d-grid gap-2">
                                   <div class="btn-group" role="group" aria-label="Mastering Buttons">
-                                    <button id="RESET_MASTER_BUTTON_2" type="button" class="btn btn-danger">RESET</button>
+                                    <button id="RESET_MASTER_BUTTON_2" type="button" class="btn btn-primary">RESET</button>
                                     <span>&nbsp;</span>
-                                    <button id="START_MASTER_BUTTON_2" type="button" class="btn btn-primary">START</button>
+                                    <button id="START_MASTER_BUTTON_2" type="button" class="btn btn-danger">START</button>
                                   </div>
                               </div>
                               <div class="text-center">
@@ -689,7 +693,7 @@
                         </div>
                       </div>
                       <br/>
-                      <p>When collecting data on the next page, the user is prompted for the rotor RPM. RPM is used to optimize the data acquisition rate to ensure enough points are acquired per blade tip.  It is best to estimate within +/- 1 RPM if possible.</p>
+                      <p>When collecting data on the next page, the user is prompted for the rotor RPM. RPM is used to optimize the data acquisition rate to ensure at least 4 points are acquired per blade tip.  It is best to estimate within +/- 1 RPM if possible.</p>
                       <br/>
                       <div class="d-grid gap-2">
                           <button id="COLLECT_DATA_BUTTON" type="button" class="btn btn-primary">COLLECT DATA</button>
@@ -708,19 +712,13 @@
                 <div class="row">
                     <div class="col-lg-12">
                       <!-- Turbine Data Collection -->
-                      <table class="table table-borderless table-sm align-middle text-center">
-                        <tbody>
-                          <tr>
-                            <td colspan="2">Collection Date:</td>
-                            <th scope="row" colspan="2" id="HEADER_DATETIME"></th>
-                            <td colspan="3">
-                              <button class="btn btn-primary" type="button" id="LOCATION_BUTTON">MEASUREMENT LOCATIONS</button>
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                      <hr/>
-                      <table class="table table-borderless table-sm align-middle">
+                      <div class="text-center">
+                          <h5>
+                              <span class="badge bg-light text-dark">Collection Date:&nbsp;<span id="HEADER_DATETIME"></span></span>
+                          </h5>
+                      </div>
+                      
+                      <table class="table table-borderless table-sm">
                         <tbody>
                           <tr>
                             <td>Frame:</td>
@@ -744,7 +742,7 @@
                         </tbody>
                       </table>
 
-                      <div class="text-center my-3">
+                      <div class="text-center my-4">
                           <h5>
                               <span id="SENSOR_PARAMS_CONFIG_MSG" class="badge bg-secondary"></span>
                           </h5>
@@ -784,42 +782,38 @@
                             </select>
                         </div>
                         <div class="col-md-3 text-center">
-                            <!-- measurement rate override is performed on separate page -->
-                            <!--<label class="form-check-label" for="MANUAL_OVERRIDE">Sensor Override</label>
+                            <label class="form-check-label" for="MANUAL_OVERRIDE">Sensor Override</label>
                             <br/>
-                            <input type="checkbox" class="form-check-input form-control-lg" id="MANUAL_OVERRIDE" name="manualOverride">-->
-                            <span>Measurement Rate</span>
-                            <br/>
-                            <span id="measurement_override_message_2" class="badge bg-success">AUTOMATIC<br/>CALCULATION</span>
+                            <input type="checkbox" class="form-check-input form-control-lg" id="MANUAL_OVERRIDE" name="manualOverride">
                         </div>
                         <div class="col-md-5 text-center">
                             <label for="CURR_CASE_THICKNESS" class="form-label">Casing Thickness</label>
                             <div class="input-group mb-0">
-                              <input type="number" inputmode="decimal" class="form-control" id="CURR_CASE_THICKNESS" aria-describedby="CURR_CASE_THICKNESS_LABEL">
+                              <input type="text" class="form-control" id="CURR_CASE_THICKNESS" aria-describedby="CURR_CASE_THICKNESS_LABEL">
                               <span class="input-group-text" id="CURR_CASE_THICKNESS_LABEL">in</span>
                             </div>
                         </div>
                         <div class="col-md-5 text-center">
                             <label for="SPACER_THICKNESS" class="form-label">Spacer Thickness</label>
                             <div class="input-group mb-0">
-                              <input type="number" inputmode="decimal" class="form-control" id="SPACER_THICKNESS" aria-describedby="SPACER_THICKNESS_LABEL">
+                              <input type="text" class="form-control" id="SPACER_THICKNESS" aria-describedby="SPACER_THICKNESS_LABEL">
                               <span class="input-group-text" id="SPACER_THICKNESS_LABEL">in</span>
                             </div>
                         </div>
                         <div class="col-md-2 text-center">
-                            <img id="SPACER_THUMBNAIL" class="img-thumbnail" alt="Unknown" src="img/spacers/Unknown.gif" width="80" height="80">
+                            <img id="SPACER_THUMBNAIL" class="img-thumbnail" alt="Unknown" src="img/spacers/Unknown.gif" width="75" height="75">
                         </div>
                         <div class="col-md-5 text-center">
                             <label for="AMBIENT_TEMPERATURE" class="form-label">Ambient Temperature</label>
                             <div class="input-group mb-0">
-                              <input type="number" inputmode="decimal" class="form-control" id="AMBIENT_TEMPERATURE" aria-describedby="AMBIENT_TEMPERATURE_LABEL">
+                              <input type="text" class="form-control" id="AMBIENT_TEMPERATURE" aria-describedby="AMBIENT_TEMPERATURE_LABEL">
                               <span class="input-group-text" id="AMBIENT_TEMPERATURE_LABEL">°F</span>
                             </div>
                         </div>
                         <div class="col-md-5 text-center">
                             <label for="MEASUREMENT_RPM" class="form-label">RPM</label>
                             <div class="input-group mb-0">
-                              <input type="number" inputmode="decimal" class="form-control" id="MEASUREMENT_RPM">
+                              <input type="text" class="form-control" id="MEASUREMENT_RPM">
                               <button class="btn btn-success" type="button" id="CALCULATE_RPM_BUTTON">CALCULATE</button>
                             </div>
                         </div>
@@ -859,18 +853,6 @@
                   <div class="container-fluid">
                       <div id="DATA_PLOT2" class="h-100"></div>
                   </div>
-              </div>
-            </div>
-        </div>
-        
-        <!-- Processing Page -->
-        <div id="PROCESSING_PAGE" class="container-fluid my-2">
-            <div id="overlay" class="bg-transparent text-dark text-center position-absolute top-50 start-50 translate-middle">
-              <div class="card text-white bg-dark">
-                <div class="card-header">Processing</div>
-                <div class="card-body">
-                  <div class="spinner-border text-light" style="width: 3rem; height: 3rem;" role="status"></div>
-                </div>
               </div>
             </div>
         </div>
@@ -973,7 +955,7 @@
                           <div class="row mb-2">
                             <label for="CLEARANCE_OVERRIDE_VALUE" class="col-sm-5 col-form-label">Clearance</label>
                             <div class="col-sm-7">
-                                <input class="form-control" type="number" inputmode="decimal" id="CLEARANCE_OVERRIDE_VALUE" value=""/>
+                                <input class="form-control" type="text" id="CLEARANCE_OVERRIDE_VALUE" value=""/>
                             </div>
                           </div>
                           <div class="row mb-2">
@@ -994,35 +976,6 @@
               </div>
             </div>
           </div>
-        </div>
-        
-        <!-- Measurement Location Modal -->
-        <div id="LOCATION_PAGE" class="container-fluid my-2">
-            <div class="card">
-              <div class="card-header">
-                <div class="row">
-                  <div class="col-auto me-auto pt-1">
-                    <h4><span id="LOCATION_NAME"></span>&nbsp;Measurement Locations</h4>
-                  </div>
-                  <div class="col-auto">
-                    <button id="LOCATION_CLOSE_BUTTON" type="button" class="btn btn-dark"><i class="fas fa-times"></i></button>
-                  </div>
-                </div>
-              </div>
-                <div class="card-body">
-                    <div class="row text-center">
-                    <div class="col-lg-12">
-                        <!-- -->
-                        <div id="LOCATION_IMAGE" class="py-2"></div>
-                        <hr/>
-                        <!-- These tabs get constructed by javascript -->
-                        <ul class="nav nav-pills nav-fill" id="LOCATION_TABS" role="tablist"></ul>
-                        <div class="tab-content py-2" id="LOCATION_CONTENT"></div>
-                        <!-- -->
-                    </div>
-                  </div>
-                </div>
-            </div>
         </div>
         
         <!-- Spacer Modal -->
@@ -1131,37 +1084,29 @@
                             <!-- Measurement Rate and Intensity Threshold -->
                             <form class="row g-3">
                               <div class="col-md-6">
-                                  <p>The app will automatically calculate the measurement (sampling) rate by default, and it is set in kHz between <span id="MIN_SAMPLING_RATE"></span> and <span id="MAX_SAMPLING_RATE"></span>. A maximum of 3 decimal places may be specified.</p>
+                                  <p>The app will automatically calculate the measurement (sampling) rate, and it is set in kHz between 0.100 and 6.500. A maximum of 3 decimal places may be specified.</p>
                               </div>
                               <div class="col-md-6">
                                   <p>The intensity threshold is automatically calculated from the measurement (sampling) rate.</p>
                               </div>
                               <div class="col-md-6 text-center">
-                                  <label for="MEASUREMENT_RATE" class="form-label">Measurement Rate</label>
+                                  <label for="MEASUREMENT_RATE_1" class="form-label">Measurement Rate</label>
                                   <div class="input-group mb-3">
-                                    <input id="MEASUREMENT_RATE" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Measurement Rate" aria-describedby="MEASUREMENT_RATE_TEXT">
-                                    <span class="input-group-text" id="MEASUREMENT_RATE_TEXT">kHz</span>
+                                    <input id="MEASUREMENT_RATE_1" type="text" class="form-control" placeholder="" aria-label="Measurement Rate" aria-describedby="MEASUREMENT_RATE_1_TEXT">
+                                    <span class="input-group-text" id="MEASUREMENT_RATE_1_TEXT">kHz</span>
                                   </div>
                               </div>
                               <div class="col-md-6 text-center">
-                                  <label for="THRESHOLD" class="form-label">Intensity Threshold</label>
+                                  <label for="THRESHOLD_1" class="form-label">Intensity Threshold</label>
                                   <div class="input-group mb-3">
-                                    <input id="THRESHOLD" type="text" class="form-control" placeholder="" aria-label="Intensity Threshold" aria-describedby="THRESHOLD_TEXT" disabled>
-                                    <span class="input-group-text" id="THRESHOLD_TEXT">%</span>
+                                    <input id="THRESHOLD_1" type="text" class="form-control" placeholder="" aria-label="Intensity Threshold" aria-describedby="THRESHOLD_1_TEXT" disabled>
+                                    <span class="input-group-text" id="THRESHOLD_1_TEXT">%</span>
                                   </div>
                               </div>
                             </form>
 
-                            <div class="text-center">
-                              <span id="measurement_override_message" class="badge bg-success">AUTOMATIC CALCULATION</span>
-                            </div>
-                            <br/>
                             <div class="d-grid gap-2" hidden>
-                              <div class="btn-group" role="group" aria-label="Measurment Rate and Intensity Buttons">
-                                <button id="RESET_MEASUREMENT_RATE_BUTTON" type="button" class="btn btn-danger">RESET</button>
-                                <span>&nbsp;</span>
-                                <button id="SET_MEASUREMENT_RATE_BUTTON" type="button" class="btn btn-primary">OVERRIDE</button>
-                              </div>
+                                <button id="SET_MEASUREMENT_RATE_BUTTON" type="button" class="btn btn-primary">SET</button>
                             </div>
                             <br/>
                             <div class="alert alert-warning pb-0" role="alert">
@@ -1194,42 +1139,42 @@
                               <div class="col-md-4 text-center">
                                   <label for="SENSOR_LENGTH" class="form-label">Measured Sensor Length</label>
                                   <div class="input-group mb-3">
-                                    <input id="SENSOR_LENGTH" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Sensor Length" aria-describedby="SENSOR_LENGTH_TEXT">
+                                    <input id="SENSOR_LENGTH" type="text" class="form-control" placeholder="" aria-label="Sensor Length" aria-describedby="SENSOR_LENGTH_TEXT">
                                     <span class="input-group-text" id="SENSOR_LENGTH_TEXT">in</span>
                                   </div>
                               </div>
                               <div class="col-md-4 text-center">
                                   <label for="SMR" class="form-label">Start of Measure Range</label>
                                   <div class="input-group mb-3">
-                                    <input id="SMR" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Start of Measure Range" aria-describedby="SMR_TEXT">
+                                    <input id="SMR" type="text" class="form-control" placeholder="" aria-label="Start of Measure Range" aria-describedby="SMR_TEXT">
                                     <span class="input-group-text" id="SMR_TEXT">mm</span>
                                   </div>
                               </div>
                               <div class="col-md-4 text-center">
                                   <label for="SENSOR_MR" class="form-label">Measurement Range</label>
                                   <div class="input-group mb-3">
-                                    <input id="SENSOR_MR" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Measurement Range" aria-describedby="SENSOR_MR_TEXT">
+                                    <input id="SENSOR_MR" type="text" class="form-control" placeholder="" aria-label="Measurement Range" aria-describedby="SENSOR_MR_TEXT">
                                     <span class="input-group-text" id="SENSOR_MR_TEXT">mm</span>
                                   </div>
                               </div>
                               <div class="col-md-4 text-center">
                                   <label for="MASTER_FIXTURE_HEIGHT" class="form-label">Mastering Fixture Height</label>
                                   <div class="input-group mb-3">
-                                    <input id="MASTER_FIXTURE_HEIGHT" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Mastering Fixture Height" aria-describedby="MASTER_FIXTURE_HEIGHT_TEXT">
+                                    <input id="MASTER_FIXTURE_HEIGHT" type="text" class="form-control" placeholder="" aria-label="Mastering Fixture Height" aria-describedby="MASTER_FIXTURE_HEIGHT_TEXT">
                                     <span class="input-group-text" id="MASTER_FIXTURE_HEIGHT_TEXT">in</span>
                                   </div>
                               </div>
                               <div class="col-md-4 text-center">
                                   <label for="MASTERING_VALUE" class="form-label">Mastering Value</label>
                                   <div class="input-group mb-3">
-                                    <input id="MASTERING_VALUE" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Mastering Value" aria-describedby="MASTERING_VALUE_TEXT">
+                                    <input id="MASTERING_VALUE" type="text" class="form-control" placeholder="" aria-label="Mastering Value" aria-describedby="MASTERING_VALUE_TEXT">
                                     <span class="input-group-text" id="MASTERING_VALUE_TEXT">mm</span>
                                   </div>
                               </div>
                               <div class="col-md-4 text-center">
                                   <label for="MASTER_OFFSET" class="form-label">Master Offset</label>
                                   <div class="input-group mb-3">
-                                    <input id="MASTER_OFFSET" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Master Offset" aria-describedby="MASTER_OFFSET_TEXT">
+                                    <input id="MASTER_OFFSET" type="text" class="form-control" placeholder="" aria-label="Master Offset" aria-describedby="MASTER_OFFSET_TEXT">
                                     <span class="input-group-text" id="MASTER_OFFSET_TEXT">in</span>
                                   </div>
                               </div>
@@ -1265,9 +1210,9 @@
                               <hr>
                               <dl class="row">
                                   <dt class="col-sm-6">Short Master Fixture</dt>
-                                  <dd class="col-sm-6"><span id="DEFAULT_SMF"></span>&quot; +/- 0.0005in</dd>
+                                  <dd class="col-sm-6">3.568&quot; +/- 0.0005in</dd>
                                   <dt class="col-sm-6">Long Master Fixture</dt>
-                                  <dd class="col-sm-6"><span id="DEFAULT_LMF"></span>&quot; +/- 0.0005in</dd>
+                                  <dd class="col-sm-6">9.463&quot; +/- 0.0005in</dd>
                               </dl>
                             </div>
                             <div class="alert alert-warning pb-0" role="alert">
@@ -1275,9 +1220,9 @@
                               <hr>
                               <dl class="row">
                                   <dt class="col-sm-6">Short Sensor</dt>
-                                  <dd class="col-sm-6"><span id="DEFAULT_SS"></span>&quot; +/- 0.0005in</dd>
+                                  <dd class="col-sm-6">2.979&quot; +/- 0.0005in</dd>
                                   <dt class="col-sm-6">Long Sensor</dt>
-                                  <dd class="col-sm-6"><span id="DEFAULT_LS"></span>&quot; +/- 0.0005in</dd>
+                                  <dd class="col-sm-6">8.825&quot; +/- 0.0005in</dd>
                               </dl>
                             </div>
                             <!-- -->
@@ -1420,17 +1365,6 @@
               <div class="card-body" style="overflow: scroll;">
                   <div class="row">
                     <div class="col-lg-12">
-                      <!-- Color Key -->
-                      <table class="table table-bordered">
-                          <tr>
-                              <td class="table-success">&nbsp;</td>
-                              <td class="table-light">Final Data</td>
-                              <td class="table-warning">&nbsp;</td>
-                              <td class="table-light">Preliminary</td>
-                              <td>&nbsp;</td>
-                              <td class="table-light">Other</td>
-                          </tr>
-                      </table>
                       <!-- File Chooser -->
                       <table id="LOCAL_FILE_TABLE" class="table table-bordered" style="overflow: scroll;">
                           <thead id="LOCAL_FILE_TABLE_HEADER" class="table-light">
@@ -1489,42 +1423,6 @@
                   </div>
               </div>
             </div>
-        </div>
-        
-        <!-- Log Modal -->
-        <div class="modal fade" id="LOG_MODAL" tabindex="-1">
-          <div class="modal-dialog modal-dialog-scrollable">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title">Log</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-              </div>
-              <div class="modal-body">
-                <div class="container-fluid">
-                    <!-- -->
-                    <div class="text-center">
-                      <span class="badge bg-primary">Displaying the most recent <span id="MAX_MESSAGE_COUNT"></span>/<span id ="LOG_MESSAGE_COUNT"></span> log message(s)</span>
-                    </div>
-                    <br/>
-                    <table id="LOG_TABLE" class="table table-sm table-striped table-bordered" style="font-size: 12px">
-                      <thead>
-                        <tr>
-                          <th scope="col">Timestamp</th>
-                          <th scope="col">Message</th>
-                        </tr>
-                      </thead>
-                      <tbody id="LOG_TABLE_BODY"></tbody>
-                    </table>
-                    <!-- -->
-                </div>
-              </div>
-              <div class="modal-footer">
-                <!--<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">CLOSE</button>-->
-                <button type="button" class="btn btn-danger" id="LOG_CLEAR_BUTTON">CLEAR</button>
-                <button type="button" class="btn btn-primary" id="LOG_EXPORT_BUTTON">EXPORT ALL</button>
-              </div>
-            </div>
-          </div>
         </div>
 
       </div>

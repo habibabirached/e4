@@ -2,14 +2,6 @@ define(function(require, exports, module) {
     const messaging = require('./messaging');
     const sensorSettings = require('./sensor_settings');
     const charting = require('./charting');
-    
-    // override console.log behavior
-    var logMessages = [];
-    var oldLog = console.log;
-    console.log = function() {
-        logMessages.push({"timestamp": new Date().toISOString(), "message": Object.values(arguments).join(" ")});
-        oldLog.apply(null, arguments);
-    }
 
     var menu_open = false;
     var downloadFileName = "";
@@ -41,22 +33,6 @@ define(function(require, exports, module) {
     var DEFAULT_SPACER_FILE = 'img/spacers/Unknown.gif';
     var MIN_RPM = 0.5;
     var MAX_RPM = 15.0;
-    var MIN_SAMPLING_RATE = 0.1;
-    var MAX_SAMPLING_RATE = 6.5;
-    var CLEARANCE_OVERRIDE_PRECISION = 4;
-    var DETAILS_PRECISION = 4;
-    
-    var CALC_METHOD_ORIGINAL = 1;
-    var CALC_METHOD_NEW = 2;
-    var CALC_METHOD_NONE = 3;
-    
-    var MAX_LOG_MESSAGES = 10;
-    
-    var CUSTOMER_REPORT_FILE_PREFIX = "customer_report_e4Pt";
-    var DETAILS_FILE_PREFIX = "details_e4pt";
-    var EMAIL_FILE_PREFIX = "e4pt";
-    var DATA_FILE_PREFIX = "data";
-    var LOG_FILE_PREFIX = "log";
 
     // This is the obscure address of the e4Pt field data Box folder.
     var FIELD_DATA_BOX_FOLDER = "Field_D.c55377p707j2cweu@u.box.com";
@@ -82,7 +58,6 @@ define(function(require, exports, module) {
     var editModal = new bootstrap.Modal(document.getElementById('EDIT_MODAL'));
     var clearanceOverrideModal = new bootstrap.Modal(document.getElementById('CLEARANCE_OVERRIDE_MODAL'));
     var spacerModal = new bootstrap.Modal(document.getElementById('SPACER_MODAL'));
-    var logModal = new bootstrap.Modal(document.getElementById('LOG_MODAL'));
     
     var POSITION_DISPLAY_MODE = 'TEXT'; // TEXT, ICON, BOTH
     var ARROW_ICONS = {
@@ -183,10 +158,7 @@ define(function(require, exports, module) {
         "blades":"",
         "blade_samples_avg":"",
         "alreadyOnLDB":"false",
-        "pouchdb_id": "",
-        "details_filename": "",
-        "report_filename": "",
-        "email_filename": ""
+        "pouchdb_id": ""
     };
 
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -211,7 +183,6 @@ define(function(require, exports, module) {
     var previous_frame = '';
 
     $(document).ready(function() {
-        console.log("@ready");
         var attachFastClick = Origami.fastclick;
         attachFastClick(document.body);
         
@@ -238,29 +209,6 @@ define(function(require, exports, module) {
         setButtonProperties($("#CALCULATE_RPM_BUTTON"), LABEL_CALCULATE, 'green');
         setButtonProperties($("#READ_SENSOR_PARAMETERS_BUTTON"), LABEL_LOAD_PARAMS, 'blue');
         
-        // update default sensor alerts
-        var infoShort = sensorSettings.getSensorType('SHORT');
-        var smf = sensorSettings.toInches(infoShort['measured_mastering_fixture_height_mm']).toFixed(3);
-        var ss = sensorSettings.toInches(infoShort['measured_length_mm']).toFixed(3);
-        var infoLong = sensorSettings.getSensorType('LONG');
-        var lmf = sensorSettings.toInches(infoLong['measured_mastering_fixture_height_mm']).toFixed(3);
-        var ls = sensorSettings.toInches(infoLong['measured_length_mm']).toFixed(3);
-        $("#DEFAULT_SMF").text(smf);
-        $("#DEFAULT_SS").text(ss);
-        $("#DEFAULT_LMF").text(lmf);
-        $("#DEFAULT_LS").text(ls);
-
-        $("#MIN_SAMPLING_RATE").text(MIN_SAMPLING_RATE.toFixed(3));
-        $("#MAX_SAMPLING_RATE").text(MAX_SAMPLING_RATE.toFixed(3));
-        
-        document.addEventListener("pause", function () {
-            console.log("pause");
-            //messaging.sendMessage({args:[{command:'disconnect'}]});
-        }, false);
-        document.addEventListener("resume", function() {
-            console.log("resume");
-            set_connection_mode();
-        }, false);
         document.getElementById("MAIN_MENU").addEventListener('click', function() {
             $("#TITLE_BAR").text(APP_NAME);
             toggleMenu();
@@ -445,10 +393,6 @@ define(function(require, exports, module) {
         document.getElementById("SETUP_CLOSE_BUTTON").addEventListener('click', function() {
             $("#SETUP_PAGE").fadeOut();
         }, {passive: true});
-        document.getElementById("LOCATION_CLOSE_BUTTON").addEventListener('click', function() {
-            $("#LOCATION_PAGE").fadeOut();
-            $("#TURBINE_SETUP_PAGE").fadeIn();
-        }, {passive: true});
         document.getElementById("LOCAL_DATA_CLOSE_BUTTON").addEventListener('click', function() {
             $("#LOCAL_DATA_PAGE").fadeOut();
             $("#TITLE_BAR").text(APP_NAME);
@@ -516,22 +460,17 @@ define(function(require, exports, module) {
                 console.log('already performing dark reference');
             }
         }, {passive: true});
-        document.getElementById("MEASUREMENT_RATE").addEventListener('input', function() {
-            var sf = parseFloat(document.getElementById('MEASUREMENT_RATE').value);
+        document.getElementById("MEASUREMENT_RATE_1").addEventListener('input', function() {
+            var sf = parseFloat(document.getElementById('MEASUREMENT_RATE_1').value);
             // Make sure the text is a number
             if (isNaN(sf) || typeof(sf) !== 'number') {
-                document.getElementById('THRESHOLD').value = "";
+                document.getElementById('THRESHOLD_1').value = "";
             } else {
                 messaging.sendMessage({args:[{command:'get_threshold_for_rate',rate:sf.toFixed(3)}]});
             }
         }, {passive: true});
         document.getElementById("SET_MEASUREMENT_RATE_BUTTON").addEventListener('click', function() {
-            set_measurement_and_intensity_value('MEASUREMENT_RATE', 'Measurement rate', MIN_SAMPLING_RATE, MAX_SAMPLING_RATE, {command:'set_measuring_rate_and_threshold',threshold:parseFloat(document.getElementById('THRESHOLD').value).toFixed(3),rate:parseFloat(document.getElementById('MEASUREMENT_RATE').value)});
-        }, {passive: true});
-        document.getElementById("RESET_MEASUREMENT_RATE_BUTTON").addEventListener('click', function() {
-            messaging.sendMessage({args:[{command:'set_manual_override',value:false}]});
-            setSpanProperties($("#measurement_override_message"), "AUTOMATIC CALCULATION", 'green');
-            setSpanProperties($("#measurement_override_message_2"), "AUTOMATIC<br/>CALCULATION", 'green');
+            set_measurement_and_intensity_value('MEASUREMENT_RATE_1', 'Measurement rate', 0.1, 6.5, {command:'set_measuring_rate_and_threshold',threshold:parseFloat(document.getElementById('THRESHOLD_1').value).toFixed(3),rate:parseFloat(document.getElementById('MEASUREMENT_RATE_1').value)});
         }, {passive: true});
         document.getElementById("EXPORT_DATA_BUTTON").addEventListener('click', function() {
             fromDataPlotPage = true;
@@ -567,7 +506,6 @@ define(function(require, exports, module) {
                 messaging.sendMessage({args:[{command:'abort'}]});
                 // ignore data response to hide DATA_PLOT
                 collectionAborted = true;
-                $("#PROCESSING_PAGE").fadeOut();
                 resetDataCollection();
             }
         }, {passive: true});
@@ -604,26 +542,14 @@ define(function(require, exports, module) {
             let prompt = "Email or Upload Files?";
             e4PtPrompt(prompt, exportDetailsFile, "Get File", ["Email","Upload to Box","Cancel"]);
         }, {passive: true});
-        /*document.getElementById("MANUAL_OVERRIDE").addEventListener('click', function() {
+        document.getElementById("MANUAL_OVERRIDE").addEventListener('click', function() {
             overrideSettings();
-        }, {passive: true});*/
+        }, {passive: true});
         document.getElementById("SPACER_THUMBNAIL").addEventListener('click', function() {
             showSpacerImage();
         }, {passive: true });
-        document.getElementById("LOG_BUTTON").addEventListener('click', function() {
-            showLog();
-        }, {passive: true });
-        document.getElementById("LOG_CLEAR_BUTTON").addEventListener('click', function() {
-            clearLog();
-        }, {passive: true});
-        document.getElementById("LOG_EXPORT_BUTTON").addEventListener('click', function() {
-            exportLog();
-        }, {passive: true});
         document.getElementById("CALCULATE_RPM_BUTTON").addEventListener('click', function() {
              calculateRPM();
-        }, {passive: true});
-        document.getElementById("LOCATION_BUTTON").addEventListener('click', function() {
-            showLocationImages();
         }, {passive: true});
         document.getElementById("EDIT_BUTTON").addEventListener('click', function() {
             edit();
@@ -686,7 +612,6 @@ define(function(require, exports, module) {
     });
 
     function fadeOutAll() {
-        $("#PROCESSING_PAGE").fadeOut();
         $("#DATA_PLOT_PAGE").fadeOut();
         $("#FRD_PAGE").fadeOut();
         $("#SETUP_PAGE").fadeOut();
@@ -701,7 +626,6 @@ define(function(require, exports, module) {
         $("#ARCHIVED_DATA_PAGE").fadeOut();
         $("#FILE_CHOOSER_PAGE").fadeOut();
         $("#DATA_DETAILS_PAGE").fadeOut();
-        $("#LOCATION_PAGE").fadeOut();
     }
 
     function gotFS(fileSystem) {
@@ -750,9 +674,8 @@ define(function(require, exports, module) {
     
     function edit_save() {
         console.log("@edit_save");
-        editModal.hide();
         // changing frame will erase data
-        if (document.getElementById("FRAME_SIZE_EDIT").value !== document.getElementById("FRAME_SIZE").value) {
+        if (document.getElementById("FRAME_SIZE_EDIT").value != document.getElementById("FRAME_SIZE").value) {
             document.getElementById("FRAME_SIZE").value = document.getElementById("FRAME_SIZE_EDIT").value;
             document.getElementById("FRAME_SIZE").selectedIndex = document.getElementById("FRAME_SIZE_EDIT").selectedIndex;
             document.getElementById("HEADER_FRAME").innerHTML = document.getElementById("FRAME_SIZE_EDIT").value;
@@ -762,32 +685,32 @@ define(function(require, exports, module) {
             send_scan_metadata(true, true);
             turbine_setup();
         }
-        if (document.getElementById("SERIAL_NUMBER_EDIT").value !== document.getElementById("SERIAL_NUMBER").value) {
+        if (document.getElementById("SERIAL_NUMBER_EDIT").value != document.getElementById("SERIAL_NUMBER").value) {
             document.getElementById("SERIAL_NUMBER").value = document.getElementById("SERIAL_NUMBER_EDIT").value;
             document.getElementById("HEADER_SERIAL").innerHTML = document.getElementById("SERIAL_NUMBER_EDIT").value;
             send_scan_metadata(true, true);
         }
-        if (document.getElementById("CUSTOMER_EDIT").value !== document.getElementById("CUSTOMER").value) {
+        if (document.getElementById("CUSTOMER_EDIT").value != document.getElementById("CUSTOMER").value) {
             document.getElementById("CUSTOMER").value = document.getElementById("CUSTOMER_EDIT").value;
             document.getElementById("HEADER_CUSTOMER").innerHTML = document.getElementById("CUSTOMER_EDIT").value;
             send_scan_metadata(true, true);
         }
-        if (document.getElementById("SITE_EDIT").value !== document.getElementById("SITE").value) {
+        if (document.getElementById("SITE_EDIT").value != document.getElementById("SITE").value) {
             document.getElementById("SITE").value = document.getElementById("SITE_EDIT").value;
             document.getElementById("HEADER_SITE").innerHTML = document.getElementById("SITE_EDIT").value;
             send_scan_metadata(true, true);
         }
-        if (document.getElementById("OPERATOR_EDIT").value !== document.getElementById("OPERATOR").value) {
+        if (document.getElementById("OPERATOR_EDIT").value != document.getElementById("OPERATOR").value) {
             document.getElementById("OPERATOR").value = document.getElementById("OPERATOR_EDIT").value;
             document.getElementById("HEADER_SITE").innerHTML = document.getElementById("OPERATOR_EDIT").value;
             send_scan_metadata(true, true);
         }
-        if (document.getElementById("UNITS_EDIT").value !== document.getElementById("UNITS").value) {
+        if (document.getElementById("UNITS_EDIT").value != document.getElementById("UNITS").value) {
             document.getElementById("UNITS").value = document.getElementById("UNITS_EDIT").value;
             document.getElementById("HEADER_UNITS").innerHTML = document.getElementById("UNITS_EDIT").value;
             send_scan_metadata(true, true);
         }
-        send_scan_metadata(false, true);
+        editModal.hide();
         $("#TURBINE_SETUP_PAGE").fadeIn();
     }
 
@@ -801,96 +724,6 @@ define(function(require, exports, module) {
         document.getElementById("SPACER_IMAGE").setAttribute("src", imageName);
         document.getElementById("SPACER_IMAGE").setAttribute("alt", spacerName);
         spacerModal.show();
-    }
-    
-    function showLocationImages() {
-        console.log("@showLocationImages");
-        let locationName = document.getElementById("FRAME_SIZE").value;
-        // frame image
-        let locationImage = document.getElementById("LOCATION_IMAGE");
-        let imageStr = "";
-        if (typeof current_frame_data.image !== 'undefined') {
-            let frameImageName = 'img/frames/' + current_frame_data.image + '.png';
-            imageStr = '<img class="img-fluid" src="' + frameImageName + '">';
-        } else {
-            imageStr += '<h5><span class="badge bg-warning text-dark">No Frame Image</span></h5>';
-        }
-        locationImage.innerHTML = imageStr;
-        // stage images
-        let tabs = document.getElementById("LOCATION_TABS");
-        let content = document.getElementById("LOCATION_CONTENT");
-        let tabStr = "";
-        let contentStr = "";
-        let isFirst = true;
-        // only include one tab/image per stage
-        if (typeof current_frame_data.stage_images !== 'undefined') {
-            for (let stageId of Object.keys(current_frame_data.stage_images)) {
-                let stageImage = current_frame_data.stage_images[stageId];
-                tabStr += '<li class="nav-item" role="presentation"><button class="nav-link' + (isFirst ? ' active' : '') + '" id="tab' + stageId + '" data-bs-toggle="tab" data-bs-target="#content' + stageId + '" type="button" role="tab" aria-controls="content' + stageId + '" aria-selected="' + isFirst + '">Stage ' + stageId + '</button></li>';
-                contentStr += '<div class="tab-pane show' + (isFirst ? ' active' : '') + '" id="content' + stageId + '" role="tabpanel" aria-labelledby="tab' + stageId + '">';
-                if (stageImage) {
-                    let stageImageName = 'img/frames/' + stageImage + '.png';
-                    contentStr += '<img class="img-fluid" src="' + stageImageName + '">';
-                } else {
-                    contentStr += '<h5><span class="badge bg-warning text-dark">No Stage Image</span></h5>';
-                }
-                contentStr += '</div>';
-                isFirst = false;
-            }
-        } else {
-            contentStr += '<h5><span class="badge bg-warning text-dark">No Stage Images</span></h5>';
-        }
-        tabs.innerHTML = tabStr;
-        content.innerHTML = contentStr;
-        $("#TURBINE_SETUP_PAGE").fadeOut();
-        $("#LOCATION_PAGE").fadeIn();
-    }
-    
-    function showLog() {
-        $("#PROCESSING_PAGE").fadeIn();
-        $("#LOG_MESSAGE_COUNT").text(logMessages.length);
-        var displayCount = Math.min(logMessages.length, MAX_LOG_MESSAGES);
-        var startIndex = logMessages.length - 1;
-        var endIndex = startIndex - displayCount;
-        $("#MAX_MESSAGE_COUNT").text(displayCount);
-        var elementID = "LOG_TABLE_BODY";
-        var prev_tbody = document.getElementById(elementID);
-        var tbody = document.createElement("tbody");
-        tbody.setAttribute("id",elementID);
-        for (var i = startIndex; i > endIndex; i--) {
-            var new_row = tbody.insertRow(-1);
-            var cell1 = new_row.insertCell(-1);
-            cell1.innerHTML = logMessages[i].timestamp;
-            var cell2 = new_row.insertCell(-1);
-            cell2.innerHTML = logMessages[i].message;
-        }
-        prev_tbody.parentNode.replaceChild(tbody, prev_tbody);
-        setTimeout(function() {
-            $("#PROCESSING_PAGE").fadeOut();
-            logModal.show();
-        }, 500);
-    }
-    
-    function clearLog() {
-        logMessages = [];
-        showLog();
-    }
-    
-    function exportLog() {
-        $("#PROCESSING_PAGE").fadeIn();
-        let contents = "";
-        for (let i=0; i<logMessages.length; i++) {
-            contents += logMessages[i].timestamp + ": " + logMessages[i].message;
-            contents += "\n";
-        }
-        let targetFolder = "data"; // default directory
-        let logDate = new Date().toJSON().slice(0, 19).replace(/-/g,'').replace(/:/g,'').replace('T','');
-        let fileName = LOG_FILE_PREFIX + "_" + logDate + ".txt";
-        let fileUrl = cordova.file.documentsDirectory + targetFolder + "/" + fileName;
-        writeToFile(targetFolder, fileName, contents, function() {
-            $("#PROCESSING_PAGE").fadeOut();
-            fileDownloadFunction(fileUrl);
-        });
     }
     
     function calculateRPM() {
@@ -1002,9 +835,6 @@ define(function(require, exports, module) {
                      E4PTdata.std_clr = "";
                      E4PTdata.alreadyOnLDB = "false";
                      E4PTdata.pouchdb_id =  "";
-                     E4PTdata.details_filename = "";
-                     E4PTdata.report_filename = "";
-                     E4PTdata.email_filename = "";
                      // Clear the entries on the page
                      document.getElementById("FRAME_SIZE").selectedIndex = 0;
                      document.getElementById("SERIAL_NUMBER").value = "";
@@ -1028,49 +858,39 @@ define(function(require, exports, module) {
         console.log('@setupCasingThicknessTable');
         // Get frame type
         let frm_idx = document.getElementById("FRAME_SIZE").selectedIndex;
-        current_frame_data = frame_data[frm_idx];
-        current_stage_index = 0;
-        current_stage = current_frame_data.stage[current_stage_index];
-        current_position_index = 0;
-        current_position = current_frame_data.position[current_stage][current_position_index];
         
-        // Update selected_frame_data for computing RPM and remembering it when we come back to the page
+        // Memorise selected_frame_data for computing RPM and remembering it when we come back to the page
         selected_frame_data.frameIdx = frm_idx;
-        selected_frame_data.stageInfoIdx = current_stage_index;
-        selected_frame_data.frameName = current_frame_data.frame;
-        selected_frame_data.stageName = current_stage;
-        // use index instead of name due to *.* stages
-        //selected_frame_data.bladeCount = current_frame_data.stage_info[current_stage].blade_count;
-        selected_frame_data.bladeCount = Object.values(current_frame_data.stage_info)[current_stage_index].blade_count;
         
+        current_frame_data = frame_data[frm_idx];
         let pos = current_frame_data.position;
         let tbl = document.getElementById("CASING_THICKNESS_TABLE");
         let stageText = "STAGE";
         let htmlStr = "";
         for (let p of Object.keys(pos)) {
-            //console.log("stageText:  ", stageText);
+            console.log("stageText:  ", stageText);
             console.log("current_frame_data.position: ", p);
-            htmlStr += '<tr>';
-            htmlStr += '<th class="align-middle">' + stageText + '</th>';
+            htmlStr = htmlStr + '<tr>';
+            htmlStr = htmlStr + '<th class="align-middle">' + stageText + '</th>';
             stageText = "";
-            console.log("pos[p]: ", pos[p]);
             for (let j=0; j<pos[p].length; j++) {
                 if (POSITION_DISPLAY_MODE == 'TEXT') {
-                    htmlStr += '<th class="align-middle" scope="row">' + pos[p][j] + '</th>';
+                    htmlStr = htmlStr + '<th class="align-middle" scope="row">' + pos[p][j] + '</th>';
                 } else if (POSITION_DISPLAY_MODE == 'ICON') {
-                    htmlStr += '<th class="align-middle">' + ARROW_ICONS[pos[p][j]] + '</th>';
+                    htmlStr = htmlStr + '<th class="align-middle">' + ARROW_ICONS[pos[p][j]] + '</th>';
                 } else if (POSITION_DISPLAY_MODE == 'BOTH') {
-                    htmlStr += '<th class="align-middle" scope="row">' + ARROW_ICONS[pos[p][j]] + '&nbsp;' + pos[p][j] + '</th>';
+                    htmlStr = htmlStr + '<th class="align-middle" scope="row">' + ARROW_ICONS[pos[p][j]] + '&nbsp;' + pos[p][j] + '</th>';
                 }
+                console.log("pos[p][j]: ", pos[p][j]);
             }
-            htmlStr += '</tr>';
-            htmlStr += '<tr>';
-            htmlStr += '<td scope="row">' + p + '</td>';
+            htmlStr = htmlStr + '</tr>';
+            htmlStr = htmlStr + '<tr>';
+            htmlStr = htmlStr + '<td scope="row">' + p + '</td>';
             for (let j=0; j<pos[p].length; j++) {
                 let casingThickness_el_id = p + '_' + pos[p][j];
-                htmlStr += '<td><input class="form-control" type="number" inputmode="decimal" id="' + casingThickness_el_id + '" value=""/></td>';
+                htmlStr = htmlStr + '<td><input class="form-control" type="text" id="' + casingThickness_el_id + '" value=""/></td>';
             }
-            htmlStr += '</tr>';
+            htmlStr = htmlStr + '</tr>';
         }
         tbl.innerHTML = htmlStr;
         if (callback != null) {
@@ -1078,8 +898,7 @@ define(function(require, exports, module) {
         }
     }
 
-    // unused, called on MANUAL_OVERRIDE checked
-    /*function overrideSettings() {
+    function overrideSettings() {
         manualOverride = document.getElementById("MANUAL_OVERRIDE").checked;
         console.log("@overrideSettings: ", manualOverride);
         messaging.sendMessage({args:[{command:'set_manual_override',value:manualOverride}]});
@@ -1090,7 +909,7 @@ define(function(require, exports, module) {
             fromDataCollectionPage = true;
             $("#SENSOR_SETUP_PAGE").fadeIn();
         }
-    }*/
+    }
 
     function acquisitionTimePromptCallback(results) {
         console.log("@acquisitionTimePromptCallback");
@@ -1181,7 +1000,6 @@ define(function(require, exports, module) {
                 checkConnectionStatus();
             }
             messaging.sendMessage({args:[{command:'get_version'}]});
-            //checkConnectionStatus();
         }
         menu_open = !menu_open;
         
@@ -1247,6 +1065,7 @@ define(function(require, exports, module) {
         messaging.sendMessage({args:[{command:'set_connection_mode',mode:mode}]});
     }
 
+    
     function authorizeControllerSettingsUpdate() {
         // Prompt user for password.
         var nav = navigator.notification;
@@ -1276,7 +1095,6 @@ define(function(require, exports, module) {
     }
     
     function configureController() {
-        console.log('@configureController');
         if (!serialConnected) {
             e4PtAlert('Please connect to the controller before proceeding.');
         } else {
@@ -1321,13 +1139,12 @@ define(function(require, exports, module) {
         // This is needed to break a cycle where previous data in this element prevents
         // new data from E4PTdata.turbine_casing_thicknesses from updating it.
         document.getElementById("CURR_CASE_THICKNESS").value = "";
-        console.log("E4PTdata.turbine_casing_thicknesses: ", JSON.stringify(E4PTdata.turbine_casing_thicknesses));
+        console.log("E4PTdata.turbine_casing_thicknesses: ", E4PTdata.turbine_casing_thicknesses);
     }
 
     function send_scan_metadata(reset, updatingExisting = false) {
-      console.log('@send_scan_metadata');
       // Set element suffix if we are updating existing measurement
-      var suffix = (updatingExisting ? '_EDIT' : '');
+      var suffix = (updatingExisting ? '2' : '');
 
       // First make sure the user has input some metadata.
       E4PTdata.serial_number = document.getElementById("SERIAL_NUMBER" + suffix).value;
@@ -1391,6 +1208,7 @@ define(function(require, exports, module) {
       addDBEntry(E4PTdata); // Save to the database here so we don't lose this data.
         
       initialize_sensor();
+        
     }
 
     function initialize_sensor() {
@@ -1435,7 +1253,6 @@ define(function(require, exports, module) {
     }
 
     function turbine_setup() {
-        console.log('@turbine_setup');
         $("#TITLE_BAR").text("Data Collection");
         $("#TURBINE_SETUP_PAGE").fadeIn();
         savedRPM = computedRPM;
@@ -1577,10 +1394,9 @@ define(function(require, exports, module) {
         var html = html_buf.join('\n');
         document.getElementById("SENSOR_POSITION").innerHTML = html;
         
-        // update in set_stage_information
-        //selected_frame_data.stageInfoIdx = current_stage_index;
-        //selected_frame_data.stageName = current_stage;
-        //selected_frame_data.bladeCount = current_frame_data.stage_info[current_stage].blade_count;
+        selected_frame_data.stageInfoIdx = current_stage_index;
+        selected_frame_data.stageName = current_stage;
+        selected_frame_data.bladeCount = current_frame_data.stage_info[current_stage].blade_count;
     }
 
     function set_stage_information() {
@@ -1593,16 +1409,11 @@ define(function(require, exports, module) {
         html = html_buf.join('\n');
         document.getElementById("SENSOR_STAGE").innerHTML = html;
         document.getElementById("SENSOR_STAGE").selectedIndex = selected_frame_data.stageInfoIdx;
-        selected_frame_data.stageName = Object.keys(frame_data[selected_frame_data.frameIdx].stage_info)[selected_frame_data.stageInfoIdx];
-        // don't use stage name due to x.x formats
-        //document.getElementById("SENSOR_STAGE").value = selected_frame_data.stageName;
+        selected_frame_data.stageName = Object.keys(frame_data[selected_frame_data.frameIdx].stage_info)[selected_frame_data.stageInfoIdx]
+        document.getElementById("SENSOR_STAGE").value = selected_frame_data.stageName;
         console.log ("selected_frame_data.stageName  , index= ", selected_frame_data.stageName, selected_frame_data.stageInfoIdx);
         current_stage_index = document.getElementById("SENSOR_STAGE").selectedIndex;
         current_stage = stages[current_stage_index];
-        
-        selected_frame_data.stageInfoIdx = current_stage_index;
-        selected_frame_data.stageName = current_stage;
-
         set_position_information(); // When you change the stage, the position information changes too.
         current_position_index = 0;
     }
@@ -1630,10 +1441,9 @@ define(function(require, exports, module) {
     }
     
     function set_measurement_and_intensity_value(el_id, label, minVal, maxVal, cmd) {
-        console.log("@set_measurement_and_intensity_value");
         var input_f = parseFloat(document.getElementById(el_id).value);
         // Make sure the text is a number
-        if ((isNaN(input_f)) || (typeof(input_f) != 'number')) {
+        if ( (isNaN(input_f)) || (typeof(input_f) != 'number')) {
             e4PtAlert(label + ' is not a number.');
             return;
         }
@@ -1649,7 +1459,7 @@ define(function(require, exports, module) {
                       input_f = maxVal;
                       document.getElementById(el_id).value = input_f.toFixed(3);
                       cmd.rate = input_f;
-                      override_measurement_rate(cmd);
+                      messaging.sendMessage({args:[cmd]});
                   } else if (buttonIndex==2) {//Cancel
                       document.getElementById(el_id).value = '';
                       return;
@@ -1662,23 +1472,15 @@ define(function(require, exports, module) {
                       input_f = minVal;
                       document.getElementById(el_id).value = input_f.toFixed(3);
                       cmd.rate = input_f;
-                      override_measurement_rate(cmd);
+                      messaging.sendMessage({args:[cmd]});
                   } else if (buttonIndex==2) {//Cancel
                       document.getElementById(el_id).value = '';
                       return;
                   }
               });
         } else {
-            override_measurement_rate(cmd);
+            messaging.sendMessage({args:[cmd]});
         }
-    }
-    
-    function override_measurement_rate(cmd) {
-        console.log('@override_measurement_rate');
-        messaging.sendMessage({args:[cmd]});
-        messaging.sendMessage({args:[{command:'set_manual_override',value:true}]});
-        setSpanProperties($("#measurement_override_message"), "MANUAL OVERRIDE", 'yellow');
-        setSpanProperties($("#measurement_override_message_2"), "MANUAL<br/>OVERRIDE<br/>" + cmd.rate.toFixed(3) + "kHz", 'yellow');
     }
     
     function displayGoButton() {
@@ -1699,9 +1501,9 @@ define(function(require, exports, module) {
           case "red":
             targetColor = "btn-danger";
             break;
-          case "blue":
-            targetColor = "btn-primary";
-            break;
+            case "blue":
+              targetColor = "btn-primary";
+              break;
           case "green":
             targetColor = "btn-success";
             break;
@@ -1754,33 +1556,33 @@ define(function(require, exports, module) {
             .html(text);
     }
 
+    // TODO: use default calculation method
     function confirm_collect_stage_data() {
-        // Disable prompt since offset calculation is disabled, default to Original
-        let calcMethod = CALC_METHOD_ORIGINAL;
-        //e4PtPrompt('Original calculation assumes master fixture height is SMR+SL+5mm, New calculation uses MV=fixture height - sensor length', function(calcMethod) {
-        document.getElementById("CLEARANCE_CALCULATION_METHOD").value = calcMethod;
-        // Here we check to see if data is in the cell that is about to be populated.
-        // If there is already data there then we confirm with the user to overwrite it.
-        let stage = current_frame_data['stage'][current_stage_index];
-        let position = current_frame_data['position'][stage][current_position_index];
-        let el_id = position + stage;
-        el_id = el_id.replace(/\s+/g, '_');
-        let cell_contents = document.getElementById(el_id).innerHTML;
-        if (cell_contents.length > 0) {
-            let msg = "Are you sure you want to overwrite stage " + stage + "-" + position + " data, " + cell_contents + "?";
-            e4PtConfirm(msg, function(buttonIndex) {
-                if (buttonIndex==1) {//OK
-                    collect_stage_data();
-                } else if (buttonIndex==2) {//Cancel
-                    return;
-                }
-            });
-        } else {
-            collect_stage_data();
-        }
+        // Disable prompt since offset calculation is disabled
+        e4PtPrompt('Original calculation assumes master fixture height is SMR+SL+5mm, New calculation uses MV=fixture height - sensor length', function(calcMethod) {
+            document.getElementById("CLEARANCE_CALCULATION_METHOD").value = calcMethod;
+            // Here we check to see if data is in the cell that is about to be populated.
+            // If there is already data there then we confirm with the user to overwrite it.
+            let stage = current_frame_data['stage'][current_stage_index];
+            let position = current_frame_data['position'][stage][current_position_index];
+            let el_id = position + stage;
+            el_id = el_id.replace(/\s+/g, '_');
+            let cell_contents = document.getElementById(el_id).innerHTML;
+            if (cell_contents.length > 0) {
+                let msg = "Are you sure you want to overwrite stage " + stage + "-" + position + " data, " + cell_contents + "?";
+                e4PtConfirm(msg, function(buttonIndex) {
+                    if (buttonIndex==1) {//OK
+                        collect_stage_data();
+                    } else if (buttonIndex==2) {//Cancel
+                        return;
+                    }
+                });
+            } else {
+                collect_stage_data();
+            }
+            return;
+        }, 'Select Clearance Calculation', ['Original','New','None']);
         return;
-//        }, 'Select Clearance Calculation', ['Original','New','None']);
-//        return;
     }
 
     function collect_stage_data() {
@@ -1900,10 +1702,7 @@ define(function(require, exports, module) {
             // This method generates a PDF, then exports it.
             let sn = processString(E4PTdata.serial_number);
             let fileDate = processString(E4PTdata.date);
-            let cust_rpt_fileName = CUSTOMER_REPORT_FILE_PREFIX + "_" + sn + "_" + fileDate + ".pdf";
-            E4PTdata.report_filename = cust_rpt_fileName;
-            console.log("CUSTOMER REPORT FILE: ", cust_rpt_fileName);
-            addDBEntry(E4PTdata); // update filename
+            let cust_rpt_fileName = "customer_report_e4Pt_" + sn + "_" + fileDate + ".pdf";
             baseURL = appDir + "www";
             var options = {
                 documentSize: 'Letter',
@@ -1937,7 +1736,6 @@ define(function(require, exports, module) {
     }
 
     function emailJSONData(toAddress, data) {
-        console.log("@emailJSONData");
         // first write the data to a file...
         let json_data = JSON.stringify(data);
         var json_blob = new Blob( [json_data], { type: 'application/json'} );
@@ -1947,12 +1745,9 @@ define(function(require, exports, module) {
         if ((typeof E4PTdata.serial_number !== 'undefined') || ( E4PTdata.serial_number.length > 0 )) {
             let sn = processString(E4PTdata.serial_number);
             targetFolder = sn;
-            fileName = processString(EMAIL_FILE_PREFIX + "_" + sn + "_" + E4PTdata.date + ".json");
+            fileName = processString("e4pt_" + sn + "_" + E4PTdata.date + ".json");
             subject = subject + " SN: " + E4PTdata.serial_number + " " + E4PTdata.date;
         }
-        E4PTdata.email_filename = fileName;
-        console.log("EMAIL FILE: ", fileName);
-        addDBEntry(E4PTdata); // update filename
         writeToFile(targetFolder, fileName, json_blob, function() {
             let fileURL = cordova.file.documentsDirectory + targetFolder + "/" + fileName;
             let attachment = [fileURL];
@@ -1961,7 +1756,7 @@ define(function(require, exports, module) {
     }
 
     function writeToFile(folder, fileName, fileData, callback=null) {
-        console.log("@writeToFile: folder=" + folder + ", fileName=" + fileName);
+        console.log("@writeToFile: fileName = ", fileName);
         var targetFolder = cordova.file.documentsDirectory + folder + "/";
         window.resolveLocalFileSystemURL(targetFolder, function(dir) {
             dir.getFile(fileName, {create:true, exclusive: false}, function(file) {
@@ -2035,7 +1830,6 @@ define(function(require, exports, module) {
     }
                   
     function setup_data_collection_page(dateStr, timeStr, update_position) {
-        console.log('@setup_data_collection_page');
         // Fill in the header
         var customer = document.getElementById("CUSTOMER").value;
         var site = document.getElementById("SITE").value;
@@ -2153,7 +1947,7 @@ define(function(require, exports, module) {
           if ((casing_thickness <= max) && (casing_thickness >= min)) {
             for(var j=0; j<spacers[i].position.length; j++) {
               if (position == spacers[i].position[j]) {
-                console.log(JSON.stringify(spacers[i]));
+                console.log(spacers[i]);
                 spacer = {'size':spacers[i].size, 'color':spacers[i].color, 'image':spacers[i].image};
                 current_stage_type = spacers[i].stage;
                 spacer_found = true;
@@ -2229,7 +2023,7 @@ define(function(require, exports, module) {
                 document.getElementById("SPACER_THUMBNAIL").setAttribute("src",imageName);
                 document.getElementById("SPACER_THUMBNAIL").setAttribute("alt",spacer.image);
             }, function() {
-                imageName = DEFAULT_SPACER_FILE;
+                imageName = 'img/spacers/Unknown.gif';
                 document.getElementById("SPACER_THUMBNAIL").setAttribute("src",imageName);
                 document.getElementById("SPACER_THUMBNAIL").setAttribute("alt",'Unknown');
             });
@@ -2282,13 +2076,6 @@ define(function(require, exports, module) {
         current_stage_index = stages.indexOf(stage);
         current_stage = stages[current_stage_index];
         current_position = positions[current_position_index];
-        
-        selected_frame_data.stageInfoIdx = current_stage_index;
-        selected_frame_data.stageName = current_stage;
-        // use index instead of name due to *.* stages
-        //selected_frame_data.bladeCount = current_frame_data.stage_info[current_stage].blade_count;
-        selected_frame_data.bladeCount = Object.values(current_frame_data.stage_info)[current_stage_index].blade_count;
-
         set_position_information();
         document.getElementById("SENSOR_STAGE").selectedIndex = current_stage_index;
         document.getElementById("SENSOR_POSITION").selectedIndex = current_position_index;
@@ -2310,7 +2097,7 @@ define(function(require, exports, module) {
         var clearance = document.getElementById(el_id).innerHTML;
         if (E4PTdata.units.toUpperCase().includes("IN") && clearance != "") {
           clearance = sensorSettings.toMMs(clearance);
-          clearance = checkValue(clearance, CLEARANCE_OVERRIDE_PRECISION);
+          clearance = checkValue(clearance, 4);
         }
         document.getElementById("CLEARANCE_OVERRIDE_STAGE").innerHTML = current_stage;
         document.getElementById("CLEARANCE_OVERRIDE_POSITION").innerHTML = current_position;
@@ -2415,7 +2202,6 @@ define(function(require, exports, module) {
     }
 
     function do_dark_reference() {
-        console.log('@do_dark_reference');
         if (messaging.usesWebSocket()) {
             setIndicatorColor("yellow");
         }
@@ -2461,7 +2247,6 @@ define(function(require, exports, module) {
     }
 
     function failed_mastering() {
-        console.log('@failed_mastering');
         setMasterMessage("red","MASTERING FAILED");
         setMasterMessage2("red","MASTERING FAILED");
         setIndicatorColor("green");
@@ -2486,7 +2271,6 @@ define(function(require, exports, module) {
 
     // alert function to work on iOS and web browser
     function e4PtAlert(msg, callback=null) {
-        console.log('e4PtAlert: ' + msg);
         try{
             navigator.notification.alert(
                 String(msg),            // message
@@ -2501,7 +2285,6 @@ define(function(require, exports, module) {
 
     // confirm function to work on iOS and web browser
     function e4PtConfirm(msg, callback) {
-        console.log('e4PtConfirm: ' + msg);
         try{
             navigator.notification.confirm(
                 String(msg),            // message
@@ -2520,7 +2303,6 @@ define(function(require, exports, module) {
 
     // prompt: function (message, resultCallback, title, buttonLabels, defaultText) {
     function e4PtPrompt(msg, callback, title, buttonLabels) {
-        console.log('e4PtPrompt: ' + msg);
         try {
             navigator.notification.confirm(
             String(msg),
@@ -2608,9 +2390,10 @@ define(function(require, exports, module) {
         console.log("@pluginMessage: msg.type = ", msg.type);
         switch(msg.type) {
             case "setting":
-                console.log("Received Setting Message: ", JSON.stringify(msg));
+                console.log("Received Setting Message");
+                console.log(msg);
                 if (msg.varName === 'intensity_threshold') {
-                    document.getElementById('THRESHOLD').value = msg.value;
+                    document.getElementById('THRESHOLD_1').value = msg.value;
                 }
                 break;
             case "connection":
@@ -2655,10 +2438,9 @@ define(function(require, exports, module) {
                 }
                 break;
             case "data":
-                //resetDataCollection();
+                resetDataCollection();
                 console.log("Received Data Message");
                 if (!collectionAborted) {
-                    //$("#PROCESSING_PAGE").fadeIn();
                     msg.data = JSON.parse(msg.data);
                     msg.intensity = JSON.parse(msg.intensity);
                     msg.locs = JSON.parse(msg.locs);
@@ -2674,12 +2456,9 @@ define(function(require, exports, module) {
 
                     if (fromCalculateRPM) {
                         console.log('calculating RPM');
-                        // TODO: already set in calculateRPM function
                         position = document.getElementById("SENSOR_POSITION").value;
                         casing_thickness = document.getElementById("CURR_CASE_THICKNESS").value;
                         if (position && casing_thickness) {
-                            console.log('position:', position);
-                            console.log('casing_thickness:', casing_thickness);
                             stage_details = get_stage_details(position, casing_thickness);
                             console.log(stage_details);
                             let rotor_blades = stage_details.blade_count;
@@ -2700,26 +2479,11 @@ define(function(require, exports, module) {
                         setButtonProperties($("#CALCULATE_RPM_BUTTON"), LABEL_CALCULATE, 'green');
                         fromCalculateRPM = false;
                     } else {
-                        var dataStr = "Avg Clearance: " + msg.clearance + "mm\n";
-                        dataStr += "Min Clearance: " + msg.min_clr + "mm\n";
-                        dataStr += "Med Clearance: " + msg.med_clr + "mm\n";
-                        dataStr += "Max Clearance: " + msg.max_clr + "mm\n";
-                        dataStr += "Std Dev Clearance: " + msg.std_clr + "mm\n";
-                        dataStr += "Overall Avg: " + msg.overall_avg + "mm\n";
-                        dataStr += "Observed Blades: " + msg.blades + "\n";
-                        dataStr += "Avg Samples/Blade: " + msg.blade_samples_avg + "\n";
-                        dataStr += "Casing Thickness: " + msg.casing_thickness + "in\n";
-                        dataStr += "Spacer Thickness: " + msg.spacer_thickness + "in\n";
-                        dataStr += "Measurement Rate: " + msg.measurement_rate + "kHz\n";
-                        dataStr += "Intensity Threshold: " + msg.intensity_threshold + "%\n";
-                        e4PtAlert(dataStr);
                         processE4PtData(msg);
                     }
                 } else {
                     console.log("Data collection was aborted");
                 }
-                $("#PROCESSING_PAGE").fadeOut();
-                resetDataCollection();
                 break;
             case "filename":
                 console.log("Recieved Filename Message: ", msg.fname);
@@ -2738,9 +2502,6 @@ define(function(require, exports, module) {
                 e4PtAlert(msg.message);
                 // TODO: reset if alert during collection
                 break;
-            case "log":
-                console.log("[BACKEND]", msg.message);
-                break;
             case "progress":
                 console.log("Progress: ", msg.progress);
                 $("#REV_PROGRESS")
@@ -2749,7 +2510,7 @@ define(function(require, exports, module) {
                       .text(msg.progress + "%");
                 break;
             case "sensor_params":
-                console.log("Received sensor parameters message: ", msg.master_fixture_height, ", ", msg.mastering_value, ", ", msg.master_offset, ", ", msg.sensor_selection, ", ", msg.sensor_length, ", ", msg.start_measurement_range, ", ", msg.sensor_measurement_range, ", ", msg.from_controller, ", ", msg.measurement_rate, ", ", msg.intensity_threshold);
+                console.log("Received sensor parameters message: ", msg.master_fixture_height, ", ", msg.mastering_value, ", ", msg.master_offset, ", ", msg.sensor_selection, ", ", msg.sensor_length, ", ", msg.start_measurement_range, ", ", msg.sensor_measurement_range);
                 
                 sensorParamsFromController = msg.from_controller;
                 if (sensorParamsFromController) {
@@ -2782,11 +2543,8 @@ define(function(require, exports, module) {
                 // TODO: implement
                 //document.getElementById("CALIBRATION_DATE").innerHTML = new Date().toLocaleDateString();
                 
-                document.getElementById("MEASUREMENT_RATE").value = JSON.parse(msg.measurement_rate).toFixed(3);
-                document.getElementById("THRESHOLD").value = JSON.parse(msg.intensity_threshold).toFixed(3);
-                
                 getConnectionMode();
-                //checkConnectionStatus();
+                checkConnectionStatus();
                 
                 break;
             default:
@@ -2830,6 +2588,7 @@ define(function(require, exports, module) {
     }
 
     function updateSensorParameters(mfh, mval, mo, sensor, sensor_length, smr, mr) {
+
         // Before updating the values, make sure the user has entered valid numbers.
         let mfh_f = parseFloat(mfh);
         let mstrval_f = parseFloat(mval);
@@ -2924,11 +2683,11 @@ define(function(require, exports, module) {
 
     function exportDetailsFile(option) {
         let targetFolder = "data";
-        let details_file_name = DETAILS_FILE_PREFIX + ".csv";
+        let details_file_name = "details_e4pt.csv";
         let sn = processString(E4PTdata.serial_number);
         let fileDate = processString(E4PTdata.date);
         if ((typeof E4PTdata.serial_number !== 'undefined') || ( E4PTdata.serial_number.length > 0 )) {
-            details_file_name = DETAILS_FILE_PREFIX + "_" + sn + "_" + fileDate + ".csv";
+            details_file_name = "details_e4pt_" + sn + "_" + fileDate + ".csv";
             targetFolder = cordova.file.documentsDirectory + sn;
         }
         details_file_name = targetFolder + "/" + details_file_name;
@@ -2960,7 +2719,7 @@ define(function(require, exports, module) {
             let row = tbl.rows[i];
             let cell = row.cells[0]; // Should only be one cell.
             for (let j=0; j<cell.classList.length; j++) {
-                if (cell.classList[j] == "table-active") {
+                if (cell.classList[j] = "table-active") {
                     console.log("exportFiles: Appending " + cell.attributes.nativeURL.value);
                     attachmentList.push(cell.attributes.nativeURL.value);
                 }
@@ -3077,7 +2836,7 @@ define(function(require, exports, module) {
     function deleteFile(dir, fileName) {
         console.log("@deleteFile: dir=" + JSON.stringify(dir) + ", fileName=" + fileName);
         dir.getFile(fileName, { create: false }, function (fileEntry) {
-            console.log("fileEntry=", JSON.stringify(fileEntry));
+            console.log("fileEntry=", fileEntry);
             fileEntry.remove(function (file) {
                 console.log("file removed");
             }, function (error) {
@@ -3118,7 +2877,12 @@ define(function(require, exports, module) {
         });
     }
 
-    function toggleFileSelected(fileName) {
+    function toggleFileSelected(fileName, idx) {
+        /*let tbl = document.getElementById("LOCAL_FILE_TABLE_BODY");
+        let row = tbl.rows[idx];
+        let cell = row.cells[0]; // Should only be one cell.
+        cell.classList.toggle("table-active"); */
+
         var table = document.getElementById("LOCAL_FILE_TABLE_BODY");
         for (var i = 0; i <  table.rows.length; i++) {
             row = table.rows[i]
@@ -3163,66 +2927,26 @@ define(function(require, exports, module) {
         tbody.setAttribute("id","LOCAL_FILE_TABLE_BODY");
         // Create the table body.
         window.entries = entries;
-        let fileEntries = entries.filter(element => element.isFile); // ignore any non-file entries
-        console.log("fileEntries: " + fileEntries.length);
-        var sortedFileEntries = fileEntries.sort(function (a, b) {
-            if (a.name < b.name) return -1;
-            if (a.name > b.name) return 1;
-            return 0;
-        });
-        sortedFileEntries.forEach((entry, index, array) => {
-            if (entry.name == ".DS_Store") return;
-            let sn = processString(E4PTdata.serial_number);
-            let fileSelectFn = "toggleFileSelected(\"" + entry.name + "\")";
-            let deleteEntryFn = "deleteEntry(\"" + entry.nativeURL +  "\"," + index + ")";
+        for (var i=0; i<entries.length; i++) {
+            if (!entries[i].isFile) continue;  // ignore any non-file entries
+            if (entries[i].name == ".DS_Store") continue;
+            let fileSelectFn = "toggleFileSelected(\"" + entries[i].name + "\"," + i + ")";
+            let deleteEntryFn = "deleteEntry(\"" + entries[i].nativeURL +  "\"," + i + ")";
             var new_row = tbody.insertRow(-1);
             var cell0 = new_row.insertCell(-1);
-            cell0.innerHTML = entry.name;
+            cell0.innerHTML = entries[i].name;
             cell0.setAttribute("onclick",fileSelectFn);
-            cell0.setAttribute("nativeURL",entry.nativeURL);
-            // apply color coding to 'final' files
-            if (entry.name.startsWith(DETAILS_FILE_PREFIX)) {
-                if (entry.name == E4PTdata.details_filename) {
-                    cell0.classList.add("table-success");
-                } else {
-                    cell0.classList.add("table-warning");
-                }
-            } else if (entry.name.startsWith(CUSTOMER_REPORT_FILE_PREFIX)) {
-                if (entry.name == E4PTdata.report_filename) {
-                    cell0.classList.add("table-success");
-                } else {
-                    cell0.classList.add("table-warning");
-                }
-            } else if (entry.name.startsWith(EMAIL_FILE_PREFIX)) {
-                if (entry.name == E4PTdata.email_filename) {
-                    cell0.classList.add("table-success");
-                } else {
-                    cell0.classList.add("table-warning");
-                }
-            } else if (entry.name.startsWith(LOG_FILE_PREFIX)) {
-                console.log("Ignoring log file");
-            } else if (entry.name.startsWith(DATA_FILE_PREFIX)) {
-                console.log("TODO: handle GET DATA file coloring");
-            } else if (entry.name.startsWith(sn)) {
-                let dataSet = E4PTdata.sets.find(o => (o.filename === sn + '/' + entry.name));
-                if (typeof dataSet !== 'undefined') {
-                    cell0.classList.add("table-success");
-                } else {
-                    cell0.classList.add("table-warning");
-                }
-            } else {
-                console.log("Unknown file entry: ", entry);
-            }
+            cell0.setAttribute("nativeURL",entries[i].nativeURL);
             // disabled due to performance with large amount of records
             /*var cell1 = new_row.insertCell(-1);
             cell1.classList.add("text-center");
             cell1.innerHTML = '<i class="fas fa-trash-alt fa-lg text-danger"></i>';
             //cell1.innerHTML = '<button type="button" class="btn btn-danger">DELETE</button>';
             cell1.setAttribute("onclick",deleteEntryFn);*/
-            //cell1.setAttribute("nativeURL",entry.nativeURL);
-        });
+            //cell1.setAttribute("nativeURL",entries[i].nativeURL);
+        }
         prev_tbody.parentNode.replaceChild(tbody, prev_tbody);
-        //sortTable('LOCAL_FILE_TABLE', 0); // not needed due to sorting of entries
+        sortTable('LOCAL_FILE_TABLE', 0);
         $("#FILE_CHOOSER_PAGE").fadeIn();
     }
 
@@ -3236,71 +2960,39 @@ define(function(require, exports, module) {
         tbody.setAttribute("id","DATA_DETAILS_TABLE_BODY");
         // Create the table body.
         let tmp = "";
-        var sortedSets = E4PTdata.sets.sort(function (a, b) {
-            let aStageArr = a.stage.split(".");
-            let aStage = parseInt(aStageArr[0]);
-            let aSubStage = 0;
-            if (aStageArr.length > 1) {
-                aSubStage = parseInt(aStageArr[1]);
-            }
-            aStage = (10 * aStage) + aSubStage;
-            let bStageArr = b.stage.split(".");
-            let bStage = parseInt(bStageArr[0]);
-            let bSubStage = 0;
-            if (bStageArr.length > 1) {
-                bSubStage = parseInt(bStageArr[1]);
-            }
-            bStage = (10 * bStage) + bSubStage;
-
-            if (aStage < bStage) {
-                return -1;
-            } else if (aStage > bStage) {
-                return 1;
-            } else {
-                // compare position index for same stage/substage
-                let aPosIdx = current_frame_data.position[a.stage].indexOf(a.position);
-                let bPosIdx = current_frame_data.position[b.stage].indexOf(b.position);
-                if (aPosIdx < bPosIdx) {
-                    return -1;
-                } else if (aPosIdx > bPosIdx) {
-                    return 1;
-                } else {
-                    return 0;
-                }
-            }
-        });
-        sortedSets.forEach((entry, index, array) => {
-            let clickFn = "toggleDetailsSelected(\"" + index + "\")";
+        // TODO: order by stage/position
+        for (let i=0; i<E4PTdata.sets.length; i++) {
+            let clickFn = "toggleDetailsSelected(\"" + i + "\")";
             var new_row = tbody.insertRow(-1);
             var cell1 = new_row.insertCell(-1);
             cell1.setAttribute("onclick",clickFn);
-            tmp = entry.stage;
+            tmp = E4PTdata.sets[i].stage;
             if (typeof tmp == 'undefined') tmp = "";
             cell1.innerHTML = tmp;
             var cell2 = new_row.insertCell(-1);
             cell2.setAttribute("onclick",clickFn);
-            tmp = entry.position;
+            tmp = E4PTdata.sets[i].position;
             if (typeof tmp == 'undefined') tmp = "";
             cell2.innerHTML = tmp;
             var cell3 = new_row.insertCell(-1);
             cell3.setAttribute("onclick",clickFn);
-            cell3.innerHTML = checkValue(entry.clearance, DETAILS_PRECISION);
-            if (entry.manualOverride) {
+            cell3.innerHTML = checkValue(E4PTdata.sets[i].clearance,3);
+            if (E4PTdata.sets[i].manualOverride) {
               cell3.classList.add("table-danger");
             }
             var cell4 = new_row.insertCell(-1);
             cell4.setAttribute("onclick",clickFn);
-            cell4.innerHTML = checkValue(entry.max_clr, DETAILS_PRECISION);
+            cell4.innerHTML = checkValue(E4PTdata.sets[i].max_clr,3);
             var cell5 = new_row.insertCell(-1);
             cell5.setAttribute("onclick",clickFn);
-            cell5.innerHTML = checkValue(entry.min_clr, DETAILS_PRECISION);
+            cell5.innerHTML = checkValue(E4PTdata.sets[i].min_clr,3);
             var cell6 = new_row.insertCell(-1);
             cell6.setAttribute("onclick",clickFn);
-            cell6.innerHTML = checkValue(entry.med_clr, DETAILS_PRECISION);
+            cell6.innerHTML = checkValue(E4PTdata.sets[i].med_clr,3);
             var cell7 = new_row.insertCell(-1);
             cell7.setAttribute("onclick",clickFn);
-            cell7.innerHTML = checkValue(entry.std_clr, DETAILS_PRECISION);
-        });
+            cell7.innerHTML = checkValue(E4PTdata.sets[i].std_clr,3);
+        }
         prev_tbody.parentNode.replaceChild(tbody, prev_tbody);
     }
 
@@ -3323,17 +3015,16 @@ define(function(require, exports, module) {
     // writeDetailsFile() does just that.  It writes a CSV file containing
     // the details for the data collected.
     function writeDetailsFile() {
-        console.log("@writeDetailsFile");
         // Construct a string containing the file contents.
         let contents = "stage,position,clearance,max_clr,min_clr,med_clr,std_clr,override,name,sso\n";
         for (let i=0; i<E4PTdata.sets.length; i++) {
             contents += E4PTdata.sets[i].stage + ","
                 + E4PTdata.sets[i].position +  ","
-                + checkValue(E4PTdata.sets[i].clearance, DETAILS_PRECISION) + ","
-                + checkValue(E4PTdata.sets[i].max_clr, DETAILS_PRECISION) + ","
-                + checkValue(E4PTdata.sets[i].min_clr, DETAILS_PRECISION) + ","
-                + checkValue(E4PTdata.sets[i].med_clr, DETAILS_PRECISION) + ","
-                + checkValue(E4PTdata.sets[i].std_clr, DETAILS_PRECISION) + ","
+                + checkValue(E4PTdata.sets[i].clearance,3) + ","
+                + checkValue(E4PTdata.sets[i].max_clr,3) + ","
+                + checkValue(E4PTdata.sets[i].min_clr,3) + ","
+                + checkValue(E4PTdata.sets[i].med_clr,3) + ","
+                + checkValue(E4PTdata.sets[i].std_clr,3) + ","
                 + E4PTdata.sets[i].manualOverride + ",";
             if (E4PTdata.sets[i].manualOverride) {
                 contents += E4PTdata.sets[i].overrideName + ","
@@ -3344,16 +3035,13 @@ define(function(require, exports, module) {
             contents += "\n";
         }
         let targetFolder = "data"; // default directory
-        let fileName = DETAILS_FILE_PREFIX + ".csv";
+        let fileName = "details_e4pt.csv";
         if ((typeof E4PTdata.serial_number !== 'undefined') || ( E4PTdata.serial_number.length > 0 )) {
             let sn = processString(E4PTdata.serial_number);
             targetFolder = sn;
             let fileDate = processString(E4PTdata.date);
-            fileName = DETAILS_FILE_PREFIX + "_" + sn + "_" + fileDate + ".csv";
+            fileName = "details_e4pt_" + sn + "_" + fileDate + ".csv";
         }
-        E4PTdata.details_filename = fileName;
-        console.log("DETAILS FILE: ", fileName);
-        addDBEntry(E4PTdata); // update filename
         writeToFile(targetFolder, fileName, contents, null);
     }
 
@@ -3392,7 +3080,7 @@ define(function(require, exports, module) {
             let row = tbl.rows[i];
             let cell = row.cells[0]; // Should only be one cell.
             for (let j=0; j<cell.classList.length; j++) {
-                if (cell.classList[j] == "table-active") {
+                if (cell.classList[j] = "table-active") {
                     let dirArr = cell.attributes.nativeURL.value.split('/');
                     let filename = dirArr[dirArr.length - 1];
                     console.log("deleteMultipleFiles: Appending " + filename);
@@ -3455,6 +3143,8 @@ define(function(require, exports, module) {
         $("#CONNECTION_INDICATOR")
             .removeClass(allColors)
             .addClass(targetColor);
+        //document.getElementById('CONNECTION_INDICATOR').classList.remove("text-danger", "text-warning", "text-success", "text-primary", "text-light");
+        //document.getElementById('CONNECTION_INDICATOR').classList.add(targetColor);
     }
 
     function setMasterMessage( bgColor, txt ) {
@@ -3476,19 +3166,8 @@ define(function(require, exports, module) {
       try {
         update_scan_info(); // currently does nothing
         parse_data();
-          
-        /*if (E4PTdata.data.length > 0) {
-          var d0 = E4PTdata.data[0];
-          var allEqual = E4PTdata.data.every(function(d) {
-            return d === d0;
-          });
-          if (allEqual) {
-            e4PtAlert("Invalid data, all clearance values are identical: " + d0);
-          }
-        }*/
-
-        document.getElementById('MEASUREMENT_RATE').value = E4PTdata.measurement_rate;
-        document.getElementById('THRESHOLD').value = E4PTdata.intensity_threshold;
+        document.getElementById('MEASUREMENT_RATE_1').value = E4PTdata.measurement_rate;
+        document.getElementById('THRESHOLD_1').value = E4PTdata.intensity_threshold;
         
         // only display the DATA PLOT page for GET DATA or SENSOR SETUP and not from DATA COLLECTION
         if (fromGetData || fromSensorSetupPage) {
@@ -3510,7 +3189,6 @@ define(function(require, exports, module) {
     }
 
     function requestE4PtData(acquisitionTime) {
-        console.log("@requestE4PtData");
         console.log("Requesting " + acquisitionTime + " seconds of data");
         charting.clearChartData(document.getElementById('DATA_PLOT'));
         startProgressBar();
@@ -3524,7 +3202,6 @@ define(function(require, exports, module) {
     }
 
     function requestE4PtDataWithMetaData(acquisitionTime, frame, sn, stage, position, casing_thickness, spacer_thickness, master_offset, clearance_calc_selection) {
-        console.log("@requestE4PtDataWithMetaData");
         console.log("Requesting " + acquisitionTime + "s data");
         console.log("Meta data: " + frame + "; " + sn + "; " + stage + "; " + position);
         frame = frame.replace(/\s+/g, '_'); // replace all the spaces with underscores
@@ -3569,8 +3246,6 @@ define(function(require, exports, module) {
         displayAbortButton();
         setIndicatorColor("red");
         startProgressBar();
-        
-        $("#PROCESSING_PAGE").fadeIn();
 
         messaging.sendMessage({args:[{
             command:'send_data',
@@ -3642,7 +3317,6 @@ define(function(require, exports, module) {
         } else {
             E4PTdata.minima = [];
         }
-        console.log("minima: ", E4PTdata.minima.length);
         console.log("Clearance average: ", E4PTdata.clearance);
         // Only update the clearance(s) info if we have all the data to do so.
         if (current_frame_data['position'] != null) {
@@ -3865,7 +3539,6 @@ define(function(require, exports, module) {
         });
     }
 
-    // TODO: unused
     function doSSO() {
       console.log("@doSSO");
       var authServerUri = SSO_AUTH_URL + "?response_type=" + SSO_RESPONSE_TYPE + "&scope=" + SSO_SCOPE + "&client_id=" + SSO_CLIENT_ID + "&redirect_uri=" + SSO_REDIRECT_URI
@@ -3915,10 +3588,7 @@ define(function(require, exports, module) {
         time: e4pt_data.time,
         sets: e4pt_data.sets,
         turbine_casing_thicknesses: e4pt_data.turbine_casing_thicknesses,
-        alreadyOnLDB: e4pt_data.alreadyOnLDB,
-        details_filename: e4pt_data.details_filename,
-        report_filename: e4pt_data.report_filename,
-        email_filename: e4pt_data.email_filename
+        alreadyOnLDB: e4pt_data.alreadyOnLDB
         // We don't save the locs, minima, or data elements of e4pt_data because it
         // contains dense data and could overwhelm the database & browser memory.
         // We also don't save the clearance element because it is saved in the sets
@@ -3976,7 +3646,7 @@ define(function(require, exports, module) {
       tbody.setAttribute("id",elementID);
       // Create the table body.
       for (var i=0; i<rows.length; i++) {
-        console.log("Row: id:" + rows[i].doc._id + "; rev: " + rows[i].doc._rev + "; frame: " + rows[i].doc.frame + "; serial: " + rows[i].doc.serial_number);
+        console.log("Row: id:" + rows[i].doc._id + "; rev: " + rows[i].doc._rev);
         var new_row = tbody.insertRow(-1);
         // save the ID in a hidden column so we can get it to retrieve the data.
         // The first column is hidden.
@@ -4307,7 +3977,6 @@ define(function(require, exports, module) {
 
     // sortTable(n) is lifted straight from https://www.w3schools.com/howto/howto_js_sort_table.asp
     function sortTable(srtTable, n) {
-      console.log("@sortTable");
       var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
       table = document.getElementById(srtTable);
       switching = true;
@@ -4385,7 +4054,7 @@ define(function(require, exports, module) {
     function loadLocalData(id) {
       console.log("@loadLocalData: id = ", id);
       local_db.get(id, function(err, doc) {
-          //console.log("Row: ", doc);
+          console.log("Row: ", doc);
           initializeFromDocument(doc);
       });
     }
@@ -4393,13 +4062,12 @@ define(function(require, exports, module) {
     function loadArchiveData(id) {
       console.log("@loadArchiveData: id = ", id);
       archive_db.get(id, function(err, doc) {
-          //console.log("Row: ", doc);
+          console.log("Row: ", doc);
           initializeFromDocument(doc);
       });
     }
 
     function initializeFromDocument(doc) {
-        console.log("@initializeFromDocument");
         if (doc._id) {
             E4PTdata.pouchdb_id = doc._id;
         } else if (doc.pouchdb_id) {
@@ -4450,15 +4118,6 @@ define(function(require, exports, module) {
         if (typeof doc.turbine_casing_thicknesses !== 'undefined') {
             E4PTdata.turbine_casing_thicknesses = doc.turbine_casing_thicknesses;
         }
-        if (typeof doc.details_filename !== 'undefined') {
-            E4PTdata.details_filename = doc.details_filename;
-        }
-        if (typeof doc.report_filename !== 'undefined') {
-            E4PTdata.report_filename = doc.report_filename;
-        }
-        if (typeof doc.email_filename !== 'undefined') {
-            E4PTdata.email_filename = doc.email_filename;
-        }
 
         current_frame_data = frame_data[frm_idx];
         current_stage_index = 0;
@@ -4470,9 +4129,7 @@ define(function(require, exports, module) {
         selected_frame_data.stageInfoIdx = current_stage_index;
         selected_frame_data.frameName = current_frame_data.frame;
         selected_frame_data.stageName = current_stage;
-        // use index instead of name due to *.* stages
-        //selected_frame_data.bladeCount = current_frame_data.stage_info[current_stage].blade_count;
-        selected_frame_data.bladeCount = Object.values(current_frame_data.stage_info)[current_stage_index].blade_count;
+        selected_frame_data.bladeCount = current_frame_data.stage_info[current_stage].blade_count;
 
         $("#LOCAL_DATA_PAGE").fadeOut();
         $("#ARCHIVED_DATA_PAGE").fadeOut();

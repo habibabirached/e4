@@ -17,8 +17,6 @@
 @dynamic state;
 
 - (void)initialize {
-    NSLog(@"@DemoController:initialize");
-    [self->delegate dispatchMessage:@{@"type":@"log",@"message":@"DemoController.initialize"}];
     self.state = initializationInProgress;
     self->controllerType = @"IFC2422";
     self->telnetIsReady = YES;
@@ -41,20 +39,15 @@
 
 - (void)selectOppositeOutput {}
 
-- (void)disconnectData {
-    NSLog(@"@DemoController:disconnectDevice");
-}
+- (void)disconnectData {}
 
 - (int)calculateNumberOfDatasetsToAcquireForTime:(float)acqTime atRateInHertz:(float)rate {return 0;}
 
 - (void)collectDataSets {
-    [self->delegate dispatchMessage:@{@"type":@"log",@"message":@"DemoController.collectDataSets"}];
-    // TODO: update to display progress bar
     self->delegate.progress = 0.5;
     [self->delegate startProgressReporting];
     [self loadCSVFile:@""];
     [self->delegate returnPluginResponse:@{@"type":@"status",@"status":@"processing"} keepOpen:YES];
-    //[NSThread sleepForTimeInterval:5.0f];
     self->delegate.progress = 1.0;
     if (self.state == collectingDataInProgress)
         self.state = halted;
@@ -68,8 +61,7 @@
 // loadCSVFile reads a CSV file and populates the data structures as though
 // the data had come from the sensor.
 - (bool)loadCSVFile:(NSString*)relativePath {
-    NSLog(@"@DemoController:loadCSVFile %@", relativePath);
-    [self->delegate dispatchMessage:@{@"type":@"log",@"message":@"DemoController.loadCSVFile"}];
+    NSLog(@"@loadCSVFile: %@", relativePath);
     NSString* filePath = [self getPathToDataFile:relativePath];
     NSFileManager* fm = [NSFileManager defaultManager];
     if (![fm fileExistsAtPath:filePath]) {
@@ -87,7 +79,6 @@
         }
 
         NSArray* lineArray = [row componentsSeparatedByString:@","]; // Split up the line
-        // TODO: update for new data format, count = 10, remove text at bottom of CSV file
         if (lineArray.count < 8) {
             NSLog(@"Skipping line %d",r);
             r++;
