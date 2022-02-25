@@ -1479,7 +1479,9 @@ define(function(require, exports, module) {
                   }
               });
         } else {
+            console.log('Setting manual override: ' + JSON.stringify(cmd));
             messaging.sendMessage({args:[cmd]});
+            messaging.sendMessage({args:[{command:'set_manual_override',value:true}]});
         }
     }
     

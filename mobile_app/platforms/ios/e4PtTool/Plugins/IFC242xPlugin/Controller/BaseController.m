@@ -153,6 +153,7 @@
 }
 
 - (void)configureController {
+    NSLog(@"@configureController");
     // update controller configuration to GE defaults
     [self->telnetCmds addObject:@"LANGUAGE EN\n"];
     [self->telnetCmds addObject:@"BAUDRATE 460800\n"];
@@ -247,6 +248,7 @@
 
 - (void)setMeasurementRate:(float)rate reportStatus:(bool)report {
     if (![self checkReady]) return;
+    NSLog(@"@setMeasurementRate: %.3f", rate);
     self.state = setMeasurementRateInProgress;
     self.settings.measurementRate = rate;
     [self->telnetCmds addObject:[NSString stringWithFormat:@"MEASRATE %.3f\n", self.settings.measurementRate]];
@@ -268,6 +270,7 @@
 
 - (void)setIntensityThreshold:(float)threshold sendImmediately:(bool)send {
     if (![self checkReady]) return;
+    NSLog(@"@setIntensityThreshold: %.3f", threshold);
     if (send) self.state = setThresholdInProgress;
     self.settings.intensityThreshold = threshold;
     if ([self->controllerType containsString:@"IFC2422"]) {
