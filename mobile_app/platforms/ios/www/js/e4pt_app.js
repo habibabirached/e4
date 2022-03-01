@@ -2,6 +2,14 @@ define(function(require, exports, module) {
     const messaging = require('./messaging');
     const sensorSettings = require('./sensor_settings');
     const charting = require('./charting');
+    
+    // override console.log behavior
+    var logMessages = [];
+    var oldLog = console.log;
+    console.log = function() {
+        logMessages.push({"timestamp": new Date().toISOString(), "message": Object.values(arguments).join(" ")});
+        oldLog.apply(null, arguments);
+    }
 
     var menu_open = false;
     var downloadFileName = "";
@@ -33,6 +41,14 @@ define(function(require, exports, module) {
     var DEFAULT_SPACER_FILE = 'img/spacers/Unknown.gif';
     var MIN_RPM = 0.5;
     var MAX_RPM = 15.0;
+    
+    var MAX_LOG_MESSAGES = 10;
+    
+    var CUSTOMER_REPORT_FILE_PREFIX = "customer_report_e4Pt";
+    var DETAILS_FILE_PREFIX = "details_e4pt";
+    var EMAIL_FILE_PREFIX = "e4pt";
+    var DATA_FILE_PREFIX = "data";
+    var LOG_FILE_PREFIX = "log";
 
     // This is the obscure address of the e4Pt field data Box folder.
     var FIELD_DATA_BOX_FOLDER = "Field_D.c55377p707j2cweu@u.box.com";
@@ -58,6 +74,7 @@ define(function(require, exports, module) {
     var editModal = new bootstrap.Modal(document.getElementById('EDIT_MODAL'));
     var clearanceOverrideModal = new bootstrap.Modal(document.getElementById('CLEARANCE_OVERRIDE_MODAL'));
     var spacerModal = new bootstrap.Modal(document.getElementById('SPACER_MODAL'));
+    var logModal = new bootstrap.Modal(document.getElementById('LOG_MODAL'));
     
     var POSITION_DISPLAY_MODE = 'TEXT'; // TEXT, ICON, BOTH
     var ARROW_ICONS = {
@@ -183,6 +200,7 @@ define(function(require, exports, module) {
     var previous_frame = '';
 
     $(document).ready(function() {
+        console.log("@ready");
         var attachFastClick = Origami.fastclick;
         attachFastClick(document.body);
         
@@ -548,6 +566,15 @@ define(function(require, exports, module) {
         document.getElementById("SPACER_THUMBNAIL").addEventListener('click', function() {
             showSpacerImage();
         }, {passive: true });
+        document.getElementById("LOG_BUTTON").addEventListener('click', function() {
+            showLog();
+        }, {passive: true });
+        document.getElementById("LOG_CLEAR_BUTTON").addEventListener('click', function() {
+            clearLog();
+        }, {passive: true});
+        document.getElementById("LOG_EXPORT_BUTTON").addEventListener('click', function() {
+            exportLog();
+        }, {passive: true});
         document.getElementById("CALCULATE_RPM_BUTTON").addEventListener('click', function() {
              calculateRPM();
         }, {passive: true});
@@ -724,6 +751,53 @@ define(function(require, exports, module) {
         document.getElementById("SPACER_IMAGE").setAttribute("src", imageName);
         document.getElementById("SPACER_IMAGE").setAttribute("alt", spacerName);
         spacerModal.show();
+    }
+    
+    function showLog() {
+        $("#PROCESSING_PAGE").fadeIn();
+        $("#LOG_MESSAGE_COUNT").text(logMessages.length);
+        var displayCount = Math.min(logMessages.length, MAX_LOG_MESSAGES);
+        var startIndex = logMessages.length - 1;
+        var endIndex = startIndex - displayCount;
+        $("#MAX_MESSAGE_COUNT").text(displayCount);
+        var elementID = "LOG_TABLE_BODY";
+        var prev_tbody = document.getElementById(elementID);
+        var tbody = document.createElement("tbody");
+        tbody.setAttribute("id",elementID);
+        for (var i = startIndex; i > endIndex; i--) {
+            var new_row = tbody.insertRow(-1);
+            var cell1 = new_row.insertCell(-1);
+            cell1.innerHTML = logMessages[i].timestamp;
+            var cell2 = new_row.insertCell(-1);
+            cell2.innerHTML = logMessages[i].message;
+        }
+        prev_tbody.parentNode.replaceChild(tbody, prev_tbody);
+        setTimeout(function() {
+            $("#PROCESSING_PAGE").fadeOut();
+            logModal.show();
+        }, 500);
+    }
+    
+    function clearLog() {
+        logMessages = [];
+        showLog();
+    }
+    
+    function exportLog() {
+        $("#PROCESSING_PAGE").fadeIn();
+        let contents = "";
+        for (let i=0; i<logMessages.length; i++) {
+            contents += logMessages[i].timestamp + ": " + logMessages[i].message;
+            contents += "\n";
+        }
+        let targetFolder = "data"; // default directory
+        let logDate = new Date().toJSON().slice(0, 19).replace(/-/g,'').replace(/:/g,'').replace('T','');
+        let fileName = LOG_FILE_PREFIX + "_" + logDate + ".txt";
+        let fileUrl = cordova.file.documentsDirectory + targetFolder + "/" + fileName;
+        writeToFile(targetFolder, fileName, contents, function() {
+            $("#PROCESSING_PAGE").fadeOut();
+            fileDownloadFunction(fileUrl);
+        });
     }
     
     function calculateRPM() {
@@ -1095,6 +1169,7 @@ define(function(require, exports, module) {
     }
     
     function configureController() {
+        console.log('@configureController');
         if (!serialConnected) {
             e4PtAlert('Please connect to the controller before proceeding.');
         } else {
@@ -2204,6 +2279,7 @@ define(function(require, exports, module) {
     }
 
     function do_dark_reference() {
+        console.log('@do_dark_reference');
         if (messaging.usesWebSocket()) {
             setIndicatorColor("yellow");
         }
@@ -2249,6 +2325,7 @@ define(function(require, exports, module) {
     }
 
     function failed_mastering() {
+        console.log('@failed_mastering');
         setMasterMessage("red","MASTERING FAILED");
         setMasterMessage2("red","MASTERING FAILED");
         setIndicatorColor("green");
@@ -2273,6 +2350,7 @@ define(function(require, exports, module) {
 
     // alert function to work on iOS and web browser
     function e4PtAlert(msg, callback=null) {
+        console.log('e4PtAlert: ' + msg);
         try{
             navigator.notification.alert(
                 String(msg),            // message
@@ -2305,6 +2383,7 @@ define(function(require, exports, module) {
 
     // prompt: function (message, resultCallback, title, buttonLabels, defaultText) {
     function e4PtPrompt(msg, callback, title, buttonLabels) {
+        console.log('e4PtPrompt: ' + msg);
         try {
             navigator.notification.confirm(
             String(msg),
@@ -2392,8 +2471,7 @@ define(function(require, exports, module) {
         console.log("@pluginMessage: msg.type = ", msg.type);
         switch(msg.type) {
             case "setting":
-                console.log("Received Setting Message");
-                console.log(msg);
+                console.log("Received Setting Message: ", JSON.stringify(msg));
                 if (msg.varName === 'intensity_threshold') {
                     document.getElementById('THRESHOLD_1').value = msg.value;
                 }
@@ -2503,6 +2581,9 @@ define(function(require, exports, module) {
                 console.log("Received an alert message: ", msg.message);
                 e4PtAlert(msg.message);
                 // TODO: reset if alert during collection
+                break;
+            case "log":
+                console.log("[BACKEND]", msg.message);
                 break;
             case "progress":
                 console.log("Progress: ", msg.progress);
@@ -2838,7 +2919,7 @@ define(function(require, exports, module) {
     function deleteFile(dir, fileName) {
         console.log("@deleteFile: dir=" + JSON.stringify(dir) + ", fileName=" + fileName);
         dir.getFile(fileName, { create: false }, function (fileEntry) {
-            console.log("fileEntry=", fileEntry);
+            console.log("fileEntry=", JSON.stringify(fileEntry));
             fileEntry.remove(function (file) {
                 console.log("file removed");
             }, function (error) {
@@ -4070,6 +4151,7 @@ define(function(require, exports, module) {
     }
 
     function initializeFromDocument(doc) {
+        console.log("@initializeFromDocument");
         if (doc._id) {
             E4PTdata.pouchdb_id = doc._id;
         } else if (doc.pouchdb_id) {

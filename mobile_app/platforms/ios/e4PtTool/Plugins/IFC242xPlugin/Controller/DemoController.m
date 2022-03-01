@@ -17,6 +17,8 @@
 @dynamic state;
 
 - (void)initialize {
+    NSLog(@"@DemoController:initialize");
+    [self->delegate dispatchMessage:@{@"type":@"log",@"message":@"DemoController.initialize"}];
     self.state = initializationInProgress;
     self->controllerType = @"IFC2422";
     self->telnetIsReady = YES;
@@ -39,11 +41,14 @@
 
 - (void)selectOppositeOutput {}
 
-- (void)disconnectData {}
+- (void)disconnectData {
+    NSLog(@"@DemoController:disconnectDevice");
+}
 
 - (int)calculateNumberOfDatasetsToAcquireForTime:(float)acqTime atRateInHertz:(float)rate {return 0;}
 
 - (void)collectDataSets {
+    [self->delegate dispatchMessage:@{@"type":@"log",@"message":@"DemoController.collectDataSets"}];
     self->delegate.progress = 0.5;
     [self->delegate startProgressReporting];
     [self loadCSVFile:@""];
@@ -61,7 +66,8 @@
 // loadCSVFile reads a CSV file and populates the data structures as though
 // the data had come from the sensor.
 - (bool)loadCSVFile:(NSString*)relativePath {
-    NSLog(@"@loadCSVFile: %@", relativePath);
+    NSLog(@"@DemoController:loadCSVFile %@", relativePath);
+    [self->delegate dispatchMessage:@{@"type":@"log",@"message":@"DemoController.loadCSVFile"}];
     NSString* filePath = [self getPathToDataFile:relativePath];
     NSFileManager* fm = [NSFileManager defaultManager];
     if (![fm fileExistsAtPath:filePath]) {
