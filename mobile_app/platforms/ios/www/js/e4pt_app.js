@@ -227,6 +227,16 @@ define(function(require, exports, module) {
         setButtonProperties($("#CALCULATE_RPM_BUTTON"), LABEL_CALCULATE, 'green');
         setButtonProperties($("#READ_SENSOR_PARAMETERS_BUTTON"), LABEL_LOAD_PARAMS, 'blue');
         
+        // reconnect if app moved to background/foreground
+        document.addEventListener("pause", function () {
+            console.log("pause");
+            //messaging.sendMessage({args:[{command:'disconnect'}]});
+        }, false);
+        document.addEventListener("resume", function() {
+            console.log("resume");
+            set_connection_mode();
+        }, false);
+        
         document.getElementById("MAIN_MENU").addEventListener('click', function() {
             $("#TITLE_BAR").text(APP_NAME);
             toggleMenu();
