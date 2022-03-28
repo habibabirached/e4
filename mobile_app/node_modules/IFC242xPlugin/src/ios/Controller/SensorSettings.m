@@ -15,12 +15,12 @@
 @implementation SensorSettings
 
 @synthesize name = _name;
-@synthesize length = _length; // provided by controller
-@synthesize smr = _smr; // provided by controller
-@synthesize mr = _mr; // provided by controller
-@synthesize hmf = _hmf;
-@synthesize mv = _mv;
-@synthesize mo = _mo;
+@synthesize length = _length; // provided by controller (in)
+@synthesize smr = _smr; // provided by controller (mm)
+@synthesize mr = _mr; // provided by controller (mm)
+@synthesize hmf = _hmf; // (in)
+@synthesize mv = _mv; // (mm)
+@synthesize mo = _mo; // (in)
 @synthesize offsetSelector = _offsetSelector;
 @synthesize offsetAdjustmentFormula = _offsetAdjustmentFormula;
 
@@ -53,25 +53,32 @@
 }
 
 +(float) mvFromLength:(float)length hmf:(float)hmf smr:(float)smr {
-    return IN_to_MM * (hmf - length) - smr;
+    float mv = IN_to_MM * (hmf - length) - smr;
+    NSLog(@"@mvFromLength: %f = %f * (%f - %f) - %f", mv, IN_to_MM, hmf, length, smr);
+    return mv;
 }
 
 +(float) moFromLength:(float)length hmf:(float)hmf smr:(float)smr mv:(float)mv {
     // should always be 0.0
-    return length + (smr + mv)/IN_to_MM - hmf;
+    float mo = length + (smr + mv)/IN_to_MM - hmf;
+    NSLog(@"@moFromLength: %f = %f + (%f - %f)/%f - %f", mo, length, smr, mv, IN_to_MM, hmf);
+    return mo;
 }
 
 -(instancetype)initWithName:(NSString*)name {
+    NSLog(@"@initWithName: %@", name);
     return [self initWithName:name lengthInches:0.0 measurementRangeMM:0.0 startOfMeasurementRangeMM:0.0 masterFixtureHeightInches:0.0];
 }
 
 -(instancetype)initWithName:(NSString*)name lengthInches:(float)length measurementRangeMM:(float)mr startOfMeasurementRangeMM:(float)smr masterFixtureHeightInches:(float)hmf {
+    NSLog(@"@initWithName: %@, %f, %f, %f", name, length, mr, smr);
     float mv = [SensorSettings mvFromLength:length hmf:hmf smr:smr];
     float mo = [SensorSettings moFromLength:length hmf:hmf smr:smr mv:mv];
     return [self initWithName:name lengthInches:length measurementRangeMM:mr startOfMeasurementRangeMM:smr masterFixtureHeightInches:hmf masteringValueMM:mv masteringOffsetInches:mo];
 }
 
 -(instancetype)initWithName:(NSString*)name lengthInches:(float)length measurementRangeMM:(float)mr startOfMeasurementRangeMM:(float)smr masterFixtureHeightInches:(float)hmf masteringValueMM:(float)mv masteringOffsetInches:(float)mo {
+    NSLog(@"@initWithName: %@, %f, %f, %f, %f, %f, %f", name, length, mr, smr, hmf, mv, mo);
     if (self = [super init]) {
         self.name = name;
         self.length = length;
@@ -85,6 +92,7 @@
 }
 
 -(void)updateMasteringValues {
+    NSLog(@"@updateMasteringValues");
     self.mv = [SensorSettings mvFromLength:self.length hmf:self.hmf smr:self.smr];
     self.mo = [SensorSettings moFromLength:self.length hmf:self.hmf smr:self.smr mv:self.mv];
 }
@@ -97,45 +105,62 @@
 }
 
 -(void) setOffsetSelector:(NSString*)selector {
+    NSLog(@"@setOffsetSelector: %@", selector);
     _offsetSelector = selector;
 }
 
 -(NSString*) offsetAdjustmentFormula {
-    if ([@"2" isEqualToString:[self offsetSelector]]) {
-        return @"MV + SL - ST - CT + MO";
-    } else if ([@"1" isEqualToString:[self offsetSelector]]) {
+    if ([@"1" isEqualToString:[self offsetSelector]]) {
         return @"Hmf - ST - CT + MO - MV";
+    } else if ([@"2" isEqualToString:[self offsetSelector]]) {
+        return @"MV + SL - ST - CT + MO";
+    } else if ([@"3" isEqualToString:[self offsetSelector]]) {
+        return @"SMR + SL - ST - CT";
     } else {
         return @"0.0";
     }
 }
 
 -(NSString*) offsetAdjustmentExplanation:(float)spacerThickness casingThickness:(float)casingThickness {
-    if ([@"2" isEqualToString:[self offsetSelector]]) {
-        return [NSString stringWithFormat:@"%.3f + (%.3f - %.3f - %.3f + %.3f) * %.3f", [self mv], [self length], spacerThickness, casingThickness, [self mo], IN_to_MM];
-    } else if ([@"1" isEqualToString:[self offsetSelector]]) {
+    if ([@"1" isEqualToString:[self offsetSelector]]) {
         return [NSString stringWithFormat:@"%.3f * (%.3f - %.3f - %.3f + %.3f) - %.3f", IN_to_MM, [self hmf], spacerThickness, casingThickness, [self mo], [self mv]];
+    } else if ([@"2" isEqualToString:[self offsetSelector]]) {
+        return [NSString stringWithFormat:@"%.3f + (%.3f - %.3f - %.3f + %.3f) * %.3f", [self mv], [self length], spacerThickness, casingThickness, [self mo], IN_to_MM];
+    } else if ([@"3" isEqualToString:[self offsetSelector]]) {
+        return [NSString stringWithFormat:@"%.3f + (%.3f - %.3f - %.3f) * %.3f", [self smr], [self length], spacerThickness, casingThickness, IN_to_MM];
     } else {
         return @"0.0";
     }
 }
 
 -(float)calculateOffsetAdjustment:(float)spacerThickness casingThickness:(float)casingThickness {
-    if ([@"2" isEqualToString:[self offsetSelector]]) {
-        return [self calcOffsetUsingSL:spacerThickness casingThickness:casingThickness];
-    } else if ([@"1" isEqualToString:[self offsetSelector]]) {
+    if ([@"1" isEqualToString:[self offsetSelector]]) {
         return [self calcOffsetUsingHmf:spacerThickness casingThickness:casingThickness];
+    } else if ([@"2" isEqualToString:[self offsetSelector]]) {
+        return [self calcOffsetUsingSL:spacerThickness casingThickness:casingThickness];
+    } else if ([@"3" isEqualToString:[self offsetSelector]]) {
+        return [self calcOffsetUsingSMR:spacerThickness casingThickness:casingThickness];
     } else {
         return 0.0;
     }
 }
 
 -(float)calcOffsetUsingHmf:(float)spacerThickness casingThickness:(float)casingThickness {
-    return IN_to_MM * ([self hmf] - spacerThickness - casingThickness + [self mo]) - [self mv];
+    float offset = IN_to_MM * ([self hmf] - spacerThickness - casingThickness + [self mo]) - [self mv];
+    NSLog(@"@calcOffsetUsingHmf: %f = %f * (%f - %f - %f + %f) - %f", offset, IN_to_MM, [self hmf], spacerThickness, casingThickness, [self mo], [self mv]);
+    return offset;
 }
 
 -(float)calcOffsetUsingSL:(float)spacerThickness casingThickness:(float)casingThickness {
-    return [self mv] + ([self length] - spacerThickness - casingThickness + [self mo]) * IN_to_MM;
+    float offset = [self mv] + ([self length] - spacerThickness - casingThickness + [self mo]) * IN_to_MM;
+    NSLog(@"@calcOffsetUsingSL: %f = %f + (%f - %f - %f + %f) * %f", offset, [self mv], [self length], spacerThickness, casingThickness, [self mo], IN_to_MM);
+    return offset;
+}
+
+-(float)calcOffsetUsingSMR:(float)spacerThickness casingThickness:(float)casingThickness {
+    float offset = [self smr] + ([self length] - spacerThickness - casingThickness) * IN_to_MM;
+    NSLog(@"@calcOffsetUsingSMR: %f = %f + (%f - %f - %f) * %f", offset, [self smr], [self length], spacerThickness, casingThickness, IN_to_MM);
+    return offset;
 }
 
 @end

@@ -407,7 +407,8 @@
         NSString* offsetFormula = [self->controller.settings.sensor offsetAdjustmentFormula];
         NSString* offsetCalculation = [self->controller.settings.sensor offsetAdjustmentExplanation:self->metaData.spacerThickness casingThickness:self->metaData.casingThickness];
         float offsetValue = [self->controller.settings.sensor calculateOffsetAdjustment:self->metaData.spacerThickness casingThickness:self->metaData.casingThickness];
-        [self returnPluginResponse:@{@"type":@"alert",@"message":[NSString stringWithFormat:@"Offset Adjustment is applied to all Clearance values below threshold and all Blade Clearance values.\n\nFormula: %@\n\nCalculation: %@\n\nValue: %.3f", offsetFormula, offsetCalculation, offsetValue]}];
+        //[self returnPluginResponse:@{@"type":@"alert",@"message":[NSString stringWithFormat:@"Offset Adjustment is applied to all Clearance values below threshold and all Blade Clearance values.\n\nFormula: %@\n\nCalculation: %@\n\nValue: %.3f", offsetFormula, offsetCalculation, offsetValue]}];
+        [self returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"Offset Adjustment\nFormula: %@\nCalculation: %@\nValue: %.3f", offsetFormula, offsetCalculation, offsetValue]}];
     } else if ([cmd containsString:@"set_connection_mode"]) {
         NSString* mode = [message objectForKey:@"mode"];
         NSLog(@"Recieved set_connection_mode:%@",mode);

@@ -676,9 +676,9 @@
                               <br/>
                               <div class="d-grid gap-2">
                                   <div class="btn-group" role="group" aria-label="Mastering Buttons">
-                                    <button id="RESET_MASTER_BUTTON_2" type="button" class="btn btn-primary">RESET</button>
+                                    <button id="RESET_MASTER_BUTTON_2" type="button" class="btn btn-danger">RESET</button>
                                     <span>&nbsp;</span>
-                                    <button id="START_MASTER_BUTTON_2" type="button" class="btn btn-danger">START</button>
+                                    <button id="START_MASTER_BUTTON_2" type="button" class="btn btn-primary">START</button>
                                   </div>
                               </div>
                               <div class="text-center">
@@ -786,14 +786,14 @@
                         <div class="col-md-5 text-center">
                             <label for="CURR_CASE_THICKNESS" class="form-label">Casing Thickness</label>
                             <div class="input-group mb-0">
-                              <input type="text" class="form-control" id="CURR_CASE_THICKNESS" aria-describedby="CURR_CASE_THICKNESS_LABEL">
+                              <input type="number" inputmode="decimal" class="form-control" id="CURR_CASE_THICKNESS" aria-describedby="CURR_CASE_THICKNESS_LABEL">
                               <span class="input-group-text" id="CURR_CASE_THICKNESS_LABEL">in</span>
                             </div>
                         </div>
                         <div class="col-md-5 text-center">
                             <label for="SPACER_THICKNESS" class="form-label">Spacer Thickness</label>
                             <div class="input-group mb-0">
-                              <input type="text" class="form-control" id="SPACER_THICKNESS" aria-describedby="SPACER_THICKNESS_LABEL">
+                              <input type="number" inputmode="decimal" class="form-control" id="SPACER_THICKNESS" aria-describedby="SPACER_THICKNESS_LABEL">
                               <span class="input-group-text" id="SPACER_THICKNESS_LABEL">in</span>
                             </div>
                         </div>
@@ -803,14 +803,14 @@
                         <div class="col-md-5 text-center">
                             <label for="AMBIENT_TEMPERATURE" class="form-label">Ambient Temperature</label>
                             <div class="input-group mb-0">
-                              <input type="text" class="form-control" id="AMBIENT_TEMPERATURE" aria-describedby="AMBIENT_TEMPERATURE_LABEL">
+                              <input type="number" inputmode="decimal" class="form-control" id="AMBIENT_TEMPERATURE" aria-describedby="AMBIENT_TEMPERATURE_LABEL">
                               <span class="input-group-text" id="AMBIENT_TEMPERATURE_LABEL">°F</span>
                             </div>
                         </div>
                         <div class="col-md-5 text-center">
                             <label for="MEASUREMENT_RPM" class="form-label">RPM</label>
                             <div class="input-group mb-0">
-                              <input type="text" class="form-control" id="MEASUREMENT_RPM">
+                              <input type="number" inputmode="decimal" class="form-control" id="MEASUREMENT_RPM">
                               <button class="btn btn-success" type="button" id="CALCULATE_RPM_BUTTON">CALCULATE</button>
                             </div>
                         </div>
@@ -952,7 +952,7 @@
                           <div class="row mb-2">
                             <label for="CLEARANCE_OVERRIDE_VALUE" class="col-sm-5 col-form-label">Clearance</label>
                             <div class="col-sm-7">
-                                <input class="form-control" type="text" id="CLEARANCE_OVERRIDE_VALUE" value=""/>
+                                <input class="form-control" type="number" inputmode="decimal" id="CLEARANCE_OVERRIDE_VALUE" value=""/>
                             </div>
                           </div>
                           <div class="row mb-2">
@@ -1081,7 +1081,7 @@
                             <!-- Measurement Rate and Intensity Threshold -->
                             <form class="row g-3">
                               <div class="col-md-6">
-                                  <p>The app will automatically calculate the measurement (sampling) rate, and it is set in kHz between 0.100 and 6.500. A maximum of 3 decimal places may be specified.</p>
+                                  <p>The app will automatically calculate the measurement (sampling) rate by default, and it is set in kHz between <span id="MIN_SAMPLING_RATE"></span> and <span id="MAX_SAMPLING_RATE"></span>. A maximum of 3 decimal places may be specified.</p>
                               </div>
                               <div class="col-md-6">
                                   <p>The intensity threshold is automatically calculated from the measurement (sampling) rate.</p>
@@ -1089,7 +1089,7 @@
                               <div class="col-md-6 text-center">
                                   <label for="MEASUREMENT_RATE_1" class="form-label">Measurement Rate</label>
                                   <div class="input-group mb-3">
-                                    <input id="MEASUREMENT_RATE_1" type="text" class="form-control" placeholder="" aria-label="Measurement Rate" aria-describedby="MEASUREMENT_RATE_1_TEXT">
+                                    <input id="MEASUREMENT_RATE_1" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Measurement Rate" aria-describedby="MEASUREMENT_RATE_1_TEXT">
                                     <span class="input-group-text" id="MEASUREMENT_RATE_1_TEXT">kHz</span>
                                   </div>
                               </div>
@@ -1136,42 +1136,42 @@
                               <div class="col-md-4 text-center">
                                   <label for="SENSOR_LENGTH" class="form-label">Measured Sensor Length</label>
                                   <div class="input-group mb-3">
-                                    <input id="SENSOR_LENGTH" type="text" class="form-control" placeholder="" aria-label="Sensor Length" aria-describedby="SENSOR_LENGTH_TEXT">
+                                    <input id="SENSOR_LENGTH" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Sensor Length" aria-describedby="SENSOR_LENGTH_TEXT">
                                     <span class="input-group-text" id="SENSOR_LENGTH_TEXT">in</span>
                                   </div>
                               </div>
                               <div class="col-md-4 text-center">
                                   <label for="SMR" class="form-label">Start of Measure Range</label>
                                   <div class="input-group mb-3">
-                                    <input id="SMR" type="text" class="form-control" placeholder="" aria-label="Start of Measure Range" aria-describedby="SMR_TEXT">
+                                    <input id="SMR" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Start of Measure Range" aria-describedby="SMR_TEXT">
                                     <span class="input-group-text" id="SMR_TEXT">mm</span>
                                   </div>
                               </div>
                               <div class="col-md-4 text-center">
                                   <label for="SENSOR_MR" class="form-label">Measurement Range</label>
                                   <div class="input-group mb-3">
-                                    <input id="SENSOR_MR" type="text" class="form-control" placeholder="" aria-label="Measurement Range" aria-describedby="SENSOR_MR_TEXT">
+                                    <input id="SENSOR_MR" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Measurement Range" aria-describedby="SENSOR_MR_TEXT">
                                     <span class="input-group-text" id="SENSOR_MR_TEXT">mm</span>
                                   </div>
                               </div>
                               <div class="col-md-4 text-center">
                                   <label for="MASTER_FIXTURE_HEIGHT" class="form-label">Mastering Fixture Height</label>
                                   <div class="input-group mb-3">
-                                    <input id="MASTER_FIXTURE_HEIGHT" type="text" class="form-control" placeholder="" aria-label="Mastering Fixture Height" aria-describedby="MASTER_FIXTURE_HEIGHT_TEXT">
+                                    <input id="MASTER_FIXTURE_HEIGHT" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Mastering Fixture Height" aria-describedby="MASTER_FIXTURE_HEIGHT_TEXT">
                                     <span class="input-group-text" id="MASTER_FIXTURE_HEIGHT_TEXT">in</span>
                                   </div>
                               </div>
                               <div class="col-md-4 text-center">
                                   <label for="MASTERING_VALUE" class="form-label">Mastering Value</label>
                                   <div class="input-group mb-3">
-                                    <input id="MASTERING_VALUE" type="text" class="form-control" placeholder="" aria-label="Mastering Value" aria-describedby="MASTERING_VALUE_TEXT">
+                                    <input id="MASTERING_VALUE" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Mastering Value" aria-describedby="MASTERING_VALUE_TEXT">
                                     <span class="input-group-text" id="MASTERING_VALUE_TEXT">mm</span>
                                   </div>
                               </div>
                               <div class="col-md-4 text-center">
                                   <label for="MASTER_OFFSET" class="form-label">Master Offset</label>
                                   <div class="input-group mb-3">
-                                    <input id="MASTER_OFFSET" type="text" class="form-control" placeholder="" aria-label="Master Offset" aria-describedby="MASTER_OFFSET_TEXT">
+                                    <input id="MASTER_OFFSET" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Master Offset" aria-describedby="MASTER_OFFSET_TEXT">
                                     <span class="input-group-text" id="MASTER_OFFSET_TEXT">in</span>
                                   </div>
                               </div>
@@ -1207,9 +1207,9 @@
                               <hr>
                               <dl class="row">
                                   <dt class="col-sm-6">Short Master Fixture</dt>
-                                  <dd class="col-sm-6">3.568&quot; +/- 0.0005in</dd>
+                                  <dd class="col-sm-6"><span id="DEFAULT_SMF"></span>&quot; +/- 0.0005in</dd>
                                   <dt class="col-sm-6">Long Master Fixture</dt>
-                                  <dd class="col-sm-6">9.463&quot; +/- 0.0005in</dd>
+                                  <dd class="col-sm-6"><span id="DEFAULT_LMF"></span>&quot; +/- 0.0005in</dd>
                               </dl>
                             </div>
                             <div class="alert alert-warning pb-0" role="alert">
@@ -1217,9 +1217,9 @@
                               <hr>
                               <dl class="row">
                                   <dt class="col-sm-6">Short Sensor</dt>
-                                  <dd class="col-sm-6">2.979&quot; +/- 0.0005in</dd>
+                                  <dd class="col-sm-6"><span id="DEFAULT_SS"></span>&quot; +/- 0.0005in</dd>
                                   <dt class="col-sm-6">Long Sensor</dt>
-                                  <dd class="col-sm-6">8.825&quot; +/- 0.0005in</dd>
+                                  <dd class="col-sm-6"><span id="DEFAULT_LS"></span>&quot; +/- 0.0005in</dd>
                               </dl>
                             </div>
                             <!-- -->
@@ -1362,6 +1362,17 @@
               <div class="card-body" style="overflow: scroll;">
                   <div class="row">
                     <div class="col-lg-12">
+                      <!-- Color Key -->
+                      <table class="table table-bordered">
+                          <tr>
+                              <td class="table-success">&nbsp;</td>
+                              <td class="table-light">Final Data</td>
+                              <td class="table-warning">&nbsp;</td>
+                              <td class="table-light">Preliminary</td>
+                              <td>&nbsp;</td>
+                              <td class="table-light">Other</td>
+                          </tr>
+                      </table>
                       <!-- File Chooser -->
                       <table id="LOCAL_FILE_TABLE" class="table table-bordered" style="overflow: scroll;">
                           <thead id="LOCAL_FILE_TABLE_HEADER" class="table-light">
