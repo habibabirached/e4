@@ -57,7 +57,7 @@ body {
 .circleCell {
     border: 2px solid black;
     width: 150px;
-    height: 130px;
+    height: 120px;
     border-radius: 50%;
     text-align: center;
     line-height: 60px;
