@@ -35,8 +35,9 @@
 @synthesize outOfRange = _outOfRange;
 @synthesize useMinimumClearance = _useMinimumClearance;
 
--(instancetype)init {
+-(instancetype)initWithDelegate:(IFC242xManager*)delegate {
     if (self = [super init]) {
+        self->delegate = delegate;
         [self computeKernel:KERNEL_SIGMA kernel_size:KERNEL_SIZE];
         [self resetOptions];
     }
@@ -59,18 +60,23 @@
 }
 
 - (ClearanceData*)computeClearance:(MeasurementData*)measurementData bladeCount:(int)bladeCount usingAdjustmentFactor:(float)offsetAdjustment {
-    
-    ClearanceData* clearanceData = [ClearanceData new];
+    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: bladeCount=%d, offsetAdjustment=%f", bladeCount, offsetAdjustment]} keepOpen:YES];
+    //[self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: displacements=%@", measurementData.displacements]} keepOpen:YES];
+    //[self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: intensities=%@", measurementData.intensities]} keepOpen:YES];
+    ClearanceData* clearanceData = [[ClearanceData alloc] initWithDelegate:self->delegate];//[ClearanceData new];
     
     // Displacement values will be between 0-15.
     // We create a coarse histogram to see how many peaks we find.
     // Should give 61 bins for BIN_MULTIPLIER = 4.0.
+    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: outOfRange=%f", self.outOfRange]} keepOpen:YES];
     int nbins = self.outOfRange * BIN_MULTIPLIER + 1;
     int* hBins = [self createHistogramForSegmentation:measurementData.displacements numberOfBins:nbins valueMultiplier:BIN_MULTIPLIER];
     
     // Use Otsu's method to get threshold
     // TODO: allow for user override
-    clearanceData.shelfThreshold = [self otsuSegmentation:hBins nbins:nbins maxBin:self.outOfRange];
+    float threshold = [self otsuSegmentation:hBins nbins:nbins maxBin:self.outOfRange];
+    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: shelfThreshold=%f", threshold]} keepOpen:YES];
+    clearanceData.shelfThreshold = threshold;
     free(hBins);
     
     // Perform edge detection with an LoG filter
@@ -78,6 +84,7 @@
     //NSLog(@"Filtering");
     NSArray* filtered = [self fir_filter:self->kernel displacements:measurementData.displacements threshold:clearanceData.shelfThreshold];
     //NSLog(@"Filtering Done.");
+    //[self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: filtered=%@", filtered]} keepOpen:YES];
     
     // Fill these buffers with indications for positive or
     // negative zero crossings.  These are the blade boundaries.
@@ -98,10 +105,12 @@
     for (int i=0; i<measurementData.displacements.count; i++) {
         float rawDisplacement = [measurementData.displacements[i] floatValue];
         if (rawDisplacement < self.outOfRange) {
+            //[self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: valid displacement=%f", rawDisplacement]} keepOpen:YES];
             clearanceData.averageDisplacement += rawDisplacement;
             overall_count++;
         }
         if (neg_crossing[i]) {
+            [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: negative crossing at [%d]", i]} keepOpen:YES];
             // We've encountered a negative zero-crossing
             // so sum displacements to the next positive zero-crossing.
             int start = i;
@@ -110,10 +119,12 @@
             // point for this blade, if any.
             for (; stop < measurementData.displacements.count; stop++) {
                 if (pos_crossing[stop]) {
+                    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: positive crossing at [%d]", stop]} keepOpen:YES];
                     //NSLog(@"Start: %d; Stop: %d", start, stop);
                     break;
                 }
                 else if (stop == measurementData.displacements.count -1) {
+                    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: no matching positive crossing found for negative crossing at [%d]", start]} keepOpen:YES];
                     //NSLog(@"No stop found for start: %d", start);
                     // end of the data is encountered without a matching
                     // positive zero crossing.
@@ -131,13 +142,14 @@
             int count = 0;
             
             if (stop > start) {
+                [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: blade found: [%d]-[%d]", start, stop]} keepOpen:YES];
                 // FILTER_EDGE_SIZE_* allows us to shave down the number of points used
                 for (int j=start + FILTER_EDGE_SIZE_START; j<=stop - FILTER_EDGE_SIZE_STOP; j++) {
                     rawDisplacement = [measurementData.displacements[j] floatValue];
                     BOOL intesityAboveThreshold = YES;
-                    if (self.filterByDisplacementAndIntensity)
+                    if (self.filterByDisplacementAndIntensity) {
                         intesityAboveThreshold = [measurementData.intensities[j] floatValue] > 0;
-                    
+                    }
                     if ( intesityAboveThreshold && (rawDisplacement < clearanceData.shelfThreshold) ) {
                         //NSLog(@"Averaging: %f",[d floatValue]);
                         if (rawDisplacement < min_clearance) {
@@ -148,6 +160,7 @@
                         count++;
                     }
                 }
+                [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: sum=%f, count=%d", clearance, count]} keepOpen:YES];
                 //NSLog(@"Sum: %f; count: %d", clearance, count);
                 // Protect against divide-by-zero...
                 if (count == 0) {
@@ -160,7 +173,9 @@
                 if (isnan(clearance)) {
                     clearance = -9.995;  // nan has happened before.
                 }
+                [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: average blade clearance = %f", clearance]} keepOpen:YES];
                 if (count >= MIN_BLADE_SAMPLE_COUNT) {
+                    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: sufficient blade samples: %d >= %d", count, MIN_BLADE_SAMPLE_COUNT]} keepOpen:YES];
                     if (self.useMinimumClearance)
                         [clearanceData.bladeClearances addObject:[NSNumber numberWithFloat:min_clearance]];
                     else {
@@ -171,6 +186,9 @@
                         min_loc = (start + stop) / 2.0;
                     }
                     [clearanceData.locations addObject:[NSNumber numberWithFloat:min_loc]];
+                } else {
+                    //NSLog(@"Not enough samples: %d < %d", count, MIN_BLADE_SAMPLE_COUNT);
+                    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: insufficient blade samples, %d < %d", count, MIN_BLADE_SAMPLE_COUNT]} keepOpen:YES];
                 }
                 //NSLog(@"Clearance: %f; Quality: %@", clearance, [clearanceData.quality lastObject]);
                 for (int j=start; j<=stop; j++) {
@@ -189,8 +207,13 @@
     free(neg_crossing);
     free(pos_crossing);
     
+    //[self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: filtered=%@", filtered]} keepOpen:YES];
+    //[self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: bladeClearances=%@", clearanceData.bladeClearances]} keepOpen:YES];
+    
     // Finish computing the overall average.
+    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: total displacement=%f, count=%d", clearanceData.averageDisplacement, overall_count]} keepOpen:YES];
     clearanceData.averageDisplacement /= (float)overall_count;
+    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: average displacement=%f", clearanceData.averageDisplacement]} keepOpen:YES];
     [clearanceData applyAdjustment:offsetAdjustment threshold:self.outOfRange];
     [clearanceData calculateStatisticsWithBladeCount:bladeCount];
 
@@ -200,13 +223,14 @@
     } else {
         clearanceData.averageBladeSamples = (float)blades_samples / (float)blades_count;
     }
+    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: blades_samples=%d, blades_count=%d, averageBladeSamples=%f", blades_samples, blades_count, clearanceData.averageBladeSamples]} keepOpen:YES];
         
     NSLog(@"computeClearance Done.");
     return clearanceData;
 }
     
 -(int*)createHistogramForSegmentation:(NSArray*)displacements numberOfBins:(int)nbins valueMultiplier:(float)multiplier {
-    
+    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.createHistogramForSegmentation: nbins=%d, multiplier=%f", nbins, multiplier]} keepOpen:YES];
     int* hBins = (int*)malloc(nbins * sizeof(int));
     for (int i=0; i<nbins; i++) hBins[i] = 0;
     // Populate the histogram by converting displacements to histogram indices.
@@ -242,6 +266,7 @@
 // If the 2 classes are seen as too close to one another, then there is
 // likely only a single class.
 -(float)otsuSegmentation:(int*)hist nbins:(int)nbins maxBin:(float)maxBin {
+    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.otsuSegmentation: nbins=%d, maxBin=%f", nbins, maxBin]} keepOpen:YES];
     float sigmaSquared;
     float maxSigma = -1.0;
     int threshold_idx = 0;

@@ -7,9 +7,15 @@
 //
 
 #import "ClearanceData.h"
+#import "IFC242xManager.h"
 #import "MeasurementData.h"
 
-@interface PostProcess : NSObject
+@interface PostProcess : NSObject {
+    @protected IFC242xManager* delegate;
+}
+
+-(instancetype)initWithDelegate:(IFC242xManager*)delegate;
+
 @property (nonatomic) BOOL filterByDisplacementAndIntensity;
 @property (nonatomic) float outOfRange;
 @property (nonatomic) BOOL useMinimumClearance;

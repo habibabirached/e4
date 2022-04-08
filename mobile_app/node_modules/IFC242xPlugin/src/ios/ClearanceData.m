@@ -34,8 +34,9 @@
 @synthesize blades = _blades;
 @synthesize averageBladeSamples = _averageBladeSamples;
 
--(instancetype)init {
+-(instancetype)initWithDelegate:(IFC242xManager*)delegate {
     if (self = [super init]) {
+        self->delegate = delegate;
         self.min = FLT_MAX;
     }
     return self;
@@ -82,6 +83,7 @@
 }
 
 -(void)applyAdjustment:(float)adjustment threshold:(float)threshold {
+    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"ClearanceData.applyAdjustment: adjustment=%f, threshold=%f", adjustment, threshold]} keepOpen:YES];
     if (adjustment != 0.0) {
         for (NSNumber* value in self.filtered) {
             if ([value floatValue] >= threshold) {
@@ -108,6 +110,7 @@
 }
 
 -(void)calculateStatisticsWithBladeCount:(int)bladeCount {
+    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"ClearanceData.calculateStatisticsWithBladeCount: bladeCount=%d", bladeCount]} keepOpen:YES];
     if (self.bladeClearances.count > 0 ) {
         NSMutableArray* statsBuff = [NSMutableArray new];
         NSUInteger upperIndex = (bladeCount == 0) ? self.bladeClearances.count : MIN(self.bladeClearances.count, bladeCount);

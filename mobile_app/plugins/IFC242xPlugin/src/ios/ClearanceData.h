@@ -5,8 +5,14 @@
 //  Created by Marc Garbiras on 2021-Jan-23.
 //
 //
+#import "IFC242xManager.h"
 
-@interface ClearanceData : NSObject
+@interface ClearanceData : NSObject {
+    @protected IFC242xManager* delegate;
+}
+
+-(instancetype)initWithDelegate:(IFC242xManager*)delegate;
+
 @property (readonly, strong, nonatomic) NSMutableArray* filtered;
 @property (readonly, strong, nonatomic) NSMutableArray* clearances;
 @property (readonly, strong, nonatomic) NSMutableArray* bladeClearances;
