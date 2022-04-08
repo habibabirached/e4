@@ -653,14 +653,7 @@ frame_data = [
     'default_sensor':'LONG'
     },
     {'frame':'7HA.02-FL18',
-    'image':'7HA02-18',
     'stage':['1', '6', '10', '14'],
-    'stage_images':{
-        '1':'7HA02-18-R1',
-        '6':'7HA02-18-R6',
-        '10':'7HA02-18-R10',
-        '14':'7HA02-18-R14'
-    },
     'position':{'1':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
                 '6':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],
                 '10':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'],

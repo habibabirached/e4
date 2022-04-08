@@ -448,10 +448,6 @@ define(function(require, exports, module) {
         document.getElementById("SETUP_CLOSE_BUTTON").addEventListener('click', function() {
             $("#SETUP_PAGE").fadeOut();
         }, {passive: true});
-        document.getElementById("LOCATION_CLOSE_BUTTON").addEventListener('click', function() {
-            $("#LOCATION_PAGE").fadeOut();
-            $("#TURBINE_SETUP_PAGE").fadeIn();
-        }, {passive: true});
         document.getElementById("LOCAL_DATA_CLOSE_BUTTON").addEventListener('click', function() {
             $("#LOCAL_DATA_PAGE").fadeOut();
             $("#TITLE_BAR").text(APP_NAME);
@@ -519,22 +515,17 @@ define(function(require, exports, module) {
                 console.log('already performing dark reference');
             }
         }, {passive: true});
-        document.getElementById("MEASUREMENT_RATE").addEventListener('input', function() {
-            var sf = parseFloat(document.getElementById('MEASUREMENT_RATE').value);
+        document.getElementById("MEASUREMENT_RATE_1").addEventListener('input', function() {
+            var sf = parseFloat(document.getElementById('MEASUREMENT_RATE_1').value);
             // Make sure the text is a number
             if (isNaN(sf) || typeof(sf) !== 'number') {
-                document.getElementById('THRESHOLD').value = "";
+                document.getElementById('THRESHOLD_1').value = "";
             } else {
                 messaging.sendMessage({args:[{command:'get_threshold_for_rate',rate:sf.toFixed(3)}]});
             }
         }, {passive: true});
         document.getElementById("SET_MEASUREMENT_RATE_BUTTON").addEventListener('click', function() {
-            set_measurement_and_intensity_value('MEASUREMENT_RATE', 'Measurement rate', MIN_SAMPLING_RATE, MAX_SAMPLING_RATE, {command:'set_measuring_rate_and_threshold',threshold:parseFloat(document.getElementById('THRESHOLD').value).toFixed(3),rate:parseFloat(document.getElementById('MEASUREMENT_RATE').value)});
-        }, {passive: true});
-        document.getElementById("RESET_MEASUREMENT_RATE_BUTTON").addEventListener('click', function() {
-            messaging.sendMessage({args:[{command:'set_manual_override',value:false}]});
-            setSpanProperties($("#measurement_override_message"), "AUTOMATIC CALCULATION", 'green');
-            setSpanProperties($("#measurement_override_message_2"), "AUTOMATIC<br/>CALCULATION", 'green');
+            set_measurement_and_intensity_value('MEASUREMENT_RATE_1', 'Measurement rate', MIN_SAMPLING_RATE, MAX_SAMPLING_RATE, {command:'set_measuring_rate_and_threshold',threshold:parseFloat(document.getElementById('THRESHOLD_1').value).toFixed(3),rate:parseFloat(document.getElementById('MEASUREMENT_RATE_1').value)});
         }, {passive: true});
         document.getElementById("EXPORT_DATA_BUTTON").addEventListener('click', function() {
             fromDataPlotPage = true;
@@ -570,7 +561,6 @@ define(function(require, exports, module) {
                 messaging.sendMessage({args:[{command:'abort'}]});
                 // ignore data response to hide DATA_PLOT
                 collectionAborted = true;
-                $("#PROCESSING_PAGE").fadeOut();
                 resetDataCollection();
             }
         }, {passive: true});
@@ -607,9 +597,9 @@ define(function(require, exports, module) {
             let prompt = "Email or Upload Files?";
             e4PtPrompt(prompt, exportDetailsFile, "Get File", ["Email","Upload to Box","Cancel"]);
         }, {passive: true});
-        /*document.getElementById("MANUAL_OVERRIDE").addEventListener('click', function() {
+        document.getElementById("MANUAL_OVERRIDE").addEventListener('click', function() {
             overrideSettings();
-        }, {passive: true});*/
+        }, {passive: true});
         document.getElementById("SPACER_THUMBNAIL").addEventListener('click', function() {
             showSpacerImage();
         }, {passive: true });
@@ -624,9 +614,6 @@ define(function(require, exports, module) {
         }, {passive: true});
         document.getElementById("CALCULATE_RPM_BUTTON").addEventListener('click', function() {
              calculateRPM();
-        }, {passive: true});
-        document.getElementById("LOCATION_BUTTON").addEventListener('click', function() {
-            showLocationImages();
         }, {passive: true});
         document.getElementById("EDIT_BUTTON").addEventListener('click', function() {
             edit();
@@ -689,7 +676,6 @@ define(function(require, exports, module) {
     });
 
     function fadeOutAll() {
-        $("#PROCESSING_PAGE").fadeOut();
         $("#DATA_PLOT_PAGE").fadeOut();
         $("#FRD_PAGE").fadeOut();
         $("#SETUP_PAGE").fadeOut();
@@ -704,7 +690,6 @@ define(function(require, exports, module) {
         $("#ARCHIVED_DATA_PAGE").fadeOut();
         $("#FILE_CHOOSER_PAGE").fadeOut();
         $("#DATA_DETAILS_PAGE").fadeOut();
-        $("#LOCATION_PAGE").fadeOut();
     }
 
     function gotFS(fileSystem) {
@@ -804,49 +789,6 @@ define(function(require, exports, module) {
         document.getElementById("SPACER_IMAGE").setAttribute("src", imageName);
         document.getElementById("SPACER_IMAGE").setAttribute("alt", spacerName);
         spacerModal.show();
-    }
-    
-    function showLocationImages() {
-        console.log("@showLocationImages");
-        let locationName = document.getElementById("FRAME_SIZE").value;
-        // frame image
-        let locationImage = document.getElementById("LOCATION_IMAGE");
-        let imageStr = "";
-        if (typeof current_frame_data.image !== 'undefined') {
-            let frameImageName = 'img/frames/' + current_frame_data.image + '.png';
-            imageStr = '<img class="img-fluid" src="' + frameImageName + '">';
-        } else {
-            imageStr += '<h5><span class="badge bg-warning text-dark">No Frame Image</span></h5>';
-        }
-        locationImage.innerHTML = imageStr;
-        // stage images
-        let tabs = document.getElementById("LOCATION_TABS");
-        let content = document.getElementById("LOCATION_CONTENT");
-        let tabStr = "";
-        let contentStr = "";
-        let isFirst = true;
-        // only include one tab/image per stage
-        if (typeof current_frame_data.stage_images !== 'undefined') {
-            for (let stageId of Object.keys(current_frame_data.stage_images)) {
-                let stageImage = current_frame_data.stage_images[stageId];
-                tabStr += '<li class="nav-item" role="presentation"><button class="nav-link' + (isFirst ? ' active' : '') + '" id="tab' + stageId + '" data-bs-toggle="tab" data-bs-target="#content' + stageId + '" type="button" role="tab" aria-controls="content' + stageId + '" aria-selected="' + isFirst + '">Stage ' + stageId + '</button></li>';
-                contentStr += '<div class="tab-pane show' + (isFirst ? ' active' : '') + '" id="content' + stageId + '" role="tabpanel" aria-labelledby="tab' + stageId + '">';
-                if (stageImage) {
-                    let stageImageName = 'img/frames/' + stageImage + '.png';
-                    contentStr += '<img class="img-fluid" src="' + stageImageName + '">';
-                } else {
-                    contentStr += '<h5><span class="badge bg-warning text-dark">No Stage Image</span></h5>';
-                }
-                contentStr += '</div>';
-                isFirst = false;
-            }
-        } else {
-            contentStr += '<h5><span class="badge bg-warning text-dark">No Stage Images</span></h5>';
-        }
-        tabs.innerHTML = tabStr;
-        content.innerHTML = contentStr;
-        $("#TURBINE_SETUP_PAGE").fadeOut();
-        $("#LOCATION_PAGE").fadeIn();
     }
     
     function showLog() {
@@ -1053,28 +995,28 @@ define(function(require, exports, module) {
         for (let p of Object.keys(pos)) {
             //console.log("stageText:  ", stageText);
             console.log("current_frame_data.position: ", p);
-            htmlStr += '<tr>';
-            htmlStr += '<th class="align-middle">' + stageText + '</th>';
+            htmlStr = htmlStr + '<tr>';
+            htmlStr = htmlStr + '<th class="align-middle">' + stageText + '</th>';
             stageText = "";
             console.log("pos[p]: ", pos[p]);
             for (let j=0; j<pos[p].length; j++) {
                 if (POSITION_DISPLAY_MODE == 'TEXT') {
-                    htmlStr += '<th class="align-middle" scope="row">' + pos[p][j] + '</th>';
+                    htmlStr = htmlStr + '<th class="align-middle" scope="row">' + pos[p][j] + '</th>';
                 } else if (POSITION_DISPLAY_MODE == 'ICON') {
-                    htmlStr += '<th class="align-middle">' + ARROW_ICONS[pos[p][j]] + '</th>';
+                    htmlStr = htmlStr + '<th class="align-middle">' + ARROW_ICONS[pos[p][j]] + '</th>';
                 } else if (POSITION_DISPLAY_MODE == 'BOTH') {
-                    htmlStr += '<th class="align-middle" scope="row">' + ARROW_ICONS[pos[p][j]] + '&nbsp;' + pos[p][j] + '</th>';
+                    htmlStr = htmlStr + '<th class="align-middle" scope="row">' + ARROW_ICONS[pos[p][j]] + '&nbsp;' + pos[p][j] + '</th>';
                 }
                 //console.log("pos[p][j]: ", pos[p][j]);
             }
-            htmlStr += '</tr>';
-            htmlStr += '<tr>';
-            htmlStr += '<td scope="row">' + p + '</td>';
+            htmlStr = htmlStr + '</tr>';
+            htmlStr = htmlStr + '<tr>';
+            htmlStr = htmlStr + '<td scope="row">' + p + '</td>';
             for (let j=0; j<pos[p].length; j++) {
                 let casingThickness_el_id = p + '_' + pos[p][j];
-                htmlStr +=  '<td><input class="form-control" type="number" inputmode="decimal" id="' + casingThickness_el_id + '" value=""/></td>';
+                htmlStr = htmlStr + '<td><input class="form-control" type="number" inputmode="decimal" id="' + casingThickness_el_id + '" value=""/></td>';
             }
-            htmlStr += '</tr>';
+            htmlStr = htmlStr + '</tr>';
         }
         tbl.innerHTML = htmlStr;
         if (callback != null) {
@@ -1082,8 +1024,7 @@ define(function(require, exports, module) {
         }
     }
 
-    // unused, called on MANUAL_OVERRIDE checked
-    /*function overrideSettings() {
+    function overrideSettings() {
         manualOverride = document.getElementById("MANUAL_OVERRIDE").checked;
         console.log("@overrideSettings: ", manualOverride);
         messaging.sendMessage({args:[{command:'set_manual_override',value:manualOverride}]});
@@ -1094,7 +1035,7 @@ define(function(require, exports, module) {
             fromDataCollectionPage = true;
             $("#SENSOR_SETUP_PAGE").fadeIn();
         }
-    }*/
+    }
 
     function acquisitionTimePromptCallback(results) {
         console.log("@acquisitionTimePromptCallback");
@@ -1329,7 +1270,7 @@ define(function(require, exports, module) {
 
     function send_scan_metadata(reset, updatingExisting = false) {
       // Set element suffix if we are updating existing measurement
-      var suffix = (updatingExisting ? '_EDIT' : '');
+      var suffix = (updatingExisting ? '2' : '');
 
       // First make sure the user has input some metadata.
       E4PTdata.serial_number = document.getElementById("SERIAL_NUMBER" + suffix).value;
@@ -1393,6 +1334,7 @@ define(function(require, exports, module) {
       addDBEntry(E4PTdata); // Save to the database here so we don't lose this data.
         
       initialize_sensor();
+        
     }
 
     function initialize_sensor() {
@@ -1598,15 +1540,14 @@ define(function(require, exports, module) {
         selected_frame_data.stageName = Object.keys(frame_data[selected_frame_data.frameIdx].stage_info)[selected_frame_data.stageInfoIdx];
         // don't use stage name due to x.x formats
         //document.getElementById("SENSOR_STAGE").value = selected_frame_data.stageName;
-        console.log("selected_frame_data.stageName:", selected_frame_data.stageName);
+        console.log ("selected_frame_data.stageName  , index= ", selected_frame_data.stageName, selected_frame_data.stageInfoIdx);
         current_stage_index = document.getElementById("SENSOR_STAGE").selectedIndex;
         current_stage = stages[current_stage_index];
         
         selected_frame_data.stageInfoIdx = current_stage_index;
         selected_frame_data.stageName = current_stage;
         
-        // When you change the stage, the position information changes too
-        set_position_information();
+        set_position_information(); // When you change the stage, the position information changes too.
         current_position_index = 0;
     }
 
@@ -1636,7 +1577,7 @@ define(function(require, exports, module) {
         console.log("@set_measurement_and_intensity_value");
         var input_f = parseFloat(document.getElementById(el_id).value);
         // Make sure the text is a number
-        if ((isNaN(input_f)) || (typeof(input_f) != 'number')) {
+        if ( (isNaN(input_f)) || (typeof(input_f) != 'number')) {
             e4PtAlert(label + ' is not a number.');
             return;
         }
@@ -1680,8 +1621,6 @@ define(function(require, exports, module) {
         console.log('@override_measurement_rate');
         messaging.sendMessage({args:[cmd]});
         messaging.sendMessage({args:[{command:'set_manual_override',value:true}]});
-        setSpanProperties($("#measurement_override_message"), "MANUAL OVERRIDE", 'yellow');
-        setSpanProperties($("#measurement_override_message_2"), "MANUAL<br/>OVERRIDE<br/>" + cmd.rate.toFixed(3) + "kHz", 'yellow');
     }
     
     function displayGoButton() {
@@ -1702,9 +1641,9 @@ define(function(require, exports, module) {
           case "red":
             targetColor = "btn-danger";
             break;
-          case "blue":
-            targetColor = "btn-primary";
-            break;
+            case "blue":
+              targetColor = "btn-primary";
+              break;
           case "green":
             targetColor = "btn-success";
             break;
@@ -1757,10 +1696,9 @@ define(function(require, exports, module) {
             .html(text);
     }
 
-    // hard-code calculation method
     /*function confirm_collect_stage_data() {
         // Disable prompt since offset calculation is disabled, default to Original
-        let calcMethod = CALC_METHOD_CONTROLLER;
+        let calcMethod = CALC_METHOD_ORIGINAL;
         document.getElementById("CLEARANCE_CALCULATION_METHOD").value = calcMethod;
         // Here we check to see if data is in the cell that is about to be populated.
         // If there is already data there then we confirm with the user to overwrite it.
@@ -1784,7 +1722,7 @@ define(function(require, exports, module) {
         return;
     }*/
 
-    // prompt for calculation method
+    // TODO: use default calculation method
     function confirm_collect_stage_data() {
         // Disable prompt since offset calculation is disabled
         e4PtPrompt('Original calculation assumes master fixture height is SMR+SL+5mm, New calculation uses MV=fixture height - sensor length', function(calcMethod) {
@@ -1993,7 +1931,7 @@ define(function(require, exports, module) {
     }
 
     function writeToFile(folder, fileName, fileData, callback=null) {
-        console.log("@writeToFile: folder=" + folder + ", fileName=" + fileName);
+        console.log("@writeToFile: fileName = ", fileName);
         var targetFolder = cordova.file.documentsDirectory + folder + "/";
         window.resolveLocalFileSystemURL(targetFolder, function(dir) {
             dir.getFile(fileName, {create:true, exclusive: false}, function(file) {
@@ -2261,7 +2199,7 @@ define(function(require, exports, module) {
                 document.getElementById("SPACER_THUMBNAIL").setAttribute("src",imageName);
                 document.getElementById("SPACER_THUMBNAIL").setAttribute("alt",spacer.image);
             }, function() {
-                imageName = DEFAULT_SPACER_FILE;
+                imageName = 'img/spacers/Unknown.gif';
                 document.getElementById("SPACER_THUMBNAIL").setAttribute("src",imageName);
                 document.getElementById("SPACER_THUMBNAIL").setAttribute("alt",'Unknown');
             });
@@ -2636,12 +2574,12 @@ define(function(require, exports, module) {
     }
 
     function pluginMessage(msg) {
-        //console.log("@pluginMessage: msg.type = ", msg.type);
+        console.log("@pluginMessage: msg.type = ", msg.type);
         switch(msg.type) {
             case "setting":
                 console.log("Received Setting Message: ", JSON.stringify(msg));
                 if (msg.varName === 'intensity_threshold') {
-                    document.getElementById('THRESHOLD').value = msg.value;
+                    document.getElementById('THRESHOLD_1').value = msg.value;
                 }
                 break;
             case "connection":
@@ -2703,7 +2641,6 @@ define(function(require, exports, module) {
 
                     if (fromCalculateRPM) {
                         console.log('calculating RPM');
-                        // TODO: already set in calculateRPM function
                         position = document.getElementById("SENSOR_POSITION").value;
                         casing_thickness = document.getElementById("CURR_CASE_THICKNESS").value;
                         if (position && casing_thickness) {
@@ -2727,25 +2664,11 @@ define(function(require, exports, module) {
                         setButtonProperties($("#CALCULATE_RPM_BUTTON"), LABEL_CALCULATE, 'green');
                         fromCalculateRPM = false;
                     } else {
-                        /*var dataStr = "Avg Clearance: " + msg.clearance + "mm\n";
-                        dataStr += "Min Clearance: " + msg.min_clr + "mm\n";
-                        dataStr += "Med Clearance: " + msg.med_clr + "mm\n";
-                        dataStr += "Max Clearance: " + msg.max_clr + "mm\n";
-                        dataStr += "Std Dev Clearance: " + msg.std_clr + "mm\n";
-                        dataStr += "Overall Avg: " + msg.overall_avg + "mm\n";
-                        dataStr += "Observed Blades: " + msg.blades + "\n";
-                        dataStr += "Avg Samples/Blade: " + msg.blade_samples_avg + "\n";
-                        dataStr += "Casing Thickness: " + msg.casing_thickness + "in\n";
-                        dataStr += "Spacer Thickness: " + msg.spacer_thickness + "in\n";
-                        dataStr += "Measurement Rate: " + msg.measurement_rate + "kHz\n";
-                        dataStr += "Intensity Threshold: " + msg.intensity_threshold + "%\n";
-                        e4PtAlert(dataStr);*/
                         processE4PtData(msg);
                     }
                 } else {
                     console.log("Data collection was aborted");
                 }
-                $("#PROCESSING_PAGE").fadeOut();
                 resetDataCollection();
                 break;
             case "filename":
@@ -2769,14 +2692,14 @@ define(function(require, exports, module) {
                 console.log("[BACKEND]", msg.message);
                 break;
             case "progress":
-                //console.log("Progress: ", msg.progress);
+                console.log("Progress: ", msg.progress);
                 $("#REV_PROGRESS")
                       .css("width", msg.progress + "%")
                       .attr("aria-valuenow", msg.progress)
                       .text(msg.progress + "%");
                 break;
             case "sensor_params":
-                console.log("Received sensor parameters message: ", msg.master_fixture_height, ", ", msg.mastering_value, ", ", msg.master_offset, ", ", msg.sensor_selection, ", ", msg.sensor_length, ", ", msg.start_measurement_range, ", ", msg.sensor_measurement_range, ", ", msg.from_controller, ", ", msg.measurement_rate, ", ", msg.intensity_threshold);
+                console.log("Received sensor parameters message: ", msg.master_fixture_height, ", ", msg.mastering_value, ", ", msg.master_offset, ", ", msg.sensor_selection, ", ", msg.sensor_length, ", ", msg.start_measurement_range, ", ", msg.sensor_measurement_range);
                 
                 sensorParamsFromController = msg.from_controller;
                 if (sensorParamsFromController) {
@@ -2808,9 +2731,6 @@ define(function(require, exports, module) {
                 
                 // TODO: implement
                 //document.getElementById("CALIBRATION_DATE").innerHTML = new Date().toLocaleDateString();
-                
-                document.getElementById("MEASUREMENT_RATE").value = JSON.parse(msg.measurement_rate).toFixed(3);
-                document.getElementById("THRESHOLD").value = JSON.parse(msg.intensity_threshold).toFixed(3);
                 
                 getConnectionMode();
                 // disable to reduce redundant calls
@@ -3508,19 +3428,8 @@ define(function(require, exports, module) {
       try {
         update_scan_info(); // currently does nothing
         parse_data();
-        
-        /*if (E4PTdata.data.length > 0) {
-          var d0 = E4PTdata.data[0];
-          var allEqual = E4PTdata.data.every(function(d) {
-            return d === d0;
-          });
-          if (allEqual) {
-            e4PtAlert("Invalid data, all clearance values are identical: " + d0);
-          }
-        }*/
-        
-        document.getElementById('MEASUREMENT_RATE').value = E4PTdata.measurement_rate;
-        document.getElementById('THRESHOLD').value = E4PTdata.intensity_threshold;
+        document.getElementById('MEASUREMENT_RATE_1').value = E4PTdata.measurement_rate;
+        document.getElementById('THRESHOLD_1').value = E4PTdata.intensity_threshold;
         
         // only display the DATA PLOT page for GET DATA or SENSOR SETUP and not from DATA COLLECTION
         if (fromGetData || fromSensorSetupPage) {
@@ -3601,8 +3510,6 @@ define(function(require, exports, module) {
         displayAbortButton();
         setIndicatorColor("red");
         startProgressBar();
-        
-        $("#PROCESSING_PAGE").fadeIn();
 
         messaging.sendMessage({args:[{
             command:'send_data',
@@ -4006,8 +3913,7 @@ define(function(require, exports, module) {
       tbody.setAttribute("id",elementID);
       // Create the table body.
       for (var i=0; i<rows.length; i++) {
-        //console.log("Row: id:" + rows[i].doc._id + "; rev: " + rows[i].doc._rev);
-        console.log("Row: frame:" + rows[i].doc.frame + "; serial: " + rows[i].doc.serial_number);
+        console.log("Row: id:" + rows[i].doc._id + "; rev: " + rows[i].doc._rev);
         var new_row = tbody.insertRow(-1);
         // save the ID in a hidden column so we can get it to retrieve the data.
         // The first column is hidden.
@@ -4415,7 +4321,7 @@ define(function(require, exports, module) {
     function loadLocalData(id) {
       console.log("@loadLocalData: id = ", id);
       local_db.get(id, function(err, doc) {
-          //console.log("Row: ", JSON.stringify(doc));
+          console.log("Row: ", doc);
           initializeFromDocument(doc);
       });
     }
@@ -4423,7 +4329,7 @@ define(function(require, exports, module) {
     function loadArchiveData(id) {
       console.log("@loadArchiveData: id = ", id);
       archive_db.get(id, function(err, doc) {
-          //console.log("Row: ", JSON.stringify(doc));
+          console.log("Row: ", doc);
           initializeFromDocument(doc);
       });
     }

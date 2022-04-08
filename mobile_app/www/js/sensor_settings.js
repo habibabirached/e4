@@ -16,7 +16,6 @@ define(function(require, exports, module) {
         mastering_value: 0, //mm
         master_offset: 0 //in
     };
-    // LONG: measured_length_mm = 222.28048, measured_mastering_value_mm = 6.0802
     const sensor_types = {
         'LONG': {'measured_length_mm': 224.164, 'measured_mastering_fixture_height_mm': 240.3602, 'measured_start_measurement_range_mm': 11.94, 'measured_mastering_value_mm': 4.2567, 'measurement_range_mm': 11.0},
         'SHORT': {'measured_length_mm': 75.667, 'measured_mastering_fixture_height_mm': 90.6272, 'measured_start_measurement_range_mm': 11.94, 'measured_mastering_value_mm': 3.0205, 'measurement_range_mm': 11.0},
@@ -59,14 +58,7 @@ define(function(require, exports, module) {
     }
                                                   
     const calculateMasteringOffsetInches = (lengthIn, heightIn, masteringValueMM, smrMM) => {
-        var mo = (lengthIn + toInches(smrMM + masteringValueMM)) - heightIn;
-        if (Math.abs(mo) <= 0.00001) {
-            // set to 0 for small values
-            mo = 0.0;
-        } else {
-            console.log('Error: mastering offset should be 0.0, but was ' + mo);
-        }
-        return mo;
+        return (lengthIn + toInches(smrMM + masteringValueMM)) - heightIn;
     }
     
     const calculateMasteringValueMM = (lengthIn, heightIn, smrMM) => {

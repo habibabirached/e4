@@ -709,19 +709,13 @@
                 <div class="row">
                     <div class="col-lg-12">
                       <!-- Turbine Data Collection -->
-                      <table class="table table-borderless table-sm align-middle text-center">
-                        <tbody>
-                          <tr>
-                            <td colspan="2">Collection Date:</td>
-                            <th scope="row" colspan="2" id="HEADER_DATETIME"></th>
-                            <td colspan="3">
-                              <button class="btn btn-primary" type="button" id="LOCATION_BUTTON">MEASUREMENT LOCATIONS</button>
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                      <hr/>
-                      <table class="table table-borderless table-sm align-middle">
+                      <div class="text-center">
+                          <h5>
+                              <span class="badge bg-light text-dark">Collection Date:&nbsp;<span id="HEADER_DATETIME"></span></span>
+                          </h5>
+                      </div>
+                      
+                      <table class="table table-borderless table-sm">
                         <tbody>
                           <tr>
                             <td>Frame:</td>
@@ -745,7 +739,7 @@
                         </tbody>
                       </table>
 
-                      <div class="text-center my-3">
+                      <div class="text-center my-4">
                           <h5>
                               <span id="SENSOR_PARAMS_CONFIG_MSG" class="badge bg-secondary"></span>
                           </h5>
@@ -785,13 +779,9 @@
                             </select>
                         </div>
                         <div class="col-md-3 text-center">
-                            <!-- measurement rate override is performed on separate page -->
-                            <!--<label class="form-check-label" for="MANUAL_OVERRIDE">Sensor Override</label>
+                            <label class="form-check-label" for="MANUAL_OVERRIDE">Sensor Override</label>
                             <br/>
-                            <input type="checkbox" class="form-check-input form-control-lg" id="MANUAL_OVERRIDE" name="manualOverride">-->
-                            <span>Measurement Rate</span>
-                            <br/>
-                            <span id="measurement_override_message_2" class="badge bg-success">AUTOMATIC<br/>CALCULATION</span>
+                            <input type="checkbox" class="form-check-input form-control-lg" id="MANUAL_OVERRIDE" name="manualOverride">
                         </div>
                         <div class="col-md-5 text-center">
                             <label for="CURR_CASE_THICKNESS" class="form-label">Casing Thickness</label>
@@ -808,7 +798,7 @@
                             </div>
                         </div>
                         <div class="col-md-2 text-center">
-                            <img id="SPACER_THUMBNAIL" class="img-thumbnail" alt="Unknown" src="img/spacers/Unknown.gif" width="80" height="80">
+                            <img id="SPACER_THUMBNAIL" class="img-thumbnail" alt="Unknown" src="img/spacers/Unknown.gif" width="75" height="75">
                         </div>
                         <div class="col-md-5 text-center">
                             <label for="AMBIENT_TEMPERATURE" class="form-label">Ambient Temperature</label>
@@ -860,18 +850,6 @@
                   <div class="container-fluid">
                       <div id="DATA_PLOT2" class="h-100"></div>
                   </div>
-              </div>
-            </div>
-        </div>
-        
-        <!-- Processing Page -->
-        <div id="PROCESSING_PAGE" class="container-fluid my-2">
-            <div id="overlay" class="bg-transparent text-dark text-center position-absolute top-50 start-50 translate-middle">
-              <div class="card text-white bg-dark">
-                <div class="card-header">Processing</div>
-                <div class="card-body">
-                  <div class="spinner-border text-light" style="width: 3rem; height: 3rem;" role="status"></div>
-                </div>
               </div>
             </div>
         </div>
@@ -997,35 +975,6 @@
           </div>
         </div>
         
-        <!-- Measurement Location Modal -->
-        <div id="LOCATION_PAGE" class="container-fluid my-2">
-            <div class="card">
-              <div class="card-header">
-                <div class="row">
-                  <div class="col-auto me-auto pt-1">
-                    <h4><span id="LOCATION_NAME"></span>&nbsp;Measurement Locations</h4>
-                  </div>
-                  <div class="col-auto">
-                    <button id="LOCATION_CLOSE_BUTTON" type="button" class="btn btn-dark"><i class="fas fa-times"></i></button>
-                  </div>
-                </div>
-              </div>
-                <div class="card-body">
-                    <div class="row text-center">
-                    <div class="col-lg-12">
-                        <!-- -->
-                        <div id="LOCATION_IMAGE" class="py-2"></div>
-                        <hr/>
-                        <!-- These tabs get constructed by javascript -->
-                        <ul class="nav nav-pills nav-fill" id="LOCATION_TABS" role="tablist"></ul>
-                        <div class="tab-content py-2" id="LOCATION_CONTENT"></div>
-                        <!-- -->
-                    </div>
-                  </div>
-                </div>
-            </div>
-        </div>
-        
         <!-- Spacer Modal -->
         <div class="modal fade" id="SPACER_MODAL" tabindex="-1">
           <div class="modal-dialog modal-dialog-centered">
@@ -1135,34 +1084,26 @@
                                   <p>The app will automatically calculate the measurement (sampling) rate by default, and it is set in kHz between <span id="MIN_SAMPLING_RATE"></span> and <span id="MAX_SAMPLING_RATE"></span>. A maximum of 3 decimal places may be specified.</p>
                               </div>
                               <div class="col-md-6">
-                                  <p>The intensity threshold percentage is automatically calculated from the measurement (sampling) rate. This will be between 0.5 and 3.2.</p>
+                                  <p>The intensity threshold is automatically calculated from the measurement (sampling) rate.</p>
                               </div>
                               <div class="col-md-6 text-center">
-                                  <label for="MEASUREMENT_RATE" class="form-label">Measurement Rate</label>
+                                  <label for="MEASUREMENT_RATE_1" class="form-label">Measurement Rate</label>
                                   <div class="input-group mb-3">
-                                    <input id="MEASUREMENT_RATE" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Measurement Rate" aria-describedby="MEASUREMENT_RATE_TEXT">
-                                    <span class="input-group-text" id="MEASUREMENT_RATE_TEXT">kHz</span>
+                                    <input id="MEASUREMENT_RATE_1" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Measurement Rate" aria-describedby="MEASUREMENT_RATE_1_TEXT">
+                                    <span class="input-group-text" id="MEASUREMENT_RATE_1_TEXT">kHz</span>
                                   </div>
                               </div>
                               <div class="col-md-6 text-center">
-                                  <label for="THRESHOLD" class="form-label">Intensity Threshold</label>
+                                  <label for="THRESHOLD_1" class="form-label">Intensity Threshold</label>
                                   <div class="input-group mb-3">
-                                    <input id="THRESHOLD" type="text" class="form-control" placeholder="" aria-label="Intensity Threshold" aria-describedby="THRESHOLD_TEXT" disabled>
-                                    <span class="input-group-text" id="THRESHOLD_TEXT">%</span>
+                                    <input id="THRESHOLD_1" type="text" class="form-control" placeholder="" aria-label="Intensity Threshold" aria-describedby="THRESHOLD_1_TEXT" disabled>
+                                    <span class="input-group-text" id="THRESHOLD_1_TEXT">%</span>
                                   </div>
                               </div>
                             </form>
 
-                            <div class="text-center">
-                              <span id="measurement_override_message" class="badge bg-success">AUTOMATIC CALCULATION</span>
-                            </div>
-                            <br/>
                             <div class="d-grid gap-2" hidden>
-                              <div class="btn-group" role="group" aria-label="Measurment Rate and Intensity Buttons">
-                                <button id="RESET_MEASUREMENT_RATE_BUTTON" type="button" class="btn btn-danger">RESET</button>
-                                <span>&nbsp;</span>
-                                <button id="SET_MEASUREMENT_RATE_BUTTON" type="button" class="btn btn-primary">OVERRIDE</button>
-                              </div>
+                                <button id="SET_MEASUREMENT_RATE_BUTTON" type="button" class="btn btn-primary">SET</button>
                             </div>
                             <br/>
                             <div class="alert alert-warning pb-0" role="alert">

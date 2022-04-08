@@ -25,7 +25,6 @@
 @synthesize offsetAdjustmentFormula = _offsetAdjustmentFormula;
 
 +(SensorSettings*) LONG {
-    // 8.7512
     return [[SensorSettings alloc] initWithName:@"LONG" lengthInches:8.825 measurementRangeMM:11.0 startOfMeasurementRangeMM:11.94 masterFixtureHeightInches:9.463];
 }
 
@@ -63,12 +62,6 @@
     // should always be 0.0
     float mo = length + (smr + mv)/IN_to_MM - hmf;
     NSLog(@"@moFromLength: %f = %f + (%f - %f)/%f - %f", mo, length, smr, mv, IN_to_MM, hmf);
-    if (fabsf(mo) <= 0.00001) {
-        // set to 0 for small values
-        mo = 0.0;
-    } else {
-        NSLog(@"Error: mastering offset should be 0.0, but was %f", mo);
-    }
     return mo;
 }
 

@@ -14,7 +14,7 @@ function generateHTMLReport(e4ptData, current_frame_data) {
   makePg1InfoTable(e4ptData);
   makeCircleTables(current_frame_data["stage"], current_frame_data["position"], e4ptData);
   makePageBanner();
-  makePg2Header(0, 0, 0, 0); // TODO: get length values
+  makePg2Header(0, 0, 0, 0); // TODO: get values
   makePg2Table("Opening", current_frame_data["stage"], current_frame_data["position"], e4ptData);
   makePg2Table("Closing", current_frame_data["stage"], current_frame_data["position"], e4ptData);
   makeProprietaryNotice();
