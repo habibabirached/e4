@@ -6,12 +6,18 @@
 //
 //
 
+#import "IFC242xManager.h"
 #import "SensorSettings.h"
 
 // moved to app settings
 //#define DESIRED_POINTS_PER_BLADE 16
 
-@interface ControllerSettings : NSObject
+@interface ControllerSettings : NSObject {
+    @protected IFC242xManager* delegate;
+}
+
+-(instancetype)initWithDelegate:(IFC242xManager*)delegate;
+
 @property (strong, nonatomic) SensorSettings* sensor;
 @property (readonly, nonatomic) float outOfRange;
 @property (nonatomic) float acquisitionTime;

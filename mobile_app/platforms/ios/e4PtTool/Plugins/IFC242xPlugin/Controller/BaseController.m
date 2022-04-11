@@ -27,7 +27,7 @@
 @dynamic state;
 
 -(instancetype)initWithDelegate:(IFC242xManager*)delegate {
-    return [self initWithDelegate:delegate andSettings:[ControllerSettings new]];
+    return [self initWithDelegate:delegate andSettings:[[ControllerSettings alloc] initWithDelegate:delegate]];
 }
 
 -(instancetype)initWithDelegate:(IFC242xManager*)delegate andSettings:(ControllerSettings*)settings {
@@ -191,7 +191,7 @@
         return;
     }
     NSLog(@"@masteringDevice: %@", masteringValue);
-    //[self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"BaseController.masterDevice %@", masteringValue]} keepOpen:YES];
+    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"BaseController.masterDevice: masteringValue=%@", masteringValue]} keepOpen:YES];
 
     self.state = masteringInProgress;
     [self->delegate returnPluginResponse:@{@"type":@"status",@"status":@"mastering_in_progress"} keepOpen:YES];
@@ -219,7 +219,7 @@
 - (void)doDarkReference {
     if (![self checkReady]) return;
     NSLog(@"@doDarkReference");
-    //[self->delegate returnPluginResponse:@{@"type":@"log",@"message":@"BaseController.doDarkReference"} keepOpen:YES];
+    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":@"BaseController.doDarkReference"} keepOpen:YES];
     self.state = darkReferenceInProgress;
     [self->delegate returnPluginResponse:@{@"type":@"status",@"status":@"waiting"} keepOpen:YES];
 

@@ -325,6 +325,7 @@
         
         // Check if the value is specified in rpm.  If so, extract the rpm value.
         if (!acqTime) {
+            [self returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"Manager.messageHandler: send_data, rpm=%f", rpms]} keepOpen:YES];
             self->calibratedAcquire = true;
             self->metaData.rpm = rpms;
             float interval = 1.0;
@@ -352,6 +353,7 @@
             NSLog(@"Acquisition time: %.3f", self->controller.settings.acquisitionTime);
             [self->controller queueDataCollection:interval];
         } else {
+            [self returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"Manger.messageHandler: send_data, acquisitionTime=%@", acqTime]} keepOpen:YES];
             self->calibratedAcquire = false;
             self->controller.settings.acquisitionTime = [acqTime floatValue];
             [self->controller doDataCollection];

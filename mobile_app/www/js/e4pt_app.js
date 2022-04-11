@@ -3601,7 +3601,7 @@ define(function(require, exports, module) {
         console.log("gap points:", E4PTdata.gaps.length);
         console.log("location points:", E4PTdata.locs.length);
         console.log("minima points:", E4PTdata.minima.length);
-        console.log("average blades per sample:", E4PTdata.blade_samples_avg);
+        console.log("average samples per blade:", E4PTdata.blade_samples_avg);
         console.log("blades:", E4PTdata.blades);
         console.log("measurement rate:", E4PTdata.measurement_rate + "kHz");
         console.log("intensity threshold:", E4PTdata.intensity_threshold + "%");
@@ -3686,7 +3686,7 @@ define(function(require, exports, module) {
     }
 
     function update_clearance(clearance, manual_clearance = false) {
-        console.log("@update_clearance: clearance:", clearance, "; manual_clearance:", manual_clearance);
+        console.log("@update_clearance: clearance=" + clearance + ", manual_clearance=" + manual_clearance);
         if (current_frame_data.length == 0) {
             return;
         }

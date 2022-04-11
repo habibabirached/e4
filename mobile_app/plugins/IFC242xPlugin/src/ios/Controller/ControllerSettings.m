@@ -20,8 +20,9 @@
 @synthesize sensorParamsProvided = _sensorParamsProvided;
 @synthesize pointsPerBlade = _pointsPerBlade;
 
--(instancetype)init {
+-(instancetype)initWithDelegate:(IFC242xManager*)delegate {
     if (self = [super init]) {
+        self->delegate = delegate;
         self.measurementRate = 1.0;
         self.intensityThreshold = [self calculateIntensityThresholdFromMeasurementRateKHz:self.measurementRate];
         dispatch_sync(dispatch_get_main_queue(), ^{
@@ -46,6 +47,7 @@
 }
 
 -(NSString*)calculate:(float)rpm forBladeWidth:(float)bladeWidth forTipDiameter:(float)tipDiameter updateRateAndIntensity:(BOOL)rateAndIntensity {
+    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"ControllerSettings.calculate: rpm=%f, bladeWidth=%f, tipDiameter=%f, rateAndIntensity=%s", rpm, bladeWidth, tipDiameter, rateAndIntensity ? "TRUE" : "FALSE"]} keepOpen:YES];
     NSString* errorMessage = @"";
     float circumference = [self calculateCircumferenceFromTipDiameterInches:tipDiameter];
     if (circumference == 0) {
@@ -53,10 +55,13 @@
     }
     float inchesPerSecond = [self calculateSpeedForCircumference:circumference withRPM:rpm];
     self.acquisitionTime = [self calculateAcquisitionTimeForCircumference:circumference atSpeed:inchesPerSecond];
+    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"ControllerSettings.calculate: acquisitionTime=%f", self.acquisitionTime]} keepOpen:YES];
     if (rateAndIntensity) {
+        [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"ControllerSettings.calculate: pointsPerBlade=%d", self.pointsPerBlade]} keepOpen:YES];
         self.measurementRate = [self calculateKHzFrequencyForSamplesPerInch:(self.pointsPerBlade / bladeWidth) atSpeed:inchesPerSecond];
         self.intensityThreshold = [self calculateIntensityThresholdFromMeasurementRateKHz:self.measurementRate];
     }
+    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"ControllerSettings.calculate: measurementRate=%f, intensityThreshold=%f", self.measurementRate, self.intensityThreshold]} keepOpen:YES];
     
     if (rpm == 0) {
         errorMessage = [errorMessage stringByAppendingString:@"Error: RPM = 0, "];

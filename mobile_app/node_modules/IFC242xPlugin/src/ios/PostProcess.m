@@ -146,11 +146,12 @@
                 // FILTER_EDGE_SIZE_* allows us to shave down the number of points used
                 for (int j=start + FILTER_EDGE_SIZE_START; j<=stop - FILTER_EDGE_SIZE_STOP; j++) {
                     rawDisplacement = [measurementData.displacements[j] floatValue];
-                    BOOL intesityAboveThreshold = YES;
+                    BOOL intensityAboveThreshold = YES;
                     if (self.filterByDisplacementAndIntensity) {
-                        intesityAboveThreshold = [measurementData.intensities[j] floatValue] > 0;
+                        intensityAboveThreshold = [measurementData.intensities[j] floatValue] > 0.0;
                     }
-                    if ( intesityAboveThreshold && (rawDisplacement < clearanceData.shelfThreshold) ) {
+                    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: rawDisplacement[%d]=%f, intensityAboveThreshold=%s", j, rawDisplacement, intensityAboveThreshold ? "TRUE" : "FALSE"]} keepOpen:YES];
+                    if (intensityAboveThreshold && (rawDisplacement < clearanceData.shelfThreshold)) {
                         //NSLog(@"Averaging: %f",[d floatValue]);
                         if (rawDisplacement < min_clearance) {
                             min_clearance = rawDisplacement;

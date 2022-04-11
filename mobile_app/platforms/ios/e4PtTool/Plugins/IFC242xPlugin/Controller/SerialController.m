@@ -65,7 +65,7 @@
 
 - (void) portStatusChanged{
     NSLog(@"SerialController:portStatusChanged");
-    int modemStatus = [self->rscMgr getModemStatus];
+    //int modemStatus = [self->rscMgr getModemStatus];
     //[self->delegate dispatchMessage:@{@"type":@"log",@"message":[NSString stringWithFormat:@"SerialController.portStatusChanged: modemStatus=%02x", modemStatus]}];
 }
 

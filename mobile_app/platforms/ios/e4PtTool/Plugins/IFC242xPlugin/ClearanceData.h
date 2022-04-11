@@ -5,6 +5,7 @@
 //  Created by Marc Garbiras on 2021-Jan-23.
 //
 //
+
 #import "IFC242xManager.h"
 
 @interface ClearanceData : NSObject {
