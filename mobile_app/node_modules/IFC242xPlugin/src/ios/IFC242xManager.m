@@ -80,9 +80,11 @@
     if (self->controller.state == darkReferenceInProgress) {
         return; // Dark referencing is followed by data collection
     } else if (self->controller.state == setMeasurementRateInProgress) {
+        [self returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"Manager.processComplete: measurement rate set to %0.3f kHz", self->controller.settings.measurementRate]} keepOpen:YES];
         [self returnPluginResponse:@{@"type":@"alert",@"message":[NSString stringWithFormat:@"Measurement rate set to %.3f kHz.", self->controller.settings.measurementRate]} keepOpen:YES];
         return;
     } else if (self->controller.state == setThresholdInProgress) {
+        [self returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"Manager.processComplete: threshold set to %0.3f", self->controller.settings.intensityThreshold]} keepOpen:YES];
         [self returnPluginResponse:@{@"type":@"alert",@"message":[NSString stringWithFormat:@"Threshold is set to %.3f.", self->controller.settings.intensityThreshold]} keepOpen:YES];
     } else if (self->controller.state == halted) {
         [self returnData:[self computeClearance:self->controller.measurementData] measurementData:self->controller.measurementData];
@@ -336,9 +338,11 @@
                 if (err.length != 0) {
                     // Report errors.
                     [self returnPluginResponse:@{@"type":@"alert",@"message":err} keepOpen:YES];
+                    [self returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"Manager.messageHandler: %@", err]} keepOpen:YES];
                     return;
                 }
                 NSLog(@"Using auto-settings: Found measurement rate: %.3f; intensity threshold: %.3f", self->controller.settings.measurementRate, self->controller.settings.intensityThreshold);
+                [self returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"Manager.messageHandler: Using auto-settings, measurement rate = %.3f, intensity threshold = %.3f", self->controller.settings.measurementRate, self->controller.settings.intensityThreshold]} keepOpen:YES];
                 [self->controller setIntensityThreshold:self->controller.settings.intensityThreshold sendImmediately:NO];
                 [self->controller setMeasurementRate:self->controller.settings.measurementRate reportStatus:NO];
             } else {
@@ -346,11 +350,14 @@
                 if (err.length != 0) {
                     // Report errors.
                     [self returnPluginResponse:@{@"type":@"alert",@"message":err} keepOpen:YES];
+                    [self returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"Manager.messageHandler: %@", err]} keepOpen:YES];
                     return;
                 }
                 NSLog(@"Overriding auto-settings: Found measurement rate: %.3f; intensity threshold: %.3f", self->controller.settings.measurementRate, self->controller.settings.intensityThreshold);
+                [self returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"Manager.messageHandler: Overriding auto-settings, measurement rate = %.3f, intensity threshold = %.3f", self->controller.settings.measurementRate, self->controller.settings.intensityThreshold]} keepOpen:YES];
             }
             NSLog(@"Acquisition time: %.3f", self->controller.settings.acquisitionTime);
+            [self returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"Manager.messageHandler: Acquisition time = %.3f", self->controller.settings.acquisitionTime]} keepOpen:YES];
             [self->controller queueDataCollection:interval];
         } else {
             [self returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"Manger.messageHandler: send_data, acquisitionTime=%@", acqTime]} keepOpen:YES];
@@ -384,12 +391,12 @@
             [self->controller masterDevice:[NSString stringWithFormat:@"%f", self->controller.settings.sensor.mv]];
     } else if ([cmd containsString:@"set_measuring_rate_and_threshold"]) {
         NSLog(@"Got set_measuring_rate_and_threshold");
-        //[self returnPluginResponse:@{@"type":@"log",@"message":@"Manager.messageHandler: set_measuring_rate_and_threshold"} keepOpen:YES];
+        [self returnPluginResponse:@{@"type":@"log",@"message":@"Manager.messageHandler: set_measuring_rate_and_threshold"} keepOpen:YES];
         [self->controller setIntensityThreshold:[[message valueForKey:@"threshold"] floatValue] sendImmediately:NO];
         [self->controller setMeasurementRate:[[message valueForKey:@"rate"] floatValue]];
     } else if ([cmd containsString:@"set_measuring_rate"]) {
         NSLog(@"Got set_measuring_rate");
-        //[self returnPluginResponse:@{@"type":@"log",@"message":@"Manager.messageHandler: set_measuring_rate"} keepOpen:YES];
+        [self returnPluginResponse:@{@"type":@"log",@"message":@"Manager.messageHandler: set_measuring_rate"} keepOpen:YES];
         [self->controller setMeasurementRate:[[message valueForKey:@"rate"] floatValue]];
     } else if ([cmd containsString:@"set_threshold"]) {
         NSLog(@"Got set_threshold");

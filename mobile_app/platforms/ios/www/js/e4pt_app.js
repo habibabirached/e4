@@ -567,6 +567,7 @@ define(function(require, exports, module) {
                 messaging.sendMessage({args:[{command:'abort'}]});
                 // ignore data response to hide DATA_PLOT
                 collectionAborted = true;
+                $("#PROCESSING_PAGE").fadeOut();
                 resetDataCollection();
             }
         }, {passive: true});
@@ -682,6 +683,7 @@ define(function(require, exports, module) {
     });
 
     function fadeOutAll() {
+        $("#PROCESSING_PAGE").fadeOut();
         $("#DATA_PLOT_PAGE").fadeOut();
         $("#FRD_PAGE").fadeOut();
         $("#SETUP_PAGE").fadeOut();
@@ -1131,7 +1133,7 @@ define(function(require, exports, module) {
                 // ensure that the connection state updates in case the original message was not received
                 checkConnectionStatus();
             }
-            messaging.sendMessage({args:[{command:'get_version'}]});
+            getVersion();
         }
         menu_open = !menu_open;
         
@@ -1155,6 +1157,10 @@ define(function(require, exports, module) {
 
     function hide_FRD() {
         fileviewer2.dismiss();
+    }
+    
+    function getVersion() {
+        messaging.sendMessage({args:[{command:'get_version'}]});
     }
     
     function getOffsetAdjustment() {
@@ -1276,7 +1282,7 @@ define(function(require, exports, module) {
 
     function send_scan_metadata(reset, updatingExisting = false) {
       // Set element suffix if we are updating existing measurement
-      var suffix = (updatingExisting ? '2' : '');
+      var suffix = (updatingExisting ? '_EDIT' : '');
 
       // First make sure the user has input some metadata.
       E4PTdata.serial_number = document.getElementById("SERIAL_NUMBER" + suffix).value;
@@ -1350,8 +1356,8 @@ define(function(require, exports, module) {
 
     function confirm_new_or_continue() {
         let msg = "Continue collecting data for a turbine, or clear data and start a new collection? Starting a new collection will create a new entry in the database with the same serial number."
-        //console.log ("previous_frame: ", previous_frame);
-        //console.log ("current_frame_data.frame: ", current_frame_data.frame);
+        //console.log("previous_frame: ", previous_frame);
+        //console.log("current_frame_data.frame: ", current_frame_data.frame);
 
         if ((E4PTdata.pouchdb_id.length > 0) && (previous_frame == current_frame_data.frame) ){
             previousFrameWas = current_frame_data.frame
@@ -1546,14 +1552,15 @@ define(function(require, exports, module) {
         selected_frame_data.stageName = Object.keys(frame_data[selected_frame_data.frameIdx].stage_info)[selected_frame_data.stageInfoIdx];
         // don't use stage name due to x.x formats
         //document.getElementById("SENSOR_STAGE").value = selected_frame_data.stageName;
-        //console.log ("selected_frame_data.stageName = " + selected_frame_data.stageName + ", index=" + selected_frame_data.stageInfoIdx);
+        //console.log("selected_frame_data.stageName = " + selected_frame_data.stageName + ", index=" + selected_frame_data.stageInfoIdx);
         current_stage_index = document.getElementById("SENSOR_STAGE").selectedIndex;
         current_stage = stages[current_stage_index];
         
         selected_frame_data.stageInfoIdx = current_stage_index;
         selected_frame_data.stageName = current_stage;
         
-        set_position_information(); // When you change the stage, the position information changes too.
+        // When you change the stage, the position information changes too
+        set_position_information();
         current_position_index = 0;
     }
 
@@ -1647,9 +1654,9 @@ define(function(require, exports, module) {
           case "red":
             targetColor = "btn-danger";
             break;
-            case "blue":
-              targetColor = "btn-primary";
-              break;
+          case "blue":
+            targetColor = "btn-primary";
+            break;
           case "green":
             targetColor = "btn-success";
             break;
@@ -1937,7 +1944,7 @@ define(function(require, exports, module) {
     }
 
     function writeToFile(folder, fileName, fileData, callback=null) {
-        //console.log("@writeToFile: fileName =", fileName);
+        //console.log("@writeToFile: folder=" + folder + ", fileName=" + fileName);
         var targetFolder = cordova.file.documentsDirectory + folder + "/";
         window.resolveLocalFileSystemURL(targetFolder, function(dir) {
             dir.getFile(fileName, {create:true, exclusive: false}, function(file) {
@@ -2205,7 +2212,7 @@ define(function(require, exports, module) {
                 document.getElementById("SPACER_THUMBNAIL").setAttribute("src",imageName);
                 document.getElementById("SPACER_THUMBNAIL").setAttribute("alt",spacer.image);
             }, function() {
-                imageName = 'img/spacers/Unknown.gif';
+                imageName = DEFAULT_SPACER_FILE;
                 document.getElementById("SPACER_THUMBNAIL").setAttribute("src",imageName);
                 document.getElementById("SPACER_THUMBNAIL").setAttribute("alt",'Unknown');
             });
@@ -2675,6 +2682,7 @@ define(function(require, exports, module) {
                 } else {
                     console.log("Data collection was aborted");
                 }
+                $("#PROCESSING_PAGE").fadeOut();
                 resetDataCollection();
                 break;
             case "filename":
@@ -2684,6 +2692,10 @@ define(function(require, exports, module) {
                 break;
             case "version":
                 //console.log("Received version message:", msg.version);
+                var version = document.getElementById("APP_VERSION").innerHTML;
+                if (version.endsWith("0.0.0.0")) {
+                    console.log('e4pt version:', msg.version);
+                }
                 document.getElementById("APP_VERSION").innerHTML = "VERSION " + msg.version;
                 // executes every time menu is opened
                 getSensorParameters();
@@ -3052,7 +3064,7 @@ define(function(require, exports, module) {
     }
     
     function deleteFolder(fileName) {
-        //console.log ("deleteFolder: " + fileName);
+        //console.log("deleteFolder: " + fileName);
         window.resolveLocalFileSystemURL(fileName, function (dirEntry) {
             dirEntry.removeRecursively(
                 console.log('successfully deleted the folder and its content'),
@@ -3524,6 +3536,8 @@ define(function(require, exports, module) {
         displayAbortButton();
         setIndicatorColor("red");
         startProgressBar();
+        
+        $("#PROCESSING_PAGE").fadeIn();
 
         messaging.sendMessage({args:[{
             command:'send_data',
@@ -3939,6 +3953,7 @@ define(function(require, exports, module) {
       // Create the table body.
       for (var i=0; i<rows.length; i++) {
         //console.log("Row: id=" + rows[i].doc._id + "; rev=" + rows[i].doc._rev);
+        console.log("Row: frame=" + rows[i].doc.frame + ", serial=" + rows[i].doc.serial_number);
         var new_row = tbody.insertRow(-1);
         // save the ID in a hidden column so we can get it to retrieve the data.
         // The first column is hidden.
@@ -4047,9 +4062,9 @@ define(function(require, exports, module) {
         // This method 'removes' the objects from the pouchdb.
         // However, pouchdb retains the objects and just marks them deleted.
         // This can cause a memory buildup, but may be more sync-friendly.
-        //console.log ("archiveSelectedDB");
+        //console.log("archiveSelectedDB");
         local_db.allDocs({ include_docs: true, descending: true }, function (err, docs) {
-            //console.log ("archiveSelectedDB -- after the local_db.allDocs");
+            //console.log("archiveSelectedDB -- after the local_db.allDocs");
             for (var i = 0; i < docs.rows.length; i++) {
                 cb = document.getElementById("checkBoxLocalIdNum" + i.toString());
                 //console.log(cb);
@@ -4079,9 +4094,9 @@ define(function(require, exports, module) {
         // This method 'removes' the objects from the pouchdb.
         // However, pouchdb retains the objects and just marks them deleted.
         // This can cause a memory buildup, but may be more sync-friendly.
-        //console.log ("unarchiveSelectedDB")
+        //console.log("unarchiveSelectedDB")
         archive_db.allDocs({ include_docs: true, descending: true }, function (err, docs) {
-            //console.log ("unarchiveSelectedDB -- after the local_db.allDocs");
+            //console.log("unarchiveSelectedDB -- after the local_db.allDocs");
             for (var i = 0; i < docs.rows.length; i++) {
                 cb = document.getElementById("checkBoxArchiveIdNum" + i.toString());
                 //console.log(cb);
@@ -4111,9 +4126,9 @@ define(function(require, exports, module) {
         // This method 'removes' the objects from the pouchdb.
         // However, pouchdb retains the objects and just marks them deleted.
         // This can cause a memory buildup, but may be more sync-friendly.
-        //console.log ("clearSelectedArchive");
+        //console.log("clearSelectedArchive");
         archive_db.allDocs({ include_docs: true, descending: true }, function (err, docs) {
-            //console.log ("clearSelectedArchive -- after the archive_db.allDocs");
+            //console.log("clearSelectedArchive -- after the archive_db.allDocs");
             for (var i = 0; i < docs.rows.length; i++) {
                 cb = document.getElementById("checkBoxArchiveIdNum" + i.toString());
                 if ((cb.checked) || allFlag) {
@@ -4142,9 +4157,9 @@ define(function(require, exports, module) {
         // This method 'removes' the objects from the pouchdb.
         // However, pouchdb retains the objects and just marks them deleted.
         // This can cause a memory buildup, but may be more sync-friendly.
-        //console.log ("clearSelectedDB");
+        //console.log("clearSelectedDB");
         local_db.allDocs({ include_docs: true, descending: true }, function (err, docs) {
-            //console.log ("clearSelectedDB -- after the local_db.allDocs");
+            //console.log("clearSelectedDB -- after the local_db.allDocs");
             for (var i = 0; i < docs.rows.length; i++) {
                 cb = document.getElementById("checkBoxLocalIdNum" + i.toString());
                 if ((cb.checked) || allFlag) {
@@ -4346,7 +4361,7 @@ define(function(require, exports, module) {
     function loadLocalData(id) {
       //console.log("@loadLocalData: id =", id);
       local_db.get(id, function(err, doc) {
-          //console.log("Row:", doc);
+          //console.log("Row: ", JSON.stringify(doc));
           initializeFromDocument(doc);
       });
     }
@@ -4354,7 +4369,7 @@ define(function(require, exports, module) {
     function loadArchiveData(id) {
       //console.log("@loadArchiveData: id =", id);
       archive_db.get(id, function(err, doc) {
-          //console.log("Row:", doc);
+          //console.log("Row: ", JSON.stringify(doc));
           initializeFromDocument(doc);
       });
     }

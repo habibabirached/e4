@@ -144,3 +144,7 @@ footer {
 .btn-matrix > .btn:last-child {
     border-top-right-radius: 0;
 }
+
+#overlay {
+    z-index: 5000;
+}

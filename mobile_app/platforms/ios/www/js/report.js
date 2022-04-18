@@ -7,14 +7,14 @@ var overrideStyleSuffix = "Override";
 var overrideFlag = false;
 
 function generateHTMLReport(e4ptData, current_frame_data) {
-  reportHTML = ""; // clear eport html page
+  reportHTML = ""; // clear report html page
   overrideFlag = false; // clear override status
   createPageTop();
   makePageBanner();
   makePg1InfoTable(e4ptData);
   makeCircleTables(current_frame_data["stage"], current_frame_data["position"], e4ptData);
   makePageBanner();
-  makePg2Header(0, 0, 0, 0); // TODO: get values
+  makePg2Header(0, 0, 0, 0); // TODO: get length values
   makePg2Table("Opening", current_frame_data["stage"], current_frame_data["position"], e4ptData);
   makePg2Table("Closing", current_frame_data["stage"], current_frame_data["position"], e4ptData);
   makeProprietaryNotice();

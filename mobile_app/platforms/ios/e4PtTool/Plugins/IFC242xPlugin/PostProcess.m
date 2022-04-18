@@ -24,6 +24,7 @@
 #define FILTER_EDGE_SIZE_START 1
 #define FILTER_EDGE_SIZE_STOP 1
 #define BIN_MULTIPLIER 4 // This multiplier will change the size & resolution of the histogram.
+// TODO: move to settings?
 #define MIN_BLADE_SAMPLE_COUNT 2 // Require more than 1 sample to identify a blade
 
 @implementation PostProcess {
@@ -150,7 +151,7 @@
                     if (self.filterByDisplacementAndIntensity) {
                         intensityAboveThreshold = [measurementData.intensities[j] floatValue] > 0.0;
                     }
-                    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: rawDisplacement[%d]=%f, intensityAboveThreshold=%s", j, rawDisplacement, intensityAboveThreshold ? "TRUE" : "FALSE"]} keepOpen:YES];
+                    //[self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: rawDisplacement[%d]=%f, intensityAboveThreshold=%s", j, rawDisplacement, intensityAboveThreshold ? "TRUE" : "FALSE"]} keepOpen:YES];
                     if (intensityAboveThreshold && (rawDisplacement < clearanceData.shelfThreshold)) {
                         //NSLog(@"Averaging: %f",[d floatValue]);
                         if (rawDisplacement < min_clearance) {
@@ -161,7 +162,8 @@
                         count++;
                     }
                 }
-                [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: sum=%f, count=%d", clearance, count]} keepOpen:YES];
+                int totalCount = (stop - FILTER_EDGE_SIZE_STOP) - (start + FILTER_EDGE_SIZE_START);
+                [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: sum=%f, valid count=%d, total count=%d", clearance, count, totalCount]} keepOpen:YES];
                 //NSLog(@"Sum: %f; count: %d", clearance, count);
                 // Protect against divide-by-zero...
                 if (count == 0) {
@@ -174,12 +176,12 @@
                 if (isnan(clearance)) {
                     clearance = -9.995;  // nan has happened before.
                 }
-                [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: average blade clearance = %f", clearance]} keepOpen:YES];
+                [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: average blade clearance = %f, minimum clearance = %f", clearance, min_clearance]} keepOpen:YES];
                 if (count >= MIN_BLADE_SAMPLE_COUNT) {
                     [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: sufficient blade samples: %d >= %d", count, MIN_BLADE_SAMPLE_COUNT]} keepOpen:YES];
-                    if (self.useMinimumClearance)
+                    if (self.useMinimumClearance) {
                         [clearanceData.bladeClearances addObject:[NSNumber numberWithFloat:min_clearance]];
-                    else {
+                    } else {
                         [clearanceData.bladeClearances addObject:[NSNumber numberWithFloat:clearance]];
                     
                         float quality = [self computeQualityScore:0.0254 clearance:clearance minClearance:min_clearance numPoints:(float)count measurementData:measurementData start:start stop:stop];

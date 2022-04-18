@@ -435,6 +435,7 @@
             if ([match numberOfRanges] > 1) {
                 NSString* sensorParams = [self->buffer substringWithRange:[match rangeAtIndex:1]];
                 NSLog(@"Sensor params from controller: %@", sensorParams);
+                [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"BaseController.processResponse: sensor params from controller = %@", sensorParams]} keepOpen:YES];
                 if (self->useSensorParams) {
                     /*
                      SENSORINFO code change:
@@ -475,11 +476,14 @@
                     self.settings.sensor.mr = mrMM;
                     self.settings.sensorParamsProvided = TRUE;
                     // need to update mastering values after reading sensor params from the controller
+                    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":@"BaseController.processResponse: updateMasteringValues"} keepOpen:YES];
                     [self.settings.sensor updateMasteringValues];
                     NSLog(@"Sensor Length is %.3f inches and SMR is %.2f mm", self.settings.sensor.length, self.settings.sensor.smr);
                     NSLog(@"Mastering Value is %.3f mm and Mastering Offset is %.2f inches", self.settings.sensor.mv, self.settings.sensor.mo);
+                    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"BaseController.processResponse: length=%.3f, smr=%.2f, mv=%.3f, mo=%.2f", self.settings.sensor.length, self.settings.sensor.smr, self.settings.sensor.mv, self.settings.sensor.mo]} keepOpen:YES];
                 } else {
                     NSLog(@"Ignoring sensor params");
+                    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":@"BaseController.processResponse: ignoring sensor params from controller"} keepOpen:YES];
                 }
             }
         }];
@@ -503,7 +507,7 @@
             case masteringInProgress:
                 if (self->telnetCmds.count == 0) {
                     NSLog(@"Mastering Complete.");
-                    //[self->delegate returnPluginResponse:@{@"type":@"log",@"message":@"BaseController.processResponse: mastering complete"} keepOpen:YES];
+                    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":@"BaseController.processResponse: mastering complete"} keepOpen:YES];
                     [self->delegate processComplete:@"done_mastering"];
                     self.state = ready;
                 }
@@ -511,6 +515,7 @@
             case darkReferenceInProgress:
                 if (self->telnetCmds.count == 0) {
                     NSLog(@"Dark Correction Complete.");
+                    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":@"BaseController.processResponse: dark reference complete"} keepOpen:YES];
                 }
                 break;
             case initializationInProgress:

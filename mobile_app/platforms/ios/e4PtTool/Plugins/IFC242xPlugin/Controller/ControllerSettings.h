@@ -11,6 +11,8 @@
 
 // moved to app settings
 //#define DESIRED_POINTS_PER_BLADE 16
+#define MIN_RATE_HZ 100.0
+#define MAX_RATE_HZ 6500.0
 
 @interface ControllerSettings : NSObject {
     @protected IFC242xManager* delegate;
