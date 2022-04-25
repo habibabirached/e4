@@ -454,6 +454,10 @@ define(function(require, exports, module) {
         document.getElementById("SETUP_CLOSE_BUTTON").addEventListener('click', function() {
             $("#SETUP_PAGE").fadeOut();
         }, {passive: true});
+        document.getElementById("LOCATION_CLOSE_BUTTON").addEventListener('click', function() {
+            $("#LOCATION_PAGE").fadeOut();
+            $("#TURBINE_SETUP_PAGE").fadeIn();
+        }, {passive: true});
         document.getElementById("LOCAL_DATA_CLOSE_BUTTON").addEventListener('click', function() {
             $("#LOCAL_DATA_PAGE").fadeOut();
             $("#TITLE_BAR").text(APP_NAME);
@@ -533,6 +537,11 @@ define(function(require, exports, module) {
         document.getElementById("SET_MEASUREMENT_RATE_BUTTON").addEventListener('click', function() {
             set_measurement_and_intensity_value('MEASUREMENT_RATE_1', 'Measurement rate', MIN_SAMPLING_RATE, MAX_SAMPLING_RATE, {command:'set_measuring_rate_and_threshold',threshold:parseFloat(document.getElementById('THRESHOLD_1').value).toFixed(3),rate:parseFloat(document.getElementById('MEASUREMENT_RATE_1').value)});
         }, {passive: true});
+        document.getElementById("RESET_MEASUREMENT_RATE_BUTTON").addEventListener('click', function() {
+            messaging.sendMessage({args:[{command:'set_manual_override',value:false}]});
+            setSpanProperties($("#MEASUREMENT_OVERRIDE_MESSAGE"), "AUTOMATIC CALCULATION", 'green');
+            setSpanProperties($("#MEASUREMENT_OVERRIDE_MESSAGE_2"), "AUTOMATIC<br/>CALCULATION", 'green');
+        }, {passive: true});
         document.getElementById("EXPORT_DATA_BUTTON").addEventListener('click', function() {
             fromDataPlotPage = true;
             fromDataCollectionPage = false;
@@ -604,9 +613,9 @@ define(function(require, exports, module) {
             let prompt = "Email or Upload Files?";
             e4PtPrompt(prompt, exportDetailsFile, "Get File", ["Email","Upload to Box","Cancel"]);
         }, {passive: true});
-        document.getElementById("MANUAL_OVERRIDE").addEventListener('click', function() {
+        /*document.getElementById("MANUAL_OVERRIDE").addEventListener('click', function() {
             overrideSettings();
-        }, {passive: true});
+        }, {passive: true});*/
         document.getElementById("SPACER_THUMBNAIL").addEventListener('click', function() {
             showSpacerImage();
         }, {passive: true });
@@ -621,6 +630,9 @@ define(function(require, exports, module) {
         }, {passive: true});
         document.getElementById("CALCULATE_RPM_BUTTON").addEventListener('click', function() {
              calculateRPM();
+        }, {passive: true});
+        document.getElementById("LOCATION_BUTTON").addEventListener('click', function() {
+            showLocationImages();
         }, {passive: true});
         document.getElementById("EDIT_BUTTON").addEventListener('click', function() {
             edit();
@@ -698,6 +710,7 @@ define(function(require, exports, module) {
         $("#ARCHIVED_DATA_PAGE").fadeOut();
         $("#FILE_CHOOSER_PAGE").fadeOut();
         $("#DATA_DETAILS_PAGE").fadeOut();
+        $("#LOCATION_PAGE").fadeOut();
     }
 
     function gotFS(fileSystem) {
@@ -797,6 +810,49 @@ define(function(require, exports, module) {
         document.getElementById("SPACER_IMAGE").setAttribute("src", imageName);
         document.getElementById("SPACER_IMAGE").setAttribute("alt", spacerName);
         spacerModal.show();
+    }
+    
+    function showLocationImages() {
+        console.log("@showLocationImages");
+        let locationName = document.getElementById("FRAME_SIZE").value;
+        // frame image
+        let locationImage = document.getElementById("LOCATION_IMAGE");
+        let imageStr = "";
+        if (typeof current_frame_data.image !== 'undefined') {
+            let frameImageName = 'img/frames/' + current_frame_data.image + '.png';
+            imageStr = '<img class="img-fluid" src="' + frameImageName + '">';
+        } else {
+            imageStr += '<h5><span class="badge bg-warning text-dark">No Frame Image</span></h5>';
+        }
+        locationImage.innerHTML = imageStr;
+        // stage images
+        let tabs = document.getElementById("LOCATION_TABS");
+        let content = document.getElementById("LOCATION_CONTENT");
+        let tabStr = "";
+        let contentStr = "";
+        let isFirst = true;
+        // only include one tab/image per stage
+        if (typeof current_frame_data.stage_images !== 'undefined') {
+            for (let stageId of Object.keys(current_frame_data.stage_images)) {
+                let stageImage = current_frame_data.stage_images[stageId];
+                tabStr += '<li class="nav-item" role="presentation"><button class="nav-link' + (isFirst ? ' active' : '') + '" id="tab' + stageId + '" data-bs-toggle="tab" data-bs-target="#content' + stageId + '" type="button" role="tab" aria-controls="content' + stageId + '" aria-selected="' + isFirst + '">Stage ' + stageId + '</button></li>';
+                contentStr += '<div class="tab-pane show' + (isFirst ? ' active' : '') + '" id="content' + stageId + '" role="tabpanel" aria-labelledby="tab' + stageId + '">';
+                if (stageImage) {
+                    let stageImageName = 'img/frames/' + stageImage + '.png';
+                    contentStr += '<img class="img-fluid" src="' + stageImageName + '">';
+                } else {
+                    contentStr += '<h5><span class="badge bg-warning text-dark">No Stage Image</span></h5>';
+                }
+                contentStr += '</div>';
+                isFirst = false;
+            }
+        } else {
+            contentStr += '<h5><span class="badge bg-warning text-dark">No Stage Images</span></h5>';
+        }
+        tabs.innerHTML = tabStr;
+        content.innerHTML = contentStr;
+        $("#TURBINE_SETUP_PAGE").fadeOut();
+        $("#LOCATION_PAGE").fadeIn();
     }
     
     function showLog() {
@@ -1032,7 +1088,8 @@ define(function(require, exports, module) {
         }
     }
 
-    function overrideSettings() {
+    // unused, called on MANUAL_OVERRIDE checked
+    /*function overrideSettings() {
         manualOverride = document.getElementById("MANUAL_OVERRIDE").checked;
         //console.log("@overrideSettings:", manualOverride);
         messaging.sendMessage({args:[{command:'set_manual_override',value:manualOverride}]});
@@ -1043,7 +1100,7 @@ define(function(require, exports, module) {
             fromDataCollectionPage = true;
             $("#SENSOR_SETUP_PAGE").fadeIn();
         }
-    }
+    }*/
 
     function acquisitionTimePromptCallback(results) {
         //console.log("@acquisitionTimePromptCallback");
@@ -1634,6 +1691,8 @@ define(function(require, exports, module) {
         //console.log('@override_measurement_rate');
         messaging.sendMessage({args:[cmd]});
         messaging.sendMessage({args:[{command:'set_manual_override',value:true}]});
+        setSpanProperties($("#MEASUREMENT_OVERRIDE_MESSAGE"), "MANUAL OVERRIDE", 'yellow');
+        setSpanProperties($("#MEASUREMENT_OVERRIDE_MESSAGE_2"), "MANUAL<br/>OVERRIDE<br/>" + cmd.rate.toFixed(3) + "kHz", 'yellow');
     }
     
     function displayGoButton() {
@@ -2757,6 +2816,9 @@ define(function(require, exports, module) {
                 
                 // TODO: implement
                 //document.getElementById("CALIBRATION_DATE").innerHTML = new Date().toLocaleDateString();
+                
+                document.getElementById("MEASUREMENT_RATE_1").value = JSON.parse(msg.measurement_rate).toFixed(3);
+                document.getElementById("THRESHOLD_1").value = JSON.parse(msg.intensity_threshold).toFixed(3);
                 
                 getConnectionMode();
                 // disable to reduce redundant calls
