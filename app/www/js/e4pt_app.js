@@ -8,6 +8,7 @@ define(function(require, exports, module) {
     var oldLog = console.log;
     console.log = function() {
         logMessages.push({"timestamp": new Date().toISOString(), "message": Object.values(arguments).join(" ")});
+        logExported = false;
         oldLog.apply(null, arguments);
     }
 
@@ -27,6 +28,7 @@ define(function(require, exports, module) {
     var fromCalculateRPM = false;
     var collectionAborted = false;
     var masteringPerformed = false;
+    var logExported = false;
 
     var sensorParamsFromController = false;
     var sensorFromController = "";
@@ -58,6 +60,7 @@ define(function(require, exports, module) {
     };
     
     var MAX_LOG_MESSAGES = 10;
+    var MAX_LOG_AGE_DAYS = 7;
     
     var CUSTOMER_REPORT_FILE_PREFIX = "customer_report_e4Pt";
     var DETAILS_FILE_PREFIX = "details_e4pt";
@@ -264,6 +267,10 @@ define(function(require, exports, module) {
         document.addEventListener("pause", function () {
             console.log("app moved to background");
             //messaging.sendMessage({args:[{command:'disconnect'}]});
+            // save log if updated and not saved
+            if (!logExported) {
+                exportLog(false);
+            }
         }, false);
         document.addEventListener("resume", function() {
             console.log("app moved to foreground");
@@ -687,11 +694,13 @@ define(function(require, exports, module) {
             window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, gotFS, fsFail);
         }, 900);
         
-        // Wait (2s) and update connection status if connected before menu is opened
+        // Wait (2s/4s) and update connection status if connected before menu is opened
         setTimeout(function() {
+            //getVersion();
             //getConnectionMode();
             checkConnectionStatus();
         }, 2000);
+        //setTimeout(checkConnectionStatus, 4000);
     });
 
     function fadeOutAll() {
@@ -734,6 +743,8 @@ define(function(require, exports, module) {
                 }, loadJSONFile);
             });
         });
+        
+        deleteStaleLogFiles();
     }
 
     function fsFail(err) {
@@ -885,7 +896,7 @@ define(function(require, exports, module) {
         showLog();
     }
     
-    function exportLog() {
+    function exportLog(showDownload = true) {
         $("#PROCESSING_PAGE").fadeIn();
         let contents = "";
         for (let i=0; i<logMessages.length; i++) {
@@ -893,12 +904,15 @@ define(function(require, exports, module) {
             contents += "\n";
         }
         let targetFolder = "data"; // default directory
-        let logDate = new Date().toJSON().slice(0, 19).replace(/-/g,'').replace(/:/g,'').replace('T','');
+        let logDate = new Date().toJSON().slice(2, 19).replace('T','_').replace(/:/g,'-');
         let fileName = LOG_FILE_PREFIX + "_" + logDate + ".txt";
         let fileUrl = cordova.file.documentsDirectory + targetFolder + "/" + fileName;
         writeToFile(targetFolder, fileName, contents, function() {
             $("#PROCESSING_PAGE").fadeOut();
-            fileDownloadFunction(fileUrl);
+            if (showDownload) {
+                fileDownloadFunction(fileUrl);
+            }
+            logExported = true;
         });
     }
     
@@ -2510,13 +2524,17 @@ define(function(require, exports, module) {
     }
 
     function systemShutdown() {
+        // save log if updated and not saved
+        if (!logExported) {
+            exportLog(false);
+        }
         if (messaging.usesPlugin) {
             e4PtConfirm("Are you sure you want to exit?",
-                        function(idx) {
-                            if (idx === 1) {
-                                messaging.sendMessage({args:[{command:'shutdown'}]});
-                            }
-                        });
+                function(idx) {
+                    if (idx === 1) {
+                        messaging.sendMessage({args:[{command:'shutdown'}]});
+                    }
+                });
         } else {
             messaging.sendMessage({args:[{command:'shutdown'}]});
         }
@@ -3088,6 +3106,48 @@ define(function(require, exports, module) {
     // boxUploadCallback is called when the file upload to box has completed.
     function boxUploadCallback() {
         //console.log("@boxUploadCallback");
+    }
+    
+    function deleteStaleLogFiles() {
+        console.log("@deleteStaleLogFiles");
+        var path = cordova.file.documentsDirectory + "data";
+        window.resolveLocalFileSystemURL(path, function (fileSystem) {
+            var reader = fileSystem.createReader();
+            reader.readEntries(function (entries) {
+                let fileEntries = entries.filter(element => element.isFile); // ignore any non-file entries
+                var sortedFileEntries = fileEntries.sort(function (a, b) {
+                    if (a.name < b.name) return -1;
+                    if (a.name > b.name) return 1;
+                    return 0;
+                });
+                let deleteList = [];
+                sortedFileEntries.forEach((entry, index, array) => {
+                    if (entry.name.startsWith(LOG_FILE_PREFIX)) {
+                        var logDateParts = entry.name.split('_')[1].split('-');
+                        var logDateYear = parseInt('20'+logDateParts[0]);
+                        var logDateMonth = parseInt(logDateParts[1])-1;
+                        var logDateDay = parseInt(logDateParts[2]);
+                        var logDate = new Date(logDateYear, logDateMonth, logDateDay);
+                        var logDiffDays = (new Date() - logDate) / (1000 * 60 * 60 * 24);
+                        if (logDiffDays > MAX_LOG_AGE_DAYS) {
+                            let dirArr = entry.nativeURL.split('/');
+                            let filename = dirArr[dirArr.length - 1];
+                            console.log("deleteStaleLogFiles: " + filename);
+                            deleteList.push(filename);
+                        }
+                    }
+                });
+                for (let i=0; i<deleteList.length; i++) {
+                    deleteFile(fileSystem, deleteList[i]);
+                }
+            }, function (err) {
+                err = "Error processing entry: " + JSON.stringify(err);
+                console.log(err);
+            });
+        }, function (err) {
+            err = "Error reading entries: " + JSON.stringify(err);
+            console.log(err);
+        });
     }
 
     //examples:

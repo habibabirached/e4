@@ -154,15 +154,8 @@
                         intensityAboveThreshold = [measurementData.intensities[j] floatValue] > 0.0;
                     }
                     //[self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: rawDisplacement[%d]=%f, intensityAboveThreshold=%s", j, rawDisplacement, intensityAboveThreshold ? "TRUE" : "FALSE"]} keepOpen:YES];
-                    if (!intensityAboveThreshold) {
-                        [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: low intensity[%d]=%f", j, [measurementData.intensities[j] floatValue]]} keepOpen:YES];
-                        count_low_intensity++;
-                    }
-                    if (rawDisplacement >= clearanceData.shelfThreshold) {
-                        [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: high clearance[%d]=%f", j, rawDisplacement]} keepOpen:YES];
-                        count_above_shelf++;
-                    }
                     if (intensityAboveThreshold && (rawDisplacement < clearanceData.shelfThreshold)) {
+                        // valid measurement
                         //NSLog(@"Averaging: %f",[d floatValue]);
                         if (rawDisplacement < min_clearance) {
                             min_clearance = rawDisplacement;
@@ -170,6 +163,18 @@
                         }
                         clearance += rawDisplacement;
                         count++;
+                    } else {
+                        // invalid measurement
+                        NSString* errorMessage = [NSString stringWithFormat:@"PostProcess.computeClearance: invalid sample [%d]", j];
+                        if (!intensityAboveThreshold) {
+                            errorMessage = [errorMessage stringByAppendingFormat:@", low intensity %f", [measurementData.intensities[j] floatValue]];
+                            count_low_intensity++;
+                        }
+                        if (rawDisplacement >= clearanceData.shelfThreshold) {
+                            errorMessage = [errorMessage stringByAppendingFormat:@", high displacement %f", rawDisplacement];
+                            count_above_shelf++;
+                        }
+                        [self->delegate returnPluginResponse:@{@"type":@"log",@"message":errorMessage} keepOpen:YES];
                     }
                 }
                 int totalCount = (stop - FILTER_EDGE_SIZE_STOP) - (start + FILTER_EDGE_SIZE_START) + 1;
