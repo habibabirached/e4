@@ -110,8 +110,8 @@
 }
 
 -(void)calculateStatisticsWithBladeCount:(int)bladeCount {
-    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"ClearanceData.calculateStatisticsWithBladeCount: bladeCount=%d", bladeCount]} keepOpen:YES];
-    if (self.bladeClearances.count > 0 ) {
+    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"ClearanceData.calculateStatisticsWithBladeCount: bladeCount=%d, bladeClearances.count=%lu", bladeCount, self.bladeClearances.count]} keepOpen:YES];
+    if (self.bladeClearances.count > 0) {
         NSMutableArray* statsBuff = [NSMutableArray new];
         NSUInteger upperIndex = (bladeCount == 0) ? self.bladeClearances.count : MIN(self.bladeClearances.count, bladeCount);
         int idx = 0;

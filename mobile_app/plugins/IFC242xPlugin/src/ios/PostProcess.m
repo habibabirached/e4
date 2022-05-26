@@ -473,7 +473,7 @@
     float* temp_buffer = (float*)malloc(result_length * sizeof(float));
     
     // Pointer to end of filter for use with vDSP_conv
-    float    *h_end = h + (h_length - 1);
+    float *h_end = h + (h_length - 1);
     
     // Length of signal passed to vDSP_conv
     unsigned signal_length = (h_length + result_length);

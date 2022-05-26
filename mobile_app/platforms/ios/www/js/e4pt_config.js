@@ -228,6 +228,7 @@ frame_data = [
          {'stage':'11', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0.0', 'max':'100.0', 'size':'8.082', 'color':'BLACK', 'image':'7FA-R5-R10'},
          {'stage':'14', 'position':['TOP', 'RIGHT', 'BOTTOM', 'LEFT'], 'min':'0.0', 'max':'100.0', 'size':'8.082', 'color':'BLACK', 'image':'7FA-R5-R10'}
      ],
+     /* blade_count changed from 4 to 64, tip_diameter changed from 5.56 to 88.96 */
      'stage_info':{
          '1':{
             'RIGHT':['A', 0.0, 0.0, 1.387],
@@ -235,7 +236,7 @@ frame_data = [
             'LEFT':['C', 180.0, 180.0, 1.387],
             'BOTTOM':['D', 270.0, 270.0, 1.387],
             'blade_count':64,
-            'tip_diameter':5.56,
+            'tip_diameter':88.96,
             'blade_width':0.228
          },
          '6':{
@@ -244,7 +245,7 @@ frame_data = [
             'LEFT':['C', 180.0, 180.0, 1.387],
             'BOTTOM':['D', 270.0, 270.0, 1.387],
             'blade_count':64,
-            'tip_diameter':5.56,
+            'tip_diameter':88.96,
             'blade_width':0.120
          },
          '11':{
@@ -253,7 +254,7 @@ frame_data = [
             'LEFT':['C', 180.0, 180.0, 1.387],
             'BOTTOM':['D', 270.0, 270.0, 1.387],
             'blade_count':64,
-            'tip_diameter':5.56,
+            'tip_diameter':88.96,
             'blade_width':0.111
          },
          '14':{
@@ -262,7 +263,7 @@ frame_data = [
             'BOTTOM':['C', 180.0, 180.0, 1.387],
             'LEFT':['D', 270.0, 270.0, 1.387],
             'blade_count':64,
-            'tip_diameter':5.56,
+            'tip_diameter':88.96,
             'blade_width':0.121
          },
      },

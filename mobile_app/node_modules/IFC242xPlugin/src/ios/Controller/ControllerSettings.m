@@ -87,7 +87,8 @@
     
     if (rateAndIntensity) {
         [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"ControllerSettings.calculate: pointsPerBlade=%d", self.pointsPerBlade]} keepOpen:YES];
-        self.measurementRate = [self calculateKHzFrequencyForSamplesPerInch:(self.pointsPerBlade / bladeWidth) atSpeed:inchesPerSecond];
+        float samplesPerInch = self.pointsPerBlade / bladeWidth;
+        self.measurementRate = [self calculateKHzFrequencyForSamplesPerInch:samplesPerInch atSpeed:inchesPerSecond];
         self.intensityThreshold = [self calculateIntensityThresholdFromMeasurementRateKHz:self.measurementRate];
     }
     [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"ControllerSettings.calculate: measurementRate=%f, intensityThreshold=%f", self.measurementRate, self.intensityThreshold]} keepOpen:YES];
