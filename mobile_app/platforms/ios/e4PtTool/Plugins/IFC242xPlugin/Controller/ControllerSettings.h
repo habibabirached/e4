@@ -29,6 +29,7 @@
 @property (nonatomic) BOOL sensorParamsProvided;
 @property (nonatomic) int pointsPerBlade;
 
+-(void)resetMeasurementRateAndIntensityThreshold;
 -(NSString*)calculateAcquisitionTimeFromRPM:(float)rpm forBladeWidth:(float)bladeWidth forTipDiameter:(float)tipDiameter;
 -(NSString*)calculateAcquisitionTimeAndSamplingFrequencyAndIntensityThresholdFromRPM:(float)rpm forBladeWidth:(float)bladeWidth forTipDiameter:(float)tipDiameter;
 -(float)calculateIntensityThresholdFromMeasurementRateKHz:(float)measurementRateKHz;

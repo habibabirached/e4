@@ -36,6 +36,7 @@
 @synthesize useSerialBuffer = _useSerialBuffer;
 @synthesize useSensorParams = _useSensorParams;
 @synthesize pointsPerBlade = _pointsPerBlade;
+@synthesize minBladeSamples = _minBladeSamples;
 
 - (BOOL)application:(UIApplication*)application didFinishLaunchingWithOptions:(NSDictionary*)launchOptions
 {
@@ -55,8 +56,9 @@
     NSObject *useSerialBufferObject = [defaults objectForKey:@"useSerialBuffer"];
     NSObject *useSensorParamsObject = [defaults objectForKey:@"useSensorParams"];
     NSObject *pointsPerBladeObject = [defaults objectForKey:@"pointsPerBlade"];
+    NSObject *minBladeSamples = [defaults objectForKey:@"minBladeSamples"];
     
-    if (connectionTypeObject == nil || ipAddressObject == nil || baudRateObject == nil || useSerialBufferObject == nil || useSensorParamsObject == nil || pointsPerBladeObject == nil) {
+    if (connectionTypeObject == nil || ipAddressObject == nil || baudRateObject == nil || useSerialBufferObject == nil || useSensorParamsObject == nil || pointsPerBladeObject == nil || minBladeSamples == nil) {
         [self registerDefaultsFromSettingsBundle];
     }
 
@@ -66,6 +68,7 @@
     self.useSerialBuffer = [defaults boolForKey:@"useSerialBuffer"];
     self.useSensorParams = [defaults boolForKey:@"useSensorParams"];
     self.pointsPerBlade = [NSNumber numberWithInt:[[defaults stringForKey:@"pointsPerBlade"] intValue]];
+    self.minBladeSamples = [NSNumber numberWithInt:[[defaults stringForKey:@"minBladeSamples"] intValue]];
 }
 
 - (void)registerDefaultsFromSettingsBundle {

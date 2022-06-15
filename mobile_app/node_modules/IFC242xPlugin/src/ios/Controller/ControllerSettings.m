@@ -46,6 +46,13 @@
     return _outOfRange;
 }
 
+-(void)resetMeasurementRateAndIntensityThreshold {
+    NSLog(@"@resetMeasurementRateAndIntensityThreshold");
+    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":@"@ControllerSettings.resetMeasurementRateAndIntensityThreshold"} keepOpen:YES];
+    self.measurementRate = 1.0;
+    self.intensityThreshold = [self calculateIntensityThresholdFromMeasurementRateKHz:self.measurementRate];
+}
+
 -(NSString*)calculate:(float)rpm forBladeWidth:(float)bladeWidth forTipDiameter:(float)tipDiameter updateRateAndIntensity:(BOOL)rateAndIntensity {
     NSLog(@"@calculate: rpm=%f, bladeWidth=%f, tipDiameter=%f, rateAndIntensity=%s", rpm, bladeWidth, tipDiameter, rateAndIntensity ? "true" : "false");
     [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"ControllerSettings.calculate: rpm=%f, bladeWidth=%f, tipDiameter=%f, rateAndIntensity=%s", rpm, bladeWidth, tipDiameter, rateAndIntensity ? "TRUE" : "FALSE"]} keepOpen:YES];

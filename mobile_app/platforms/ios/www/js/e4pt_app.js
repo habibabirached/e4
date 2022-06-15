@@ -44,6 +44,7 @@ define(function(require, exports, module) {
     var MIN_RPM = 0.5;
     var MAX_RPM = 15.0;
     var MIN_SAMPLING_RATE = 0.1;
+    var DEFAULT_SAMPLING_RATE = 1.000;
     var MAX_SAMPLING_RATE = 6.5;
     var CLEARANCE_OVERRIDE_PRECISION = 4;
     var DETAILS_PRECISION = 4;
@@ -548,6 +549,8 @@ define(function(require, exports, module) {
             messaging.sendMessage({args:[{command:'set_manual_override',value:false}]});
             setSpanProperties($("#MEASUREMENT_OVERRIDE_MESSAGE"), "AUTOMATIC CALCULATION", 'green');
             setSpanProperties($("#MEASUREMENT_OVERRIDE_MESSAGE_2"), "AUTOMATIC<br/>CALCULATION", 'green');
+            document.getElementById("MEASUREMENT_RATE_1").value = DEFAULT_SAMPLING_RATE;
+            messaging.sendMessage({args:[{command:'get_threshold_for_rate',rate:DEFAULT_SAMPLING_RATE}]});
         }, {passive: true});
         document.getElementById("EXPORT_DATA_BUTTON").addEventListener('click', function() {
             fromDataPlotPage = true;

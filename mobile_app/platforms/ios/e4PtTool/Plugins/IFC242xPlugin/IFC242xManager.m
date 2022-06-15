@@ -368,6 +368,19 @@
             [self returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"Manger.messageHandler: send_data, acquisitionTime=%@", acqTime]} keepOpen:YES];
             self->calibratedAcquire = false;
             self->controller.settings.acquisitionTime = [acqTime floatValue];
+            if (!self->controller.settings.overrideRateAndIntensity) {
+                NSLog(@"Using existing settings: Found measurement rate: %.3f; intensity threshold: %.3f", self->controller.settings.measurementRate, self->controller.settings.intensityThreshold);
+                [self returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"Manager.messageHandler: Using existing settings, measurement rate = %.3f, intensity threshold = %.3f", self->controller.settings.measurementRate, self->controller.settings.intensityThreshold]} keepOpen:YES];
+                // reset measurement rate and intensity threshold if modified from measurment
+                /*[self->controller.settings resetMeasurementRateAndIntensityThreshold];
+                NSLog(@"Using default settings: Found measurement rate: %.3f; intensity threshold: %.3f", self->controller.settings.measurementRate, self->controller.settings.intensityThreshold);
+                [self returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"Manager.messageHandler: Using default settings, measurement rate = %.3f, intensity threshold = %.3f", self->controller.settings.measurementRate, self->controller.settings.intensityThreshold]} keepOpen:YES];
+                [self->controller setIntensityThreshold:self->controller.settings.intensityThreshold sendImmediately:NO];
+                [self->controller setMeasurementRate:self->controller.settings.measurementRate reportStatus:NO];*/
+            } else {
+                NSLog(@"Overriding auto-settings: Found measurement rate: %.3f; intensity threshold: %.3f", self->controller.settings.measurementRate, self->controller.settings.intensityThreshold);
+                [self returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"Manager.messageHandler: Overriding auto-settings, measurement rate = %.3f, intensity threshold = %.3f", self->controller.settings.measurementRate, self->controller.settings.intensityThreshold]} keepOpen:YES];
+            }
             [self->controller doDataCollection];
         }
     } else if ([cmd containsString:@"abort"]) {
@@ -410,7 +423,13 @@
     } else if ([cmd containsString:@"set_manual_override"]) {
         NSLog(@"Got set_manual_override");
         //[self returnPluginResponse:@{@"type":@"log",@"message":@"Manager.messageHandler: set_manual_override"} keepOpen:YES];
-        self->controller.settings.overrideRateAndIntensity = [[message objectForKey:@"value"] boolValue];
+        BOOL manualOverride = [[message objectForKey:@"value"] boolValue];
+        self->controller.settings.overrideRateAndIntensity = manualOverride;
+        if (!manualOverride) {
+            [self->controller.settings resetMeasurementRateAndIntensityThreshold];
+            [self->controller setIntensityThreshold:self->controller.settings.intensityThreshold sendImmediately:NO];
+            [self->controller setMeasurementRate:self->controller.settings.measurementRate reportStatus:NO];
+        }
     } else if ([cmd containsString:@"get_connection_mode"]) {
         NSLog(@"Got get_connection_mode");
         //[self returnPluginResponse:@{@"type":@"log",@"message":@"Manager.messageHandler: get_connection_mode"} keepOpen:YES];

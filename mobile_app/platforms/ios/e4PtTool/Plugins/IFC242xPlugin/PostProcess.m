@@ -7,6 +7,7 @@
 //
 //
 
+#import "AppDelegate.h"
 #import "PostProcess.h"
 #include "math.h"
 #include <Accelerate/Accelerate.h>
@@ -24,8 +25,8 @@
 #define FILTER_EDGE_SIZE_START 1
 #define FILTER_EDGE_SIZE_STOP 1
 #define BIN_MULTIPLIER 4 // This multiplier will change the size & resolution of the histogram.
-// TODO: move to settings?
-#define MIN_BLADE_SAMPLE_COUNT 2 // Require more than 1 sample to identify a blade
+// moved to app settings
+//#define MIN_BLADE_SAMPLE_COUNT 4 // Required number of samples to identify a blade
 
 @implementation PostProcess {
     NSMutableArray* kernel;
@@ -35,12 +36,17 @@
 @synthesize filterByDisplacementAndIntensity = _filterByDisplacementAndIntensity;
 @synthesize outOfRange = _outOfRange;
 @synthesize useMinimumClearance = _useMinimumClearance;
+@synthesize minBladeSamples = _minBladeSamples;
 
 -(instancetype)initWithDelegate:(IFC242xManager*)delegate {
     if (self = [super init]) {
         self->delegate = delegate;
         [self computeKernel:KERNEL_SIGMA kernel_size:KERNEL_SIZE];
         [self resetOptions];
+        dispatch_sync(dispatch_get_main_queue(), ^{
+            self.minBladeSamples = [((AppDelegate *)[UIApplication sharedApplication].delegate).minBladeSamples intValue];
+        });
+        NSLog(@"@initWithDelegate: minBladeSamples=%d", self.minBladeSamples);
     }
     return self;
 }
@@ -107,7 +113,7 @@
         float rawDisplacement = [measurementData.displacements[i] floatValue];
         if (rawDisplacement < self.outOfRange) {
             //[self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: valid displacement=%f", rawDisplacement]} keepOpen:YES];
-            clearanceData.averageDisplacement += rawDisplacement;
+            clearanceData.averageDisplacement += rawDisplacement; // TODO: only use valid blade measurements?
             overall_count++;
         }
         if (neg_crossing[i]) {
@@ -185,15 +191,17 @@
                     clearance = -9.996;
                 } else {
                     clearance /= count; // Average clearance for this blade.
-                    blades_count += 1;
-                    blades_samples += count;
+                    //blades_count += 1;
+                    //blades_samples += count;
                 }
                 if (isnan(clearance)) {
                     clearance = -9.995;  // nan has happened before.
                 }
                 [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: average blade clearance = %f, minimum clearance = %f", clearance, min_clearance]} keepOpen:YES];
-                if (count >= MIN_BLADE_SAMPLE_COUNT) {
-                    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: sufficient blade samples: %d >= %d", count, MIN_BLADE_SAMPLE_COUNT]} keepOpen:YES];
+                if (count >= self.minBladeSamples) {
+                    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: sufficient blade samples: %d >= %d", count, self.minBladeSamples]} keepOpen:YES];
+                    blades_count += 1;
+                    blades_samples += count;
                     if (self.useMinimumClearance) {
                         [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: using minimum clearance = %f", min_clearance]} keepOpen:YES];
                         [clearanceData.bladeClearances addObject:[NSNumber numberWithFloat:min_clearance]];
@@ -207,12 +215,12 @@
                     }
                     [clearanceData.locations addObject:[NSNumber numberWithFloat:min_loc]];
                 } else {
-                    //NSLog(@"Not enough samples: %d < %d", count, MIN_BLADE_SAMPLE_COUNT);
-                    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: insufficient blade samples, %d < %d", count, MIN_BLADE_SAMPLE_COUNT]} keepOpen:YES];
+                    //NSLog(@"Not enough samples: %d < %d", count, self.minBladeSamples);
+                    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: insufficient blade samples, %d < %d", count, self.minBladeSamples]} keepOpen:YES];
                 }
                 //NSLog(@"Clearance: %f; Quality: %@", clearance, [clearanceData.quality lastObject]);
                 for (int j=start; j<=stop; j++) {
-                    if (count >= MIN_BLADE_SAMPLE_COUNT && [measurementData.displacements[j] floatValue] < self.outOfRange) {
+                    if (count >= self.minBladeSamples && [measurementData.displacements[j] floatValue] < self.outOfRange) {
                         [clearanceData.filtered addObject:[NSNumber numberWithFloat:clearance]];
                     } else {
                         [clearanceData.filtered addObject:outOfRangeNumber];
@@ -236,6 +244,7 @@
     [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: average displacement=%f", clearanceData.averageDisplacement]} keepOpen:YES];
     [clearanceData applyAdjustment:offsetAdjustment threshold:self.outOfRange];
     [clearanceData calculateStatisticsWithBladeCount:bladeCount];
+    // TODO: use 1 std deviation?
 
     clearanceData.blades = blades_count;
     if (blades_count == 0) {
@@ -445,7 +454,7 @@
 //
 - (NSArray*)fir_filter:(NSArray*)kernel displacements:(NSArray*)displacements threshold:(float)threshold {
 
-    // Get the kernal into a float array
+    // Get the kernel into a float array
     int h_length = (int)kernel.count;
     float* h = (float*)malloc(h_length * sizeof(float));
     int idx = 0;

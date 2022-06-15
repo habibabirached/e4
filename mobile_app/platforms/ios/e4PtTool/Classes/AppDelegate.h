@@ -36,5 +36,6 @@
 @property BOOL useSerialBuffer;
 @property BOOL useSensorParams;
 @property NSNumber *pointsPerBlade;
+@property NSNumber *minBladeSamples;
 
 @end
