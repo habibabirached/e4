@@ -10,11 +10,17 @@ define(function(require, exports, module, sensorSettings) {
   const renderChart = (chartConfig, target, chartFilename, writeToFileFunc) => {
     let html = createSavedChartHTML(chartConfig);
     let chart = Highcharts.chart(target, chartConfig);
-    chart.renderer.button('Save',chart.plotWidth+20,0,function(){
+    chart.renderer.button('Save',chart.plotWidth+20,0,
+      function(){
           writeToFileFunc(chartFilename.substring(0,chartFilename.indexOf('_')), chartFilename, html);
           this.attr({text: 'Saved'});
           this.setState(3);
-    },{fill:'black',style:{color:'white'}},{},{},{fill:'gray',style:{color:'black'}}).add();
+      },
+      {fill:'black',width:34,height:16,style:{color:'white'}},
+      {},
+      {},
+      {fill:'gray',width:34,height:16,style:{color:'black'}}
+    ).add();
   }
   
   const clearChartData = (chartContainer) => {
@@ -44,12 +50,12 @@ define(function(require, exports, module, sensorSettings) {
     return "<html><head><script src='https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js'></script><script src='https://code.highcharts.com/highcharts.js'></script><style>.FONT_BLACK{color:black}.FONT_RED{color:red}.highcharts-subtitle {text-align: center;width: 100%;}</style></head><body><div style='width:100%'></div><script>$(function () {$('div').highcharts(" + JSON.stringify(chartConfig) + ");});</script></body></html>";
   }
   
-  const addChartSubtitle = (chartConfig, acquisition_date, overall_clearance, blades, blade_samples_avg, avg_displacement, selected_frame_data) => {
+  const addChartSubtitle = (chartConfig, acquisition_date, overall_clearance, blades, blade_samples_avg, avg_displacement, selected_frame_data, current_position) => {
     let subtitle = 'Date: ' + acquisition_date + ';&nbsp;Observed Blades: ' + blades;
     subtitle += '<br/>';
 
     if (selected_frame_data) {
-      subtitle += 'Frame: ' + selected_frame_data.frameName + ';&nbsp;Stage: ' + selected_frame_data.stageName + ';&nbsp;Blades: ' + selected_frame_data.bladeCount + ';&nbsp;RPM: ' + parseFloat(selected_frame_data.RPM).toFixed(3);
+      subtitle += 'Frame: ' + selected_frame_data.frameName + ';&nbsp;Stage: ' + selected_frame_data.stageName + ';&nbsp;Position: ' + current_position + ';&nbsp;Blades: ' + selected_frame_data.bladeCount + ';&nbsp;RPM: ' + parseFloat(selected_frame_data.RPM).toFixed(3);
       subtitle += '<br/>';
     }
 

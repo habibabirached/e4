@@ -27,6 +27,7 @@ define(function(require, exports, module) {
     var fromDataPlotPage = false;
     var fromCalculateRPM = false;
     var collectionAborted = false;
+    var rpmCalculationAborted = false;
     var masteringPerformed = false;
     var logExported = false;
 
@@ -43,6 +44,7 @@ define(function(require, exports, module) {
     var DEFAULT_SPACER_FILE = 'img/spacers/Unknown.gif';
     var MIN_RPM = 0.5;
     var MAX_RPM = 15.0;
+    var CALCULATE_RPM_SECONDS = 60.0;
     var MIN_SAMPLING_RATE = 0.1;
     var DEFAULT_SAMPLING_RATE = 1.000;
     var MAX_SAMPLING_RATE = 6.5;
@@ -105,6 +107,17 @@ define(function(require, exports, module) {
         "TOP RIGHT": '<i class="fas fa-arrow-up" data-fa-transform="rotate-45"></i>',
         "BOTTOM LEFT": '<i class="fas fa-arrow-down" data-fa-transform="rotate-45"></i>',
         "BOTTOM RIGHT": '<i class="fas fa-arrow-right" data-fa-transform="rotate-45"></i>',
+    };
+    
+    var POSITION_CODES = {
+        "TOP": "T",
+        "BOTTOM": "B",
+        "LEFT": "L",
+        "RIGHT": "R",
+        "TOP LEFT": "TL",
+        "TOP RIGHT": "TR",
+        "BOTTOM LEFT": "BL",
+        "BOTTOM RIGHT": "BR"
     };
 
     // Replace with remote instance when we get to that point.
@@ -244,9 +257,11 @@ define(function(require, exports, module) {
         fadeOutAll();
         
         // set default button values
-        setButtonProperties($("#STAGE_COLLECT_BUTTON"), LABEL_GO, 'green');
+        //setButtonProperties($("#STAGE_COLLECT_BUTTON"), LABEL_GO, 'green');
+        displayGoButton();
         setButtonProperties($("#START_DARK_REFERENCE_BUTTON"), LABEL_START_DARK, 'blue');
-        setButtonProperties($("#CALCULATE_RPM_BUTTON"), LABEL_CALCULATE, 'green');
+        //setButtonProperties($("#CALCULATE_RPM_BUTTON"), LABEL_CALCULATE, 'green');
+        displayCalculateButton();
         setButtonProperties($("#READ_SENSOR_PARAMETERS_BUTTON"), LABEL_LOAD_PARAMS, 'blue');
         
         // update default sensor alerts
@@ -639,7 +654,31 @@ define(function(require, exports, module) {
             exportLog();
         }, {passive: true});
         document.getElementById("CALCULATE_RPM_BUTTON").addEventListener('click', function() {
-             calculateRPM();
+            //calculateRPM();
+            if (document.getElementById("CALCULATE_RPM_BUTTON").innerHTML === LABEL_CALCULATE) {
+                rpmCalculationAborted = false;
+                if (!masteringPerformed) {
+                    //e4PtAlert('Mastering has not been performed. Please perform mastering before calculating RPM.');
+                    e4PtConfirm("Mastering has not been performed. Do you want to calculate RPM without mastering?",
+                      function(idx) {
+                        if (idx == 1) {
+                          console.log("Proceeding without mastering");
+                            calculateRPM();
+                        } else {
+                          console.log("Calculate RPM was cancelled.");
+                        }
+                      });
+                } else {
+                    calculateRPM();
+                }
+            } else if (document.getElementById("CALCULATE_RPM_BUTTON").innerHTML === LABEL_ABORT) {
+                messaging.sendMessage({args:[{command:'abort'}]});
+                // ignore data response to hide DATA_PLOT
+                //collectionAborted = true;
+                rpmCalculationAborted = true;
+                $("#PROCESSING_PAGE").fadeOut();
+                resetDataCollection();
+            }
         }, {passive: true});
         document.getElementById("LOCATION_BUTTON").addEventListener('click', function() {
             showLocationImages();
@@ -929,14 +968,16 @@ define(function(require, exports, module) {
                     function(idx) {
                         if (idx === 1) {
                             fromCalculateRPM = true;
-                            setButtonProperties($("#CALCULATE_RPM_BUTTON"), LABEL_CALCULATING, 'yellow');
-                            requestE4PtData(60.0);
+                            //setButtonProperties($("#CALCULATE_RPM_BUTTON"), LABEL_CALCULATING, 'yellow');
+                            displayCalculatingButton();
+                            requestE4PtData(CALCULATE_RPM_SECONDS);
                         }
                     });
             } else {
                 fromCalculateRPM = true;
-                setButtonProperties($("#CALCULATE_RPM_BUTTON"), LABEL_CALCULATING, 'yellow');
-                requestE4PtData(60.0);
+                //setButtonProperties($("#CALCULATE_RPM_BUTTON"), LABEL_CALCULATING, 'yellow');
+                displayCalculatingButton();
+                requestE4PtData(CALCULATE_RPM_SECONDS);
             }
         } else {
             e4PtAlert('No position or casing thickness, could not calculate RPM.');
@@ -973,6 +1014,7 @@ define(function(require, exports, module) {
     function resetDataCollection() {
         setButtonProperties($("#START_DARK_REFERENCE_BUTTON"), LABEL_START_DARK, 'blue');
         displayGoButton();
+        displayCalculateButton();
         setIndicatorColor("green");
         $("#REV_PROGRESS_BAR").hide();
         $("#STATUS_BAR").show();
@@ -1234,6 +1276,7 @@ define(function(require, exports, module) {
     }
     
     function getVersion() {
+        //console.log('@getVersion');
         messaging.sendMessage({args:[{command:'get_version'}]});
     }
     
@@ -1720,6 +1763,15 @@ define(function(require, exports, module) {
         setButtonProperties($("#STAGE_COLLECT_BUTTON"), LABEL_ABORT, 'red');
     }
     
+    function displayCalculateButton() {
+        setButtonProperties($("#CALCULATE_RPM_BUTTON"), LABEL_CALCULATE, 'green');
+    }
+    
+    function displayCalculatingButton() {
+        //setButtonProperties($("#CALCULATE_RPM_BUTTON"), LABEL_CALCULATING, 'yellow');
+        setButtonProperties($("#CALCULATE_RPM_BUTTON"), LABEL_ABORT, 'red');
+    }
+    
     function setButtonProperties(button, text, buttonColor) {
         let allColors = "btn-secondary btn-dark btn-danger btn-success btn-warning btn-info";
         let targetColor = "btn-secondary";
@@ -1785,9 +1837,9 @@ define(function(require, exports, module) {
             .html(text);
     }
 
-    /*function confirm_collect_stage_data() {
-        // Disable prompt since offset calculation is disabled, default to Original
-        let calcMethod = CALC_METHODS['Original'];
+    function confirm_collect_stage_data() {
+        // Disable prompt since offset calculation is disabled, default to Controller
+        let calcMethod = CALC_METHODS['Controller'];
         document.getElementById("CLEARANCE_CALCULATION_METHOD").value = calcMethod;
         // Here we check to see if data is in the cell that is about to be populated.
         // If there is already data there then we confirm with the user to overwrite it.
@@ -1809,10 +1861,9 @@ define(function(require, exports, module) {
             collect_stage_data();
         }
         return;
-    }*/
+    }
 
-    // TODO: use default calculation method
-    function confirm_collect_stage_data() {
+    /*function confirm_collect_stage_data() {
         // Disable prompt since offset calculation is disabled
         e4PtPrompt('Original calculation assumes master fixture height is SMR+SL+5mm, New calculation uses MV=fixture height - sensor length', function(calcMethod) {
             console.log('calcMethod:', Object.keys(CALC_METHODS).find(key => CALC_METHODS[key] === calcMethod));
@@ -1839,7 +1890,7 @@ define(function(require, exports, module) {
             return;
         }, 'Select Clearance Calculation', Object.keys(CALC_METHODS)); //['Original', 'New', 'Controller', 'None']
         return;
-    }
+    }*/
 
     function collect_stage_data() {
         //console.log("@collect_stage_data");
@@ -2698,12 +2749,18 @@ define(function(require, exports, module) {
                         // TODO: reset application/controller connection
                     }
                 } else if (msg.status == "acquiring") {
-                    displayAbortButton();
-                    setIndicatorColor("red");
-                    startProgressBar();
+                    if (!fromCalculateRPM) {
+                        displayAbortButton();
+                        setIndicatorColor("red");
+                        startProgressBar();
+                    }
                 } else if (msg.status == "processing") {
-                    setIndicatorColor("blue");
-                    displayGoButton();
+                    console.log('PROCESSING STATUS');
+                    if (!fromCalculateRPM) {
+                        console.log('SHOW GO');
+                        setIndicatorColor("blue");
+                        displayGoButton();
+                    }
                 } else if (msg.status == "done_mastering") {
                     done_mastering();
                 } else if (msg.status == "failed_mastering") {
@@ -2733,34 +2790,51 @@ define(function(require, exports, module) {
                     msg.overrideSSO = "";
 
                     if (fromCalculateRPM) {
-                        //console.log('calculating RPM');
-                        position = document.getElementById("SENSOR_POSITION").value;
-                        casing_thickness = document.getElementById("CURR_CASE_THICKNESS").value;
-                        if (position && casing_thickness) {
-                            stage_details = get_stage_details(position, casing_thickness);
-                            //console.log(stage_details);
-                            let rotor_blades = stage_details.blade_count;
-                            let observed_blades = parseFloat(msg.blades);
-                            console.log('rotor_blades = ' + rotor_blades + ', observed_blades = ' + observed_blades);
-                            if (observed_blades > 0) {
-                                let calculated_rpm = observed_blades / rotor_blades;
-                                console.log('calculated_rpm = ' + calculated_rpm);
-                                document.getElementById("MEASUREMENT_RPM").value = calculated_rpm.toFixed(3);
-                                computedRPM = calculated_rpm;
-                                selected_frame_data.RPM = calculated_rpm;
+                        if (!rpmCalculationAborted) {
+                            console.log('calculating RPM');
+                            position = document.getElementById("SENSOR_POSITION").value;
+                            casing_thickness = document.getElementById("CURR_CASE_THICKNESS").value;
+                            if (position && casing_thickness) {
+                                stage_details = get_stage_details(position, casing_thickness);
+                                //console.log(stage_details);
+                                let rotor_blades = stage_details.blade_count;
+                                let observed_blades = parseFloat(msg.blades);
+                                console.log('rotor_blades = ' + rotor_blades + ', observed_blades = ' + observed_blades);
+                                if (observed_blades > 0) {
+                                    let calculated_rpm = observed_blades / rotor_blades;
+                                    console.log('calculated_rpm = ' + calculated_rpm);
+                                    if (calculated_rpm < MIN_RPM || calculated_rpm > MAX_RPM) {
+                                        e4PtAlert("Calculated RPM of " + calculated_rpm + ", RPM must be between " + MIN_RPM + " and " + MAX_RPM + ".");
+                                        /*if (calculated_rpm < MIN_RPM) {
+                                            document.getElementById("MEASUREMENT_RPM").value = MIN_RPM;
+                                        } else if (calculated_rpm > MAX_RPM) {
+                                            document.getElementById("MEASUREMENT_RPM").value = MAX_RPM;
+                                        }*/
+                                    } else {
+                                        document.getElementById("MEASUREMENT_RPM").value = calculated_rpm.toFixed(3);
+                                        computedRPM = calculated_rpm;
+                                        selected_frame_data.RPM = calculated_rpm;
+                                    }
+                                } else {
+                                    e4PtAlert('No blades observed, could not calculate RPM.');
+                                }
                             } else {
-                                e4PtAlert('No blades observed, could not calculate RPM.');
+                                e4PtAlert('No position or casing thickness, could not calculate RPM.');
                             }
                         } else {
-                            e4PtAlert('No position or casing thickness, could not calculate RPM.');
+                            console.log("RPM calculation was aborted");
+                            rpmCalculationAborted = false;
                         }
-                        setButtonProperties($("#CALCULATE_RPM_BUTTON"), LABEL_CALCULATE, 'green');
+                        //setButtonProperties($("#CALCULATE_RPM_BUTTON"), LABEL_CALCULATE, 'green');
+                        displayCalculateButton();
                         fromCalculateRPM = false;
                     } else {
+                        //console.log('processing data without RPM');
                         processE4PtData(msg);
                     }
                 } else {
                     console.log("Data collection was aborted");
+                    collectionAborted = false;
                 }
                 $("#PROCESSING_PAGE").fadeOut();
                 resetDataCollection();
@@ -3602,10 +3676,12 @@ define(function(require, exports, module) {
     }
 
     function requestE4PtData(acquisitionTime) {
-        //console.log("@requestE4PtData");
+        //console.log("@requestE4PtData: fromCalculateRPM=", fromCalculateRPM);
         //console.log("Requesting " + acquisitionTime + " seconds of data");
         charting.clearChartData(document.getElementById('DATA_PLOT'));
         startProgressBar();
+        
+        $("#PROCESSING_PAGE").fadeIn();
 
         // send_data needs args: acquisition time and casing thickness
         // Casing thickness can be zero here.
@@ -3700,7 +3776,7 @@ define(function(require, exports, module) {
                     if (detailKeys[key] == pos) {
                         //console.log("Found Position");
                         var caseThck = current_frame_data.stage_info[stageKey][pos][3];
-                        if ((casing_thickness > (caseThck - 0.050)) && (casing_thickness < (caseThck + 0.05))) {
+                        if ((casing_thickness > (caseThck - 0.05)) && (casing_thickness < (caseThck + 0.05))) {
                             //console.log("For: position =", position, "; casing_thickness =", casing_thickness);
                             //console.log("Found:", stageKey, ";", detailKeys[key], ";", caseThck);
                             details["blade_width"] = current_frame_data.stage_info[stageKey].blade_width;
@@ -3902,7 +3978,7 @@ define(function(require, exports, module) {
       chartConfig.chart.panning = true;
       chartConfig.chart.panKey = 'shift';
       chartConfig.chart.zoomType = 'xy';
-      charting.addChartSubtitle(chartConfig, E4PTdata.date, E4PTdata.clearance, E4PTdata.blades, E4PTdata.blade_samples_avg, E4PTdata.overall_avg, null);
+      charting.addChartSubtitle(chartConfig, E4PTdata.date, E4PTdata.clearance, E4PTdata.blades, E4PTdata.blade_samples_avg, E4PTdata.overall_avg, null, null);
       charting.displayIntensityThresholdAndMeasurementRate(chartConfig, E4PTdata.measurement_rate, E4PTdata.intensity_threshold);
       let chartFilename = charting.createSavedChartFilename(E4PTdata.date.substring(2));
       charting.renderChart(chartConfig, 'DATA_PLOT', chartFilename, writeToFile);
@@ -3913,7 +3989,8 @@ define(function(require, exports, module) {
       let chartConfig = charting.createChartConfig(E4PTdata.data, E4PTdata.minima);
       chartConfig.tooltip.enabled = false;
       chartConfig.series[0].name = 'Filtered ' + chartConfig.series[0].name;
-      charting.addChartSubtitle(chartConfig, E4PTdata.date, E4PTdata.clearance, E4PTdata.blades, E4PTdata.blade_samples_avg, null, selected_frame_data);
+      let current_position_code = POSITION_CODES[current_position];
+      charting.addChartSubtitle(chartConfig, E4PTdata.date, E4PTdata.clearance, E4PTdata.blades, E4PTdata.blade_samples_avg, null, selected_frame_data, current_position_code);
       charting.displayIntensityThresholdAndMeasurementRate(chartConfig, E4PTdata.measurement_rate, E4PTdata.intensity_threshold);
       let chartFilename = charting.createSavedChartFilename(E4PTdata.date.substring(2), E4PTdata.serial_number, current_stage, current_position.substring(0,1));
       //charting.renderChart(chartConfig, 'DATA_PLOT', chartFilename, writeToFile);
