@@ -26,6 +26,7 @@ define(function(require, exports, module) {
     var fromSensorSetupPage = false;
     var fromDataPlotPage = false;
     var fromCalculateRPM = false;
+    var fromCompareMasterValue = false;
     var collectionAborted = false;
     var rpmCalculationAborted = false;
     var masteringPerformed = false;
@@ -50,6 +51,7 @@ define(function(require, exports, module) {
     var MAX_SAMPLING_RATE = 6.5;
     var CLEARANCE_OVERRIDE_PRECISION = 4;
     var DETAILS_PRECISION = 4;
+    var COMPARE_MASTER_VALUE_SECONDS = 10.0;
     
     //var CALC_METHOD_ORIGINAL = 1;
     //var CALC_METHOD_NEW = 2;
@@ -88,6 +90,8 @@ define(function(require, exports, module) {
     var LABEL_CALCULATING = "CALCULATING";
     var LABEL_LOAD_PARAMS = "LOAD FROM CONTROLLER";
     var LABEL_LOADING_PARAMS = "LOADING FROM CONTROLLER";
+    var LABEL_COMPARE = "COMPARE MASTERING VALUES";
+    var LABEL_COMPARING = "COMPARING MASTERING VALUES";
 
     var local_db = new PouchDB('e4ptdb', {revs_limit: 1, auto_compaction: true});
     var archive_db = new PouchDB('e4ptarchive', {revs_limit: 1, auto_compaction: true});
@@ -263,6 +267,7 @@ define(function(require, exports, module) {
         //setButtonProperties($("#CALCULATE_RPM_BUTTON"), LABEL_CALCULATE, 'green');
         displayCalculateButton();
         setButtonProperties($("#READ_SENSOR_PARAMETERS_BUTTON"), LABEL_LOAD_PARAMS, 'blue');
+        displayCompareButton();
         
         // update default sensor alerts
         var infoShort = sensorSettings.getSensorType('SHORT');
@@ -290,6 +295,7 @@ define(function(require, exports, module) {
         }, false);
         document.addEventListener("resume", function() {
             console.log("app moved to foreground");
+            setIndicatorColor("white");
             set_connection_mode();
         }, false);
         
@@ -680,6 +686,9 @@ define(function(require, exports, module) {
                 resetDataCollection();
             }
         }, {passive: true});
+        document.getElementById("COMPARE_MASTER_BUTTON").addEventListener('click', function() {
+            compareMasterValue();
+        }, {passive: true});
         document.getElementById("LOCATION_BUTTON").addEventListener('click', function() {
             showLocationImages();
         }, {passive: true});
@@ -984,6 +993,13 @@ define(function(require, exports, module) {
         }
     }
     
+    function compareMasterValue() {
+        console.log('@compareMasterValue');
+        fromCompareMasterValue = true;
+        displayComparingButton();
+        requestE4PtData(COMPARE_MASTER_VALUE_SECONDS);
+    }
+    
     function getData() {
         //console.log('@getData');
         fromGetData = true;
@@ -1015,6 +1031,7 @@ define(function(require, exports, module) {
         setButtonProperties($("#START_DARK_REFERENCE_BUTTON"), LABEL_START_DARK, 'blue');
         displayGoButton();
         displayCalculateButton();
+        displayCompareButton();
         setIndicatorColor("green");
         $("#REV_PROGRESS_BAR").hide();
         $("#STATUS_BAR").show();
@@ -1770,6 +1787,14 @@ define(function(require, exports, module) {
     function displayCalculatingButton() {
         //setButtonProperties($("#CALCULATE_RPM_BUTTON"), LABEL_CALCULATING, 'yellow');
         setButtonProperties($("#CALCULATE_RPM_BUTTON"), LABEL_ABORT, 'red');
+    }
+    
+    function displayCompareButton() {
+        setButtonProperties($("#COMPARE_MASTER_BUTTON"), LABEL_COMPARE, 'blue');
+    }
+    
+    function displayComparingButton() {
+        setButtonProperties($("#COMPARE_MASTER_BUTTON"), LABEL_COMPARING, 'yellow');
     }
     
     function setButtonProperties(button, text, buttonColor) {
@@ -2740,6 +2765,7 @@ define(function(require, exports, module) {
                     getSensorParameters();
                 } else if (msg.status == "connecting") {
                     document.getElementById("STATUS_DISPLAY").innerHTML = "Connecting";
+                    setIndicatorColor("white");
                 } else if (msg.status == 'disconnected') {
                     setIndicatorColor('white');
                     document.getElementById('STATUS_DISPLAY').innerHTML = 'Disconnected';
@@ -2828,6 +2854,20 @@ define(function(require, exports, module) {
                         //setButtonProperties($("#CALCULATE_RPM_BUTTON"), LABEL_CALCULATE, 'green');
                         displayCalculateButton();
                         fromCalculateRPM = false;
+                    } else if (fromCompareMasterValue) {
+                        console.log("Comparing mastering values");
+                        var calculatedMV = sensorSettings.get('mastering_value');
+                        var observedMV = msg.overall_avg;
+                        var stdDev = msg.std_clr;
+                        var diffMV = Math.abs(calculatedMV - observedMV);
+                        console.log("Calculated=" + calculatedMV + ", Observed=" + observedMV + ", StdDev=" + stdDev + ", Diff=" + diffMV);
+                        if (diffMV <= (2.0 * stdDev)) {
+                            e4PtAlert("Sensor is good to use.");
+                        } else {
+                            e4PtAlert("Discrepancy in mastering values, sensor should be repaired.\nCalculated: " + calculatedMV + "\nObserved: " + observedMV + "\n2 * Deviation: " + (2.0 * stdDev));
+                        }
+                        displayCompareButton();
+                        fromCompareMasterValue = false;
                     } else {
                         //console.log('processing data without RPM');
                         processE4PtData(msg);
