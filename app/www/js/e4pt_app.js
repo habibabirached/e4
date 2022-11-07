@@ -52,6 +52,7 @@ define(function(require, exports, module) {
     var CLEARANCE_OVERRIDE_PRECISION = 4;
     var DETAILS_PRECISION = 4;
     var COMPARE_MASTER_VALUE_SECONDS = 10.0;
+    var COMPARE_MASTER_VALUE_STD_DEV = 0.01;
     
     //var CALC_METHOD_ORIGINAL = 1;
     //var CALC_METHOD_NEW = 2;
@@ -2859,6 +2860,10 @@ define(function(require, exports, module) {
                         var calculatedMV = sensorSettings.get('mastering_value');
                         var observedMV = msg.overall_avg;
                         var stdDev = msg.std_clr;
+                        if (stdDev == 0.0) {
+                            console.log("using default std dev");
+                            stdDev = COMPARE_MASTER_VALUE_STD_DEV;
+                        }
                         var diffMV = Math.abs(calculatedMV - observedMV);
                         console.log("Calculated=" + calculatedMV + ", Observed=" + observedMV + ", StdDev=" + stdDev + ", Diff=" + diffMV);
                         if (diffMV <= (2.0 * stdDev)) {
