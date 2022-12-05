@@ -31,7 +31,10 @@
                   <button id="MAIN_MENU" class="btn btn-primary">
                       <i class="fas fa-bars"></i><span class="ps-2">MENU</span>
                   </button>
-                  <a id="TITLE_BAR" class="navbar-brand" href="#">e-4Pt Tool</a>
+                  <span id="WARMUP_CLOCK" class="badge bg-secondary pe-2">WARM UP<br/>00:00</span>
+                  <a id="TITLE_BAR" class="navbar-brand" href="#">
+                      e-4Pt Tool
+                  </a>
                   
                   <span class="navbar-text">
                     <span id="CONNECTION_NAME" class="align-middle pe-2">SERIAL</span>
@@ -383,7 +386,7 @@
                                                 <li>Position the base station near the gas turbine compressor section. Keep in mind that the sensor cable, Redpark Cables, and Power Cables constitute a tripping hazard. Care should be made to position the base station close to the compressor casing. Additionally, the Fiber Optic cable has a 3x maximum radius and should never be kinked.</li>
                                                 <li>Power on the Base station (120/220 Vac, 50/60Hz). An adaptor may be needed. Turn the base station on by flipping the single rocker switch.</li>
                                                 <li>Connect iPad or iPhone to the armored lightning cable, and then open the e4 point App. You can confirm that the app has connected via the SERIAL indicator circle in the top right corner of the app. The indicator circle should be GREEN as shown below</li>
-                                                <li>Sensor and controller warmup time is 30 minutes. Measurement prior to 30 minute warm up period will result in erroneous dark reference, mastering, and clearance data.
+                                                <li>Sensor and controller warmup time is 5 minutes. Measurement prior to 30 minute warm up period will result in erroneous dark reference, operability check, and clearance data.
                                                     <ol>
                                                         <li>Good practice is to set up and turn on the e4 point tool and then remove clearance hole plugs and note casing thicknesses. While this may not take full 30 minutes, it will reduce idle time.</li>
                                                     </ol>
@@ -407,7 +410,7 @@
                                                         <img class="figure-img img-fluid" width="320" src="img/frd/master_5.1.png"/>
                                                     </figure>
                                                 </li>
-                                                <li>Select “Sensor Probe Mastering” from the submenu and follow on screen instructions for mastering the sensor. When Mastering has been completed the green “Ready Button” will transition to “Mastering Complete.”
+                                                <li>Select “Sensor Operability Check” from the submenu and follow on screen instructions for checking the sensor. When this has been completed there will be a popup indicating whether or not the sensor is ready to use.
                                                     <br/>
                                                     <figure class="text-center mt-2">
                                                        <img class="figure-img img-fluid" width="320" src="img/frd/app_master.png"/>
@@ -637,71 +640,6 @@
           </div>
         </div>
         
-        <!-- Sensor Mastering Before Data Collection Page -->
-        <div id="INITIALIZE_SENSOR_PAGE" class="container-fluid my-2">
-            <div class="card">
-              <div class="card-header">
-                <div class="row">
-                  <div class="col-auto me-auto pt-1">
-                    <h4>Setup</h4>
-                  </div>
-                  <div class="col-auto">
-                    <button id="INITIALIZE_SENSOR_CLOSE_BUTTON" type="button" class="btn btn-dark"><i class="fas fa-times"></i></button>
-                  </div>
-                </div>
-              </div>
-                <div class="card-body">
-                    <div class="row">
-                    <div class="col-lg-12">
-                      <!-- Sensor Probe Mastering Before Data Collection -->
-                      <div class="accordion" id="accordionMastering">
-                        <div class="accordion-item">
-                          <h2 class="accordion-header" id="headingMasteringOne">
-                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMasteringOne" aria-expanded="true" aria-controls="collapseMasteringOne">Sensor Probe Mastering</button>
-                          </h2>
-                          <div id="collapseMasteringOne" class="accordion-collapse collapse show" aria-labelledby="headingMasteringOne" data-bs-parent="#accordionMastering">
-                            <div class="accordion-body">
-                              <!-- Sensor Probe Mastering -->
-                              <p>Before collecting data be sure to master the sensor.</p>
-                              <br/>
-                              <p>Mastering in the mastering fixture sets the value of the target distance for the calculation of the clearance.  The mastering fixture is machined to hold the sensor so that the base surface of the fixture (target surface) is at the center of the sensor measuring range.</p>
-                              <br/>
-                              <p class="text-decoration-underline">Instructions:</p>
-                              <ol>
-                                  <li>Clean mating surfaces of the Sensor Probe and the Set Master.</li>
-                                  <li>Insert Sensor Probe into the Set Master.</li>
-                                  <li>Press Start.</li>
-                                  <li>Wait until the screen changes.</li>
-                              </ol>
-                              <br/>
-                              <div class="d-grid gap-2">
-                                  <div class="btn-group" role="group" aria-label="Mastering Buttons">
-                                    <button id="RESET_MASTER_BUTTON_2" type="button" class="btn btn-danger">RESET</button>
-                                    <span>&nbsp;</span>
-                                    <button id="START_MASTER_BUTTON_2" type="button" class="btn btn-primary">START</button>
-                                  </div>
-                              </div>
-                              <div class="text-center">
-                                  <span id="master_message_2" class="badge bg-success">READY</span>
-                              </div>
-                              <!-- -->
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <br/>
-                      <p>When collecting data on the next page, the user is prompted for the rotor RPM. RPM is used to optimize the data acquisition rate to ensure at least 4 points are acquired per blade tip.  It is best to estimate within +/- 1 RPM if possible.</p>
-                      <br/>
-                      <div class="d-grid gap-2">
-                          <button id="COLLECT_DATA_BUTTON" type="button" class="btn btn-primary">COLLECT DATA</button>
-                      </div>
-                      <!-- -->
-                    </div>
-                  </div>
-                </div>
-            </div>
-        </div>
-        
         <!-- Turbine Data Collection Page -->
         <div id="TURBINE_SETUP_PAGE" class="container-fluid my-2">
             <div class="card w-100">
@@ -747,6 +685,13 @@
 
                       <div class="text-center my-3">
                           <h5>
+                              <!-- C = D + SMR + SL - ST - CT -->
+                              <!-- Clearance = Displacement + StartOfMeasuringRange + SensorLength - SpacerThickness - CasingThickness -->
+                              <span id="CALCULATION_MSG" class="badge bg-secondary" data-bs-toggle="tooltip" data-bs-placement="top" title="Clearance = Displacement + Start of Measuring Range + Sensor Length - Spacer Thickness - Casing Thickness">
+                                  Clearances calculated using Controller-based parameters (touch for details)
+                              </span>
+                          </h5>
+                          <h5>
                               <span id="SENSOR_PARAMS_CONFIG_MSG" class="badge bg-secondary"></span>
                           </h5>
                           <span class="badge bg-light text-dark">
@@ -757,9 +702,6 @@
                               <span id="MV_CONFIG_MSG"></span>,
                               <span id="MO_CONFIG_MSG"></span>
                           </span>
-                          <h5>
-                              <span id="CALCULATION_MSG" class="badge bg-secondary">Clearances calculated using Controller-based parameters</span>
-                          </h5>
                       </div>
 
                       <div class="w-100" style="overflow-x: scroll;">
@@ -1093,38 +1035,26 @@
                         </div>
                       </div>
                     </div>
-                    
                     <div class="accordion-item">
                       <h2 class="accordion-header" id="headingSensorControlsTwo">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSensorControlsTwo" aria-expanded="true" aria-controls="collapseSensorControlsTwo">Sensor Probe Mastering</button>
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSensorControlsTwo" aria-expanded="true" aria-controls="collapseSensorControlsTwo">Sensor Operability Check</button>
                       </h2>
                       <div id="collapseSensorControlsTwo" class="accordion-collapse collapse" aria-labelledby="headingSensorControlsTwo" data-bs-parent="#accordionSensorControls">
                         <div class="accordion-body">
                             <!-- Sensor Probe Mastering -->
-                            <p>Mastering in the mastering fixture sets the value of the target distance for the calculation of the clearance.  The mastering fixture is machined to hold the the sensor so that the base surface of the fixture (target surface) is at the center of the sensor measuring range.</p>
+                            <p>Running the operability check in the mastering fixture compares the measured versus calculated clearance values.  The mastering fixture is machined to hold the the sensor so that the base surface of the fixture (target surface) is at the center of the sensor measuring range.</p>
+                            <p>The calculated mastering value will be compared with the observed average mastering value.  This difference should be within 2 standard deviations.</p>
                             <br/>
                             <h5>Instructions:</h5>
                             <ol>
                                 <li>Clean mating surfaces of the Sensor Probe and the Set Master.</li>
                                 <li>Insert Sensor Probe into the Set Master.</li>
-                                <li>Press Start.</li>
-                                <li>Wait until the screen changes.</li>
+                                <li>Press Operability Check.</li>
+                                <li>Wait until the message appears.</li>
                             </ol>
                             <br/>
                             <div class="d-grid gap-2">
-                                <div class="btn-group" role="group" aria-label="Mastering Buttons">
-                                  <button id="RESET_MASTER_BUTTON" type="button" class="btn btn-danger">RESET</button>
-                                  <span>&nbsp;</span>
-                                  <button id="START_MASTER_BUTTON" type="button" class="btn btn-primary">START</button>
-                                </div>
-                            </div>
-                            <div class="text-center">
-                                <span id="master_message" class="badge bg-success">READY</span>
-                            </div>
-                            <br/>
-                            <p>The calculated mastering value may be compared with the observed average mastering value.  This difference should be within 2 standard deviations.</p>
-                            <div class="d-grid gap-2">
-                                <button id="COMPARE_MASTER_BUTTON" type="button" class="btn btn-primary">COMPARE MASTERING VALUES</button>
+                                <button id="COMPARE_MASTER_BUTTON" type="button" class="btn btn-primary">OPERABILITY CHECK</button>
                             </div>
                             <!-- -->
                         </div>

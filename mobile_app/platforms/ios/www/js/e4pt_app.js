@@ -29,8 +29,9 @@ define(function(require, exports, module) {
     var fromCompareMasterValue = false;
     var collectionAborted = false;
     var rpmCalculationAborted = false;
-    var masteringPerformed = false;
     var logExported = false;
+    var warmedUp = false;
+    var warmupTimer;
 
     var sensorParamsFromController = false;
     var sensorFromController = "";
@@ -53,6 +54,7 @@ define(function(require, exports, module) {
     var DETAILS_PRECISION = 4;
     var COMPARE_MASTER_VALUE_SECONDS = 10.0;
     var COMPARE_MASTER_VALUE_STD_DEV = 0.01;
+    var WARMUP_SECONDS = 5 * 60;
     
     //var CALC_METHOD_ORIGINAL = 1;
     //var CALC_METHOD_NEW = 2;
@@ -91,8 +93,8 @@ define(function(require, exports, module) {
     var LABEL_CALCULATING = "CALCULATING";
     var LABEL_LOAD_PARAMS = "LOAD FROM CONTROLLER";
     var LABEL_LOADING_PARAMS = "LOADING FROM CONTROLLER";
-    var LABEL_COMPARE = "COMPARE MASTERING VALUES";
-    var LABEL_COMPARING = "COMPARING MASTERING VALUES";
+    var LABEL_COMPARE = "OPERABILITY CHECK";
+    var LABEL_COMPARING = "RUNNING OPERABILITY CHECK";
 
     var local_db = new PouchDB('e4ptdb', {revs_limit: 1, auto_compaction: true});
     var archive_db = new PouchDB('e4ptarchive', {revs_limit: 1, auto_compaction: true});
@@ -224,7 +226,6 @@ define(function(require, exports, module) {
                             'TOP LEFT':315, 'BOTTOM LEFT':225, 'TOP RIGHT':45, 'BOTTOM RIGHT':135};
     var current_stage_index = 0;
     var current_stage = 0;
-    var current_stage_type = '';
     var current_position_index = 0;
     var current_position = 0;
     var current_frame_data = [];
@@ -325,10 +326,6 @@ define(function(require, exports, module) {
         document.getElementById("SN_SUBMIT_BUTTON").addEventListener('click', function() {
             record_casing_thickness();
             confirm_new_or_continue();
-        }, {passive: true});
-        document.getElementById("COLLECT_DATA_BUTTON").addEventListener('click', function() {
-            fadeOutAll();
-            turbine_setup();
         }, {passive: true});
         document.getElementById("CLEAR_DB_BUTTON").addEventListener('click', function() {
             e4PtConfirm("Are you sure you want to clear all data from this database?",
@@ -470,9 +467,6 @@ define(function(require, exports, module) {
         document.getElementById("FRD_CLOSE_BUTTON").addEventListener('click', function() {
             $("#FRD_PAGE").fadeOut();
         }, {passive: true});
-        document.getElementById("INITIALIZE_SENSOR_CLOSE_BUTTON").addEventListener('click', function() {
-            $("#INITIALIZE_SENSOR_PAGE").fadeOut();
-        }, {passive: true});
         document.getElementById("SENSOR_SETUP_CLOSE_BUTTON").addEventListener('click', function() {
             $("#SENSOR_SETUP_PAGE").fadeOut();
             // re-open DATA COLLECTION page
@@ -515,38 +509,12 @@ define(function(require, exports, module) {
             //console.log("@GET_DATA_BUTTON event listener function.");
             toggleMenu();
             fadeOutAll();
-            if (!masteringPerformed) {
-                //e4PtAlert('Mastering has not been performed. Please perform mastering before collecting data.');
-                e4PtConfirm("Mastering has not been performed. Do you want to collect data without mastering?",
-                  function(idx) {
-                    if (idx == 1) {
-                      console.log("Proceeding without mastering");
-                      getData();
-                    } else {
-                      console.log("Get data was cancelled.");
-                    }
-                  });
-            } else {
-                getData();
-            }
+            checkWarmup(getData);
         }, {passive: true});
         document.getElementById("SENSOR_SETUP_BUTTON").addEventListener('click', function() {
             toggleMenu();
             fadeOutAll();
             $("#SENSOR_SETUP_PAGE").fadeIn();
-            setMasterMessage("green","READY");
-        }, {passive: true});
-        document.getElementById("START_MASTER_BUTTON").addEventListener('click', function() {
-        do_mastering();
-        }, {passive: true});
-        document.getElementById("RESET_MASTER_BUTTON").addEventListener('click', function() {
-        do_mastering(true);
-        }, {passive: true});
-        document.getElementById("START_MASTER_BUTTON_2").addEventListener('click', function() {
-        do_mastering();
-        }, {passive: true});
-        document.getElementById("RESET_MASTER_BUTTON_2").addEventListener('click', function() {
-        do_mastering(true);
         }, {passive: true});
         document.getElementById("START_DARK_REFERENCE_BUTTON").addEventListener('click', function() {
             if (document.getElementById("START_DARK_REFERENCE_BUTTON").innerHTML === LABEL_START_DARK) {
@@ -590,20 +558,7 @@ define(function(require, exports, module) {
         document.getElementById("STAGE_COLLECT_BUTTON").addEventListener('click', function() {
             if (document.getElementById("STAGE_COLLECT_BUTTON").innerHTML === LABEL_GO) {
                 collectionAborted = false;
-                if (!masteringPerformed) {
-                    //e4PtAlert('Mastering has not been performed. Please perform mastering before collecting data.');
-                    e4PtConfirm("Mastering has not been performed. Do you want to collect stage data without mastering?",
-                      function(idx) {
-                        if (idx == 1) {
-                          console.log("Proceeding without mastering");
-                            confirm_collect_stage_data();
-                        } else {
-                          console.log("Collect stage data was cancelled.");
-                        }
-                      });
-                } else {
-                    confirm_collect_stage_data();
-                }
+                checkWarmup(confirm_collect_stage_data);
             } else if (document.getElementById("STAGE_COLLECT_BUTTON").innerHTML === LABEL_ABORT) {
                 messaging.sendMessage({args:[{command:'abort'}]});
                 // ignore data response to hide DATA_PLOT
@@ -664,20 +619,7 @@ define(function(require, exports, module) {
             //calculateRPM();
             if (document.getElementById("CALCULATE_RPM_BUTTON").innerHTML === LABEL_CALCULATE) {
                 rpmCalculationAborted = false;
-                if (!masteringPerformed) {
-                    //e4PtAlert('Mastering has not been performed. Please perform mastering before calculating RPM.');
-                    e4PtConfirm("Mastering has not been performed. Do you want to calculate RPM without mastering?",
-                      function(idx) {
-                        if (idx == 1) {
-                          console.log("Proceeding without mastering");
-                            calculateRPM();
-                        } else {
-                          console.log("Calculate RPM was cancelled.");
-                        }
-                      });
-                } else {
-                    calculateRPM();
-                }
+                calculateRPM();
             } else if (document.getElementById("CALCULATE_RPM_BUTTON").innerHTML === LABEL_ABORT) {
                 messaging.sendMessage({args:[{command:'abort'}]});
                 // ignore data response to hide DATA_PLOT
@@ -753,6 +695,29 @@ define(function(require, exports, module) {
             checkConnectionStatus();
         }, 2000);
         //setTimeout(checkConnectionStatus, 4000);
+        
+        var sec = 0;
+        function pad (val) { return val > 9 ? val : "0" + val; }
+        warmupTimer = setInterval(function() {
+            if (serialConnected) {
+                sec += 1;
+                var warmupStr = "WARMING UP<br/>" + pad(parseInt(sec/60,10)) + ":" + pad(sec%60);
+                if (sec < WARMUP_SECONDS) {
+                    setSpanProperties($("#WARMUP_CLOCK"), warmupStr, 'red');
+                } else {
+                    setSpanProperties($("#WARMUP_CLOCK"), 'WARMED UP', 'green');
+                    warmedUp = true;
+                    // TODO: stop timer, hide span?
+                }
+            }
+        }, 1000);
+        // clearInterval(warmupTimer);
+
+        // enable tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+          return new bootstrap.Tooltip(tooltipTriggerEl)
+        })
     });
 
     function fadeOutAll() {
@@ -765,7 +730,6 @@ define(function(require, exports, module) {
         $("#FILE_LOADING_PAGE").fadeOut();
         $("#DB_LOADING_PAGE").fadeOut();
         $("#SENSOR_SETUP_PAGE").fadeOut();
-        $("#INITIALIZE_SENSOR_PAGE").fadeOut();
         $("#TURBINE_SETUP_PAGE").fadeOut();
         $("#LOCAL_DATA_PAGE").fadeOut();
         $("#ARCHIVED_DATA_PAGE").fadeOut();
@@ -999,6 +963,20 @@ define(function(require, exports, module) {
         fromCompareMasterValue = true;
         displayComparingButton();
         requestE4PtData(COMPARE_MASTER_VALUE_SECONDS);
+    }
+    
+    function checkWarmup(f) {
+        if (!warmedUp) {
+            //e4PtAlert('Sensor not warmed up!\nIt is recommended to wait before proceeding.');
+            e4PtConfirm("Sensor not warmed up!\nIt is recommended to wait before proceeding. Do you wish to continue with collection?",
+              function(idx) {
+                if (idx == 1) {
+                  f();
+                }
+              });
+        } else {
+            f();
+        }
     }
     
     function getData() {
@@ -1324,7 +1302,6 @@ define(function(require, exports, module) {
         
         if (mode === 'demo') {
             //console.log('DEMO mode: ignore mastering');
-            masteringPerformed = true;
         }
     }
 
@@ -1430,7 +1407,7 @@ define(function(require, exports, module) {
         $("#SETUP_PAGE").fadeOut();
         $("#RESULTS_PAGE").fadeOut();
         $("#DATA_PLOT_PAGE").fadeOut();
-        $("#INITIALIZE_SENSOR_PAGE").fadeIn();
+        turbine_setup();
         $("#LOCAL_DATA_PAGE").fadeOut();
         $("#ARCHIVED_DATA_PAGE").fadeOut();
       }
@@ -1480,13 +1457,6 @@ define(function(require, exports, module) {
       }
       addDBEntry(E4PTdata); // Save to the database here so we don't lose this data.
         
-      initialize_sensor();
-        
-    }
-
-    function initialize_sensor() {
-        //console.log("@initialize_sensor");
-        setMasterMessage2("green", "Ready");
     }
 
     function confirm_new_or_continue() {
@@ -2291,7 +2261,6 @@ define(function(require, exports, module) {
               if (position == spacers[i].position[j]) {
                 //console.log(JSON.stringify(spacers[i]));
                 spacer = {'size':spacers[i].size, 'color':spacers[i].color, 'image':spacers[i].image};
-                current_stage_type = spacers[i].stage;
                 spacer_found = true;
                 break;
               }
@@ -2569,40 +2538,6 @@ define(function(require, exports, module) {
         messaging.sendMessage({args:[{command:'do_dark_reference'}]});
     }
 
-    function do_mastering(reset) {
-        //console.log('@do_mastering: reset=' + reset);
-        masteringPerformed = false;
-        if (messaging.usesWebSocket()) {
-            setIndicatorColor('yellow');
-        }
-        var cmd = {args:[{command:'do_mastering'}]};
-        if (reset) {
-            cmd.args[0].reset = true;
-        }
-        messaging.sendMessage(cmd);
-    }
-
-    function mastering_in_progress() {
-        setMasterMessage("yellow","IN PROGRESS...");
-        setMasterMessage2("yellow","IN PROGRESS...");
-        setIndicatorColor("red");
-    }
-
-    function done_mastering() {
-        console.log("@done_mastering");
-        masteringPerformed = true;
-        setMasterMessage("green","MASTERING COMPLETE");
-        setMasterMessage2("green","MASTERING COMPLETE");
-        setIndicatorColor("green");
-    }
-
-    function failed_mastering() {
-        console.log('@failed_mastering');
-        setMasterMessage("red","MASTERING FAILED");
-        setMasterMessage2("red","MASTERING FAILED");
-        setIndicatorColor("green");
-    }
-
     function systemShutdown() {
         // save log if updated and not saved
         if (!logExported) {
@@ -2788,12 +2723,6 @@ define(function(require, exports, module) {
                         setIndicatorColor("blue");
                         displayGoButton();
                     }
-                } else if (msg.status == "done_mastering") {
-                    done_mastering();
-                } else if (msg.status == "failed_mastering") {
-                    failed_mastering();
-                } else if (msg.status == "mastering_in_progress") {
-                    mastering_in_progress();
                 } else if (msg.status == "waiting") {
                     setIndicatorColor("yellow");
                 } else if (msg.status.includes("Error:")) {
@@ -3677,14 +3606,6 @@ define(function(require, exports, module) {
         //document.getElementById('CONNECTION_INDICATOR').classList.add(targetColor);
     }
 
-    function setMasterMessage( bgColor, txt ) {
-        setSpanProperties($("#master_message"), txt, bgColor);
-    }
-
-    function setMasterMessage2( bgColor, txt ) {
-        setSpanProperties($("#master_message_2"), txt, bgColor);
-    }
-
     function processE4PtData(msg) {
       //console.log("@processE4PtData");
       try {
@@ -3750,7 +3671,7 @@ define(function(require, exports, module) {
         var blade_width = 0;
         var tip_diameter = 0;
         if (typeof current_frame_data.stage_info !== 'undefined') {
-            if (typeof current_frame_data.stage_info[current_stage_type] !== 'undefined') {
+            if (typeof current_frame_data.stage_info[stage] !== 'undefined') {
                 stage_details = get_stage_details(position, casing_thickness);
                 num_blades = stage_details.blade_count;
                 blade_width = stage_details.blade_width;
@@ -3760,7 +3681,7 @@ define(function(require, exports, module) {
                     return;
                 }
             } else {
-                console.log('UNDEFINED STAGE INFO FOR TYPE: current_stage_type=' + current_stage_type);
+                console.log('UNDEFINED STAGE INFO: current_stage=' + stage);
             }
         } else {
             console.log('UNDEFINED STAGE INFO: frame=' + frame + ', stage=' + stage + ', position=' + position);
