@@ -29,7 +29,7 @@
 
 -(instancetype)initWithName:(NSString*)name;
 -(instancetype)initWithName:(NSString*)name lengthInches:(float)length measurementRangeMM:(float)mr startOfMeasurementRangeMM:(float)smr masterFixtureHeightInches:(float)hmf;
--(instancetype)initWithName:(NSString*)name lengthInches:(float)length measurementRangeMM:(float)mr startOfMeasurementRangeMM:(float)smr masterFixtureHeightInches:(float)hmf masteringValueMM:(float)mv masteringOffsetInches:(float)mo;
+-(instancetype)initWithName:(NSString*)name lengthInches:(float)length measurementRangeMM:(float)mr startOfMeasurementRangeMM:(float)smr masterFixtureHeightInches:(float)hmf masteringValueMM:(float)mv;
 -(void)updateMasteringValues;
 -(float)calculateOffsetAdjustment:(float)spacerThickness casingThickness:(float)casingThickness;
 -(NSString*)offsetAdjustmentExplanation:(float)spacerThickness casingThickness:(float)casingThickness;

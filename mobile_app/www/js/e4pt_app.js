@@ -635,6 +635,9 @@ define(function(require, exports, module) {
         document.getElementById("LOCATION_BUTTON").addEventListener('click', function() {
             showLocationImages();
         }, {passive: true});
+        document.getElementById("CALCULATION_MSG").addEventListener('click', function() {
+            e4PtAlert("Clearance = Displacement + Start of Measuring Range + Sensor Length - Spacer Thickness - Casing Thickness");
+        }, {passive: true});
         document.getElementById("EDIT_BUTTON").addEventListener('click', function() {
             edit();
         }, {passive: true});
@@ -658,27 +661,20 @@ define(function(require, exports, module) {
         }, {passive: true});
         document.getElementById("MASTER_FIXTURE_HEIGHT").addEventListener('change', function() {
             updateMasteringValue();
-            updateMasteringOffset();
             enableMasteringValuesForEditing(true);
         }, {passive: true});
         document.getElementById("MASTERING_VALUE").addEventListener('change', function() {
-            updateMasteringOffset();
             enableMasteringValuesForEditing(true);
         }, {passive: true});
         document.getElementById("SENSOR_LENGTH").addEventListener('change', function() {
             updateMasteringValue();
-            updateMasteringOffset();
             enableMasteringValuesForEditing(true);
         }, {passive: true});
         document.getElementById("SMR").addEventListener('change', function() {
             updateMasteringValue();
-            updateMasteringOffset();
             enableMasteringValuesForEditing(true);
         }, {passive: true});
         document.getElementById("SENSOR_MR").addEventListener('change', function() {
-            enableMasteringValuesForEditing(true);
-        }, {passive: true});
-        document.getElementById("MASTER_OFFSET").addEventListener('change', function() {
             enableMasteringValuesForEditing(true);
         }, {passive: true});
         
@@ -712,12 +708,6 @@ define(function(require, exports, module) {
             }
         }, 1000);
         // clearInterval(warmupTimer);
-
-        // enable tooltips
-        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-          return new bootstrap.Tooltip(tooltipTriggerEl)
-        })
     });
 
     function fadeOutAll() {
@@ -1225,7 +1215,7 @@ define(function(require, exports, module) {
                     if (spacer_thickness.length > MAX_STR_LEN) {
                         spacer_thickness = spacer_thickness.substr(0,MAX_STR_LEN);
                     }
-                    requestE4PtDataWithMetaData(acquisitionTime, frame, sn, current_stage, current_position, casing_thickness, spacer_thickness, sensorSettings.get('master_offset'), document.getElementById("CLEARANCE_CALCULATION_METHOD").value);
+                    requestE4PtDataWithMetaData(acquisitionTime, frame, sn, current_stage, current_position, casing_thickness, spacer_thickness, document.getElementById("CLEARANCE_CALCULATION_METHOD").value);
             //    }
             //}
             }
@@ -1569,7 +1559,6 @@ define(function(require, exports, module) {
         document.getElementById("MR_CONFIG_MSG").innerHTML = sensorSettings.get('sensor_mr') + "mm MR";
         document.getElementById("MFH_CONFIG_MSG").innerHTML = sensorSettings.get('master_fixture_height') + "&quot; MFH";
         document.getElementById("MV_CONFIG_MSG").innerHTML = sensorSettings.get('mastering_value') + "mm MV";
-        document.getElementById("MO_CONFIG_MSG").innerHTML = sensorSettings.get('master_offset') + "&quot; MO";
         if (sensorParamsFromController) {
             setSpanProperties($("#SENSOR_PARAMS_CONFIG_MSG"), "Using controller-provided '" + sensorSettings.get('sensor_selection') + "' sensor settings", 'green');
             $("#SL_CONFIG_MSG").css('color', 'black');
@@ -2786,19 +2775,21 @@ define(function(require, exports, module) {
                         fromCalculateRPM = false;
                     } else if (fromCompareMasterValue) {
                         console.log("Comparing mastering values");
-                        var calculatedMV = sensorSettings.get('mastering_value');
+                        //var calculatedMV = sensorSettings.get('mastering_value');
+                        var calculatedMV = sensorSettings.calculateMasteringValueMM(sensorSettings.get('sensor_length'), sensorSettings.get('master_fixture_height'), sensorSettings.get('start_measurement_range'));
+                        calculatedMV = calculatedMV.toFixed(4);
                         var observedMV = msg.overall_avg;
                         var stdDev = msg.std_clr;
                         if (stdDev == 0.0) {
                             console.log("using default std dev");
-                            stdDev = COMPARE_MASTER_VALUE_STD_DEV;
+                            stdDev = COMPARE_MASTER_VALUE_STD_DEV; // TODO: check
                         }
                         var diffMV = Math.abs(calculatedMV - observedMV);
                         console.log("Calculated=" + calculatedMV + ", Observed=" + observedMV + ", StdDev=" + stdDev + ", Diff=" + diffMV);
                         if (diffMV <= (2.0 * stdDev)) {
                             e4PtAlert("Sensor is good to use.");
                         } else {
-                            e4PtAlert("Discrepancy in mastering values, sensor should be repaired.\nCalculated: " + calculatedMV + "\nObserved: " + observedMV + "\n2 * Deviation: " + (2.0 * stdDev));
+                            e4PtAlert("Discrepancy in values, sensor should be repaired.\nCalculated: " + calculatedMV + "\nObserved: " + observedMV + "\n2 * Deviation: " + (2.0 * stdDev));
                         }
                         displayCompareButton();
                         fromCompareMasterValue = false;
@@ -2873,8 +2864,6 @@ define(function(require, exports, module) {
                 
                 document.getElementById("MASTERING_VALUE").value = sensorSettings.parseAndSetSensorValue('mastering_value', msg.mastering_value);
                 
-                document.getElementById("MASTER_OFFSET").value = sensorSettings.parseAndSetSensorValue('master_offset', msg.master_offset);
-                
                 document.getElementById("SMR").value = sensorSettings.parseAndSetSensorValue('start_measurement_range', msg.start_measurement_range);
                 
                 document.getElementById("SENSOR_MR").value = sensorSettings.parseAndSetSensorValue('sensor_mr', msg.sensor_measurement_range);
@@ -2924,7 +2913,6 @@ define(function(require, exports, module) {
         if (results.input1 == UPDATE_SETTINGS_PASSWORD) {
             updateSensorParameters(document.getElementById("MASTER_FIXTURE_HEIGHT").value,
                                    document.getElementById("MASTERING_VALUE").value,
-                                   document.getElementById("MASTER_OFFSET").value,
                                    document.getElementById("SENSOR_SELECTION").value,
                                    document.getElementById("SENSOR_LENGTH").value,
                                    document.getElementById("SMR").value,
@@ -2934,16 +2922,15 @@ define(function(require, exports, module) {
         }
     }
 
-    function updateSensorParameters(mfh, mval, mo, sensor, sensor_length, smr, mr) {
+    function updateSensorParameters(mfh, mval, sensor, sensor_length, smr, mr) {
         // Before updating the values, make sure the user has entered valid numbers.
         let mfh_f = parseFloat(mfh);
         let mstrval_f = parseFloat(mval);
-        let mo_f = parseFloat(mo);
         let sensor_length_f = parseFloat(sensor_length);
         let smr_f = parseFloat(smr);
         let mr_f = parseFloat(mr);
         // If a number is not valid, give the user a chance to try again or abort.
-        if (isNaN(mfh_f) || isNaN(mstrval_f) || isNaN(mo_f) || isNaN(sensor_length_f) || isNaN(smr_f) || isNaN(mr_f)) {
+        if (isNaN(mfh_f) || isNaN(mstrval_f) || isNaN(sensor_length_f) || isNaN(smr_f) || isNaN(mr_f)) {
             e4PtConfirm("Please enter only floating point values.\nPlease try again.", function(buttonIndex) {
                     if (buttonIndex==2) {//Cancel - This cancels and gets the previous values back.
                         getSensorParameters();
@@ -2952,12 +2939,11 @@ define(function(require, exports, module) {
             );
             return;
         }
-        messaging.sendMessage({args:[{command:'set_sensor_parameters',hmf:mfh_f.toString(10),mv:mstrval_f.toString(10),mo:mo_f.toString(10),name:sensor,length:sensor_length_f.toString(10),smr:smr_f.toString(10),mr:mr_f.toString(10)}]});
+        messaging.sendMessage({args:[{command:'set_sensor_parameters',hmf:mfh_f.toString(10),mv:mstrval_f.toString(10),name:sensor,length:sensor_length_f.toString(10),smr:smr_f.toString(10),mr:mr_f.toString(10)}]});
         
         sensorSettings.set('sensor_selection', sensor);
         sensorSettings.set('sensor_length', sensor_length_f);
         sensorSettings.set('master_fixture_height', mfh_f);
-        sensorSettings.set('master_offset', mo_f);
         sensorSettings.set('mastering_value', mstrval_f);
         sensorSettings.set('start_measurement_range', smr_f);
         sensorSettings.set('sensor_mr', mr_f);
@@ -2983,7 +2969,6 @@ define(function(require, exports, module) {
                 //document.getElementById("SENSOR_MR").value = info.measurement_range_mm.toFixed(4);
             }
             updateMasteringValue();
-            updateMasteringOffset();
         }
         
         if (sensorType === 'CUSTOM' || sensorType === 'PROTOTYPE') {
@@ -2993,7 +2978,6 @@ define(function(require, exports, module) {
             updateSensorParameters(
                 document.getElementById("MASTER_FIXTURE_HEIGHT").value,
                 document.getElementById("MASTERING_VALUE").value,
-                document.getElementById("MASTER_OFFSET").value,
                 document.getElementById("SENSOR_SELECTION").value,
                 document.getElementById("SENSOR_LENGTH").value,
                 document.getElementById("SMR").value,
@@ -3008,15 +2992,6 @@ define(function(require, exports, module) {
         //document.getElementById("MASTERING_VALUE").disabled = !enabled;
         //document.getElementById("SMR").disabled = !enabled;
         document.getElementById("SENSOR_PARAMS_UPDATE_BUTTON").parentNode.hidden = !enabled;
-    }
-    
-    function updateMasteringOffset() {
-        document.getElementById("MASTER_OFFSET").value = sensorSettings.calculateMasteringOffsetInches(
-                            parseFloat(document.getElementById("SENSOR_LENGTH").value),
-                            parseFloat(document.getElementById("MASTER_FIXTURE_HEIGHT").value),
-                            parseFloat(document.getElementById("MASTERING_VALUE").value),
-                            parseFloat(document.getElementById("SMR").value))
-        .toFixed(4);
     }
     
     function updateMasteringValue() {
@@ -3657,7 +3632,7 @@ define(function(require, exports, module) {
         messaging.sendMessage({args:[{command:'send_data',acquisitionTime:acquisitionTime}]});
     }
 
-    function requestE4PtDataWithMetaData(acquisitionTime, frame, sn, stage, position, casing_thickness, spacer_thickness, master_offset, clearance_calc_selection) {
+    function requestE4PtDataWithMetaData(acquisitionTime, frame, sn, stage, position, casing_thickness, spacer_thickness, clearance_calc_selection) {
         //console.log("@requestE4PtDataWithMetaData");
         //console.log("Requesting " + acquisitionTime + "s data");
         //console.log("requestE4PtDataWithMetaData: frame=" + frame + "; sn=" + sn + "; stage=" + stage + "; position=" + position);
@@ -4706,7 +4681,6 @@ define(function(require, exports, module) {
             getSensorParametersForSensorSelection(current_frame_data.default_sensor);
             updateSensorParameters(document.getElementById("MASTER_FIXTURE_HEIGHT").value,
                                    document.getElementById("MASTERING_VALUE").value,
-                                   document.getElementById("MASTER_OFFSET").value,
                                    document.getElementById("SENSOR_SELECTION").value,
                                    document.getElementById("SENSOR_LENGTH").value,
                                    document.getElementById("SMR").value,

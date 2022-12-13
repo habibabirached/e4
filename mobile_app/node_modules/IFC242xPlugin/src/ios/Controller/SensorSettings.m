@@ -81,11 +81,11 @@
     NSLog(@"@initWithName: %@, %f, %f, %f", name, length, mr, smr);
     float mv = [SensorSettings mvFromLength:length hmf:hmf smr:smr];
     float mo = [SensorSettings moFromLength:length hmf:hmf smr:smr mv:mv];
-    return [self initWithName:name lengthInches:length measurementRangeMM:mr startOfMeasurementRangeMM:smr masterFixtureHeightInches:hmf masteringValueMM:mv masteringOffsetInches:mo];
+    return [self initWithName:name lengthInches:length measurementRangeMM:mr startOfMeasurementRangeMM:smr masterFixtureHeightInches:hmf masteringValueMM:mv];
 }
 
--(instancetype)initWithName:(NSString*)name lengthInches:(float)length measurementRangeMM:(float)mr startOfMeasurementRangeMM:(float)smr masterFixtureHeightInches:(float)hmf masteringValueMM:(float)mv masteringOffsetInches:(float)mo {
-    NSLog(@"@initWithName: %@, %f, %f, %f, %f, %f, %f", name, length, mr, smr, hmf, mv, mo);
+-(instancetype)initWithName:(NSString*)name lengthInches:(float)length measurementRangeMM:(float)mr startOfMeasurementRangeMM:(float)smr masterFixtureHeightInches:(float)hmf masteringValueMM:(float)mv {
+    NSLog(@"@initWithName: %@, %f, %f, %f, %f, %f", name, length, mr, smr, hmf, mv);
     if (self = [super init]) {
         self.name = name;
         self.length = length;
@@ -93,7 +93,6 @@
         self.mr = mr;
         self.hmf = hmf;
         self.mv = mv;
-        self.mo = mo;
     }
     return self;
 }

@@ -168,7 +168,7 @@
                                                         <td>All</td>
                                                     </tr>
                                                     <tr>
-                                                        <td>Mastering Fixture</td>
+                                                        <td>Fixture</td>
                                                         <td>Sensor Specific</td>
                                                     </tr>
                                                     <tr>
@@ -235,7 +235,7 @@
                                             <br/>
                                             <figure class="text-center">
                                                 <img class="figure-img img-fluid" width="320" src="img/frd/master_5.1.png"/>
-                                                <figcaption class="figure-caption fw-bold">Long Mastering Fixture with Long sensor probe</figcaption>
+                                                <figcaption class="figure-caption fw-bold">Long Fixture with Long sensor probe</figcaption>
                                             </figure>
                                             <br/>
                                             <figure class="text-center">
@@ -341,7 +341,7 @@
                                             <ol>
                                                 <li>E4 point Tool Inspection
                                                     <ol>
-                                                        <li>Verify all the parts listed above are in the kit and appear to be in good condition. Only spacers for desired frame will be included in shipped kit. Dark Reference cap should fit snuggly over sensor tip. Mastering fixture should be clear of debris or blockages. The magnets should not be cracked or broken on either the sensor or spacers</li>
+                                                        <li>Verify all the parts listed above are in the kit and appear to be in good condition. Only spacers for desired frame will be included in shipped kit. Dark Reference cap should fit snuggly over sensor tip. Fixture should be clear of debris or blockages. The magnets should not be cracked or broken on either the sensor or spacers</li>
                                                         <li>Electrical and sensor connections should be clear of debris.</li>
                                                     </ol>
                                                 </li>
@@ -404,7 +404,7 @@
                                                         <img class="figure-img img-fluid" width="320" src="img/frd/app_dark.png"/>
                                                     </figure>
                                                 </li>
-                                                <li>Remove dark reference cap from sensor. Clean the sensor mating surfaces and lens as directed above and carefully insert the sensor into the mastering fixture.
+                                                <li>Remove dark reference cap from sensor. Clean the sensor mating surfaces and lens as directed above and carefully insert the sensor into the fixture.
                                                     <br/>
                                                     <figure class="text-center mt-2">
                                                         <img class="figure-img img-fluid" width="320" src="img/frd/master_5.1.png"/>
@@ -416,7 +416,7 @@
                                                        <img class="figure-img img-fluid" width="320" src="img/frd/app_master.png"/>
                                                    </figure>
                                                 </li>
-                                                <li>Verify that sensor mastering is acceptable by navigating to the main menu and selecting the “Get Data” submenu. Collect data for a short amount of time with the sensor probe still placed in the mastering fixture. The display should be a constant line at 15mm.
+                                                <li>Verify that sensor mastering is acceptable by navigating to the main menu and selecting the “Get Data” submenu. Collect data for a short amount of time with the sensor probe still placed in the fixture. The display should be a constant line at 15mm.
                                                     <br/>
                                                     <figure class="text-center mt-2">
                                                         <img class="figure-img img-fluid" width="320" src="img/frd/app_data.png"/>
@@ -687,7 +687,7 @@
                           <h5>
                               <!-- C = D + SMR + SL - ST - CT -->
                               <!-- Clearance = Displacement + StartOfMeasuringRange + SensorLength - SpacerThickness - CasingThickness -->
-                              <span id="CALCULATION_MSG" class="badge bg-secondary" data-bs-toggle="tooltip" data-bs-placement="top" title="Clearance = Displacement + Start of Measuring Range + Sensor Length - Spacer Thickness - Casing Thickness">
+                              <span id="CALCULATION_MSG" class="badge bg-secondary">
                                   Clearances calculated using Controller-based parameters (touch for details)
                               </span>
                           </h5>
@@ -699,8 +699,7 @@
                               <span id="SMR_CONFIG_MSG"></span>,
                               <span id="MR_CONFIG_MSG"></span>,
                               <span id="MFH_CONFIG_MSG"></span>,
-                              <span id="MV_CONFIG_MSG"></span>,
-                              <span id="MO_CONFIG_MSG"></span>
+                              <span id="MV_CONFIG_MSG"></span>
                           </span>
                       </div>
 
@@ -1042,8 +1041,8 @@
                       <div id="collapseSensorControlsTwo" class="accordion-collapse collapse" aria-labelledby="headingSensorControlsTwo" data-bs-parent="#accordionSensorControls">
                         <div class="accordion-body">
                             <!-- Sensor Probe Mastering -->
-                            <p>Running the operability check in the mastering fixture compares the measured versus calculated clearance values.  The mastering fixture is machined to hold the the sensor so that the base surface of the fixture (target surface) is at the center of the sensor measuring range.</p>
-                            <p>The calculated mastering value will be compared with the observed average mastering value.  This difference should be within 2 standard deviations.</p>
+                            <p>Running the operability check in the fixture compares the measured versus calculated clearance values.  The fixture is machined to hold the the sensor so that the base surface of the fixture (target surface) is at the center of the sensor measuring range.</p>
+                            <p>The calculated check value will be compared with the observed average measured value.  This difference should be within 2 standard deviations.</p>
                             <br/>
                             <h5>Instructions:</h5>
                             <ol>
@@ -1152,24 +1151,17 @@
                                   </div>
                               </div>
                               <div class="col-md-4 text-center">
-                                  <label for="MASTER_FIXTURE_HEIGHT" class="form-label">Mastering Fixture Height</label>
+                                  <label for="MASTER_FIXTURE_HEIGHT" class="form-label">Fixture Height</label>
                                   <div class="input-group mb-3">
-                                    <input id="MASTER_FIXTURE_HEIGHT" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Mastering Fixture Height" aria-describedby="MASTER_FIXTURE_HEIGHT_TEXT">
+                                    <input id="MASTER_FIXTURE_HEIGHT" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Fixture Height" aria-describedby="MASTER_FIXTURE_HEIGHT_TEXT">
                                     <span class="input-group-text" id="MASTER_FIXTURE_HEIGHT_TEXT">in</span>
                                   </div>
                               </div>
                               <div class="col-md-4 text-center">
-                                  <label for="MASTERING_VALUE" class="form-label">Mastering Value</label>
+                                  <label for="MASTERING_VALUE" class="form-label">Op Check Value</label>
                                   <div class="input-group mb-3">
-                                    <input id="MASTERING_VALUE" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Mastering Value" aria-describedby="MASTERING_VALUE_TEXT">
+                                    <input id="MASTERING_VALUE" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Op Check Value" aria-describedby="MASTERING_VALUE_TEXT">
                                     <span class="input-group-text" id="MASTERING_VALUE_TEXT">mm</span>
-                                  </div>
-                              </div>
-                              <div class="col-md-4 text-center">
-                                  <label for="MASTER_OFFSET" class="form-label">Master Offset</label>
-                                  <div class="input-group mb-3">
-                                    <input id="MASTER_OFFSET" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Master Offset" aria-describedby="MASTER_OFFSET_TEXT">
-                                    <span class="input-group-text" id="MASTER_OFFSET_TEXT">in</span>
                                   </div>
                               </div>
                             </form>
@@ -1194,18 +1186,15 @@
                             <br/>-->
                             
                             <div class="alert alert-warning pb-0" role="alert">
-                              <p>When changing the Mastering Value here be certain to perform Mastering before collecting data, else clearances may be calculated incorrectly.</p>
+                              <p>When changing the Op Check Value here be certain to perform Mastering before collecting data, else clearances may be calculated incorrectly.</p>
                             </div>
                             <div class="alert alert-warning pb-0" role="alert">
-                              <p>The Master Offset is the delta calculated: (measured sensor length + SMR + Mastering Value) - measured mastering fixture height. This should be 0.</p>
-                            </div>
-                            <div class="alert alert-warning pb-0" role="alert">
-                              <p>The Mastering Fixture height defaults are:</p>
+                              <p>The Fixture height defaults are:</p>
                               <hr>
                               <dl class="row">
-                                  <dt class="col-sm-6">Short Master Fixture</dt>
+                                  <dt class="col-sm-6">Short Fixture</dt>
                                   <dd class="col-sm-6"><span id="DEFAULT_SMF"></span>&quot; +/- 0.0005in</dd>
-                                  <dt class="col-sm-6">Long Master Fixture</dt>
+                                  <dt class="col-sm-6">Long Fixture</dt>
                                   <dd class="col-sm-6"><span id="DEFAULT_LMF"></span>&quot; +/- 0.0005in</dd>
                               </dl>
                             </div>

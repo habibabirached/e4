@@ -490,7 +490,7 @@
         [self returnPluginResponse:jsonDict];
     } else if ([cmd containsString:@"set_sensor_parameters"]) {
         //[self returnPluginResponse:@{@"type":@"log",@"message":@"Manager.messageHandler: set_sensor_parameters"} keepOpen:YES];
-        self->controller.settings.sensor = [[SensorSettings alloc] initWithName:[message valueForKey:@"name"] lengthInches:[[message valueForKey:@"length"] floatValue] measurementRangeMM:[[message valueForKey:@"mr"] floatValue] startOfMeasurementRangeMM:[[message valueForKey:@"smr"] floatValue] masterFixtureHeightInches:[[message valueForKey:@"hmf"] floatValue] masteringValueMM:[[message objectForKey:@"mv"] floatValue] masteringOffsetInches:[[message objectForKey:@"mo"] floatValue]];
+        self->controller.settings.sensor = [[SensorSettings alloc] initWithName:[message valueForKey:@"name"] lengthInches:[[message valueForKey:@"length"] floatValue] measurementRangeMM:[[message valueForKey:@"mr"] floatValue] startOfMeasurementRangeMM:[[message valueForKey:@"smr"] floatValue] masterFixtureHeightInches:[[message valueForKey:@"hmf"] floatValue] masteringValueMM:[[message objectForKey:@"mv"] floatValue]];
         
         [self returnPluginResponse:@{@"type":@"alert",@"message":@"Sensor Parameters are Set."}];
     } else if ([cmd containsString:@"shutdown"]) {
