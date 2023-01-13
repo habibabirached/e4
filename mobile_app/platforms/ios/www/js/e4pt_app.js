@@ -786,7 +786,7 @@ define(function(require, exports, module) {
             document.getElementById("FRAME_DEFAULT_SENSOR").value = current_frame_data.default_sensor;
             record_casing_thickness();
             send_scan_metadata(true, true);
-            turbine_setup();
+            turbine_setup(false);
         }
         if (document.getElementById("SERIAL_NUMBER_EDIT").value !== document.getElementById("SERIAL_NUMBER").value) {
             document.getElementById("SERIAL_NUMBER").value = document.getElementById("SERIAL_NUMBER_EDIT").value;
@@ -1383,6 +1383,7 @@ define(function(require, exports, module) {
     }
 
     function send_scan_metadata(reset, updatingExisting = false) {
+      //console.log('@send_scan_metadata');
       // Set element suffix if we are updating existing measurement
       var suffix = (updatingExisting ? '_EDIT' : '');
 
@@ -1397,7 +1398,7 @@ define(function(require, exports, module) {
         $("#SETUP_PAGE").fadeOut();
         $("#RESULTS_PAGE").fadeOut();
         $("#DATA_PLOT_PAGE").fadeOut();
-        turbine_setup();
+        turbine_setup(true);
         $("#LOCAL_DATA_PAGE").fadeOut();
         $("#ARCHIVED_DATA_PAGE").fadeOut();
       }
@@ -1438,6 +1439,7 @@ define(function(require, exports, module) {
       let dateStr = monthNames[d.getMonth()] + "-" + d.getDate() + "-" + d.getFullYear();
       E4PTdata.date = dateStr;
       E4PTdata.time = timeStr;
+      //console.log(E4PTdata);
 
       if (reset) {
           if (!updatingExisting) {
@@ -1446,10 +1448,10 @@ define(function(require, exports, module) {
           reset_data_collection();
       }
       addDBEntry(E4PTdata); // Save to the database here so we don't lose this data.
-        
     }
 
     function confirm_new_or_continue() {
+        //console.log('@confirm_new_or_continue');
         let msg = "Continue collecting data for a turbine, or clear data and start a new collection? Starting a new collection will create a new entry in the database with the same serial number."
         //console.log("previous_frame: ", previous_frame);
         //console.log("current_frame_data.frame: ", current_frame_data.frame);
@@ -1485,8 +1487,9 @@ define(function(require, exports, module) {
         return;
     }
 
-    function turbine_setup() {
+    function turbine_setup(createTable) {
         //console.log('@turbine_setup');
+        //console.log(frame_data);
         $("#TITLE_BAR").text("Data Collection");
         $("#TURBINE_SETUP_PAGE").fadeIn();
         savedRPM = computedRPM;
@@ -1494,6 +1497,7 @@ define(function(require, exports, module) {
         // Get frame type
         var frm_idx = document.getElementById("FRAME_SIZE").selectedIndex;
         current_frame_data = frame_data[frm_idx];
+        //console.log(current_frame_data);
         document.getElementById("FRAME_DEFAULT_SENSOR").value = current_frame_data.default_sensor;
 
         // Setup the Stage options
@@ -1503,7 +1507,12 @@ define(function(require, exports, module) {
         // TODO: called already by set_stage_information()
         set_position_information();
         current_position_index = 0;
+        //console.log("current_stage: " + current_stage);
         current_position = current_frame_data['position'][current_stage][current_position_index];
+        //console.log("current_position: " + current_position);
+        if (createTable) {
+            reset_data_collection();
+        }
         highlight_cell(current_position, current_stage);
         
         update_spacer_value();
@@ -1554,6 +1563,7 @@ define(function(require, exports, module) {
     }
 
     function updateSensorHeaderMessage() {
+        //console.log('@updateSensorHeaderMessage');
         document.getElementById("SL_CONFIG_MSG").innerHTML = sensorSettings.get('sensor_length') + "&quot; SL";
         document.getElementById("SMR_CONFIG_MSG").innerHTML = sensorSettings.get('start_measurement_range') + "mm SMR";
         document.getElementById("MR_CONFIG_MSG").innerHTML = sensorSettings.get('sensor_mr') + "mm MR";
@@ -1587,6 +1597,7 @@ define(function(require, exports, module) {
     }
 
     function set_frame_information() {
+        //console.log('@set_frame_information');
         var html_buf = [];
         var frmIdx = 0;
         var frame = "";
@@ -2152,6 +2163,7 @@ define(function(require, exports, module) {
         E4PTdata.customer = customer;
         E4PTdata.site = site;
         E4PTdata.operator = document.getElementById("OPERATOR").value;
+        //console.log(E4PTdata);
 
         document.getElementById("HEADER_DATETIME").innerHTML = dateStr;
 
@@ -2339,6 +2351,7 @@ define(function(require, exports, module) {
     }
 
     function advance_position() {
+        //console.log('@advance_position');
         // Don't try to advance the position if we're not set up for it.
         // (i.e. if we're not on the right page)
         //console.log("@advance_position");
@@ -4653,7 +4666,7 @@ define(function(require, exports, module) {
           }
         }
 
-        turbine_setup();
+        turbine_setup(false);
     }
 
     function json_data_is_valid(fileData) {
