@@ -21,6 +21,8 @@
     PostProcess* postProcess;
     NSString* cmdCallbackId, *lastSavedFile, *connectionType;
     BOOL calibratedAcquire;
+    BOOL filterShelfRange;
+    BOOL filterNextBlade;
 }
 
 @synthesize progress = _progress;
@@ -47,6 +49,9 @@
         }
         
         self->postProcess = [[PostProcess alloc] initWithDelegate:self];//[PostProcess new];
+        
+        self->filterShelfRange = FALSE;
+        self->filterNextBlade = FALSE;
         
         // Remove notifications before adding them so they are not added multiple times.
         [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationDidEnterBackgroundNotification object:nil];
@@ -100,7 +105,7 @@
     if (self->calibratedAcquire) {
         offsetAdjustment = [self->controller.settings.sensor calculateOffsetAdjustment:self->metaData.spacerThickness casingThickness:self->metaData.casingThickness];
     }
-    return [self->postProcess computeClearance:measurementData bladeCount:self->metaData.numberOfBlades usingAdjustmentFactor:offsetAdjustment];
+    return [self->postProcess computeClearance:measurementData bladeCount:self->metaData.numberOfBlades usingAdjustmentFactor:offsetAdjustment filterShelfRange:self->filterShelfRange filterNextBlade:self->filterNextBlade];
 }
 
 - (void)returnData:(ClearanceData*)clearanceData measurementData:(MeasurementData*)measurementData {
@@ -329,6 +334,8 @@
         self->metaData.casingThickness = [[message valueForKey:@"casingThickness"] floatValue];
         self->metaData.spacerThickness = [[message valueForKey:@"spacerThickness"] floatValue];
         self->metaData.numberOfBlades = [[message valueForKey:@"numberOfBlades"] floatValue];
+        self->filterShelfRange = [[message valueForKey:@"filterShelfRange"] boolValue];
+        self->filterNextBlade = [[message valueForKey:@"filterNextBlade"] boolValue];
         
         // Check if the value is specified in rpm.  If so, extract the rpm value.
         if (!acqTime) {

@@ -55,6 +55,7 @@ define(function(require, exports, module) {
     var COMPARE_MASTER_VALUE_SECONDS = 10.0;
     var COMPARE_MASTER_VALUE_STD_DEV = 0.01;
     var WARMUP_SECONDS = 5 * 60;
+    var DEFAULT_FIXTURE_TOLERANCE_INCHES = 0.0003;
     
     //var CALC_METHOD_ORIGINAL = 1;
     //var CALC_METHOD_NEW = 2;
@@ -676,6 +677,9 @@ define(function(require, exports, module) {
         }, {passive: true});
         document.getElementById("SENSOR_MR").addEventListener('change', function() {
             enableMasteringValuesForEditing(true);
+        }, {passive: true});
+        document.getElementById("FIXTURE_TOLERANCE_LABEL").addEventListener('click', function() {
+            e4PtAlert("Default tolerance value of " + DEFAULT_FIXTURE_TOLERANCE_INCHES + "in comes from fixture drawings");
         }, {passive: true});
         
         // Wait (0.9s) for the page load to complete, then get the file system.
@@ -2797,12 +2801,14 @@ define(function(require, exports, module) {
                             console.log("using default std dev");
                             stdDev = COMPARE_MASTER_VALUE_STD_DEV; // TODO: check
                         }
-                        var diffMV = Math.abs(calculatedMV - observedMV);
-                        console.log("Calculated=" + calculatedMV + ", Observed=" + observedMV + ", StdDev=" + stdDev + ", Diff=" + diffMV);
-                        if (diffMV <= (2.0 * stdDev)) {
+                        var diffMV = Math.abs(calculatedMV - observedMV).toFixed(4);
+                        var fixtureTolerance = sensorSettings.toMMs(parseFloat(document.getElementById("FIXTURE_TOLERANCE").value)).toFixed(4);
+                        var doubleDevTolerance = parseFloat(2.0 * stdDev + fixtureTolerance).toFixed(4);
+                        console.log("Calculated=" + calculatedMV + "mm, Observed=" + observedMV + "mm, StdDev=" + stdDev + "mm, FixtureTolerance=" + fixtureTolerance + "mm, Diff=" + diffMV + "mm, 2*Dev+Tol=" + doubleDevTolerance + "mm");
+                        if (diffMV <= doubleDevTolerance) {
                             e4PtAlert("Sensor is good to use.");
                         } else {
-                            e4PtAlert("Discrepancy in values, sensor should be repaired.\nCalculated: " + calculatedMV + "\nObserved: " + observedMV + "\n2 * Deviation: " + (2.0 * stdDev));
+                            e4PtAlert("Discrepancy in values, sensor should be repaired.\nCalculated: " + calculatedMV + "mm\nObserved: " + observedMV + "mm\nDifference: " + diffMV + "mm\n2 * Deviation + Tolerance: " + doubleDevTolerance + "mm");
                         }
                         displayCompareButton();
                         fromCompareMasterValue = false;
@@ -2880,6 +2886,9 @@ define(function(require, exports, module) {
                 document.getElementById("SMR").value = sensorSettings.parseAndSetSensorValue('start_measurement_range', msg.start_measurement_range);
                 
                 document.getElementById("SENSOR_MR").value = sensorSettings.parseAndSetSensorValue('sensor_mr', msg.sensor_measurement_range);
+                
+                // in -> mm for compare function
+                document.getElementById("FIXTURE_TOLERANCE").value = DEFAULT_FIXTURE_TOLERANCE_INCHES;
                 
                 sensorSettings.saveValuesForSensorType();
                 
@@ -3674,6 +3683,8 @@ define(function(require, exports, module) {
         } else {
             console.log('UNDEFINED STAGE INFO: frame=' + frame + ', stage=' + stage + ', position=' + position);
         }
+        var filter_shelf_range = document.getElementById("FILTER_SHELF_RANGE").checked;
+        var filter_next_blade = document.getElementById("FILTER_NEXT_BLADE").checked;
         //charting.clearChartData(document.getElementById('DATA_PLOT'));
         charting.clearChartData(document.getElementById('DATA_PLOT2'));
         document.getElementById("DATA_PLOT2").innerHTML = "";
@@ -3705,7 +3716,9 @@ define(function(require, exports, module) {
             numberOfBlades:num_blades,
             tipDiameter:tip_diameter,
             bladeWidth:blade_width,
-            clearanceCalculationMethod:clearance_calc_selection
+            clearanceCalculationMethod:clearance_calc_selection,
+            filterShelfRange:filter_shelf_range,
+            filterNextBlade:filter_next_blade
         }]});
     }
 
@@ -3927,7 +3940,7 @@ define(function(require, exports, module) {
 
     function plot_non_calibrated_acquire() {
       //console.log("@plot_non_calibrated_acquire");
-      let chartConfig = charting.createChartConfig(E4PTdata.data, E4PTdata.minima);
+      let chartConfig = charting.createChartConfig(E4PTdata.data, E4PTdata.minima, 'mm'); //E4PTdata.units
       //chartConfig.chart.backgroundColor = 'white';
       chartConfig.chart.panning = true;
       chartConfig.chart.panKey = 'shift';
@@ -3940,7 +3953,7 @@ define(function(require, exports, module) {
 
     function plot_calibrated_acquire() {
       //console.log("@plot_calibrated_acquire");
-      let chartConfig = charting.createChartConfig(E4PTdata.data, E4PTdata.minima);
+      let chartConfig = charting.createChartConfig(E4PTdata.data, E4PTdata.minima, 'mm'); //E4PTdata.units
       chartConfig.tooltip.enabled = false;
       chartConfig.series[0].name = 'Filtered ' + chartConfig.series[0].name;
       let current_position_code = POSITION_CODES[current_position];

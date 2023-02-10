@@ -83,7 +83,7 @@ define(function(require, exports, module, sensorSettings) {
       chartConfig.subtitle.text = '<span>Measurement Rate: ' + measurement_rate + 'kHz;&nbsp;Intensity Threshold: ' + intensity_threshold + '%</span><br/><span>' + chartConfig.subtitle.text + '</span>';
   }
   
-  const createChartConfig = (displacementsArray, clearancesArray) => {
+  const createChartConfig = (displacementsArray, clearancesArray, units) => {
     return {
       chart: {
         animation: false
@@ -100,7 +100,7 @@ define(function(require, exports, module, sensorSettings) {
       style: { fontFamily: 'Veranda' },
       subtitle: { useHTML: true },
       yAxis: {
-        title: { text: 'Blade Gap' },
+        title: { text: 'Blade Gap' + (units ? ' (' + units + ')' : '') },
         labels: {
           style: { color: 'black', fontSize: 10 }
         }

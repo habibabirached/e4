@@ -19,7 +19,8 @@
 @property (nonatomic) BOOL filterByDisplacementAndIntensity;
 @property (nonatomic) float outOfRange;
 @property (nonatomic) BOOL useMinimumClearance;
+@property (nonatomic) int pointsPerBlade;
 @property (nonatomic) int minBladeSamples;
 -(ClearanceData*)computeClearance:(MeasurementData*)measurementData bladeCount:(int)bladeCount;
--(ClearanceData*)computeClearance:(MeasurementData*)measurementData bladeCount:(int)bladeCount usingAdjustmentFactor:(float)offsetAdjustment;
+-(ClearanceData*)computeClearance:(MeasurementData*)measurementData bladeCount:(int)bladeCount usingAdjustmentFactor:(float)offsetAdjustment filterShelfRange:(BOOL)filterShelfRange filterNextBlade:(BOOL)filterNextBlade;
 @end

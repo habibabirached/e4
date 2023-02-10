@@ -687,9 +687,7 @@
                           <h5>
                               <!-- C = D + SMR + SL - ST - CT -->
                               <!-- Clearance = Displacement + StartOfMeasuringRange + SensorLength - SpacerThickness - CasingThickness -->
-                              <span id="CALCULATION_MSG" class="badge bg-secondary">
-                                  Clearances calculated using Controller-based parameters (touch for details)
-                              </span>
+                              <span id="CALCULATION_MSG" class="badge bg-secondary">Clearances calculated using Controller-based parameters (touch for details)</span>
                           </h5>
                           <h5>
                               <span id="SENSOR_PARAMS_CONFIG_MSG" class="badge bg-secondary"></span>
@@ -754,7 +752,7 @@
                         <div class="col-md-2 text-center">
                             <img id="SPACER_THUMBNAIL" class="img-thumbnail" alt="Unknown" src="img/spacers/Unknown.gif" width="80" height="80">
                         </div>
-                        <div class="col-md-5 text-center">
+                        <div class="col-md-4 text-center">
                             <label for="AMBIENT_TEMPERATURE" class="form-label">Ambient Temperature</label>
                             <div class="input-group mb-0">
                               <input type="number" inputmode="decimal" class="form-control" id="AMBIENT_TEMPERATURE" aria-describedby="AMBIENT_TEMPERATURE_LABEL">
@@ -768,8 +766,16 @@
                               <button class="btn btn-success" type="button" id="CALCULATE_RPM_BUTTON">CALCULATE</button>
                             </div>
                         </div>
-                        <div class="col-md-2 text-center">
-                            <!-- -->
+                        <div class="col-md-3 text-center">
+                            <label class="form-check-label" for="EXTRA_FILTERS">Extra Filters</label>
+                            <div class="form-check text-start">
+                              <input class="form-check-input" type="checkbox" value="" id="FILTER_SHELF_RANGE">
+                              <label class="form-check-label" for="FILTER_SHELF_RANGE">Shelf Range</label>
+                            </div>
+                            <div class="form-check text-start">
+                              <input class="form-check-input" type="checkbox" value="" id="FILTER_NEXT_BLADE">
+                              <label class="form-check-label" for="FILTER_NEXT_BLADE">Next Blade</label>
+                            </div>
                         </div>
                       </form>
 
@@ -1042,7 +1048,7 @@
                         <div class="accordion-body">
                             <!-- Sensor Probe Mastering -->
                             <p>Running the operability check in the fixture compares the measured versus calculated clearance values.  The fixture is machined to hold the the sensor so that the base surface of the fixture (target surface) is at the center of the sensor measuring range.</p>
-                            <p>The calculated check value will be compared with the observed average measured value.  This difference should be within 2 standard deviations.</p>
+                            <p>The calculated check value will be compared with the observed average measured value.  This difference should be within 2 standard deviations plus fixture tolerance.</p>
                             <br/>
                             <h5>Instructions:</h5>
                             <ol>
@@ -1162,6 +1168,13 @@
                                   <div class="input-group mb-3">
                                     <input id="MASTERING_VALUE" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Op Check Value" aria-describedby="MASTERING_VALUE_TEXT">
                                     <span class="input-group-text" id="MASTERING_VALUE_TEXT">mm</span>
+                                  </div>
+                              </div>
+                              <div class="col-md-4 text-center">
+                                  <label for="FIXTURE_TOLERANCE" class="form-label" id="FIXTURE_TOLERANCE_LABEL">Fixture Tolerance&nbsp;<i class="fas fa-info-circle"></i></label>
+                                  <div class="input-group mb-3">
+                                    <input id="FIXTURE_TOLERANCE" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Fixture Tolerance" aria-describedby="FIXTURE_TOLERANCE_TEXT">
+                                    <span class="input-group-text" id="FIXTURE_TOLERANCE_TEXT">in</span>
                                   </div>
                               </div>
                             </form>
