@@ -2758,12 +2758,14 @@ define(function(require, exports, module) {
                             position = document.getElementById("SENSOR_POSITION").value;
                             casing_thickness = document.getElementById("CURR_CASE_THICKNESS").value;
                             if (position && casing_thickness) {
+                                console.log('position = ' + position + ', casing_thickness = ' + casing_thickness);
                                 stage_details = get_stage_details(position, casing_thickness);
                                 //console.log(stage_details);
                                 let rotor_blades = stage_details.blade_count;
                                 let observed_blades = parseFloat(msg.blades);
                                 console.log('rotor_blades = ' + rotor_blades + ', observed_blades = ' + observed_blades);
                                 if (observed_blades > 0) {
+                                    // assumes 60 seconds of collection
                                     let calculated_rpm = observed_blades / rotor_blades;
                                     console.log('calculated_rpm = ' + calculated_rpm);
                                     if (calculated_rpm < MIN_RPM || calculated_rpm > MAX_RPM) {
@@ -3652,7 +3654,14 @@ define(function(require, exports, module) {
         if (messaging.usesWebSocket()) {
             setIndicatorColor("yellow");
         }
-        messaging.sendMessage({args:[{command:'send_data',acquisitionTime:acquisitionTime}]});
+        var filter_shelf_range = document.getElementById("FILTER_SHELF_RANGE").checked;
+        var filter_next_blade = document.getElementById("FILTER_NEXT_BLADE").checked;
+        messaging.sendMessage({args:[{
+            command:'send_data',
+            acquisitionTime:acquisitionTime,
+            filterShelfRange:filter_shelf_range,
+            filterNextBlade:filter_next_blade
+        }]});
     }
 
     function requestE4PtDataWithMetaData(acquisitionTime, frame, sn, stage, position, casing_thickness, spacer_thickness, clearance_calc_selection) {

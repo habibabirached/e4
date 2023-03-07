@@ -271,7 +271,7 @@
     int expectedBlades = roundf(self->metaData.numberOfBlades * rotations);
     
     // Write the sensor parameters and app version to the CSV file.
-    dataStr = [NSString stringWithFormat:@"\n - Sensor Parameters,,,,,,,,,,,,\nSensor Selection,Sensor Length (in),MR (mm),SMR (mm),Mastering Fixture Height (in),Mastering Value (mm),Master Offset (in),Casing Thickness (in),Spacer Thickness (in),Shelf Threshold (mm),Measurement Rate (kHz),Intensity Threshold (%%),Clearance Override,Expected Blades,Observed Blades,Avg Samples per Blade,Applied Offset,Applied Offset Formula\n%@,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%s,%d,%d,%@,%f,%@\n",
+    dataStr = [NSString stringWithFormat:@"\n - Sensor Parameters,,,,,,,,,,,,\nSensor Selection,Sensor Length (in),MR (mm),SMR (mm),Mastering Fixture Height (in),Mastering Value (mm),Master Offset (in),Casing Thickness (in),Spacer Thickness (in),Shelf Threshold (mm),Measurement Rate (kHz),Intensity Threshold (%%),Clearance Override,Expected Blades,Observed Blades,Avg Samples per Blade,RPM,Applied Offset,Applied Offset Formula\n%@,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%s,%d,%d,%@,%f,%f,%@\n",
                self->controller.settings.sensor.name,
                self->controller.settings.sensor.length,
                self->controller.settings.sensor.mr,
@@ -288,6 +288,7 @@
                expectedBlades,
                clearanceData.blades,
                [NSString stringWithFormat:@"%.02f", clearanceData.averageBladeSamples],
+               self->metaData.rpm,
                clearanceData.offsetAdjustmentFactor,
                self->controller.settings.sensor.offsetAdjustmentFormula];
     [handle writeData:[dataStr dataUsingEncoding:NSUTF8StringEncoding]];
@@ -375,6 +376,7 @@
             [self returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"Manger.messageHandler: send_data, acquisitionTime=%@", acqTime]} keepOpen:YES];
             self->calibratedAcquire = false;
             self->controller.settings.acquisitionTime = [acqTime floatValue];
+            // TODO: check
             if (!self->controller.settings.overrideRateAndIntensity) {
                 NSLog(@"Using existing settings: Found measurement rate: %.3f; intensity threshold: %.3f", self->controller.settings.measurementRate, self->controller.settings.intensityThreshold);
                 [self returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"Manager.messageHandler: Using existing settings, measurement rate = %.3f, intensity threshold = %.3f", self->controller.settings.measurementRate, self->controller.settings.intensityThreshold]} keepOpen:YES];

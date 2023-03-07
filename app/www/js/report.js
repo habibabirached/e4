@@ -5,6 +5,7 @@ var precision = 3;
 // clearance measurement table cell styles
 var overrideStyleSuffix = "Override";
 var overrideFlag = false;
+var naValue = "-";
 
 function generateHTMLReport(e4ptData, current_frame_data) {
   reportHTML = ""; // clear report html page
@@ -301,7 +302,7 @@ function makePg2Table(state, stages, positions, data) {
                     reportHTML += "</td>";
                 }
                 else {
-                    reportHTML += "<td class=\"tCell2\"></td><td class=\"tCell2\"></td><td class=\"tCell2\"></td>";
+                    reportHTML += "<td class=\"tCell2\">" + naValue + "</td><td class=\"tCell2\">" + naValue + "</td><td class=\"tCell2\">" + naValue + "</td>";
                 }
             }
             reportHTML += "</tr>";

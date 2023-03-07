@@ -72,7 +72,7 @@
 
 - (ClearanceData*)computeClearance:(MeasurementData*)measurementData bladeCount:(int)bladeCount usingAdjustmentFactor:(float)offsetAdjustment filterShelfRange:(BOOL)filterShelfRange filterNextBlade:(BOOL)filterNextBlade {
     [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: bladeCount=%d, offsetAdjustment=%f, filterShelfRange=%d, filterNextBlade=%d", bladeCount, offsetAdjustment, filterShelfRange, filterNextBlade]} keepOpen:YES];
-    [self setOutOfRange:17];  // for testing only
+    //[self setOutOfRange:17];  // for testing only
     //[self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: displacements=%@", measurementData.displacements]} keepOpen:YES];
     //[self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: intensities=%@", measurementData.intensities]} keepOpen:YES];
     ClearanceData* clearanceData = [[ClearanceData alloc] initWithDelegate:self->delegate];//[ClearanceData new];
@@ -110,7 +110,6 @@
     // and pos. zero-crossings IFF the intensity is greater than zero.
     // These averages are the per-blade clearances
     int overall_count = 0;
-
     int blades_count = 0;
     int blades_samples = 0;
 
@@ -569,7 +568,7 @@
         [filtered addObject:zeroNumber]; // offset
     for (int i=0; i<x_length; i++) {
         float tmpf = temp_buffer[i] - threshold;
-        tmpf = roundf(tmpf * 1e5)/1e5;  // round to 5 decimal places
+        tmpf = roundf(tmpf * 1e2)/1e2;  // round to 2 decimal places, was 5
         tmpf = (tmpf == 0.0) ? 0.0 : tmpf; // This avoids problems that have happened where -0 is generated, causing a sign change.
         [filtered addObject:[NSNumber numberWithFloat:tmpf]];
     }
