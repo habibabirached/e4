@@ -335,7 +335,7 @@
 }
 
 - (void)queueDataCollection:(float)timeoutSecondsForPrep {
-    //[self->delegate returnPluginResponse:@{@"type":@"log",@"message":@"BaseController.queueDataCollection"} keepOpen:YES];
+    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":@"BaseController.queueDataCollection"} keepOpen:YES];
     [self recordStartTime]; // start timeout timer
 
     dispatch_async(dispatch_get_main_queue(), ^{
@@ -351,7 +351,7 @@
 }
 
 - (void)doDataCollection {
-    //[self->delegate returnPluginResponse:@{@"type":@"log",@"message":@"BaseController.doDataCollection"} keepOpen:YES];
+    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":@"BaseController.doDataCollection"} keepOpen:YES];
     [self prepareDataForCollection];
 
     // Update the status in the HTML page.
@@ -360,7 +360,7 @@
 }
 
 - (void)prepareDataForCollection {
-    //[self->delegate returnPluginResponse:@{@"type":@"log",@"message":@"BaseController.prepareDataForCollection"} keepOpen:YES];
+    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":@"BaseController.prepareDataForCollection"} keepOpen:YES];
     [self.measurementData clear];
     self->set_count = 0;
     self->num_sets = [self calculateNumberOfDatasetsToAcquireForTime:self.settings.acquisitionTime atRateInHertz:self.settings.measurementRate * 1000];
@@ -373,7 +373,7 @@
 
 - (void)processResponse:(NSString*)rxData {
     NSLog(@"@processResponse");
-    //[self->delegate returnPluginResponse:@{@"type":@"log",@"message":@"BaseController.processResponse"} keepOpen:YES];
+    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":@"BaseController.processResponse"} keepOpen:YES];
     // TODO: remove old processing logic after we are satisfied with the updated logic
     NSString* prompt = @"";
     if (rxData.length > 1) {

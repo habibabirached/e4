@@ -767,15 +767,6 @@
                             </div>
                         </div>
                         <div class="col-md-3 text-center">
-                            <label class="form-check-label" for="EXTRA_FILTERS">Extra Filters</label>
-                            <div class="form-check text-start">
-                              <input class="form-check-input" type="checkbox" value="" id="FILTER_SHELF_RANGE">
-                              <label class="form-check-label" for="FILTER_SHELF_RANGE">Shelf Range</label>
-                            </div>
-                            <div class="form-check text-start">
-                              <input class="form-check-input" type="checkbox" value="" id="FILTER_NEXT_BLADE">
-                              <label class="form-check-label" for="FILTER_NEXT_BLADE">Next Blade</label>
-                            </div>
                         </div>
                       </form>
 
@@ -1048,7 +1039,7 @@
                         <div class="accordion-body">
                             <!-- Sensor Probe Mastering -->
                             <p>Running the operability check in the fixture compares the measured versus calculated clearance values.  The fixture is machined to hold the the sensor so that the base surface of the fixture (target surface) is at the center of the sensor measuring range.</p>
-                            <p>The calculated check value will be compared with the observed average measured value.  This difference should be within 2 standard deviations plus fixture tolerance.</p>
+                            <p>The calculated check value will be compared with the observed average measured value.  This difference should be within the total tolerance of the fixture height, sensor length, and SMR.</p>
                             <br/>
                             <h5>Instructions:</h5>
                             <ol>
@@ -1171,10 +1162,10 @@
                                   </div>
                               </div>
                               <div class="col-md-4 text-center">
-                                  <label for="FIXTURE_TOLERANCE" class="form-label" id="FIXTURE_TOLERANCE_LABEL">Fixture Tolerance&nbsp;<i class="fas fa-info-circle"></i></label>
+                                  <label for="TOLERANCE" class="form-label" id="TOLERANCE_LABEL">Tolerance&nbsp;<i class="fas fa-info-circle"></i></label>
                                   <div class="input-group mb-3">
-                                    <input id="FIXTURE_TOLERANCE" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Fixture Tolerance" aria-describedby="FIXTURE_TOLERANCE_TEXT">
-                                    <span class="input-group-text" id="FIXTURE_TOLERANCE_TEXT">in</span>
+                                    <input id="TOLERANCE" type="number" inputmode="decimal" class="form-control" placeholder="" aria-label="Tolerance" aria-describedby="TOLERANCE_TEXT">
+                                    <span class="input-group-text" id="TOLERANCE_TEXT">in</span>
                                   </div>
                               </div>
                             </form>
@@ -1368,6 +1359,8 @@
                               <td class="table-light">Final Data</td>
                               <td class="table-warning">&nbsp;</td>
                               <td class="table-light">Preliminary</td>
+                              <td class="table-info">&nbsp;</td>
+                              <td class="table-light">Log</td>
                               <td>&nbsp;</td>
                               <td class="table-light">Other</td>
                           </tr>
@@ -1462,7 +1455,7 @@
               <div class="modal-footer">
                 <!--<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">CLOSE</button>-->
                 <button type="button" class="btn btn-danger" id="LOG_CLEAR_BUTTON">CLEAR</button>
-                <button type="button" class="btn btn-primary" id="LOG_EXPORT_BUTTON">EXPORT ALL</button>
+                <button type="button" class="btn btn-primary" id="LOG_EXPORT_BUTTON">EXPORT</button>
               </div>
             </div>
           </div>

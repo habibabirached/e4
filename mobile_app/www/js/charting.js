@@ -59,7 +59,7 @@ define(function(require, exports, module, sensorSettings) {
       subtitle += '<br/>';
     }
 
-    subtitle += 'Avg Samples/Blade: ' + blade_samples_avg.toFixed(1) + ';&nbsp;Avg Tip Dist: ' + parseFloat(overall_clearance).toFixed(3);
+    subtitle += 'Avg Samples/Blade: ' + parseFloat(blade_samples_avg).toFixed(1) + ';&nbsp;Avg Tip Dist: ' + parseFloat(overall_clearance).toFixed(3);
 
     if (avg_displacement) {
       // value could be number or "\"--\""

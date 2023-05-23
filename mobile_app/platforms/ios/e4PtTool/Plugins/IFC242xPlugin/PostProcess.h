@@ -21,6 +21,7 @@
 @property (nonatomic) BOOL useMinimumClearance;
 @property (nonatomic) int pointsPerBlade;
 @property (nonatomic) int minBladeSamples;
--(ClearanceData*)computeClearance:(MeasurementData*)measurementData bladeCount:(int)bladeCount;
--(ClearanceData*)computeClearance:(MeasurementData*)measurementData bladeCount:(int)bladeCount usingAdjustmentFactor:(float)offsetAdjustment filterShelfRange:(BOOL)filterShelfRange filterNextBlade:(BOOL)filterNextBlade;
+@property (nonatomic) int filterRounding;
+-(ClearanceData*)computeClearance:(MeasurementData*)measurementData bladeCount:(int)bladeCount pointsBetweenBlades:(float)pointsBetweenBlades;
+-(ClearanceData*)computeClearance:(MeasurementData*)measurementData bladeCount:(int)bladeCount pointsBetweenBlades:(float)pointsBetweenBlades usingAdjustmentFactor:(float)offsetAdjustment;
 @end

@@ -30,6 +30,7 @@ define(function(require, exports, module) {
     var collectionAborted = false;
     var rpmCalculationAborted = false;
     var logExported = false;
+    var previousLogFile = "";
     var warmedUp = false;
     var warmupTimer;
 
@@ -53,9 +54,8 @@ define(function(require, exports, module) {
     var CLEARANCE_OVERRIDE_PRECISION = 4;
     var DETAILS_PRECISION = 4;
     var COMPARE_MASTER_VALUE_SECONDS = 10.0;
-    var COMPARE_MASTER_VALUE_STD_DEV = 0.01;
     var WARMUP_SECONDS = 5 * 60;
-    var DEFAULT_FIXTURE_TOLERANCE_INCHES = 0.0003;
+    var DEFAULT_TOLERANCE_INCHES = 0.023922; // 0.60762mm
     
     //var CALC_METHOD_ORIGINAL = 1;
     //var CALC_METHOD_NEW = 2;
@@ -287,6 +287,8 @@ define(function(require, exports, module) {
         $("#MIN_SAMPLING_RATE").text(MIN_SAMPLING_RATE.toFixed(3));
         $("#MAX_SAMPLING_RATE").text(MAX_SAMPLING_RATE.toFixed(3));
         
+        document.getElementById("TOLERANCE").value = DEFAULT_TOLERANCE_INCHES;
+        
         // reconnect if app moved to background/foreground
         // TODO: check
         document.addEventListener("pause", function () {
@@ -508,7 +510,7 @@ define(function(require, exports, module) {
             $("#TURBINE_SETUP_PAGE").fadeIn();
         }, {passive: true});
         document.getElementById("GET_DATA_BUTTON").addEventListener('click', function() {
-            //console.log("@GET_DATA_BUTTON event listener function.");
+            console.log("@GET_DATA_BUTTON event listener function.");
             toggleMenu();
             fadeOutAll();
             checkWarmup(getData);
@@ -560,11 +562,13 @@ define(function(require, exports, module) {
         document.getElementById("STAGE_COLLECT_BUTTON").addEventListener('click', function() {
             if (document.getElementById("STAGE_COLLECT_BUTTON").innerHTML === LABEL_GO) {
                 collectionAborted = false;
+                console.log("Collect button clicked");
                 checkWarmup(confirm_collect_stage_data);
             } else if (document.getElementById("STAGE_COLLECT_BUTTON").innerHTML === LABEL_ABORT) {
                 messaging.sendMessage({args:[{command:'abort'}]});
                 // ignore data response to hide DATA_PLOT
                 collectionAborted = true;
+                console.log("Abort button clicked");
                 $("#PROCESSING_PAGE").fadeOut();
                 resetDataCollection();
             }
@@ -620,12 +624,14 @@ define(function(require, exports, module) {
         document.getElementById("CALCULATE_RPM_BUTTON").addEventListener('click', function() {
             //calculateRPM();
             if (document.getElementById("CALCULATE_RPM_BUTTON").innerHTML === LABEL_CALCULATE) {
+                console.log("Calculate RPM button clicked");
                 rpmCalculationAborted = false;
                 calculateRPM();
             } else if (document.getElementById("CALCULATE_RPM_BUTTON").innerHTML === LABEL_ABORT) {
                 messaging.sendMessage({args:[{command:'abort'}]});
                 // ignore data response to hide DATA_PLOT
                 //collectionAborted = true;
+                console.log("Abort RPM button clicked");
                 rpmCalculationAborted = true;
                 $("#PROCESSING_PAGE").fadeOut();
                 resetDataCollection();
@@ -679,8 +685,8 @@ define(function(require, exports, module) {
         document.getElementById("SENSOR_MR").addEventListener('change', function() {
             enableMasteringValuesForEditing(true);
         }, {passive: true});
-        document.getElementById("FIXTURE_TOLERANCE_LABEL").addEventListener('click', function() {
-            e4PtAlert("Default tolerance value of " + DEFAULT_FIXTURE_TOLERANCE_INCHES + "in comes from fixture drawings");
+        document.getElementById("TOLERANCE_LABEL").addEventListener('click', function() {
+            e4PtAlert("Default tolerance value of " + DEFAULT_TOLERANCE_INCHES + "in comes from fixture and sensor drawings.\nFixture height tolerance (0.0003in)\nSensor length tolerance (0.1mm)\nSMR tolerance (0.5mm)");
         }, {passive: true});
         
         // Wait (0.9s) for the page load to complete, then get the file system.
@@ -783,6 +789,7 @@ define(function(require, exports, module) {
         //console.log("@edit_save");
         editModal.hide();
         // changing frame will erase data
+        // TODO: test with RPM calculation
         if (document.getElementById("FRAME_SIZE_EDIT").value !== document.getElementById("FRAME_SIZE").value) {
             document.getElementById("FRAME_SIZE").value = document.getElementById("FRAME_SIZE_EDIT").value;
             document.getElementById("FRAME_SIZE").selectedIndex = document.getElementById("FRAME_SIZE_EDIT").selectedIndex;
@@ -907,7 +914,9 @@ define(function(require, exports, module) {
         showLog();
     }
     
+    // TODO: check: GetData, CalculateRPM, Measure
     function exportLog(showDownload = true) {
+        //console.log("@exportLog");
         $("#PROCESSING_PAGE").fadeIn();
         let contents = "";
         for (let i=0; i<logMessages.length; i++) {
@@ -917,13 +926,29 @@ define(function(require, exports, module) {
         let targetFolder = "data"; // default directory
         let logDate = new Date().toJSON().slice(2, 19).replace('T','_').replace(/:/g,'-');
         let fileName = LOG_FILE_PREFIX + "_" + logDate + ".txt";
-        let fileUrl = cordova.file.documentsDirectory + targetFolder + "/" + fileName;
+        let fileDir = cordova.file.documentsDirectory + targetFolder + "/";
+        let fileUrl = fileDir + fileName;
+        //console.log(fileUrl);
         writeToFile(targetFolder, fileName, contents, function() {
+            //console.log('writeToFile:', fileName);
             $("#PROCESSING_PAGE").fadeOut();
             if (showDownload) {
                 fileDownloadFunction(fileUrl);
             }
             logExported = true;
+            if (previousLogFile != "" && previousLogFile != fileName) {
+                window.resolveLocalFileSystemURL(fileDir, function (dir) {
+                    //console.log("deleting previous log file:", previousLogFile);
+                    deleteFile(dir, previousLogFile);
+                    previousLogFile = fileName;
+                    //console.log('new previousLogFile:', previousLogFile);
+                }, function(error) {
+                    console.log("Error deleting previous log file: " + error);
+                });
+            } else {
+                previousLogFile = fileName;
+                //console.log('setting previousLogFile:', previousLogFile);
+            }
         });
     }
     
@@ -937,16 +962,42 @@ define(function(require, exports, module) {
                     function(idx) {
                         if (idx === 1) {
                             fromCalculateRPM = true;
-                            //setButtonProperties($("#CALCULATE_RPM_BUTTON"), LABEL_CALCULATING, 'yellow');
-                            displayCalculatingButton();
-                            requestE4PtData(CALCULATE_RPM_SECONDS);
+                            //displayCalculatingButton();
+                            //requestE4PtData(CALCULATE_RPM_SECONDS);
+                            var sn = document.getElementById("SERIAL_NUMBER").value;
+                            var frame = document.getElementById("FRAME_SIZE").value;
+                            let casing_thickness = document.getElementById("CURR_CASE_THICKNESS").value;
+                            let ct_id = current_stage + "_" + current_position; // get element id for casing thickness
+                            E4PTdata.turbine_casing_thicknesses[ct_id] = casing_thickness;
+                            document.getElementById(ct_id).value = casing_thickness;
+                            if (casing_thickness.length > MAX_STR_LEN) {
+                                casing_thickness = casing_thickness.substr(0,MAX_STR_LEN);
+                            }
+                            var spacer_thickness = document.getElementById("SPACER_THICKNESS").value;
+                            if (spacer_thickness.length > MAX_STR_LEN) {
+                                spacer_thickness = spacer_thickness.substr(0,MAX_STR_LEN);
+                            }
+                            requestE4PtDataForRPM(CALCULATE_RPM_SECONDS, frame, sn, current_stage, current_position, casing_thickness, spacer_thickness);
                         }
                     });
             } else {
                 fromCalculateRPM = true;
-                //setButtonProperties($("#CALCULATE_RPM_BUTTON"), LABEL_CALCULATING, 'yellow');
-                displayCalculatingButton();
-                requestE4PtData(CALCULATE_RPM_SECONDS);
+                //displayCalculatingButton();
+                //requestE4PtData(CALCULATE_RPM_SECONDS);
+                var sn = document.getElementById("SERIAL_NUMBER").value;
+                var frame = document.getElementById("FRAME_SIZE").value;
+                let casing_thickness = document.getElementById("CURR_CASE_THICKNESS").value;
+                let ct_id = current_stage + "_" + current_position; // get element id for casing thickness
+                E4PTdata.turbine_casing_thicknesses[ct_id] = casing_thickness;
+                document.getElementById(ct_id).value = casing_thickness;
+                if (casing_thickness.length > MAX_STR_LEN) {
+                    casing_thickness = casing_thickness.substr(0,MAX_STR_LEN);
+                }
+                var spacer_thickness = document.getElementById("SPACER_THICKNESS").value;
+                if (spacer_thickness.length > MAX_STR_LEN) {
+                    spacer_thickness = spacer_thickness.substr(0,MAX_STR_LEN);
+                }
+                requestE4PtDataForRPM(CALCULATE_RPM_SECONDS, frame, sn, current_stage, current_position, casing_thickness, spacer_thickness);
             }
         } else {
             e4PtAlert('No position or casing thickness, could not calculate RPM.');
@@ -1565,6 +1616,10 @@ define(function(require, exports, module) {
 
         updateSensorHeaderMessage();
         checkSensorSelection();
+        
+        //charting.clearChartData(document.getElementById('DATA_PLOT'));
+        charting.clearChartData(document.getElementById('DATA_PLOT2'));
+        document.getElementById("DATA_PLOT2").innerHTML = "";
     }
 
     function updateSensorHeaderMessage() {
@@ -1972,6 +2027,8 @@ define(function(require, exports, module) {
         //charting.clearChartData(document.getElementById('DATA_PLOT'));
         charting.clearChartData(document.getElementById('DATA_PLOT2'));
         document.getElementById("DATA_PLOT2").innerHTML = "";
+        charting.clearChartData(document.getElementById('DATA_PLOT3'));
+        document.getElementById("DATA_PLOT3").innerHTML = "";
     }
 
     function b64toBlob(b64Data, contentType, sliceSize) {
@@ -2359,7 +2416,6 @@ define(function(require, exports, module) {
         //console.log('@advance_position');
         // Don't try to advance the position if we're not set up for it.
         // (i.e. if we're not on the right page)
-        //console.log("@advance_position");
         if (current_frame_data['position'] == null) {
             return;
         }
@@ -2387,7 +2443,7 @@ define(function(require, exports, module) {
     }
 
     function set_grid_position(position, stage) {
-        //console.log("@set_grid_position: pos:", position, "; stage:", stage);
+        console.log("@set_grid_position: pos:", position, "; stage:", stage);
         var stages = current_frame_data['stage'];
         var positions = current_frame_data['position'][stage];
         current_position_index = positions.indexOf(position);
@@ -2702,6 +2758,7 @@ define(function(require, exports, module) {
             case "status":
                 //console.log("Received Status Message:", JSON.stringify(msg));
                 if (msg.status == "connected") {
+                    console.log('status: connected');
                     setIndicatorColor("green");
                     document.getElementById("STATUS_DISPLAY").innerHTML = "Connected";
                     serialConnected = true;
@@ -2718,13 +2775,16 @@ define(function(require, exports, module) {
                         // TODO: reset application/controller connection
                     }
                 } else if (msg.status == "acquiring") {
-                    if (!fromCalculateRPM) {
+                    console.log('status: acquiring');
+                    if (fromCalculateRPM) {
+                        displayCalculatingButton();
+                    } else {
                         displayAbortButton();
                         setIndicatorColor("red");
                         startProgressBar();
                     }
                 } else if (msg.status == "processing") {
-                    console.log('PROCESSING STATUS');
+                    console.log('status: processing');
                     if (!fromCalculateRPM) {
                         console.log('SHOW GO');
                         setIndicatorColor("blue");
@@ -2762,6 +2822,7 @@ define(function(require, exports, module) {
                                 stage_details = get_stage_details(position, casing_thickness);
                                 //console.log(stage_details);
                                 let rotor_blades = stage_details.blade_count;
+                                // use filtered blade count
                                 let observed_blades = parseFloat(msg.blades);
                                 console.log('rotor_blades = ' + rotor_blades + ', observed_blades = ' + observed_blades);
                                 if (observed_blades > 0) {
@@ -2787,6 +2848,7 @@ define(function(require, exports, module) {
                                 e4PtAlert('No position or casing thickness, could not calculate RPM.');
                             }
                         } else {
+                            // TODO: test
                             console.log("RPM calculation was aborted");
                             rpmCalculationAborted = false;
                         }
@@ -2799,19 +2861,16 @@ define(function(require, exports, module) {
                         var calculatedMV = sensorSettings.calculateMasteringValueMM(sensorSettings.get('sensor_length'), sensorSettings.get('master_fixture_height'), sensorSettings.get('start_measurement_range'));
                         calculatedMV = calculatedMV.toFixed(4);
                         var observedMV = msg.overall_avg;
-                        var stdDev = msg.std_clr;
-                        if (stdDev == 0.0) {
-                            console.log("using default std dev");
-                            stdDev = COMPARE_MASTER_VALUE_STD_DEV; // TODO: check
-                        }
                         var diffMV = Math.abs(calculatedMV - observedMV).toFixed(4);
-                        var fixtureTolerance = sensorSettings.toMMs(parseFloat(document.getElementById("FIXTURE_TOLERANCE").value)).toFixed(4);
-                        var doubleDevTolerance = parseFloat(2.0 * stdDev + fixtureTolerance).toFixed(4);
-                        console.log("Calculated=" + calculatedMV + "mm, Observed=" + observedMV + "mm, StdDev=" + stdDev + "mm, FixtureTolerance=" + fixtureTolerance + "mm, Diff=" + diffMV + "mm, 2*Dev+Tol=" + doubleDevTolerance + "mm");
-                        if (diffMV <= doubleDevTolerance) {
-                            e4PtAlert("Sensor is good to use.");
+                        // Fixture height tolerance (0.0003 in) + Sensor length tolerance (0.1mm) + SMR Tolerance (.5mm) = 0.60762 mm
+                        var tolerance = sensorSettings.toMMs(parseFloat(document.getElementById("TOLERANCE").value)).toFixed(4);
+                        console.log("Calculated=" + calculatedMV + "mm, Observed=" + observedMV + "mm, Tolerance=" + tolerance + "mm, Diff=" + diffMV + "mm");
+                        if (calculatedMV == 0 || isNaN(diffMV) || isNaN(tolerance)) {
+                            e4PtAlert("Missing values, please try again.\n\nCalculated: " + calculatedMV + "mm\nObserved: " + observedMV + "mm\nDifference: " + diffMV + "mm\nTolerance: " + tolerance + "mm");
+                        } else if (diffMV <= tolerance) {
+                            e4PtAlert("Sensor is good to use.\n\nCalculated: " + calculatedMV + "mm\nObserved: " + observedMV + "mm\nDifference: " + diffMV + "mm\nTolerance: " + tolerance + "mm");
                         } else {
-                            e4PtAlert("Discrepancy in values, sensor should be repaired.\nCalculated: " + calculatedMV + "mm\nObserved: " + observedMV + "mm\nDifference: " + diffMV + "mm\n2 * Deviation + Tolerance: " + doubleDevTolerance + "mm");
+                            e4PtAlert("Discrepancy in values, sensor should be repaired.\n\nCalculated: " + calculatedMV + "mm\nObserved: " + observedMV + "mm\nDifference: " + diffMV + "mm\nTolerance: " + tolerance + "mm");
                         }
                         displayCompareButton();
                         fromCompareMasterValue = false;
@@ -2822,9 +2881,19 @@ define(function(require, exports, module) {
                 } else {
                     console.log("Data collection was aborted");
                     collectionAborted = false;
+                    if (fromCalculateRPM) {
+                        console.log("Aborted while calculating RPM");
+                        rpmCalculationAborted = false;
+                        displayCalculateButton();
+                        fromCalculateRPM = false;
+                    }
                 }
                 $("#PROCESSING_PAGE").fadeOut();
                 resetDataCollection();
+                // save log if updated and not saved
+                if (!logExported) {
+                    exportLog(false);
+                }
                 break;
             case "filename":
                 //console.log("Recieved Filename Message:", msg.fname);
@@ -2850,6 +2919,11 @@ define(function(require, exports, module) {
             case "log":
                 console.log("[BACKEND]", msg.message);
                 break;
+            case "export_log":
+                // save log if updated and not saved
+                if (!logExported) {
+                    exportLog(false);
+                }
             case "progress":
                 //console.log("Progress: ", msg.progress);
                 $("#REV_PROGRESS")
@@ -2891,7 +2965,7 @@ define(function(require, exports, module) {
                 document.getElementById("SENSOR_MR").value = sensorSettings.parseAndSetSensorValue('sensor_mr', msg.sensor_measurement_range);
                 
                 // in -> mm for compare function
-                document.getElementById("FIXTURE_TOLERANCE").value = DEFAULT_FIXTURE_TOLERANCE_INCHES;
+                document.getElementById("TOLERANCE").value = DEFAULT_TOLERANCE_INCHES;
                 
                 sensorSettings.saveValuesForSensorType();
                 
@@ -3227,7 +3301,7 @@ define(function(require, exports, module) {
         dir.getFile(fileName, { create: false }, function (fileEntry) {
             //console.log("fileEntry =", JSON.stringify(fileEntry));
             fileEntry.remove(function (file) {
-                console.log("file removed");
+                console.log("file removed: " + fileName);
             }, function (error) {
                 console.log("error in deleteFile type 1: " + error.code);
             }, function () {
@@ -3348,7 +3422,7 @@ define(function(require, exports, module) {
                     cell0.classList.add("table-warning");
                 }
             } else if (entry.name.startsWith(LOG_FILE_PREFIX)) {
-                //console.log("Ignoring log file");
+                cell0.classList.add("table-info");
             } else if (entry.name.startsWith(DATA_FILE_PREFIX)) {
                 //console.log("TODO: handle GET DATA file coloring");
             } else if (entry.name.startsWith(sn)) {
@@ -3654,47 +3728,102 @@ define(function(require, exports, module) {
         if (messaging.usesWebSocket()) {
             setIndicatorColor("yellow");
         }
-        var filter_shelf_range = document.getElementById("FILTER_SHELF_RANGE").checked;
-        var filter_next_blade = document.getElementById("FILTER_NEXT_BLADE").checked;
         messaging.sendMessage({args:[{
             command:'send_data',
-            acquisitionTime:acquisitionTime,
-            filterShelfRange:filter_shelf_range,
-            filterNextBlade:filter_next_blade
+            acquisitionTime:acquisitionTime
         }]});
     }
-
-    function requestE4PtDataWithMetaData(acquisitionTime, frame, sn, stage, position, casing_thickness, spacer_thickness, clearance_calc_selection) {
-        //console.log("@requestE4PtDataWithMetaData");
-        //console.log("Requesting " + acquisitionTime + "s data");
-        //console.log("requestE4PtDataWithMetaData: frame=" + frame + "; sn=" + sn + "; stage=" + stage + "; position=" + position);
+    
+    function requestE4PtDataForRPM(acquisitionTime, frame, sn, stage, position, casing_thickness, spacer_thickness) {
+        console.log("@requestE4PtDataForRPM: requesting " + acquisitionTime + "s data");
+        console.log("@requestE4PtDataForRPM: frame=" + frame + "; sn=" + sn + "; stage=" + stage + "; position=" + position + "; casing_thickness=" + casing_thickness + "; spacer_thickness=" + spacer_thickness);
         frame = frame.replace(/\s+/g, '_'); // replace all the spaces with underscores
         sn = sn.replace(/\s+/g, '_');
         stage = stage.replace(/\s+/g, '_');
         position = position.replace(/\s+/g, '_');
         casing_thickness = casing_thickness.replace(/\s+/g, '_');
         spacer_thickness = spacer_thickness.replace(/\s+/g, '_');
+        if (casing_thickness == '') {
+            e4PtAlert("Please provide a casing thickness.");
+            return;
+        }
         var num_blades = 0;
         var blade_width = 0;
         var tip_diameter = 0;
+        //console.log(current_frame_data);
         if (typeof current_frame_data.stage_info !== 'undefined') {
-            if (typeof current_frame_data.stage_info[stage] !== 'undefined') {
-                stage_details = get_stage_details(position, casing_thickness);
-                num_blades = stage_details.blade_count;
-                blade_width = stage_details.blade_width;
-                tip_diameter = stage_details.tip_diameter;
-                if (num_blades == 0) {
-                    e4PtAlert("This stage and casing thickness do not match. Please check the casing thickness and try again.\nIf the casing thickness is verified, you may perform a manual drop check (do not insert the probe) and provide an override measurement.");
-                    return;
-                }
-            } else {
-                console.log('UNDEFINED STAGE INFO: current_stage=' + stage);
+            //if (typeof current_frame_data.stage_info[stage] !== 'undefined') {
+            stage_details = get_stage_details(position, casing_thickness);
+            console.log(JSON.stringify(stage_details));
+            num_blades = stage_details.blade_count;
+            blade_width = stage_details.blade_width;
+            tip_diameter = stage_details.tip_diameter;
+            if (num_blades == 0) {
+                e4PtAlert("This stage and casing thickness do not match. Please check the casing thickness and try again.\nIf the casing thickness is verified, you may perform a manual drop check (do not insert the probe) and provide an override measurement.");
+                return;
             }
+            //} else {
+            //    console.log('UNDEFINED STAGE INFO: current_stage=' + stage);
+            //}
         } else {
             console.log('UNDEFINED STAGE INFO: frame=' + frame + ', stage=' + stage + ', position=' + position);
+            e4PtAlert("No information found for frame " + frame + " and stage " + stage + ". Please check configuration file.");
+            return;
         }
-        var filter_shelf_range = document.getElementById("FILTER_SHELF_RANGE").checked;
-        var filter_next_blade = document.getElementById("FILTER_NEXT_BLADE").checked;
+        
+        startProgressBar();
+        
+        $("#PROCESSING_PAGE").fadeIn();
+        
+        if (messaging.usesWebSocket()) {
+            setIndicatorColor('yellow');
+        }
+
+        messaging.sendMessage({args:[{
+            command:'send_data',
+            acquisitionTime:acquisitionTime,
+            numberOfBlades:num_blades,
+            tipDiameter:tip_diameter,
+            bladeWidth:blade_width
+        }]});
+    }
+
+    function requestE4PtDataWithMetaData(acquisitionTime, frame, sn, stage, position, casing_thickness, spacer_thickness, clearance_calc_selection) {
+        console.log("@requestE4PtDataWithMetaData: requesting " + acquisitionTime + "s data");
+        console.log("@requestE4PtDataWithMetaData: frame=" + frame + "; sn=" + sn + "; stage=" + stage + "; position=" + position + "; casing_thickness=" + casing_thickness + "; spacer_thickness=" + spacer_thickness);
+        frame = frame.replace(/\s+/g, '_'); // replace all the spaces with underscores
+        sn = sn.replace(/\s+/g, '_');
+        stage = stage.replace(/\s+/g, '_');
+        position = position.replace(/\s+/g, '_');
+        casing_thickness = casing_thickness.replace(/\s+/g, '_');
+        spacer_thickness = spacer_thickness.replace(/\s+/g, '_');
+        if (casing_thickness == '') {
+            e4PtAlert("Please provide a casing thickness.");
+            return;
+        }
+        var num_blades = 0;
+        var blade_width = 0;
+        var tip_diameter = 0;
+        //console.log(current_frame_data);
+        if (typeof current_frame_data.stage_info !== 'undefined') {
+            //if (typeof current_frame_data.stage_info[stage] !== 'undefined') {
+            stage_details = get_stage_details(position, casing_thickness);
+            console.log(JSON.stringify(stage_details));
+            num_blades = stage_details.blade_count;
+            blade_width = stage_details.blade_width;
+            tip_diameter = stage_details.tip_diameter;
+            if (num_blades == 0) {
+                e4PtAlert("This stage and casing thickness do not match. Please check the casing thickness and try again.\nIf the casing thickness is verified, you may perform a manual drop check (do not insert the probe) and provide an override measurement.");
+                return;
+            }
+            //} else {
+            //    console.log('UNDEFINED STAGE INFO: current_stage=' + stage);
+            //}
+        } else {
+            console.log('UNDEFINED STAGE INFO: frame=' + frame + ', stage=' + stage + ', position=' + position);
+            e4PtAlert("No information found for frame " + frame + " and stage " + stage + ". Please check configuration file.");
+            return;
+        }
         //charting.clearChartData(document.getElementById('DATA_PLOT'));
         charting.clearChartData(document.getElementById('DATA_PLOT2'));
         document.getElementById("DATA_PLOT2").innerHTML = "";
@@ -3708,10 +3837,10 @@ define(function(require, exports, module) {
         acquisitionTime = acquisitionTime.replace("rpm","");
         selected_frame_data.RPM = acquisitionTime;
         
-        // ensure that UI is updated, this should occur on "acquiring" status
-        displayAbortButton();
+        // this should occur on "acquiring" status
+        /*displayAbortButton();
         setIndicatorColor("red");
-        startProgressBar();
+        startProgressBar();*/
         
         $("#PROCESSING_PAGE").fadeIn();
 
@@ -3726,16 +3855,14 @@ define(function(require, exports, module) {
             numberOfBlades:num_blades,
             tipDiameter:tip_diameter,
             bladeWidth:blade_width,
-            clearanceCalculationMethod:clearance_calc_selection,
-            filterShelfRange:filter_shelf_range,
-            filterNextBlade:filter_next_blade
+            clearanceCalculationMethod:clearance_calc_selection
         }]});
     }
 
     // get_stage_details find the specific information for this stage, given the frame, position,
     // and casing thickness.
     function get_stage_details(position, casing_thickness) {
-        //console.log('@get_stage_details: ' + position + ', ' + casing_thickness);
+        console.log('@get_stage_details: ' + position + ', ' + casing_thickness);
         var details = {};
         details["blade_width"] = 0;
         details["blade_count"] = 0;
@@ -3755,11 +3882,11 @@ define(function(require, exports, module) {
                         var caseThck = current_frame_data.stage_info[stageKey][pos][3];
                         if ((casing_thickness > (caseThck - 0.05)) && (casing_thickness < (caseThck + 0.05))) {
                             //console.log("For: position =", position, "; casing_thickness =", casing_thickness);
-                            //console.log("Found:", stageKey, ";", detailKeys[key], ";", caseThck);
+                            console.log("Found:", stageKey, ";", detailKeys[key], ";", caseThck);
                             details["blade_width"] = current_frame_data.stage_info[stageKey].blade_width;
                             details["blade_count"] = current_frame_data.stage_info[stageKey].blade_count;
                             details["tip_diameter"] = current_frame_data.stage_info[stageKey].tip_diameter;
-                            //console.log("blade_width:", details["blade_width"], "; blade_count:", details["blade_count"], "; tip_diameter:", details["tip_diameter"]);
+                            console.log("blade_width:", details["blade_width"], "; blade_count:", details["blade_count"], "; tip_diameter:", details["tip_diameter"]);
                             foundDetails = true;
                             break;
                         }
@@ -3886,6 +4013,7 @@ define(function(require, exports, module) {
         var position = current_frame_data['position'][stage][current_position_index];
         var el_id = position + stage;
         el_id = el_id.replace(/\s+/g, '_');
+
         if (clearance.length == 0) {
             clearance = 0.0;
         }
@@ -3895,6 +4023,7 @@ define(function(require, exports, module) {
         } else {
             clearance_f = parseFloat(clearance);
         }
+        
         var err_id = document.getElementById("CLEARANCE_ERROR");
         var err_str = "";
 

@@ -16,4 +16,6 @@
 @synthesize spacerThickness = _spacerThickness;
 @synthesize numberOfBlades = _numberOfBlades;
 @synthesize rpm = _rpm;
+@synthesize tipDiameter = _tipDiameter;
+@synthesize bladeWidth = _bladeWidth;
 @end

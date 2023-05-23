@@ -19,6 +19,7 @@
 @synthesize overrideRateAndIntensity = _overrideRateAndIntensity;
 @synthesize sensorParamsProvided = _sensorParamsProvided;
 @synthesize pointsPerBlade = _pointsPerBlade;
+@synthesize pointsBetweenBlades = _pointsBetweenBlades;
 
 -(instancetype)initWithDelegate:(IFC242xManager*)delegate {
     if (self = [super init]) {
@@ -27,6 +28,7 @@
         self.intensityThreshold = [self calculateIntensityThresholdFromMeasurementRateKHz:self.measurementRate];
         dispatch_sync(dispatch_get_main_queue(), ^{
             self.pointsPerBlade = [((AppDelegate *)[UIApplication sharedApplication].delegate).pointsPerBlade intValue];
+            self.pointsBetweenBlades = [((AppDelegate *)[UIApplication sharedApplication].delegate).pointsBetweenBlades floatValue];
         });
         NSLog(@"@init: pointsPerBlade=%d", self.pointsPerBlade);
     }
@@ -53,9 +55,9 @@
     self.intensityThreshold = [self calculateIntensityThresholdFromMeasurementRateKHz:self.measurementRate];
 }
 
--(NSString*)calculate:(float)rpm forBladeWidth:(float)bladeWidth forTipDiameter:(float)tipDiameter updateRateAndIntensity:(BOOL)rateAndIntensity {
-    NSLog(@"@calculate: rpm=%f, bladeWidth=%f, tipDiameter=%f, rateAndIntensity=%s", rpm, bladeWidth, tipDiameter, rateAndIntensity ? "true" : "false");
-    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"ControllerSettings.calculate: rpm=%f, bladeWidth=%f, tipDiameter=%f, rateAndIntensity=%s", rpm, bladeWidth, tipDiameter, rateAndIntensity ? "TRUE" : "FALSE"]} keepOpen:YES];
+-(NSString*)calculate:(float)rpm forBladeWidth:(float)bladeWidth forTipDiameter:(float)tipDiameter forBladeCount:(int)bladeCount updateRateAndIntensity:(BOOL)rateAndIntensity {
+    NSLog(@"@calculate: rpm=%f, bladeWidth=%f, tipDiameter=%f, bladeCount=%d, rateAndIntensity=%s", rpm, bladeWidth, tipDiameter, bladeCount, rateAndIntensity ? "true" : "false");
+    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"ControllerSettings.calculate: rpm=%f, bladeWidth=%f, tipDiameter=%f, bladeCount=%d, rateAndIntensity=%s", rpm, bladeWidth, tipDiameter, bladeCount, rateAndIntensity ? "TRUE" : "FALSE"]} keepOpen:YES];
     NSString* errorMessage = @"";
     
     if (rpm == 0) {
@@ -74,16 +76,23 @@
         errorMessage = [errorMessage stringByAppendingString:@"Error: Tip Diameter = 0, "];
     }
 
+    // M_PI * tipDiameterInches
     float circumference = [self calculateCircumferenceFromTipDiameterInches:tipDiameter];
     if (circumference == 0) {
         errorMessage = @"Error: Circumference = 0, ";
     }
 
+    // circumference * rpm / 60.0
     float inchesPerSecond = [self calculateSpeedForCircumference:circumference withRPM:rpm];
     if (inchesPerSecond == 0) {
         errorMessage = [errorMessage stringByAppendingString:@"Error: Inches Per Second = 0, "];
     }
+    
+    self.pointsBetweenBlades = [self calculatePointsBetweenBlades:tipDiameter forBladeWidth:bladeWidth forBladeCount:bladeCount];
+    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"ControllerSettings.calculate: pointsBetweenBlades=%f", self.pointsBetweenBlades]} keepOpen:YES];
 
+    // 1.10 * circumference / inchesPerSecond
+    // 1.10 * 60.0 / rpm
     self.acquisitionTime = [self calculateAcquisitionTimeForCircumference:circumference atSpeed:inchesPerSecond];
     [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"ControllerSettings.calculate: acquisitionTime=%f", self.acquisitionTime]} keepOpen:YES];
     if (self.acquisitionTime <= 0) {
@@ -95,6 +104,7 @@
     if (rateAndIntensity) {
         [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"ControllerSettings.calculate: pointsPerBlade=%d", self.pointsPerBlade]} keepOpen:YES];
         float samplesPerInch = self.pointsPerBlade / bladeWidth;
+        // MIN(MAX(ceilf((inchesPerSecond * samplesPerInch) / 100.0) * 100.0, MIN_RATE_HZ), MAX_RATE_HZ) / 1000.0
         self.measurementRate = [self calculateKHzFrequencyForSamplesPerInch:samplesPerInch atSpeed:inchesPerSecond];
         self.intensityThreshold = [self calculateIntensityThresholdFromMeasurementRateKHz:self.measurementRate];
     }
@@ -108,12 +118,12 @@
     return errorMessage;
 }
 
--(NSString*)calculateAcquisitionTimeFromRPM:(float)rpm forBladeWidth:(float)bladeWidth forTipDiameter:(float)tipDiameter {
-    return [self calculate:rpm forBladeWidth:bladeWidth forTipDiameter:tipDiameter updateRateAndIntensity:FALSE];
+-(NSString*)calculateAcquisitionTimeFromRPM:(float)rpm forBladeWidth:(float)bladeWidth forTipDiameter:(float)tipDiameter forBladeCount:(int)bladeCount {
+    return [self calculate:rpm forBladeWidth:bladeWidth forTipDiameter:tipDiameter forBladeCount:bladeCount updateRateAndIntensity:FALSE];
 }
 
--(NSString*)calculateAcquisitionTimeAndSamplingFrequencyAndIntensityThresholdFromRPM:(float)rpm forBladeWidth:(float)bladeWidth forTipDiameter:(float)tipDiameter {
-    return [self calculate:rpm forBladeWidth:bladeWidth forTipDiameter:tipDiameter updateRateAndIntensity:TRUE];
+-(NSString*)calculateAcquisitionTimeAndSamplingFrequencyAndIntensityThresholdFromRPM:(float)rpm forBladeWidth:(float)bladeWidth forTipDiameter:(float)tipDiameter forBladeCount:(int)bladeCount {
+    return [self calculate:rpm forBladeWidth:bladeWidth forTipDiameter:tipDiameter forBladeCount:bladeCount updateRateAndIntensity:TRUE];
 }
 
 -(float)calculateCircumferenceFromTipDiameterInches:(float)tipDiameterInches {
@@ -140,6 +150,19 @@
         return 0.5; // 0.5698
     } else {
         return 4.98 * expf(-1.141 * measurementRateKHz);
+    }
+}
+
+-(float)calculatePointsBetweenBlades:(float)tipDiameter forBladeWidth:(float)bladeWidth forBladeCount:(int)bladeCount {
+    // auto calculate
+    if (self.pointsBetweenBlades == -1) {
+        float circumference = [self calculateCircumferenceFromTipDiameterInches:tipDiameter];
+        float samplesPerInch = self.pointsPerBlade / bladeWidth;
+        float pointsPerRotation = samplesPerInch * circumference;
+        float pointsPerSection = pointsPerRotation / bladeCount;
+        return 0.75 * (pointsPerSection - self.pointsPerBlade);
+    } else {
+        return self.pointsBetweenBlades;
     }
 }
 

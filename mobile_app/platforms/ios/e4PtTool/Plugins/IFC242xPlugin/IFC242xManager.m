@@ -21,8 +21,6 @@
     PostProcess* postProcess;
     NSString* cmdCallbackId, *lastSavedFile, *connectionType;
     BOOL calibratedAcquire;
-    BOOL filterShelfRange;
-    BOOL filterNextBlade;
 }
 
 @synthesize progress = _progress;
@@ -49,9 +47,6 @@
         }
         
         self->postProcess = [[PostProcess alloc] initWithDelegate:self];//[PostProcess new];
-        
-        self->filterShelfRange = FALSE;
-        self->filterNextBlade = FALSE;
         
         // Remove notifications before adding them so they are not added multiple times.
         [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationDidEnterBackgroundNotification object:nil];
@@ -92,6 +87,8 @@
         [self returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"Manager.processComplete: threshold set to %0.3f", self->controller.settings.intensityThreshold]} keepOpen:YES];
         [self returnPluginResponse:@{@"type":@"alert",@"message":[NSString stringWithFormat:@"Threshold is set to %.3f.", self->controller.settings.intensityThreshold]} keepOpen:YES];
     } else if (self->controller.state == halted) {
+        // TODO: only call if not aborted?
+        [self returnPluginResponse:@{@"type":@"export_log"} keepOpen:YES];
         [self returnData:[self computeClearance:self->controller.measurementData] measurementData:self->controller.measurementData];
     }
     [self returnPluginResponse:@{@"type":@"status",@"status":statusMsg}];
@@ -101,15 +98,18 @@
     self->postProcess.outOfRange = self->controller.settings.outOfRange;
     
     float offsetAdjustment = 0.0;
-    // Disabled until further testing, this would apply offsetAdjustment only for turbine measurements and not apply to acquisition via Get Data
+    float pointsBetweenBlades = 0.0;
+    // Disabled until further testing, this would apply offsetAdjustment and pointsBetweenBlades only for turbine measurements and not apply to acquisition via Get Data
     if (self->calibratedAcquire) {
         offsetAdjustment = [self->controller.settings.sensor calculateOffsetAdjustment:self->metaData.spacerThickness casingThickness:self->metaData.casingThickness];
+        pointsBetweenBlades = [self->controller.settings calculatePointsBetweenBlades:self->metaData.tipDiameter forBladeWidth:self->metaData.bladeWidth forBladeCount:self->metaData.numberOfBlades];
     }
-    return [self->postProcess computeClearance:measurementData bladeCount:self->metaData.numberOfBlades usingAdjustmentFactor:offsetAdjustment filterShelfRange:self->filterShelfRange filterNextBlade:self->filterNextBlade];
+    return [self->postProcess computeClearance:measurementData bladeCount:self->metaData.numberOfBlades pointsBetweenBlades:pointsBetweenBlades usingAdjustmentFactor:offsetAdjustment];
 }
 
 - (void)returnData:(ClearanceData*)clearanceData measurementData:(MeasurementData*)measurementData {
     //[self returnPluginResponse:@{@"type":@"log",@"message":@"Manager.returnData"} keepOpen:YES];
+    [self returnPluginResponse:@{@"type":@"export_log"} keepOpen:YES];
     NSError* error;
     NSData* jsonData;
     // If we've done a calibrated acquisition we pass back the filtered, calibrated data.
@@ -271,7 +271,7 @@
     int expectedBlades = roundf(self->metaData.numberOfBlades * rotations);
     
     // Write the sensor parameters and app version to the CSV file.
-    dataStr = [NSString stringWithFormat:@"\n - Sensor Parameters,,,,,,,,,,,,\nSensor Selection,Sensor Length (in),MR (mm),SMR (mm),Mastering Fixture Height (in),Mastering Value (mm),Master Offset (in),Casing Thickness (in),Spacer Thickness (in),Shelf Threshold (mm),Measurement Rate (kHz),Intensity Threshold (%%),Clearance Override,Expected Blades,Observed Blades,Avg Samples per Blade,RPM,Applied Offset,Applied Offset Formula\n%@,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%s,%d,%d,%@,%f,%f,%@\n",
+    dataStr = [NSString stringWithFormat:@"\n - Sensor Parameters,,,,,,,,,,,,\nSensor Selection,Sensor Length (in),MR (mm),SMR (mm),Mastering Fixture Height (in),Mastering Value (mm),Master Offset (in),Casing Thickness (in),Spacer Thickness (in),Shelf Threshold (mm),Measurement Rate (kHz),Intensity Threshold (%%),Clearance Override,Expected Blades,Observed Blades,Avg Samples per Blade,RPM,Applied Offset,Applied Offset Formula,Points Between Blades\n%@,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%s,%d,%d,%@,%f,%f,%@,%f\n",
                self->controller.settings.sensor.name,
                self->controller.settings.sensor.length,
                self->controller.settings.sensor.mr,
@@ -290,7 +290,8 @@
                [NSString stringWithFormat:@"%.02f", clearanceData.averageBladeSamples],
                self->metaData.rpm,
                clearanceData.offsetAdjustmentFactor,
-               self->controller.settings.sensor.offsetAdjustmentFormula];
+               self->controller.settings.sensor.offsetAdjustmentFormula,
+               self->controller.settings.pointsBetweenBlades];
     [handle writeData:[dataStr dataUsingEncoding:NSUTF8StringEncoding]];
 
     NSString* appVersion = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleShortVersionString"];
@@ -335,8 +336,8 @@
         self->metaData.casingThickness = [[message valueForKey:@"casingThickness"] floatValue];
         self->metaData.spacerThickness = [[message valueForKey:@"spacerThickness"] floatValue];
         self->metaData.numberOfBlades = [[message valueForKey:@"numberOfBlades"] floatValue];
-        self->filterShelfRange = [[message valueForKey:@"filterShelfRange"] boolValue];
-        self->filterNextBlade = [[message valueForKey:@"filterNextBlade"] boolValue];
+        self->metaData.tipDiameter = [[message valueForKey:@"tipDiameter"] floatValue];
+        self->metaData.bladeWidth = [[message valueForKey:@"bladeWidth"] floatValue];
         
         // Check if the value is specified in rpm.  If so, extract the rpm value.
         if (!acqTime) {
@@ -347,7 +348,7 @@
             if (!self->controller.settings.overrideRateAndIntensity) {
                 // Set new measurement rate
                 interval = 3.0; // Give it more time to set things up.
-                NSString* err = [self->controller.settings calculateAcquisitionTimeAndSamplingFrequencyAndIntensityThresholdFromRPM:rpms forBladeWidth:[[message valueForKey:@"bladeWidth"] floatValue] forTipDiameter:[[message valueForKey:@"tipDiameter"] floatValue]];
+                NSString* err = [self->controller.settings calculateAcquisitionTimeAndSamplingFrequencyAndIntensityThresholdFromRPM:rpms forBladeWidth:[[message valueForKey:@"bladeWidth"] floatValue] forTipDiameter:[[message valueForKey:@"tipDiameter"] floatValue] forBladeCount:self->metaData.numberOfBlades];
                 if (err.length != 0) {
                     // Report errors.
                     [self returnPluginResponse:@{@"type":@"alert",@"message":err} keepOpen:YES];
@@ -359,7 +360,7 @@
                 [self->controller setIntensityThreshold:self->controller.settings.intensityThreshold sendImmediately:NO];
                 [self->controller setMeasurementRate:self->controller.settings.measurementRate reportStatus:NO];
             } else {
-                NSString* err = [self->controller.settings calculateAcquisitionTimeFromRPM:rpms forBladeWidth:[[message valueForKey:@"bladeWidth"] floatValue] forTipDiameter:[[message valueForKey:@"tipDiameter"] floatValue]];
+                NSString* err = [self->controller.settings calculateAcquisitionTimeFromRPM:rpms forBladeWidth:[[message valueForKey:@"bladeWidth"] floatValue] forTipDiameter:[[message valueForKey:@"tipDiameter"] floatValue] forBladeCount:self->metaData.numberOfBlades];
                 if (err.length != 0) {
                     // Report errors.
                     [self returnPluginResponse:@{@"type":@"alert",@"message":err} keepOpen:YES];
@@ -371,14 +372,20 @@
             }
             NSLog(@"Acquisition time: %.3f", self->controller.settings.acquisitionTime);
             [self returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"Manager.messageHandler: Acquisition time = %.3f", self->controller.settings.acquisitionTime]} keepOpen:YES];
+            [self returnPluginResponse:@{@"type":@"export_log"} keepOpen:YES];
             [self->controller queueDataCollection:interval];
         } else {
             [self returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"Manger.messageHandler: send_data, acquisitionTime=%@", acqTime]} keepOpen:YES];
             self->calibratedAcquire = false;
+            // temporary fix for filtering RPM data collection
+            if ([acqTime floatValue] == 60) {
+                self->calibratedAcquire = true;
+            }
             self->controller.settings.acquisitionTime = [acqTime floatValue];
             if (!self->controller.settings.overrideRateAndIntensity) {
                 NSLog(@"Using existing settings: Found measurement rate: %.3f; intensity threshold: %.3f", self->controller.settings.measurementRate, self->controller.settings.intensityThreshold);
                 [self returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"Manager.messageHandler: Using existing settings, measurement rate = %.3f, intensity threshold = %.3f", self->controller.settings.measurementRate, self->controller.settings.intensityThreshold]} keepOpen:YES];
+                // TODO: check
                 // reset measurement rate and intensity threshold if modified from measurment
                 /*[self->controller.settings resetMeasurementRateAndIntensityThreshold];
                 NSLog(@"Using default settings: Found measurement rate: %.3f; intensity threshold: %.3f", self->controller.settings.measurementRate, self->controller.settings.intensityThreshold);
@@ -389,11 +396,12 @@
                 NSLog(@"Overriding auto-settings: Found measurement rate: %.3f; intensity threshold: %.3f", self->controller.settings.measurementRate, self->controller.settings.intensityThreshold);
                 [self returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"Manager.messageHandler: Overriding auto-settings, measurement rate = %.3f, intensity threshold = %.3f", self->controller.settings.measurementRate, self->controller.settings.intensityThreshold]} keepOpen:YES];
             }
+            [self returnPluginResponse:@{@"type":@"export_log"} keepOpen:YES];
             [self->controller doDataCollection];
         }
     } else if ([cmd containsString:@"abort"]) {
         NSLog(@"Got ABORT");
-        //[self returnPluginResponse:@{@"type":@"log",@"message":@"Manager.messageHandler: abort"} keepOpen:YES];
+        [self returnPluginResponse:@{@"type":@"log",@"message":@"Manager.messageHandler: abort"} keepOpen:YES];
         [self->controller abortDataCollection];
     } else if ([cmd containsString:@"get_threshold_for_rate"]) {
         NSLog(@"Got threshold for rate");

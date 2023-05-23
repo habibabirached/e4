@@ -28,8 +28,8 @@
 // moved to app settings
 //#define MIN_BLADE_SAMPLE_COUNT 4 // Required number of samples to identify a blade
 #define INTENSITY_THRESHOLD 0.0
-// TODO: move to app settings
-#define MIN_BLADE_DELTA 100
+// calculate based on configuration
+//#define MIN_BLADE_DELTA 50
 
 @implementation PostProcess {
     NSMutableArray* kernel;
@@ -41,6 +41,7 @@
 @synthesize useMinimumClearance = _useMinimumClearance;
 @synthesize pointsPerBlade = _pointsPerBlade;
 @synthesize minBladeSamples = _minBladeSamples;
+@synthesize filterRounding = _filterRounding;
 
 -(instancetype)initWithDelegate:(IFC242xManager*)delegate {
     if (self = [super init]) {
@@ -50,8 +51,9 @@
         dispatch_sync(dispatch_get_main_queue(), ^{
             self.pointsPerBlade = [((AppDelegate *)[UIApplication sharedApplication].delegate).pointsPerBlade intValue];
             self.minBladeSamples = [((AppDelegate *)[UIApplication sharedApplication].delegate).minBladeSamples intValue];
+            self.filterRounding = [((AppDelegate *)[UIApplication sharedApplication].delegate).filterRounding intValue];
         });
-        NSLog(@"@initWithDelegate: pointsPerBlade=%d, minBladeSamples=%d", self.pointsPerBlade, self.minBladeSamples);
+        NSLog(@"@initWithDelegate: pointsPerBlade=%d, minBladeSamples=%d, filterRounding=%d", self.pointsPerBlade, self.minBladeSamples, self.filterRounding);
     }
     return self;
 }
@@ -67,12 +69,12 @@
     self->outOfRangeNumber = [NSNumber numberWithFloat:self.outOfRange];
 }
 
-- (ClearanceData*)computeClearance:(MeasurementData*)measurementData bladeCount:(int)bladeCount {
-    return [self computeClearance:measurementData bladeCount:bladeCount usingAdjustmentFactor:0.0 filterShelfRange:FALSE filterNextBlade:FALSE];
+- (ClearanceData*)computeClearance:(MeasurementData*)measurementData bladeCount:(int)bladeCount pointsBetweenBlades:(float)pointsBetweenBlades {
+    return [self computeClearance:measurementData bladeCount:bladeCount pointsBetweenBlades:pointsBetweenBlades usingAdjustmentFactor:0.0];
 }
 
-- (ClearanceData*)computeClearance:(MeasurementData*)measurementData bladeCount:(int)bladeCount usingAdjustmentFactor:(float)offsetAdjustment filterShelfRange:(BOOL)filterShelfRange filterNextBlade:(BOOL)filterNextBlade {
-    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: bladeCount=%d, offsetAdjustment=%f, filterShelfRange=%d, filterNextBlade=%d", bladeCount, offsetAdjustment, filterShelfRange, filterNextBlade]} keepOpen:YES];
+- (ClearanceData*)computeClearance:(MeasurementData*)measurementData bladeCount:(int)bladeCount pointsBetweenBlades:(float)pointsBetweenBlades usingAdjustmentFactor:(float)offsetAdjustment {
+    [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: bladeCount=%d, pointsBetweenBlades=%f, offsetAdjustment=%f", bladeCount, pointsBetweenBlades, offsetAdjustment]} keepOpen:YES];
     //[self setOutOfRange:17];  // for testing only
     //[self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: displacements=%@", measurementData.displacements]} keepOpen:YES];
     //[self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: intensities=%@", measurementData.intensities]} keepOpen:YES];
@@ -95,7 +97,6 @@
     // Perform edge detection with an LoG filter
     // (Kernel computation was handled during initialization.)
     //NSLog(@"Filtering");
-    // TODO: check this logic
     NSArray* filtered = [self fir_filter:self->kernel displacements:measurementData.displacements threshold:clearanceData.shelfThreshold];
     //NSLog(@"Filtering Done.");
     //[self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: filtered=%@", filtered]} keepOpen:YES];
@@ -105,7 +106,6 @@
     // Blades tip go from a negative zc to a positive zc.
     bool* pos_crossing = (bool*)malloc(filtered.count * sizeof(bool));
     bool* neg_crossing = (bool*)malloc(filtered.count * sizeof(bool));
-    // TODO: check this logic
     [self createBladeBoundaries:filtered pos_crossing:pos_crossing neg_crossing:neg_crossing];
     filtered = nil;
     
@@ -157,26 +157,26 @@
             int count = 0;
             int count_low_intensity = 0;
             int count_above_shelf = 0;
+            // TODO: remove
             int count_out_of_range_last_points = 0;
             
             if (stop > start) {
                 [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: blade found: [%d]-[%d], filtered to [%d]-[%d]", start, stop, (start + FILTER_EDGE_SIZE_START), (stop - FILTER_EDGE_SIZE_STOP)]} keepOpen:YES];
-                if (filterNextBlade) {
-                    for (int j=stop; j<measurementData.displacements.count-1; j++) {
-                        if (nextStart > stop) {
-                            break;
-                        } else {
-                            if (neg_crossing[j]) {
-                                for (int k=j; k<measurementData.displacements.count; k++) {
-                                    if (pos_crossing[k]) {
-                                        nextStart = j;
-                                        break;
-                                    }
+                for (int j=stop; j<measurementData.displacements.count-1; j++) {
+                    if (nextStart > stop) {
+                        break;
+                    } else {
+                        if (neg_crossing[j]) {
+                            for (int k=j; k<measurementData.displacements.count; k++) {
+                                if (pos_crossing[k]) {
+                                    nextStart = j;
+                                    break;
                                 }
                             }
                         }
                     }
                 }
+                //}
                 // FILTER_EDGE_SIZE_* allows us to shave down the number of points used
                 for (int j=start + FILTER_EDGE_SIZE_START; j<=stop - FILTER_EDGE_SIZE_STOP; j++) {
                     rawDisplacement = [measurementData.displacements[j] floatValue];
@@ -208,6 +208,7 @@
                         [self->delegate returnPluginResponse:@{@"type":@"log",@"message":errorMessage} keepOpen:YES];
                     }
                 }
+                // TODO: remove
                 for (int j=stop - FILTER_EDGE_SIZE_STOP; j >= start + FILTER_EDGE_SIZE_START; j--) {
                     rawDisplacement = [measurementData.displacements[j] floatValue];
                     //if (rawDisplacement >= clearanceData.shelfThreshold) {
@@ -232,13 +233,12 @@
                     clearance = -9.995;  // nan has happened before.
                 }
                 [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: average blade clearance = %f, minimum clearance = %f", clearance, min_clearance]} keepOpen:YES];
+                BOOL isFiltered = FALSE;
                 if (count >= self.minBladeSamples) {
                     [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: sufficient blade samples: %d >= %d", count, self.minBladeSamples]} keepOpen:YES];
-                    // TODO: remove this filter
-                    if (filterShelfRange && count >= (self.pointsPerBlade * 2) && ((count_above_shelf - count_out_of_range_last_points) >= (self.pointsPerBlade / 2) || count_out_of_range_last_points < (self.pointsPerBlade / 2))) {
-                        [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: filterShelfRange: start=%d, stop=%d, samples=%d, aboveShelf=%d, lastPoints=%d", start, stop, count, count_above_shelf, count_out_of_range_last_points]} keepOpen:YES];
-                    } else if (filterNextBlade && nextStart > stop && nextStart - stop < MIN_BLADE_DELTA) {
-                        [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: filterNextBlade: start=%d, stop=%d, nextStart=%d", start, stop, nextStart]} keepOpen:YES];
+                    if (nextStart > stop && nextStart - stop < pointsBetweenBlades) {
+                        [self->delegate returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"PostProcess.computeClearance: blade within delta: start=%d, stop=%d, nextStart=%d", start, stop, nextStart]} keepOpen:YES];
+                        isFiltered = TRUE;
                     } else {
                         blades_count += 1;
                         blades_samples += count;
@@ -261,7 +261,7 @@
                 }
                 //NSLog(@"Clearance: %f; Quality: %@", clearance, [clearanceData.quality lastObject]);
                 for (int j=start; j<=stop; j++) {
-                    if (count >= self.minBladeSamples && [measurementData.displacements[j] floatValue] < self.outOfRange) {
+                    if (count >= self.minBladeSamples && [measurementData.displacements[j] floatValue] < self.outOfRange && !isFiltered) {
                         [clearanceData.filtered addObject:[NSNumber numberWithFloat:clearance]];
                     } else {
                         [clearanceData.filtered addObject:outOfRangeNumber];
@@ -572,7 +572,8 @@
         [filtered addObject:zeroNumber]; // offset
     for (int i=0; i<x_length; i++) {
         float tmpf = temp_buffer[i] - threshold;
-        tmpf = roundf(tmpf * 1e2)/1e2;  // round to 2 decimal places, was 5
+        float rounding = pow(10, self.filterRounding);
+        tmpf = roundf(tmpf * rounding)/rounding;  // round to filterRounding decimal places
         tmpf = (tmpf == 0.0) ? 0.0 : tmpf; // This avoids problems that have happened where -0 is generated, causing a sign change.
         [filtered addObject:[NSNumber numberWithFloat:tmpf]];
     }

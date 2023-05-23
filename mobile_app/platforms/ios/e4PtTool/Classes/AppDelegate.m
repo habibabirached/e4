@@ -37,6 +37,8 @@
 @synthesize useSensorParams = _useSensorParams;
 @synthesize pointsPerBlade = _pointsPerBlade;
 @synthesize minBladeSamples = _minBladeSamples;
+@synthesize filterRounding = _filterRounding;
+@synthesize pointsBetweenBlades = _pointsBetweenBlades;
 
 - (BOOL)application:(UIApplication*)application didFinishLaunchingWithOptions:(NSDictionary*)launchOptions
 {
@@ -57,8 +59,11 @@
     NSObject *useSensorParamsObject = [defaults objectForKey:@"useSensorParams"];
     NSObject *pointsPerBladeObject = [defaults objectForKey:@"pointsPerBlade"];
     NSObject *minBladeSamples = [defaults objectForKey:@"minBladeSamples"];
+    NSObject *filterRounding = [defaults objectForKey:@"filterRounding"];
+    NSObject *pointsBetweenBladesObject = [defaults objectForKey:@"pointsBetweenBlades"];
     
-    if (connectionTypeObject == nil || ipAddressObject == nil || baudRateObject == nil || useSerialBufferObject == nil || useSensorParamsObject == nil || pointsPerBladeObject == nil || minBladeSamples == nil) {
+    if (connectionTypeObject == nil || ipAddressObject == nil || baudRateObject == nil || useSerialBufferObject == nil || useSensorParamsObject == nil || pointsPerBladeObject == nil || minBladeSamples == nil || filterRounding == nil ||
+        pointsBetweenBladesObject == nil) {
         [self registerDefaultsFromSettingsBundle];
     }
 
@@ -69,6 +74,8 @@
     self.useSensorParams = [defaults boolForKey:@"useSensorParams"];
     self.pointsPerBlade = [NSNumber numberWithInt:[[defaults stringForKey:@"pointsPerBlade"] intValue]];
     self.minBladeSamples = [NSNumber numberWithInt:[[defaults stringForKey:@"minBladeSamples"] intValue]];
+    self.filterRounding = [NSNumber numberWithInt:[[defaults stringForKey:@"filterRounding"] intValue]];
+    self.pointsBetweenBlades = [NSNumber numberWithInt:[[defaults stringForKey:@"pointsBetweenBlades"] floatValue]];
 }
 
 - (void)registerDefaultsFromSettingsBundle {

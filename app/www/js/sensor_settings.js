@@ -16,6 +16,7 @@ define(function(require, exports, module) {
         mastering_value: 0, //mm
         master_offset: 0 //in
     };
+    // TODO: set SMR + MR per drawing instead of optimizing based on individual sensor intensity
     // LONG: measured_length_mm = 222.28048, measured_mastering_value_mm = 6.0802
     const sensor_types = {
         'LONG': {'measured_length_mm': 224.164, 'measured_mastering_fixture_height_mm': 240.3602, 'measured_start_measurement_range_mm': 11.94, 'measured_mastering_value_mm': 4.2567, 'measurement_range_mm': 11.0},

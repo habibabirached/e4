@@ -28,9 +28,11 @@
 @property (nonatomic) BOOL overrideRateAndIntensity;
 @property (nonatomic) BOOL sensorParamsProvided;
 @property (nonatomic) int pointsPerBlade;
+@property (nonatomic) float pointsBetweenBlades;
 
 -(void)resetMeasurementRateAndIntensityThreshold;
--(NSString*)calculateAcquisitionTimeFromRPM:(float)rpm forBladeWidth:(float)bladeWidth forTipDiameter:(float)tipDiameter;
--(NSString*)calculateAcquisitionTimeAndSamplingFrequencyAndIntensityThresholdFromRPM:(float)rpm forBladeWidth:(float)bladeWidth forTipDiameter:(float)tipDiameter;
+-(NSString*)calculateAcquisitionTimeFromRPM:(float)rpm forBladeWidth:(float)bladeWidth forTipDiameter:(float)tipDiameter forBladeCount:(int)bladeCount;
+-(NSString*)calculateAcquisitionTimeAndSamplingFrequencyAndIntensityThresholdFromRPM:(float)rpm forBladeWidth:(float)bladeWidth forTipDiameter:(float)tipDiameter forBladeCount:(int)bladeCount;
 -(float)calculateIntensityThresholdFromMeasurementRateKHz:(float)measurementRateKHz;
+-(float)calculatePointsBetweenBlades:(float)tipDiameter forBladeWidth:(float)bladeWidth forBladeCount:(int)bladeCount;
 @end

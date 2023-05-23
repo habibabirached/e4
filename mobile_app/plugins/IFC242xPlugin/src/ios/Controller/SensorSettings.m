@@ -24,6 +24,7 @@
 @synthesize offsetSelector = _offsetSelector;
 @synthesize offsetAdjustmentFormula = _offsetAdjustmentFormula;
 
+// TODO: set SMR + MR per drawing instead of optimizing based on individual sensor intensity
 +(SensorSettings*) LONG {
     // 8.751
     return [[SensorSettings alloc] initWithName:@"LONG" lengthInches:8.825 measurementRangeMM:11.0 startOfMeasurementRangeMM:11.94 masterFixtureHeightInches:9.463];

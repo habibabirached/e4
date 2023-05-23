@@ -37,5 +37,7 @@
 @property BOOL useSensorParams;
 @property NSNumber *pointsPerBlade;
 @property NSNumber *minBladeSamples;
+@property NSNumber *filterRounding;
+@property NSNumber *pointsBetweenBlades;
 
 @end

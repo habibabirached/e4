@@ -14,4 +14,6 @@
 @property (nonatomic) float spacerThickness;
 @property (nonatomic) int numberOfBlades;
 @property (nonatomic) float rpm;
+@property (nonatomic) float tipDiameter;
+@property (nonatomic) float bladeWidth;
 @end
