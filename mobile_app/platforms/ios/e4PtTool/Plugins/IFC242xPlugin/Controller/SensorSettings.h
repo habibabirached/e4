@@ -9,7 +9,7 @@
 #define IN_to_MM 25.4
 
 @interface SensorSettings : NSObject
-@property (readonly, strong, nonatomic) NSString* name;
+@property (nonatomic) NSString* name;
 @property (nonatomic) float length;
 @property (nonatomic) float smr;
 @property (nonatomic) float mr;

@@ -24,17 +24,22 @@ define(function(require, exports, module, sensorSettings) {
   }
   
   const clearChartData = (chartContainer) => {
-      let chart = Highcharts.charts[chartContainer.getAttribute('data-highcharts-chart')];
-      if (typeof chart !== 'undefined') {
-          if (chart.series)
-              while(chart.series.length > 0)
-                  chart.series[0].remove(true);
-          if (chart.subtitle)
-              chart.subtitle.hide();
-          if (chart.renderer && chart.renderer.box && chart.renderer.box.children)
-              for (element of chart.renderer.box.children)
-                  if (element.classList && element.classList.contains('highcharts-button'))
-                      element.style.visibility = 'hidden';
+      if (chartContainer) {
+          let chartAttr = chartContainer.getAttribute('data-highcharts-chart');
+          if (chartAttr) {
+              let chart = Highcharts.charts[chartAttr];
+              if (typeof chart !== 'undefined') {
+                  if (chart.series)
+                      while(chart.series.length > 0)
+                          chart.series[0].remove(true);
+                  if (chart.subtitle)
+                      chart.subtitle.hide();
+                  if (chart.renderer && chart.renderer.box && chart.renderer.box.children)
+                      for (element of chart.renderer.box.children)
+                          if (element.classList && element.classList.contains('highcharts-button'))
+                              element.style.visibility = 'hidden';
+              }
+          }
       }
   }
   

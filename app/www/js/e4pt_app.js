@@ -51,6 +51,8 @@ define(function(require, exports, module) {
     var MIN_SAMPLING_RATE = 0.1;
     var DEFAULT_SAMPLING_RATE = 1.000;
     var MAX_SAMPLING_RATE = 6.5;
+    var MIN_INTENSITY = 0.5
+    var MAX_INTENSITY = 3.2
     var CLEARANCE_OVERRIDE_PRECISION = 4;
     var DETAILS_PRECISION = 4;
     var COMPARE_MASTER_VALUE_SECONDS = 10.0;
@@ -537,7 +539,7 @@ define(function(require, exports, module) {
             }
         }, {passive: true});
         document.getElementById("SET_MEASUREMENT_RATE_BUTTON").addEventListener('click', function() {
-            set_measurement_and_intensity_value('MEASUREMENT_RATE_1', 'Measurement rate', MIN_SAMPLING_RATE, MAX_SAMPLING_RATE, {command:'set_measuring_rate_and_threshold',threshold:parseFloat(document.getElementById('THRESHOLD_1').value).toFixed(3),rate:parseFloat(document.getElementById('MEASUREMENT_RATE_1').value)});
+            set_measurement_and_intensity_value('MEASUREMENT_RATE_1', 'Measurement rate', MIN_SAMPLING_RATE, MAX_SAMPLING_RATE, 'THRESHOLD_1', 'Intensity Threshold', MIN_INTENSITY, MAX_INTENSITY, {command:'set_measuring_rate_and_threshold',threshold:parseFloat(document.getElementById('THRESHOLD_1').value).toFixed(3),rate:parseFloat(document.getElementById('MEASUREMENT_RATE_1').value)});
         }, {passive: true});
         document.getElementById("RESET_MEASUREMENT_RATE_BUTTON").addEventListener('click', function() {
             messaging.sendMessage({args:[{command:'set_manual_override',value:false}]});
@@ -803,29 +805,77 @@ define(function(require, exports, module) {
         if (document.getElementById("SERIAL_NUMBER_EDIT").value !== document.getElementById("SERIAL_NUMBER").value) {
             document.getElementById("SERIAL_NUMBER").value = document.getElementById("SERIAL_NUMBER_EDIT").value;
             document.getElementById("HEADER_SERIAL").innerHTML = document.getElementById("SERIAL_NUMBER_EDIT").value;
-            send_scan_metadata(true, true);
+            send_scan_metadata(false, true);
         }
         if (document.getElementById("CUSTOMER_EDIT").value !== document.getElementById("CUSTOMER").value) {
             document.getElementById("CUSTOMER").value = document.getElementById("CUSTOMER_EDIT").value;
             document.getElementById("HEADER_CUSTOMER").innerHTML = document.getElementById("CUSTOMER_EDIT").value;
-            send_scan_metadata(true, true);
+            send_scan_metadata(false, true);
         }
         if (document.getElementById("SITE_EDIT").value !== document.getElementById("SITE").value) {
             document.getElementById("SITE").value = document.getElementById("SITE_EDIT").value;
             document.getElementById("HEADER_SITE").innerHTML = document.getElementById("SITE_EDIT").value;
-            send_scan_metadata(true, true);
+            send_scan_metadata(false, true);
         }
         if (document.getElementById("OPERATOR_EDIT").value !== document.getElementById("OPERATOR").value) {
             document.getElementById("OPERATOR").value = document.getElementById("OPERATOR_EDIT").value;
             document.getElementById("HEADER_SITE").innerHTML = document.getElementById("OPERATOR_EDIT").value;
-            send_scan_metadata(true, true);
+            send_scan_metadata(false, true);
         }
         if (document.getElementById("UNITS_EDIT").value !== document.getElementById("UNITS").value) {
             document.getElementById("UNITS").value = document.getElementById("UNITS_EDIT").value;
             document.getElementById("HEADER_UNITS").innerHTML = document.getElementById("UNITS_EDIT").value;
-            send_scan_metadata(true, true);
+            // convert data
+            let units_new = document.getElementById("UNITS_EDIT").value;
+            console.log('CONVERTING TO ' + units_new);
+            for (var i=0; i<E4PTdata.sets.length; i++) {
+              console.log(E4PTdata.sets[i]);
+              var pos = E4PTdata.sets[i].position;
+              var stg = E4PTdata.sets[i].stage;
+              var clr = E4PTdata.sets[i].clearance;
+              var clr_f = 0;
+              if ((typeof clr) == "string") {
+                clr_f = parseFloat(clr)
+              } else {
+                clr_f = clr;
+              }
+              if (units_new == "In") {
+                  clr_f = sensorSettings.toInches(clr_f);
+              } else if (units_new == "MM") {
+                  clr_f = sensorSettings.toMMs(clr_f);
+              }
+              var positions = current_frame_data.position[stg];
+              var stages = current_frame_data.stage;
+              var position_index = 0;
+              for (position_index = 0; position_index<positions.length; position_index++) {
+                if (positions[position_index] == pos) {
+                  break;
+                }
+              }
+              var stage_index = 0;
+              for (stage_index = 0; stage_index < stages.length; stage_index++) {
+                if (stages[stage_index] == stg) {
+                  break;
+                }
+              }
+              var el_id = positions[position_index] + stages[stage_index];
+              el_id = el_id.replace(/\s+/g, '_');
+              document.getElementById(el_id).innerHTML = clr_f.toFixed(4);
+              E4PTdata.sets[i].clearance = clr_f.toString(10);
+              if (units_new == "In") {
+                  E4PTdata.sets[i].max_clr = sensorSettings.toInches(parseFloat(E4PTdata.sets[i].max_clr)).toString(10);
+                  E4PTdata.sets[i].min_clr = sensorSettings.toInches(parseFloat(E4PTdata.sets[i].min_clr)).toString(10);
+                  E4PTdata.sets[i].med_clr = sensorSettings.toInches(parseFloat(E4PTdata.sets[i].med_clr)).toString(10);
+                  E4PTdata.sets[i].std_clr = sensorSettings.toInches(parseFloat(E4PTdata.sets[i].std_clr)).toString(10);
+              } else if (units_new == "MM") {
+                  E4PTdata.sets[i].max_clr = sensorSettings.toMMs(parseFloat(E4PTdata.sets[i].max_clr)).toString(10);
+                  E4PTdata.sets[i].min_clr = sensorSettings.toMMs(parseFloat(E4PTdata.sets[i].min_clr)).toString(10);
+                  E4PTdata.sets[i].med_clr = sensorSettings.toMMs(parseFloat(E4PTdata.sets[i].med_clr)).toString(10);
+                  E4PTdata.sets[i].std_clr = sensorSettings.toMMs(parseFloat(E4PTdata.sets[i].std_clr)).toString(10);
+              }
+            }
+            send_scan_metadata(false, true);
         }
-        send_scan_metadata(false, true);
         $("#TURBINE_SETUP_PAGE").fadeIn();
     }
 
@@ -1574,21 +1624,25 @@ define(function(require, exports, module) {
         update_spacer_value();
 
         var units = document.getElementById("UNITS").value.toUpperCase();
-        if (units.includes('IN')) {
+        // always inches
+        /*if (units.includes('IN')) {
             document.getElementById("CURR_CASE_THICKNESS_LABEL").innerHTML = "in";
             document.getElementById("SPACER_THICKNESS_LABEL").innerHTML = "in";
         } else if (units.includes('MM')) {
             document.getElementById("CURR_CASE_THICKNESS_LABEL").innerHTML = "mm";
             document.getElementById("SPACER_THICKNESS_LABEL").innerHTML = "mm";
-        }
+        }*/
         var temperatureUnits = document.getElementById("TEMPERATURE_UNITS").value.toUpperCase();
         if (temperatureUnits.includes('FAHRENHEIT')) {
             document.getElementById("AMBIENT_TEMPERATURE_LABEL").innerHTML = "°F";
         } else {
             document.getElementById("AMBIENT_TEMPERATURE_LABEL").innerHTML = "°C";
         }
+        let frame_size = document.getElementById("FRAME_SIZE").value;
+        let serial_number = document.getElementById("SERIAL_NUMBER").value;
         let customer = document.getElementById("CUSTOMER").value;
         let site = document.getElementById("SITE").value;
+        let operator = document.getElementById("OPERATOR").value;
         let dateStr = E4PTdata.date;
         let d = new Date();
         let hh = ('0' + d.getHours()).substr(-2);
@@ -1600,19 +1654,19 @@ define(function(require, exports, module) {
         }
         document.getElementById("HEADER_DATETIME").innerHTML = dateStr;
 
-        document.getElementById("HEADER_FRAME").innerHTML = E4PTdata.frame;
-        document.getElementById("HEADER_SERIAL").innerHTML = E4PTdata.serial_number;
+        document.getElementById("HEADER_FRAME").innerHTML = frame_size;
+        document.getElementById("HEADER_SERIAL").innerHTML = serial_number;
         document.getElementById("HEADER_CUSTOMER").innerHTML = customer;
         document.getElementById("HEADER_SITE").innerHTML = site;
-        document.getElementById("HEADER_OPERATOR").innerHTML = E4PTdata.operator;
-        document.getElementById("HEADER_UNITS").innerHTML = E4PTdata.units;
+        document.getElementById("HEADER_OPERATOR").innerHTML = operator;
+        document.getElementById("HEADER_UNITS").innerHTML = units;
         
-        document.getElementById("FRAME_SIZE_EDIT").value = document.getElementById("FRAME_SIZE").value;
-        document.getElementById("SERIAL_NUMBER_EDIT").value = document.getElementById("SERIAL_NUMBER").value;
-        document.getElementById("CUSTOMER_EDIT").value = document.getElementById("CUSTOMER").value;
-        document.getElementById("SITE_EDIT").value = document.getElementById("SITE").value;
-        document.getElementById("OPERATOR_EDIT").value = document.getElementById("OPERATOR").value;
-        document.getElementById("UNITS_EDIT").value = document.getElementById("UNITS").value;
+        document.getElementById("FRAME_SIZE_EDIT").value = frame_size;
+        document.getElementById("SERIAL_NUMBER_EDIT").value = serial_number;
+        document.getElementById("CUSTOMER_EDIT").value = customer;
+        document.getElementById("SITE_EDIT").value = site;
+        document.getElementById("OPERATOR_EDIT").value = operator;
+        document.getElementById("UNITS_EDIT").value = units;
 
         updateSensorHeaderMessage();
         checkSensorSelection();
@@ -1751,18 +1805,26 @@ define(function(require, exports, module) {
       highlight_cell(current_position, current_stage);
     }
     
-    function set_measurement_and_intensity_value(el_id, label, minVal, maxVal, cmd) {
+    function set_measurement_and_intensity_value(el_id, label, minVal, maxVal, el_id2, label2, minVal2, maxVal2, cmd) {
         //console.log("@set_measurement_and_intensity_value");
         var input_f = parseFloat(document.getElementById(el_id).value);
+        var input_f2 = parseFloat(document.getElementById(el_id2).value);
         // Make sure the text is a number
         if ((isNaN(input_f)) || (typeof(input_f) != 'number')) {
             e4PtAlert(label + ' is not a number.');
+            return;
+        }
+        if ((isNaN(input_f2)) || (typeof(input_f2) != 'number')) {
+            e4PtAlert(label2 + ' is not a number.');
             return;
         }
         
         document.getElementById(el_id).value = input_f.toFixed(3);
         input_f = parseFloat(document.getElementById(el_id).value);
         cmd.rate = input_f;
+        document.getElementById(el_id2).value = input_f2.toFixed(3);
+        input_f2 = parseFloat(document.getElementById(el_id2).value);
+        cmd.threshold = input_f2;
         
         if (input_f > maxVal) {
             e4PtConfirm(label + 's over ' + maxVal + ' are not supported. Value will be set to ' + maxVal,
@@ -1790,6 +1852,32 @@ define(function(require, exports, module) {
                       return;
                   }
               });
+        } else if (input_f2 > maxVal2) {
+            e4PtConfirm(label2 + 's over ' + maxVal2 + ' are not supported. Value will be set to ' + maxVal2,
+              function(buttonIndex) {
+                  if (buttonIndex==1) {//OK
+                      input_f2 = maxVal2;
+                      document.getElementById(el_id2).value = input_f2.toFixed(3);
+                      cmd.threshold = input_f2;
+                      override_measurement_rate(cmd);
+                  } else if (buttonIndex==2) {//Cancel
+                      document.getElementById(el_id2).value = '';
+                      return;
+                  }
+              });
+        } else if (input_f2 < minVal2) {
+            e4PtConfirm(label2 + 's below ' + minVal2 + ' are not supported. Value will be set to ' + minVal2,
+              function(buttonIndex) {
+                  if (buttonIndex==1) {//OK
+                      input_f2 = minVal2;
+                      document.getElementById(el_id2).value = input_f2.toFixed(3);
+                      cmd.threshold = input_f2;
+                      override_measurement_rate(cmd);
+                  } else if (buttonIndex==2) {//Cancel
+                      document.getElementById(el_id2).value = '';
+                      return;
+                  }
+              });
         } else {
             override_measurement_rate(cmd);
         }
@@ -1800,7 +1888,7 @@ define(function(require, exports, module) {
         messaging.sendMessage({args:[cmd]});
         messaging.sendMessage({args:[{command:'set_manual_override',value:true}]});
         setSpanProperties($("#MEASUREMENT_OVERRIDE_MESSAGE"), "MANUAL OVERRIDE", 'yellow');
-        setSpanProperties($("#MEASUREMENT_OVERRIDE_MESSAGE_2"), "MANUAL<br/>OVERRIDE<br/>" + cmd.rate.toFixed(3) + "kHz", 'yellow');
+        setSpanProperties($("#MEASUREMENT_OVERRIDE_MESSAGE_2"), "OVERRIDE<br/>" + cmd.rate.toFixed(3) + "kHz<br/>" + cmd.threshold.toFixed(3) + "%", 'yellow');
     }
     
     function displayGoButton() {
@@ -1990,13 +2078,13 @@ define(function(require, exports, module) {
     }
 
     // unused, was called on SENSOR_STAGE change event
-    function setup_data_collection(update_position) {
+    /*function setup_data_collection(update_position) {
         current_stage_index = document.getElementById("SENSOR_STAGE").selectedIndex;
         current_stage = current_frame_data['stage'][current_stage_index];
         current_position_index = document.getElementById("SENSOR_POSITION").selectedIndex;
         current_position = current_frame_data['position'][current_stage][current_position_index];
         setup_data_collection_page("", "", update_position);
-    }
+    }*/
 
     function confirm_reset_data_collection() {
         e4PtConfirm("Are you sure you want to clear all data on this page?",
@@ -2027,8 +2115,6 @@ define(function(require, exports, module) {
         //charting.clearChartData(document.getElementById('DATA_PLOT'));
         charting.clearChartData(document.getElementById('DATA_PLOT2'));
         document.getElementById("DATA_PLOT2").innerHTML = "";
-        charting.clearChartData(document.getElementById('DATA_PLOT3'));
-        document.getElementById("DATA_PLOT3").innerHTML = "";
     }
 
     function b64toBlob(b64Data, contentType, sliceSize) {
@@ -2159,7 +2245,7 @@ define(function(require, exports, module) {
         });
     }
 
-    function fileSaveCallback() {
+    function fileSaveCallback(boolVal) {
         //console.log("@fileSaveCallback");
     }
 
@@ -2952,7 +3038,13 @@ define(function(require, exports, module) {
                 }
                 
                 sensorSettings.set('sensor_selection', msg.sensor_selection);
-                document.getElementById("SENSOR_SELECTION").value = sensorSettings.get('sensor_selection');
+                if (['SHORT', 'LONG', 'PROTOTYPE', 'CUSTOM'].includes(sensorSettings.get('sensor_selection'))) {
+                    document.getElementById("SENSOR_SELECTION").value = sensorSettings.get('sensor_selection');
+                } else {
+                    // sensor name read from controller
+                    console.log("sensor name was read from controller, using CUSTOM");
+                    document.getElementById("SENSOR_SELECTION").value = 'CUSTOM';
+                }
                 
                 document.getElementById("SENSOR_LENGTH").value = sensorSettings.parseAndSetSensorValue('sensor_length', msg.sensor_length);
                 
@@ -3880,7 +3972,7 @@ define(function(require, exports, module) {
                     if (detailKeys[key] == pos) {
                         //console.log("Found Position");
                         var caseThck = current_frame_data.stage_info[stageKey][pos][3];
-                        if ((casing_thickness > (caseThck - 0.05)) && (casing_thickness < (caseThck + 0.05))) {
+                        if ((casing_thickness >= (caseThck - 0.05)) && (casing_thickness <= (caseThck + 0.05))) {
                             //console.log("For: position =", position, "; casing_thickness =", casing_thickness);
                             console.log("Found:", stageKey, ";", detailKeys[key], ";", caseThck);
                             details["blade_width"] = current_frame_data.stage_info[stageKey].blade_width;
@@ -3926,6 +4018,7 @@ define(function(require, exports, module) {
         console.log("intensity threshold:", E4PTdata.intensity_threshold + "%");
         console.log("spacer thickness:", E4PTdata.spacer_thickness + "in");
         console.log("casing thickness:", E4PTdata.casing_thickness + "in");
+        console.log("units:", E4PTdata.units);
         // Only update the clearance(s) info if we have all the data to do so.
         if (current_frame_data['position'] != null) {
             let clearance_f = parseFloat(E4PTdata.clearance);

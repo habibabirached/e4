@@ -8,9 +8,9 @@
 
 #import "SensorSettings.h"
 
-@interface SensorSettings ()
+/*@interface SensorSettings ()
 @property (strong, nonatomic) NSString* name;
-@end
+@end*/
 
 @implementation SensorSettings
 

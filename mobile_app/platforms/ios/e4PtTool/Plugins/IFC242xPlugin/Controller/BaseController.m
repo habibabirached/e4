@@ -17,6 +17,7 @@
     NSTimeInterval startTime;
     NSRegularExpression *promptRegex;
     NSRegularExpression *mrRegex;
+    NSRegularExpression *sensorNameRegex;
     NSRegularExpression *sensorParamRegex;
     BOOL useSerialBuffer;
     BOOL useSensorParams;
@@ -39,6 +40,7 @@
         self->telnetCmds = [NSMutableArray new];
         self->promptRegex = [NSRegularExpression regularExpressionWithPattern:@"(\\-\\>)$" options:NSRegularExpressionCaseInsensitive error:nil];
         self->mrRegex = [NSRegularExpression regularExpressionWithPattern:@"\\s(\\d+\\.\\d+)mm" options:NSRegularExpressionCaseInsensitive error:nil];
+        self->sensorNameRegex = [NSRegularExpression regularExpressionWithPattern:@"Name:\\s+(.*?)(?:$|\\n)" options:NSRegularExpressionCaseInsensitive error:nil];
         self->sensorParamRegex = [NSRegularExpression regularExpressionWithPattern:@":\\s+(\\d{8})(?:$|\\r\\n)" options:NSRegularExpressionAnchorsMatchLines error:nil];
         [self initialize];
     }
@@ -425,6 +427,12 @@
         [self->telnetCmds addObject:@"SENSORINFO\n"];
         [self sendTelnetCommand];
     } else {
+        [self->sensorNameRegex enumerateMatchesInString:self->buffer options:0 range:NSMakeRange(0, self->buffer.length) usingBlock:^(NSTextCheckingResult *match, NSMatchingFlags flags, BOOL *stop) {
+            if ([match numberOfRanges] > 1) {
+                self.settings.sensor.name = [self->buffer substringWithRange:[match rangeAtIndex:1]];
+                NSLog(@"Sensor name is %@", self.settings.sensor.name);
+            }
+        }];
         [self->mrRegex enumerateMatchesInString:self->buffer options:0 range:NSMakeRange(0, self->buffer.length) usingBlock:^(NSTextCheckingResult *match, NSMatchingFlags flags, BOOL *stop) {
             if ([match numberOfRanges] > 1) {
                 self.settings.sensor.mr = [[self->buffer substringWithRange:[match rangeAtIndex:1]] floatValue];
@@ -459,6 +467,7 @@
 
                     float smrMM = [[sensorParams substringFromIndex:4] floatValue] / 100.0;
 
+                    NSString* name = self.settings.sensor.name;
                     float mrMM = self.settings.sensor.mr;
 
                     // update sensor type based on length
@@ -471,6 +480,7 @@
                         self.settings.sensor = [SensorSettings SHORT];
                     }
                     // override defaults
+                    self.settings.sensor.name = name;
                     self.settings.sensor.length = lengthInches;
                     self.settings.sensor.smr = smrMM;
                     self.settings.sensor.mr = mrMM;

@@ -80,8 +80,8 @@
     if (self->controller.state == darkReferenceInProgress) {
         return; // Dark referencing is followed by data collection
     } else if (self->controller.state == setMeasurementRateInProgress) {
-        [self returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"Manager.processComplete: measurement rate set to %0.3f kHz", self->controller.settings.measurementRate]} keepOpen:YES];
-        [self returnPluginResponse:@{@"type":@"alert",@"message":[NSString stringWithFormat:@"Measurement rate set to %.3f kHz.", self->controller.settings.measurementRate]} keepOpen:YES];
+        [self returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"Manager.processComplete: measurement rate set to %0.3f kHz, intensity threshold set to %0.3f %%", self->controller.settings.measurementRate, self->controller.settings.intensityThreshold]} keepOpen:YES];
+        [self returnPluginResponse:@{@"type":@"alert",@"message":[NSString stringWithFormat:@"Measurement rate set to %.3f kHz.\nIntensity threshold set to %.3f %%", self->controller.settings.measurementRate, self->controller.settings.intensityThreshold]} keepOpen:YES];
         return;
     } else if (self->controller.state == setThresholdInProgress) {
         [self returnPluginResponse:@{@"type":@"log",@"message":[NSString stringWithFormat:@"Manager.processComplete: threshold set to %0.3f", self->controller.settings.intensityThreshold]} keepOpen:YES];
@@ -102,6 +102,10 @@
     // Disabled until further testing, this would apply offsetAdjustment and pointsBetweenBlades only for turbine measurements and not apply to acquisition via Get Data
     if (self->calibratedAcquire) {
         offsetAdjustment = [self->controller.settings.sensor calculateOffsetAdjustment:self->metaData.spacerThickness casingThickness:self->metaData.casingThickness];
+        if (offsetAdjustment < 0) {
+            NSLog(@"offsetAdjustment < 0: %f", offsetAdjustment);
+            [self returnPluginResponse:@{@"type":@"log",@"message":@"offsetAdjustment < 0"} keepOpen:YES];
+        }
         pointsBetweenBlades = [self->controller.settings calculatePointsBetweenBlades:self->metaData.tipDiameter forBladeWidth:self->metaData.bladeWidth forBladeCount:self->metaData.numberOfBlades];
     }
     return [self->postProcess computeClearance:measurementData bladeCount:self->metaData.numberOfBlades pointsBetweenBlades:pointsBetweenBlades usingAdjustmentFactor:offsetAdjustment];
