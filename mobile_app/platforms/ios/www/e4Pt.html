@@ -98,6 +98,28 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Plot -->
+        <div id="DATA_PLOT3_PAGE" class="container-fluid h-95 my-2">
+            <div class="card h-100">
+                <div class="card-header">
+                    <div class="row">
+                      <div class="col-auto me-auto pt-1">
+                        <h4>Data</h4>
+                      </div>
+                      <!-- <div class="col-auto">
+                          <button id="EXPORT_DATA_BUTTON" class="btn btn-primary" type="button">EXPORT DATA</button>
+                      </div> -->
+                      <div class="col-auto">
+                        <button id="DATA_PLOT3_CLOSE_BUTTON" type="button" class="btn btn-dark"><i class="fas fa-times"></i></button>
+                      </div>
+                    </div>
+                </div>
+                <div class="card-body h-100">
+                    <div id="DATA_PLOT3" class="h-100"></div>
+                </div>
+            </div>
+        </div>
 
         <!-- FRD PAGE -->
         <div id="FRD_PAGE" class="container-fluid my-2">
@@ -797,6 +819,7 @@
                     </div>
                   </div>
                 </div>
+              <!-- Panel below the measurements where user can see the data plot -->
               <div class="card-footer">
                   <div class="container-fluid">
                       <div id="DATA_PLOT2" class="h-100"></div>
@@ -1266,8 +1289,8 @@
               <div class="card-footer text-muted">
                   <div class="d-grid gap-2">
                       <div class="btn-group" role="group" aria-label="Measurement Buttons">
-                        <button id="CLEAR_DB_BUTTON" type="button" class="btn btn-danger">ERASE ALL</button>
-                        <span>&nbsp;</span>
+<!--                        <button id="CLEAR_DB_BUTTON" type="button" class="btn btn-danger">ERASE ALL</button>-->
+<!--                        <span>&nbsp;</span>-->
                         <button id="CLEAR_SELECTED_BUTTON" type="button" class="btn btn-danger">ERASE SELECTED</button>
                         <span>&nbsp;</span>
                         <button id="ARCHIVE_SELECTED_BUTTON" type="button" class="btn btn-primary">ARCHIVE SELECTED</button>
@@ -1318,8 +1341,8 @@
               <div class="card-footer text-muted">
                   <div class="d-grid gap-2">
                       <div class="btn-group" role="group" aria-label="Measurement Buttons">
-                        <button id="DELETE_ARCHIVE_DB_BUTTON" type="button" class="btn btn-danger">ERASE ALL</button>
-                        <span>&nbsp;</span>
+<!--                        <button id="DELETE_ARCHIVE_DB_BUTTON" type="button" class="btn btn-danger">ERASE ALL</button>-->
+<!--                        <span>&nbsp;</span>-->
                         <button id="DELETE_SELECTED_ARCHIVE_BUTTON" type="button" class="btn btn-danger">ERASE SELECTED</button>
                         <span>&nbsp;</span>
                         <button id="UNARCHIVE_SELECTED_BUTTON" type="button" class="btn btn-primary">UNARCHIVE SELECTED</button>

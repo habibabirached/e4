@@ -333,17 +333,17 @@ define(function(require, exports, module) {
             record_casing_thickness();
             confirm_new_or_continue();
         }, {passive: true});
-        document.getElementById("CLEAR_DB_BUTTON").addEventListener('click', function() {
-            e4PtConfirm("Are you sure you want to clear all data from this database?",
-              function(idx) {
-                if (idx == 1) {
-                  console.log("Clearing database.");
-                  clearDB();
-                } else {
-                  console.log("Database clear was cancelled.");
-                }
-              });
-        }, {passive: true});
+//        document.getElementById("CLEAR_DB_BUTTON").addEventListener('click', function() {
+//            e4PtConfirm("Are you sure you want to clear all data from this database?",
+//              function(idx) {
+//                if (idx == 1) {
+//                  console.log("Clearing database.");
+//                  clearDB();
+//                } else {
+//                  console.log("Database clear was cancelled.");
+//                }
+//              });
+//        }, {passive: true});
         document.getElementById("CLEAR_SELECTED_BUTTON").addEventListener('click', function() {
             e4PtConfirm("Are you sure you want to delete the selected records?",
               function(idx) {
@@ -366,17 +366,17 @@ define(function(require, exports, module) {
                 }
               });
         }, {passive: true});
-        document.getElementById("DELETE_ARCHIVE_DB_BUTTON").addEventListener('click', function() {
-            e4PtConfirm("Are you sure you want to clear and delete all data from this archive and local drive?",
-              function(idx) {
-                if (idx == 1) {
-                  console.log("Clearing archive.");
-                  clearArchive();
-                } else {
-                  console.log("Archive clear was cancelled.");
-                }
-              });
-        }, {passive: true});
+//        document.getElementById("DELETE_ARCHIVE_DB_BUTTON").addEventListener('click', function() {
+//            e4PtConfirm("Are you sure you want to clear and delete all data from this archive and local drive?",
+//              function(idx) {
+//                if (idx == 1) {
+//                  console.log("Clearing archive.");
+//                  clearArchive();
+//                } else {
+//                  console.log("Archive clear was cancelled.");
+//                }
+//              });
+//        }, {passive: true});
         document.getElementById("DELETE_SELECTED_ARCHIVE_BUTTON").addEventListener('click', function() {
             e4PtConfirm("Are you sure you want to delete the selected archive records?",
               function(idx) {
@@ -463,12 +463,28 @@ define(function(require, exports, module) {
                 $("#SENSOR_SETUP_PAGE").fadeIn();
             }
             // disabled since showing data on plot2
-            /* else if (fromDataCollectionPage) {
+            /*else if (fromDataCollectionPage) {
                 $("#TURBINE_SETUP_PAGE").fadeIn();
                 fromDataCollectionPage = false;
             }*/
             fromGetData = false;
             fromSensorSetupPage = false;
+        }, {passive: true});
+        
+        // Show the data plot 2 as a popup in the data collection page
+        document.getElementById("DATA_PLOT3_CLOSE_BUTTON").addEventListener('click', function() {
+            $("#DATA_PLOT3_PAGE").fadeOut();
+            
+            // show the plot in the bottom of the page
+            $("#DATA_PLOT2").fadeIn();
+            
+            // re-open previous page
+            if (fromDataCollectionPage) {
+                $("#TURBINE_SETUP_PAGE").fadeIn();
+                fromDataCollectionPage = false;
+            }
+            fromGetData = false;
+            
         }, {passive: true});
         document.getElementById("FRD_CLOSE_BUTTON").addEventListener('click', function() {
             $("#FRD_PAGE").fadeOut();
@@ -739,6 +755,8 @@ define(function(require, exports, module) {
         $("#FILE_CHOOSER_PAGE").fadeOut();
         $("#DATA_DETAILS_PAGE").fadeOut();
         $("#LOCATION_PAGE").fadeOut();
+        
+        $("#DATA_PLOT3_PAGE").fadeOut();
     }
 
     function gotFS(fileSystem) {
@@ -1674,6 +1692,11 @@ define(function(require, exports, module) {
         //charting.clearChartData(document.getElementById('DATA_PLOT'));
         charting.clearChartData(document.getElementById('DATA_PLOT2'));
         document.getElementById("DATA_PLOT2").innerHTML = "";
+        
+        // plot from popup
+        charting.clearChartData(document.getElementById('DATA_PLOT3'));
+        document.getElementById("DATA_PLOT3").innerHTML = "";
+        
     }
 
     function updateSensorHeaderMessage() {
@@ -2115,6 +2138,10 @@ define(function(require, exports, module) {
         //charting.clearChartData(document.getElementById('DATA_PLOT'));
         charting.clearChartData(document.getElementById('DATA_PLOT2'));
         document.getElementById("DATA_PLOT2").innerHTML = "";
+        
+        // popup plot
+        charting.clearChartData(document.getElementById('DATA_PLOT3'));
+        document.getElementById("DATA_PLOT3").innerHTML = "";
     }
 
     function b64toBlob(b64Data, contentType, sliceSize) {
@@ -2587,6 +2614,11 @@ define(function(require, exports, module) {
         //console.log("@clearance_override_save");
         charting.clearChartData(document.getElementById('DATA_PLOT2'));
         document.getElementById("DATA_PLOT2").innerHTML = "";
+        
+        // popup plot
+        charting.clearChartData(document.getElementById('DATA_PLOT3'));
+        document.getElementById("DATA_PLOT3").innerHTML = "";
+        
         clearanceOverrideModal.hide();
         var clearanceOverrideName = document.getElementById("CLEARANCE_OVERRIDE_NAME").value;
         var clearanceOverrideSSO = document.getElementById("CLEARANCE_OVERRIDE_SSO").value;
@@ -3802,6 +3834,16 @@ define(function(require, exports, module) {
           plot_non_calibrated_acquire();
         }
         advance_position();
+          
+        // show the plot but keep the DATA COLLECTION active in the background
+        if (fromDataCollectionPage) {
+          //fadeOutAll();
+          $("#TURBINE_SETUP_PAGE").fadeOut();
+          //$("#DATA_PLOT_PAGE").fadeIn();
+          $("#DATA_PLOT3_PAGE").fadeIn();
+          //fromGetData = false;
+          fromDataCollectionPage = true;
+        }
       } catch (error) {
         console.log(error);
       }
@@ -3919,6 +3961,11 @@ define(function(require, exports, module) {
         //charting.clearChartData(document.getElementById('DATA_PLOT'));
         charting.clearChartData(document.getElementById('DATA_PLOT2'));
         document.getElementById("DATA_PLOT2").innerHTML = "";
+        
+        // popup plot
+        charting.clearChartData(document.getElementById('DATA_PLOT3'));
+        document.getElementById("DATA_PLOT3").innerHTML = "";
+        
         if (messaging.usesWebSocket()) {
             setIndicatorColor('yellow');
         }
@@ -4194,6 +4241,9 @@ define(function(require, exports, module) {
       let chartFilename = charting.createSavedChartFilename(E4PTdata.date.substring(2), E4PTdata.serial_number, current_stage, current_position.substring(0,1));
       //charting.renderChart(chartConfig, 'DATA_PLOT', chartFilename, writeToFile);
       charting.renderChart(chartConfig, 'DATA_PLOT2', chartFilename, writeToFile);
+    
+      // poppup plot
+      charting.renderChart(chartConfig, 'DATA_PLOT3', chartFilename, writeToFile);
     }
 
     function loadExternalFile(dir, filename) {
