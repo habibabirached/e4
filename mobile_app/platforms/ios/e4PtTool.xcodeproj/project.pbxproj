@@ -419,7 +419,7 @@
 				TargetAttributes = {
 					1D6058900D05DD3D006BFB54 = {
 						DevelopmentTeam = H62B4T98ND;
-						ProvisioningStyle = Manual;
+						ProvisioningStyle = Automatic;
 						SystemCapabilities = {
 							com.apple.Push = {
 								enabled = 1;
@@ -585,8 +585,8 @@
 				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
-				CODE_SIGN_IDENTITY = "iPhone Distribution";
-				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 0.2.8.29;
 				DEVELOPMENT_TEAM = H62B4T98ND;
@@ -603,9 +603,9 @@
 					"$(inherited)",
 					"\"$(SRCROOT)/e4PtTool/Plugins/IFC242xPlugin\"",
 				);
-				MARKETING_VERSION = 0.2.8.29;
+				MARKETING_VERSION = 0.2.8.32;
 				PRODUCT_NAME = e4PtTool;
-				PROVISIONING_PROFILE_SPECIFIER = "XCBOT e4PtTool ENT Dist Profile";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -619,7 +619,8 @@
 				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
-				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = YES;
 				CURRENT_PROJECT_VERSION = 0.2.8.29;
 				DEVELOPMENT_TEAM = H62B4T98ND;
@@ -634,9 +635,9 @@
 					"$(inherited)",
 					"\"$(SRCROOT)/e4PtTool/Plugins/IFC242xPlugin\"",
 				);
-				MARKETING_VERSION = 0.2.8.29;
+				MARKETING_VERSION = 0.2.8.32;
 				PRODUCT_NAME = e4PtTool;
-				PROVISIONING_PROFILE_SPECIFIER = "XCBOT e4PtTool ENT Dist Profile";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
