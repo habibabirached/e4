@@ -148,3 +148,48 @@ footer {
 #overlay {
     z-index: 5000;
 }
+
+/* Modify dark backgrounds to Evergreen */
+.bg-dark {
+    background-color: #005E60 !important; /* Evergreen */
+}
+
+.text-dark {
+    color: #005E60 !important; /* Evergreen text */
+}
+
+.bg-secondary {
+    background-color: #dbdcdc !important; /* Lighter green for contrast */
+}
+
+.navbar-dark .navbar-brand, .navbar-dark .navbar-text {
+    color: #66CDAA !important; /* Adjust navbar text to lighter green */
+}
+
+/* Change buttons to green */
+/* Change main buttons to rgb(1,121,111) */
+.btn-primary {
+    background-color: rgb(1, 121, 111) !important; /* Main button color */
+    border-color: rgb(1, 121, 111) !important;
+}
+
+.btn-secondary {
+    background-color: rgb(1, 121, 111) !important; /* Secondary button color */
+    border-color: rgb(1, 121, 111) !important;
+}
+
+
+/* Adjust badge color to Evergreen */
+.badge.bg-secondary {
+    background-color: #228B22 !important; /* Darker green badge */
+}
+
+.badge.bg-light {
+    background-color: #66CDAA !important; /* Light green */
+    color: #005E60 !important; /* Evergreen text */
+}
+
+/* Progress bar color */
+.progress-bar {
+    background-color: #66CDAA !important; /* Lighter green progress bar */
+}
