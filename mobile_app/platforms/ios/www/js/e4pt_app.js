@@ -44,6 +44,8 @@ define(function(require, exports, module) {
     var UPDATE_SETTINGS_PASSWORD = "Gr0undH0g";
     var MAX_STR_LEN = 64;
     var FRD_FILE = 'www/FRD.pdf';
+    var CROSS_SECTION_FILE_DIR = 'www/img/cross_sections/';
+    var CROSS_SECTION_FILE = CROSS_SECTION_FILE_DIR+'Frame_6.pdf';
     var DEFAULT_SPACER_FILE = 'img/spacers/Unknown.gif';
     var MIN_RPM = 0.5;
     var MAX_RPM = 15.0;
@@ -915,13 +917,20 @@ define(function(require, exports, module) {
         // frame image
         let locationImage = document.getElementById("LOCATION_IMAGE");
         let imageStr = "";
-        if (typeof current_frame_data.image !== 'undefined') {
-            let frameImageName = 'img/frames/' + current_frame_data.image + '.png';
-            imageStr = '<img class="img-fluid" src="' + frameImageName + '">';
+        if (typeof current_frame_data.cross_section !== 'undefined') {
+            CROSS_SECTION_FILE = CROSS_SECTION_FILE_DIR+current_frame_data.cross_section;
+            imageStr =  '<button id="SHOW_CROSS_SECTION" class="btn btn-primary" type="button"> Click here to view the cross section </button>'
+            //imageStr = '<img class="img-fluid" src="' + frameImageName + '">';
+
         } else {
             imageStr += '<h5><span class="badge bg-warning text-dark">No Frame Image</span></h5>';
         }
         locationImage.innerHTML = imageStr;
+
+        document.getElementById("SHOW_CROSS_SECTION").addEventListener('click', function() {
+            show_cross_section();
+        }, {passive: true});
+
         // stage images
         let tabs = document.getElementById("LOCATION_TABS");
         let content = document.getElementById("LOCATION_CONTENT");
@@ -1376,6 +1385,19 @@ define(function(require, exports, module) {
                 },
                 success : function () {
                     console.log('FRD file opened successfully');
+                }
+            }
+        );
+    }
+
+    function show_cross_section() {
+        console.log('show_cross_section() called with ',CROSS_SECTION_FILE);
+        fileviewer2.open(appDir + CROSS_SECTION_FILE, {
+                error : function(e) {
+                    console.log('Cross section file error: status=' + e.status + ', message=' + e.message);
+                },
+                success : function () {
+                    console.log('Cross section file opened successfully');
                 }
             }
         );
