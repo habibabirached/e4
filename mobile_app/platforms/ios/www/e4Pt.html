@@ -155,6 +155,400 @@
 
                                   <div class="accordion" id="accordionTools">
 
+                                    <div class="accordion-item"> <!-- High Level -->
+                                      <h2 class="accordion-header" id="headingToolsFour">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseToolsFour" aria-expanded="true" aria-controls="collapseToolsFour">
+                                          High Level 
+                                        </button>
+                                      </h2>
+                                      <div id="collapseToolsFour" class="accordion-collapse collapse" aria-labelledby="headingToolsFour" data-bs-parent="#accordionTools">
+                                        <div class="accordion-body">
+                                          <ol>
+                                            <li>Cases requiring Outage Tooling be informed and ER case submitted 
+                                              <ol>
+                                                <li>Failed OP Check, after performing steps outlined in 5.4.7.14 </li>
+                                                <li>Stamped Casing thickness producing error in app upon selecting “Collect” as outlined in 6.1.4.6  </li>
+                                                <li>Any Manually overwritten clearance values as outlined in 5.4.2Any failed troubleshooting steps in section 7 </li>
+                                              </ol>
+                                            </li>
+                                            <li>E4 Point Procedure – High Level Overview 
+                                              <ol>
+                                                <li>Pre Set-Up – tool inspection, verify GT assembly configuration. Full procedure can be found in Section 5.4<br/> 
+                                                    The upper GT cases are installed and fully torqued – All cases must be installed and tensioned including the mini-case. </li>
+                                                <li>Set up base station </li>
+                                                <li>See FRD-T-0507-01 for full Casing plug removal procedure  </li>
+                                                <li>Remove all clearance hole plugs, including inner casing plugs and clean area around plug hole to ensure no debris, anti-seize or corrosion is on the flat surface the stand off/spacer attaches too.  This will ensure proper magnetic mating of the stand offs and accurate measurements.  Any Debris between the stand off and casing will directly affect the measurement accuracy.  
+                                                   <br/>For Opening Clearances it is required that the clearance probe holes are cleaned of corrosion prior to rotating the rotor. Cleaning may require a bottle brush, air, and in extreme corrosion instances a drill per FE/TFA discretion.  
+                                                </li>
+                                                <li>Ensure rotor is on Turning gear or otherwise rotating with Lift Oil if required. Obtain shaft RPM. A smooth rotor rotation is required, system is designed to work with a rotor rotation between  0.5 and 15 RPM 
+                                                  <ol>
+                                                    <li>Shaft RPM can be determined manually, from Customer Control Room, or via TRACC scan app (FRD-T-2017-1055) </li>
+                                                    <li>If determining RPM via the app a manual verification of RPM is also needed </li>
+                                                  </ol>
+                                                </li>
+                                                <li>Install stage and frame specific spacer into clearance probe holes and verify NO sensor interference with turbine blades by inserting the dummy probe while rotor is rotating..  
+                                                  <ol>
+                                                    <li>Dummy Probe should be slightly longer (0.25”-0.33”) than the actual sensor and whole. Do not use a broken dummy probe. Intact probe will have hole features on the end of the probe </li>
+                                                    <li>See Figure 15 Dummy Probe Length Check with Sensor for example of whole Dummy Probe compared to Sensor.  </li>
+                                                    <li>Ensure rotor rotates through multiple airfoils before removing dummy probe to ensure no interference with the turbine blades </li>
+                                                  </ol>
+                                                  <br/>
+                                                  <figure class="text-center mt-2">
+                                                      <img class="figure-img img-fluid" width="620" src="img/frd/dummy_probe_check.png"/>
+                                                  </figure>
+                                                  <div style="text-align: center; font-weight:bold;"> Dummy Probe Length Check with Sensor </div>
+                                                  <br/>
+                                                  <figure class="text-center mt-2">
+                                                    <img class="figure-img img-fluid" width="100" src="img/frd/warning.png"/>
+                                                  </figure>
+                                                  <div style="text-align: center; font-weight:bold;"> WARNING! </div>
+                                                  <br/>
+                                                  Failure to check gross clearance with the Dummy Probe can result in sensor decapitation and FOD introduction to the turbine.
+                                                  <br/>
+                                                  <figure class="text-center mt-2">
+                                                    <img class="figure-img img-fluid" width="100" src="img/frd/warning.png"/>
+                                                  </figure>
+                                                </li>
+                                                <li>Install sensor into spacer </li>
+                                                <li>Follow e4 Point App process for measuring a turbine for specific stage and location </li>
+                                                <li>See section 5.4 for pre-set up and use instructions </li>
+                                                <li>When data has been recorded for current location, measurement can then be performed at next location on the same stage by performing the above procedure from step 5.2.5 </li>
+                                                <li>When all locations for current stage have been measured repeat procedure for next stage starting with step 5.2.5 </br>
+                                                    The correct spacer must be used for each stage and location. Failure to use correct spacer can cause sensor decapitation, FOD introduction to the turbine, or failure to accurately measure clearances 
+                                                </li>
+                                                <li>When all stages and locations have been measured load all raw data files to GE Vernova Box using “Export” button as shown in Figure 29 and section 6.2 </li>
+                                                <li>Generate the customer report and load to GE Vernova Box and send to customer if applicable using “Report” button as shown in Figure 29 and section 6.2 </li>
+                                                <li>Disassemble tool and package back into appropriate containers </li>
+                                                
+                                              </ol>
+                                            </li>
+                                          </ol>
+                                        </div>
+                                      </div>
+                                    </div> <!-- High Level  -->
+
+                                    <div class="accordion-item"> <!--Tools, Equipment and Materials -->
+                                      <h2 class="accordion-header" id="headingToolsEight">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseToolsEight" aria-expanded="true" aria-controls="collapseToolsEight">
+                                         Tools, Equipment and Materials 
+                                        </button>
+                                      </h2>
+                                      <div id="collapseToolsEight" class="accordion-collapse collapse" aria-labelledby="headingToolsEight" data-bs-parent="#accordionTools">
+                                        <div class="accordion-body">
+                                          <ol>
+                                            <li>Tool Storage and operation Temperature requirements 
+                                              <ol>
+                                                <li>Operating Temperature 
+                                                  <br/>
+                                                  <table style="border: 1px solid black;">
+                                                    <tr style="border: 1px solid black;">
+                                                      <th style="border: 1px solid black;">Component</th>
+                                                      <th style="border: 1px solid black;">Temperature Range</th>
+                                                    </tr>
+                                                    <tr style="border: 1px solid black;">
+                                                      <td style="border: 1px solid black;">Controller </td>
+                                                      <td style="border: 1px solid black;">5 to +50 °C (+41 to +122 °F) </td>
+                                                    </tr>
+                                                    <tr style="border: 1px solid black;">
+                                                      <td style="border: 1px solid black;">Sensor</td>
+                                                      <td style="border: 1px solid black;">5 to +70 °C (+41 to +158 °F) </td>
+                                                    </tr>
+                                                    <tr style="border: 1px solid black;">
+                                                      <td style="border: 1px solid black;">Humidity </td>
+                                                      <td style="border: 1px solid black;">5 - 95 % (non-condensing) </td>
+                                                    </tr>
+                                                  </table>
+                                                </li>
+                                                <li>
+                                                  Storage Requirements
+                                                  <br/>
+                                                  <table style="border: 1px solid black;">
+                                                    <tr style="border: 1px solid black;">
+                                                      <td style="border: 1px solid black;">Temperature </td>
+                                                      <td style="border: 1px solid black;">-20 to +70 °C (-4 to +158 °F)  </td>
+                                                    </tr>
+                                                    <tr style="border: 1px solid black;">
+                                                      <td style="border: 1px solid black;">Humidity </td>
+                                                      <td style="border: 1px solid black;">5 - 95 % (non-condensing) </td>
+                                                    </tr>
+                                                  </table>
+                                                </li>
+                                              </ol>
+                                            </li>
+                                            <li>Tools, Equipment, and Materials
+                                              <ol>
+                                                <li>Tools List (covered in this document) from 134T1076 and 134T1086 (Long and Short sensor kit assemblies) 
+                                                  <br/>
+                                                  <figure class="text-center mt-2">
+                                                    <img class="figure-img img-fluid" width="320" src="img/frd/table_kit_spacer.png"/>
+                                                  </figure>
+                                                  <div style="text-align: center; font-weight:bold;">Kit and spacer applicability </div>
+                                                  <br/>
+                                                </li>
+                                                <li>
+                                                  <br/>
+                                                  <figure class="text-center mt-2">
+                                                    <img class="figure-img img-fluid" width="320" src="img/frd/7FAE_5.1.png"/>
+                                                  </figure>
+                                                  <div style="text-align: center; font-weight:bold;">840-90-04 7FA+e Spacers and Dummy Probe </div>
+                                                  <br/>
+                                                </li>
+                                                <li>
+                                                  <br/>
+                                                  <figure class="text-center mt-2">
+                                                    <img class="figure-img img-fluid" width="320" src="img/frd/9FA_spacers_5.1.png"/>
+                                                  </figure>
+                                                  <div style="text-align: center; font-weight:bold;"> 840-90-07 9FA Spacers and Dummy Probe </div>
+                                                  <br/>
+                                                </li>
+                                                <li>
+                                                  <br/>
+                                                  <figure class="text-center mt-2">
+                                                    <img class="figure-img img-fluid" width="320" src="img/frd/9FB_5.1.png"/>
+                                                  </figure>
+                                                  <div style="text-align: center; font-weight:bold;">840-90-11 9FB Spacers and Dummy Probe </div>
+                                                  <br/>
+                                                </li>
+                                                <li>
+                                                  <br/>
+                                                  <figure class="text-center mt-2">
+                                                    <img class="figure-img img-fluid" width="320" src="img/frd/9FB_5.1.png"/>
+                                                  </figure>
+                                                  <div style="text-align: center; font-weight:bold;">840-90-11 9FB Spacers and Dummy Probe </div>
+                                                  <br/>
+                                                </li>
+                                                <li>
+                                                  <br/>
+                                                  <figure class="text-center mt-2">
+                                                    <img class="figure-img img-fluid" width="320" src="img/frd/7FB_5.1.png"/>
+                                                  </figure>
+                                                  <div style="text-align: center; font-weight:bold;"> 840-90-12 7FB Spacers and Dummy Probe </div>
+                                                  <br/>
+                                                </li>
+                                                <li>
+                                                  <br/>
+                                                  <figure class="text-center mt-2">
+                                                    <img class="figure-img img-fluid" width="320" src="img/frd/6FA_5.1.png"/>
+                                                  </figure>
+                                                  <div style="text-align: center; font-weight:bold;">840-90-13 6FA Spacers and Dummy Probe </div>
+                                                  <br/>
+                                                </li>
+                                                <li>
+                                                  <br/>
+                                                  <figure class="text-center mt-2">
+                                                    <img class="figure-img img-fluid" width="320" src="img/frd/6B_5.1.png"/>
+                                                  </figure>
+                                                  <div style="text-align: center; font-weight:bold;">840-90-14 6B Spacer and Dummy Probe </div>
+                                                  <br/>
+                                                </li>
+                                                <li>
+                                                  <br/>
+                                                  <figure class="text-center mt-2">
+                                                    <img class="figure-img img-fluid" width="320" src="img/frd/9HA02_rotor_clearance_kit.png"/>
+                                                  </figure>
+                                                  <div style="text-align: center; font-weight:bold;"> 9HA.02 Rotor Clearance Kit </div>
+                                                  <br/>
+                                                </li>
+                                                <li>
+                                                  <br/>
+                                                  <figure class="text-center mt-2">
+                                                    <img class="figure-img img-fluid" width="620" src="img/frd/9HA02_rotor_clearance_table.png"/>
+                                                  </figure>
+                                                  <div style="text-align: center; font-weight:bold;">305T6369 9HA.02 Rotor Clearance measurement kit, with 305T6365 </div>
+                                                  <br/>
+                                                </li>
+                                                <li>
+                                                  <br/>
+                                                  <figure class="text-center mt-2">
+                                                    <img class="figure-img img-fluid" width="320" src="img/frd/9HA01_rotor_clearance_kit.png"/>
+                                                  </figure>
+                                                  <div style="text-align: center; font-weight:bold;"> 9HA.01 Rotor Clearance Kit </div>
+                                                  <br/>
+                                                </li>
+                                                <li>
+                                                  <br/>
+                                                  <figure class="text-center mt-2">
+                                                    <img class="figure-img img-fluid" width="620" src="img/frd/9HA01_rotor_clearance_table.png"/>
+                                                  </figure>
+                                                  <div style="text-align: center; font-weight:bold;">305T6368 9HA.01 Rotor Clearance measurement kit </div>
+                                                  <br/>
+                                                </li>
+                                                <li>
+                                                  <br/>
+                                                  <figure class="text-center mt-2">
+                                                    <img class="figure-img img-fluid" width="320" src="img/frd/7HA01_rotor_clearance_kit.png"/>
+                                                  </figure>
+                                                  <div style="text-align: center; font-weight:bold;"> 7HA.01 Rotor Clearance Kit </div>
+                                                  <br/>
+                                                </li>
+                                                <li>
+                                                  <br/>
+                                                  <figure class="text-center mt-2">
+                                                    <img class="figure-img img-fluid" width="620" src="img/frd/7HA01_rotor_clearance_table.png"/>
+                                                  </figure>
+                                                  <div style="text-align: center; font-weight:bold;">305T6367 7HA.01 Rotor Clearance measurement kit </div>
+                                                  <br/>
+                                                </li>
+                                                <li>
+                                                  <br/>
+                                                  <figure class="text-center mt-2">
+                                                    <img class="figure-img img-fluid" width="320" src="img/frd/7HA02_rotor_clearance_kit.png"/>
+                                                  </figure>
+                                                  <div style="text-align: center; font-weight:bold;"> 7HA.02 Rotor Clearance Kit </div>
+                                                  <br/>
+                                                </li>
+                                                <li>
+                                                  <br/>
+                                                  <figure class="text-center mt-2">
+                                                    <img class="figure-img img-fluid" width="620" src="img/frd/7HA02_rotor_clearance_table.png"/>
+                                                  </figure>
+                                                  <div style="text-align: center; font-weight:bold;"> 305T6356 7HA.02 Rotor Clearance measurement kit, with 610-11-00-62 </div>
+                                                  <br/>
+                                                </li>
+                                                <li>
+                                                  <br/>
+                                                  <figure class="text-center mt-2">
+                                                    <img class="figure-img img-fluid" width="320" src="img/frd/7HA03_rotor_clearance_kit.png"/>
+                                                  </figure>
+                                                  <div style="text-align: center; font-weight:bold;"> 7HA.03 Rotor Clearance Kit </div>
+                                                  <br/>
+                                                </li>
+                                                <li>
+                                                  <br/>
+                                                  <figure class="text-center mt-2">
+                                                    <img class="figure-img img-fluid" width="620" src="img/frd/7HA03_rotor_clearance_table.png"/>
+                                                  </figure>
+                                                  <div style="text-align: center; font-weight:bold;"> 305T6366 7HA.03 Rotor Clearance measurement kit with 100F0017F0036  </div>
+                                                  <br/>
+                                                </li>
+                                                <li>
+                                                  <br/>
+                                                  <figure class="text-center mt-2">
+                                                    <img class="figure-img img-fluid" width="620" src="img/frd/controller_kit.png"/>
+                                                  </figure>
+                                                  <div style="text-align: center; font-weight:bold;"> Controller kit connections (Long Sensor Kit Shown)  </div>
+                                                  <br/>
+                                                </li>
+                                                <li>
+                                                  <br/>
+                                                  <figure class="text-center mt-2">
+                                                    <img class="figure-img img-fluid" width="620" src="img/frd/controller_box_components.png"/>
+                                                  </figure>
+                                                  <div style="text-align: center; font-weight:bold;"> Controller Box Components  </div>
+                                                  <br/>
+                                                </li>
+                                                <li>Cleaning Instructions: 
+                                                  <ol>
+                                                    <li>The base station, sensor, and cabling are NOT considered submergible or waterproof.  To clean the external features and spacers, use a lint free cloth dampened with water. Wipe residue free and wipe excess liquid.  Do not close lid to case before surfaces are dry. </li>
+                                                    <li>Dry Cleaning: wipe the face of the sensor lens with an optics anti-static lint-free brush or cloth or blow with canned electronics grade dehumidified, clean, oil-free compressed air. </li>
+                                                    <li>Wet Cleaning: Use a clean soft, lint-free cloth or lens cleaning paper with pure alcohol (50% isopropyl) </li>
+                                                  </ol>
+                                                </li>
+                                              </ol>
+                                            </li> 
+                                          </ol>
+                                        </div>
+                                      </div>
+                                    </div> <!--Tools, Equipment and Materials  -->
+
+                                    <div class="accordion-item"> <!-- Gas Turbine Setup -->
+                                      <h2 class="accordion-header" id="headingToolsThree">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseToolsThree" aria-expanded="true" aria-controls="collapseToolsThree">
+                                          Gas Turbine Setup 
+                                        </button>
+                                      </h2>
+                                      <div id="collapseToolsThree" class="accordion-collapse collapse" aria-labelledby="headingToolsThree" data-bs-parent="#accordionTools">
+                                        <div class="accordion-body">
+                                          <ol>
+                                            <li>
+                                              Gas Turbine Setup  
+                                              <ol>
+                                                <li>The upper GT cases are installed and fully torqued – All cases must be installed and tensioned including the mini-case.</li>
+                                                <li>All Clearance probe plugs are removed and surfaces cleaned, including inner compressor case/Double Wall Casing Plugs.
+                                                    <br/>See FRD-T-0507-01 (Inner Compressor Case Plug Removal and Rotor Rim Checks) for more details
+                                                </li>
+                                              </ol>
+                                            </li>
+                                            <li>The Compressor Clearance measurement kits are equipped with everything needed to perform manual measurements (drop check) of the Compressor Airfoil clearances through the  6 point/4 point holes, with the exception of basic hand tools and precision measurement equipment 
+                                              <ol>
+                                                <li>If manual checks are required due to an error in the app or with the hardware an ER case must be entered and the Outage Tooling Team informed </li>
+                                              </ol>
+                                            </li>
+                                            <li>
+                                              To begin Compressor Clearance Measurement on a Single Wall Compressor
+                                              <ol>
+                                                <li>Determine appropriate clearance hole plug to be removed. These plugs are denoted with “CP” stamped on the Casing next to a number that represents the Casing thickness 
+                                                  <br/>
+                                                  <figure class="text-center mt-2">
+                                                      <img class="figure-img img-fluid" width="320" src="img/frd/outer_casing.png"/>
+                                                  </figure>
+                                                  <div style="text-align: center; font-weight:bold;"> Square Outer Casing Clearance plug with “CP” stamped on the case </div>
+                                                  <br/>
+                                                </li>
+                                                <li>Each Clearance Probe hole is plugged to prevent dirt and debris from entering the turbine. For single wall casings this plug can simply be removed. 
+                                                    <br/>Care should be taken to mark the plugs with each location or replace the plug immediately after measurement to avoid accidental installation of an incorrect plug. 
+                                                </li>
+                                              </ol>
+                                            </li>
+                                            <li>To begin Measurements on a double walled Compressor
+                                              <ol>
+                                                <li>Double walled compressor measurements require the removal of the outer casing clearance plug as well as the inner casing clearance plug 
+                                                  <br/>
+                                                  <figure class="text-center mt-2">
+                                                      <img class="figure-img img-fluid" width="320" src="img/frd/inner_compressor_casing.png"/>
+                                                  </figure>
+                                                  <div style="text-align: center; font-weight:bold;"> Inner Compressor Casing plug. Shown with Outer case removed and Casing Thickness Stamped </div>
+                                                  <br/>
+                                                </li>
+                                                <li>
+                                                  Removal of the outer casing plug is the same as with single walled compressors. See FRD-T-0507 for more complete guidance. 
+                                                  <br/><strong>Note</strong> – Using a 12 point socket on larger/square plugs has been found useful See Figure 16: Square Outer Casing Clearance plug with “CP” stamped on the case. 12 point socket should be used on square end to prevent the need for thin walled hex socket 
+                                                </li>
+                                                <li>
+                                                  Removal of the inner Compressor Casing plugs requires use of the 100F0017F0036, 610-11-00-62, or 305T6365, as determined by the frame size 
+                                                  <br/><strong>Note</strong> - The inner casing plug has an internal reversed threaded hole as well as an external socket to remove the plug. Both components must be used to ensure a successful completion. See Figure 17 Inner Compressor Casing plug. Shown with Outer case removed and Casing Thickness Stamped 
+                                                </li>
+                                                <li>
+                                                  To use the inner casing plug removal tools see FRD-T-0507-01 <br/>
+                                                  <span style="background-color: yellow;"> Caution: Do not use left hand threaded tool as slide hammer. The threaded portion will break. </span>
+                                                </li>
+                                              </ol>
+                                            </li>
+
+                                            <li>
+                                              Lift oil and turning gear  
+                                              <ol>
+                                                <li>The rotor will need to be turned between 0.5 -15 RPM using the turning gear or some other method that will turn the rotor at a constant speed.  (Some sites have used an air motor attached to the manual input on the turning gear.) </li>
+                                                <li>The rotor will also need to be on lift oil. <br/>
+                                                    Some sites do not have lift oil; in this case, consult the MLI 0404 for that target without lift oil.  (nearly every site will use lift oil, currently only a few early 7HA01 sites do not have lift oil) 
+                                                </li>
+                                              </ol>
+                                            </li>
+
+                                            <li>
+                                              E4 point Tool Inspection
+                                              <ol>
+                                                <li>Verify all the parts listed above in Figure 14 : Controller Box Components are in the kit and appear to be in good condition.  </li>
+                                                <li>Only spacers for desired frame will be included in shipped kit.  <br/>
+                                                  See Table 1 Kit and spacer applicability for more details.  
+                                                </li>
+                                                <li>Dark Reference cap should fit snuggly over sensor tip. And be tethered to the sensor top hat </li>
+                                                <li>Operational Check cylinder fixture should be clear of debris or blockages.</li>
+                                                <li>The magnets should not be cracked or broken on either the sensor or spacers.  
+                                                  <ol>
+                                                    <li>Broken or cracked magnet must be removed prior to use to avoid FOD introduction into turbine </li>
+                                                    <li>Loss or removal of a magnet will necessitate steady manual holding of the spacer and probe to properly collect data </li>
+                                                  </ol>
+                                                </li>
+                                                <li>Electrical and sensor connections should be clear of debris.</li>
+                                              </ol>
+                                            </li>
+
+                                          </ol>
+                                        </div>
+                                      </div>
+                                    </div> <!-- Gas Turbine Setup  -->
+
                                     <div class="accordion-item"> <!-- Data Management and Reports-->
                                       <h2 class="accordion-header" id="headingToolsOne">
                                         <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseToolsOne" aria-expanded="true" aria-controls="collapseToolsOne">
@@ -220,6 +614,7 @@
                                                           <img class="figure-img img-fluid" width="320" src="img/frd/chart_out_of_range.png"/>
                                                       </figure>
                                                       <div style="text-align: center; font-weight:bold;"> Out of Range </div>
+                                                      <br/>
                                                     </li>
                                                   </ol>
                                                 </li>
@@ -253,6 +648,7 @@
                                                           <img class="figure-img img-fluid" width="320" src="img/frd/app_settings.png"/>
                                                       </figure>
                                                       <div style="text-align: center; font-weight:bold;">App Settings (HA left, all others Right)</div>
+                                                      <br/>
                                                     </li>
                                                   </ol>
                                                 </li>
@@ -275,6 +671,7 @@
                                                   <img class="figure-img img-fluid" width="320" src="img/frd/chart_noisy_data_3.png"/>
                                               </figure>
                                               <div style="text-align: center; font-weight:bold;"> Noisy data </div>
+                                              <br/>
                                               <ol>
                                                 
                                                 <li>Noisy data should not be accepted. To correct noisy data 
@@ -302,6 +699,7 @@
                                                   <img class="figure-img img-fluid" width="320" src="img/frd/chart_clear_double_counting_2.png"/>
                                               </figure>
                                               <div style="text-align: center; font-weight:bold;"> Clear Double Counting </div>
+                                              <br/>
                                               <ol>
                                                 <li>Clear Double Counting can be noted as 2 distinct points on a squealer tipped airfoil. To address this
                                                   <ol>
@@ -327,6 +725,7 @@
                                                   <img class="figure-img img-fluid" width="320" src="img/frd/chart_discrete_double_counting_2.png"/>
                                               </figure>
                                               <div style="text-align: center; font-weight:bold;"> Discrete Double Counting </div>
+                                              <br/>
                                               <ol>
                                                 <li>Discrete double counting occurs for a variety of reasons, if no more than 1/8 of airfoils measured exhibit discreet double counting on the airfoil tip (See the bottom plot in Figure 47 Discrete Double Counting) the maximum clearance error has been calculated to be ~10-13%. </li>
                                                 <li>Pervasive double counting (See the top plot of Figure 47 Discrete Double Counting) and clear shelf double counting (See Figure 46 Clear Double Counting) is not allowed. Analysis must be re-run. If it persists perform manual check and submit ER case </li>
@@ -363,6 +762,7 @@
                                                   <img class="figure-img img-fluid" width="320" src="img/frd/chart_garbage_data_3.png"/>
                                               </figure>
                                               <div style="text-align: center; font-weight:bold;"> Garbage Data </div>
+                                              <br/>
                                               <li>Figure 48 Garbage data has multiple causes, all of them serious data errors 
                                                 <ol>
                                                   <li>Re-perform clearance calculation. If data is garbled perform clearance calculation at another location and compare data plots </li>
@@ -399,44 +799,118 @@
                                       </div>
                                     </div> <!-- Data, Visualization and Plot Troubleshooting -->
 
-                                    <div class="accordion-item"> <!-- Gas Turbine Setup -->
-                                      <h2 class="accordion-header" id="headingToolsThree">
-                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseToolsThree" aria-expanded="true" aria-controls="collapseToolsThree">
-                                          Gas Turbine Setup 
-                                        </button>
-                                      </h2>
-                                      <div id="collapseToolsThree" class="accordion-collapse collapse" aria-labelledby="headingToolsThree" data-bs-parent="#accordionTools">
-                                        <div class="accordion-body">
-                                          
-                                        </div>
-                                      </div>
-                                    </div> <!-- Gas Turbine Setup  -->
-
-                                    <div class="accordion-item"> <!-- High Level -->
-                                      <h2 class="accordion-header" id="headingToolsFour">
-                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseToolsFour" aria-expanded="true" aria-controls="collapseToolsFour">
-                                          High Level 
-                                        </button>
-                                      </h2>
-                                      <div id="collapseToolsFour" class="accordion-collapse collapse" aria-labelledby="headingToolsFour" data-bs-parent="#accordionTools">
-                                        <div class="accordion-body">
-                                          
-                                        </div>
-                                      </div>
-                                    </div> <!-- High Level  -->
-
-                                    <div class="accordion-item"> <!-- System Setup-->
+                                    <div class="accordion-item"> <!-- System Test-->
                                       <h2 class="accordion-header" id="headingToolsFive">
                                         <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseToolsFive" aria-expanded="true" aria-controls="collapseToolsFive">
-                                          System Setup
+                                          System Test
                                         </button>
                                       </h2>
                                       <div id="collapseToolsFive" class="accordion-collapse collapse" aria-labelledby="headingToolsFive" data-bs-parent="#accordionTools">
                                         <div class="accordion-body">
-                                          
+                                          <ol>
+                                            <li>
+                                              An iPad or iPhone with GE mobile Iron (or equivalent GE Vernova security app) installed is required to install the e4Point tool from the GE Vernova Apps Store  <br/>
+                                              <br/>
+                                              <div style="text-align: center; font-weight:bold;"> NOTE: FRD instructions are also available in the app  </div> <br/>
+                                              <div style="text-align: center; font-weight:bold;"> NOTE: all pictures and figures below are for reference. Actual App pictures and figures may vary and shall supersede all FRD pictures or figures </div>
+                                              <br/>
+                                            </li>
+                                            <li>Download the “e4 Point” app from the GE app store to a GE iPad or iPhone if not already done. </li>
+                                            <li>Connect Base station power supply cable to the Base Station and to a GFCI 120V or 220V power source </li>
+                                            <li>Position the base station near the gas turbine compressor section. Keep in mind that the sensor cable, Serial cable, and Power Cables constitute a tripping hazard. Care should be made to position the base station close to the compressor casing, generally at the Horizontal joint has been sufficient. If possible keep the base unit out of direct sunlightAdditionally, the Fiber Optic cable may not be bent with a radius any less than ~50mm radius and should never be kinked </li>
+                                            <li>Power on the Base station (100-240V AC, 50-60hz 0.48A MAX).  An adaptor may be needed. The kit comes with a standard NAM and a EU plug. Turn the base station on by flipping the single rocker switch. </li>
+                                            <li>Connect iPad or iPhone to the armored serial cable, and then open the e4 point App and press the menu button.  You can confirm that the app has connected via the SERIAL indicator circle in the top right corner of the app.  The indicator circle should be GREEN as shown below in Figure 18 E4 point app startup menu and main side menu. If the indicator is not green, open the main menu. This should force the connection from the app to the controller. </li>
+                                            <li>Sensor and controller warmup time is 10 minutes. Measurement prior to 10 minute warm up period will result in erroneous dark reference, Op Check, and clearance data. 
+                                              <ol>
+                                                <li> Good practice is to set up and turn on the e4 point tool and then remove clearance hole plugs and note casing thicknesses while waiting for warm up </li>
+                                                <li> Manufacturers recommended warm up time is 60 minutes. Per GE Vernova testing it has been found that a warmup time of 10 minutes is adequate to maintain tool accuracy. </li>
+                                              </ol>
+                                            </li>
+                                            <li>Once 10 minute warm up time has elapsed open the Menu page and select “Sensor Setup” Submenu 
+                                              <br/>
+                                              <figure class="text-center mt-2">
+                                                  <img class="figure-img img-fluid" width="320" src="img/frd/app_menu.png"/>
+                                              </figure>
+                                              <div style="text-align: center; font-weight:bold;"> E4 point app startup menu and main side menu </div>
+                                              <br/>
+                                            </li>
+                                            <li>Ensure the dark refence cap is firmly fit over the end of the sensor and then select the “Dark reference” submenu. Follow the on-screen instructions to perform dark-referencing of the sensor. <br/>
+                                              <figure class="text-center mt-2">
+                                                <img class="figure-img img-fluid" width="320" src="img/frd/dark_ref_cap.png"/>
+                                              </figure>
+                                              <div style="text-align: center; font-weight:bold;"> Dark Ref Cap on Sensor  </div>
+                                              <br/>
+
+                                            </li>
+                                            <li>
+                                              Dark Referencing sets a reference value for the controller as an “Out of Range” value. It is displayed as ‘17’ on the data plot after dark referencing. This is done by digitally analyzing the noise and hysteresis inherent in the system and removing this from all calculations 
+                                              <br/>
+                                              <figure class="text-center mt-2">
+                                                <img class="figure-img img-fluid" width="320" src="img/frd/app_dark.png"/>
+                                              </figure>
+                                              <div style="text-align: center; font-weight:bold;"> Dark Reference Menu  </div>
+                                              <br/>
+                                              <ol>
+                                                <li>Dark Referencing must be done every time the controller is powered on </li>
+                                                <li>A failed dark reference is anything other than what is shown in Figure 21 Post Dark Reference data collection </li>
+                                              </ol>
+                                              <br/>
+                                              <figure class="text-center mt-2">
+                                                <img class="figure-img img-fluid" width="320" src="img/frd/dark_reference.png"/>
+                                              </figure>
+                                              <div style="text-align: center; font-weight:bold;"> Post Dark Reference data collection  </div>
+                                              <br/>
+                                            </li>
+                                            <li>Remove dark reference cap from sensor. </li>
+                                            <li>Perform “white dot” test on the op check fixture by holding the sensor ~15mm from the top of the op check fixture.
+                                              <ol>
+                                                <li>The dot on the fixture should be clear and bright with no halo or half moon artifacts. </li>
+                                                <li>If any artifacts are noted, the e4 point kit should be sent to the tool center. Further investigation is required, the Outage Tooling team must be informed </li>
+                                              </ol>
+                                              <br/>
+                                              <figure class="text-center mt-2">
+                                                <img class="figure-img img-fluid" width="320" src="img/frd/white_dot_test.png"/>
+                                              </figure>
+                                              <div style="text-align: center; font-weight:bold;"> White dot test  </div>
+                                              <br/>
+                                            </li>
+                                            <li>Verify the sensor mating surfaces and lens are clean and carefully insert the sensor into the Op-Check fixture. 
+                                              <br/>
+                                              <figure class="text-center mt-2">
+                                                <img class="figure-img img-fluid" width="320" src="img/frd/mastering_fixture.png"/>
+                                              </figure>
+                                              <div style="text-align: center; font-weight:bold;"> Mastering Fixture with Probe inserted </div>
+                                              <br/>
+                                            </li>
+                                            <li>
+                                              Select “Operational Check” from the submenu and follow on screen instructions for checking the sensor measurement. When Op-Check is complete a pop up will display the measured and calculated sensor displacement as well as if this is an acceptable outcome 
+                                              <br/>
+                                              <figure class="text-center mt-2">
+                                                <img class="figure-img img-fluid" width="320" src="img/frd/op_check_menu.png"/>
+                                              </figure>
+                                              <div style="text-align: center; font-weight:bold;"> Op Check Menu and Pop Up </div>
+                                              <br/>
+                                              If the sensor fails the operational check perform the below, in order, until the op check passes or the list is exhausted (sections 5.4.7.14.1 to 5.4.7.14.5) 
+                                              <ol>
+                                                <li>Verify sensor lens is clean and reattempt the op check </li>
+                                                <li>Cycle the app open and closed and reattempt op check </li>
+                                                <li>Power cycle the controller. Wait at least 1 minute between power off to power on. Reperform all preceding steps for warm up and dark reference</li>
+                                                <li>If the Op-Check comes back showing failure, re-check the measurement after verifying the lens and fixture are clear of debris </li>
+                                                <li>If the sensor op check still fails the kit must be sent back to the tool center for further investigation, an ER case be opened and an NCR submitted, and the Outage Tooling team informed. Include all information about failure and e4 point logs and JSON file </li>
+                                              </ol>
+                                            </li>
+                                            <li>Verify that sensor op-check is acceptable via pop up 
+                                              <ol>
+                                                <li>If the Op-Check comes back showing failure, re-check the measurement after verifying the lens and fixture are clear of debris </li>
+                                                <li>If the Op-Check value still yields unacceptable results the kit must be red-tagged and sent back to the tool center for maintenance </li>
+                                              </ol>
+                                            </li>
+                                            <li>ShapeShapeShapeShapeShapeShapeShapeThe sensor is now ready to use. Do not turn power off until all measurements are complete, data has been saved to GE Vernova Box, Final Save Data is loaded to box, and a Customer report has been generated. </li>
+
+                                          </ol>
                                         </div>
                                       </div>
-                                    </div> <!-- System Setup -->
+                                    </div> <!-- System Test -->
 
                                     <div class="accordion-item"> <!-- System Troubleshooting-->
                                       <h2 class="accordion-header" id="headingToolsSix">
@@ -446,7 +920,70 @@
                                       </h2>
                                       <div id="collapseToolsSix" class="accordion-collapse collapse" aria-labelledby="headingToolsSix" data-bs-parent="#accordionTools">
                                         <div class="accordion-body">
-                                          
+                                          <ol>
+                                            <div>Collected Data troubleshooting 
+                                              <ol>
+                                                <li>If all troubleshooting steps have been exhausted contact the Outage Tooling Team for further instructions and submit an ER case: <a href="mailto:David.Runkel@ge.com">David.Runkel@ge.com</a> </li>
+                                                <li>Connectivity and operation errors can be diagnosed using Table 2 Typical Connectivity and Operation Errors </li>
+                                              </ol>
+                                            </div>
+                                          </ol>
+                                          <li>Typical Connectivity and Operation Errors
+                                            <br/>
+                                            <table style="border: 1px solid black;">
+                                              <tr style="border: 1px solid black;">
+                                                <th style="border: 1px solid black;">Issue</th>
+                                                <th style="border: 1px solid black;">Solution</th>
+                                              </tr>
+                                              <tr style="border: 1px solid black;">
+                                                <td style="border: 1px solid black;">Serial connection indicator is not green on initial start up or connection error message </td>
+                                                <td style="border: 1px solid black;">
+                                                  <ol>
+                                                    <li>Open Main Menu. This will initiate app communication through the serial port. </li>
+                                                    <li>If not green after opening main menu, check serial connection is firm and fully made </li> 
+                                                    <li>Fully close app, disconnect serial cable, reconnect cable and restart app. Open main menu </li>
+                                                  </ol>
+                                                </td>
+                                              </tr style="border: 1px solid black;">
+                                              <tr style="border: 1px solid black;">
+                                                <td style="border: 1px solid black;">Dark Reference plot does not show flat line at 17mm </td>
+                                                <td style="border: 1px solid black;">
+                                                  <ol>
+                                                    <li>Dark Reference cap is not securely fit over sensor lens. Adjust cap and Dark Reference again </li>
+                                                    <li>Cap may be damaged. Place sensor lens on a solid flat surface, keeping lens perpendicular, and in contact with the surface. Dark Reference again. </li>
+                                                    <li> Alternatively, place the sensor on a surface with the lens pointing away from anything that could be in the sensor field of view. Dark Reference again </li>
+                                                  </ol>
+                                                </td>
+                                              </tr>
+                                              <tr style="border: 1px solid black;">
+                                                <td style="border: 1px solid black;">Collected Data on output plot does not show as expected across all airfoils in a stage  </td>
+                                                <td style="border: 1px solid black;">
+                                                  <ol>
+                                                    <li>Remove and clean spacer and sensor lens</li> 
+                                                    <li>Re-perform measuring operation</li> 
+                                                    <li>If data is still not as expected, manual drop checks should be performed </li>
+                                                  </ol>
+                                                </td>
+                                              </tr>
+                                              <tr style="border: 1px solid black;">
+                                                <td style="border: 1px solid black;">Dummy probe is decapitated by compressor airfoil  </td>
+                                                <td style="border: 1px solid black;">
+                                                  <ol>
+                                                    <li>Incorrect spacer was used. Locate correct spacer and replace dummy probe. Repeat procedure with new dummy probe tip </li>
+                                                  </ol>
+                                                </td>
+                                              </tr>
+                                              <tr style="border: 1px solid black;">
+                                                <td style="border: 1px solid black;">System power loss </td>
+                                                <td style="border: 1px solid black;">
+                                                  <ol>
+                                                    <li>Restart procedure from the beginning. Including warm up period, Dark referencing, and op check. </li>
+                                                    <li>Navigate to main menu and select “Open Local” and navigate through the table to your current turbine. Continue the measurements as before. </li>
+                                                  </ol>
+                                                </td>
+                                              </tr>
+                                            </table>
+                                          </li>
                                         </div>
                                       </div>
                                     </div> <!-- System Troubleshooting -->
@@ -459,23 +996,82 @@
                                       </h2>
                                       <div id="collapseToolsSeven" class="accordion-collapse collapse" aria-labelledby="headingToolsSeven" data-bs-parent="#accordionTools">
                                         <div class="accordion-body">
-                                          
+                                          <ol>
+                                            <li>Upon receiving new tooling from vendor or tool center.  Perform an inventory to ensure all components are in the kit as intended. 
+                                              <ol>
+                                                <li>Inventory the kits referencing the appropriate bill of materials.  If any of these components are missing they must be replaced before placing the tooling into storage or shipping to the next job. </li> 
+                                                <li>Common repair parts that will need to be accounted for in each post-outage servicing are: 
+                                                  <ol>
+                                                    <li>Magnetic Routing Rings (Mcmaster part 1706T74) </li>
+                                                    <li>US and European Power cords </li>
+                                                    <li>USB lightning cable (Apple Product) </li>
+                                                  </ol>
+                                                </li>
+                                              </ol>
+                                            </li>
+                                            <li>Perform QA Checks per QA-T-0025 at Vendor prior to initial receipt and annually thereafter for all tools listed in Table 1 Kit and spacer applicability </li>
+                                            <li>Prior to sending tooling to the field 
+                                              <ol>
+                                                <li>Clean and inspect all components  </li>
+                                                <li>Care must be shown in cleaning sensor lens with a lint free optical cloth. </li>
+                                                <li>All spacers shall be visually inspected prior to sending to field 
+                                                  <br/>
+                                                  <figure class="text-center mt-2">
+                                                    <img class="figure-img img-fluid" width="320" src="img/frd/spacer_visual_inspection.jpg"/>
+                                                  </figure>
+                                                  <div style="text-align: center; font-weight:bold;"> Spacer Visual Inspection </div>
+                                                  <br/>
+                                                  <ol>
+                                                    <li>Any defects such as dents or deformations shall be measured 
+                                                      <br/>
+                                                      <figure class="text-center mt-2">
+                                                        <img class="figure-img img-fluid" width="320" src="img/frd/spacer_defect_measurement.jpg"/>
+                                                      </figure>
+                                                      <div style="text-align: center; font-weight:bold;"> Spacer Defect Measurement </div>
+                                                      <br/>
+                                                    </li>
+                                                    <li>No defect is allowed to increase the spacer length, as per the individual drawing (see Table 1 Kit and spacer applicability) </li>
+                                                    <li>Measurement shall be performed with a precision height gage as shown in Figure 50: Spacer defect measurement </li>
+                                                    <li>If a spacer is measured outside the drawing tolerance it must be sent to the vendor for repair or replacement </li>
+                                                  </ol>
+                                                </li>
+                                                <li>
+                                                  Inspect all magnets 
+                                                  <ol>
+                                                    <li> Magnets must be whole and not cracked or broken. Broken magnets must be replaced  </li>
+                                                    <li> No magnet or retention screw may protrude above the spacer surface. 
+                                                      <br/>
+                                                      <figure class="text-center mt-2">
+                                                        <img class="figure-img img-fluid" width="320" src="img/frd/magnet_surface_measurement.png"/>
+                                                      </figure>
+                                                      <div style="text-align: center; font-weight:bold;"> Magnet surface measurement </div>
+                                                      <br/>
+                                                    </li>
+                                                    <li> All magnet surface area must be clean of debris </li>
+                                                  </ol>
+                                                </li>
+                                                <li>Power on the e4 point tool and perform the following inspections 
+                                                  <ol>
+                                                    <li>Verify (through controller window) that all lights are energized </li>
+                                                    <li>Remove the dust cap from the sensor and perform the white dot test on any matte surface as shown in Figure 52: White Dot Test 
+                                                      <br/>
+                                                      <figure class="text-center mt-2">
+                                                        <img class="figure-img img-fluid" width="320" src="img/frd/white_dot_test.png"/>
+                                                      </figure>
+                                                      <div style="text-align: center; font-weight:bold;"> White dot test  </div>
+                                                      <br/>
+                                                      If the white dot test fails, the tool must be sent back to the vendor 
+                                                    </li>
+                                                    <li>Replace the sensor dust cap </li>
+                                                  </ol>
+                                                </li>
+                                              </ol>
+                                            </li>
+                                          </ol>
                                         </div>
                                       </div>
                                     </div> <!--Tool Center Maintenance and QA -->
 
-                                    <div class="accordion-item"> <!--Tools, Equipment and Materials -->
-                                      <h2 class="accordion-header" id="headingToolsEight">
-                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseToolsEight" aria-expanded="true" aria-controls="collapseToolsEight">
-                                         Tools, Equipment and Materials 
-                                        </button>
-                                      </h2>
-                                      <div id="collapseToolsEight" class="accordion-collapse collapse" aria-labelledby="headingToolsEight" data-bs-parent="#accordionTools">
-                                        <div class="accordion-body">
-                                          
-                                        </div>
-                                      </div>
-                                    </div> <!--Tools, Equipment and Materials  -->
 
                                     <div class="accordion-item"> <!-- Use Procedure -->
                                       <h2 class="accordion-header" id="headingToolsNine">
@@ -485,20 +1081,252 @@
                                       </h2>
                                       <div id="collapseToolsNine" class="accordion-collapse collapse" aria-labelledby="headingToolsNine" data-bs-parent="#accordionTools">
                                         <div class="accordion-body">
-                                          
+                                          <div style="text-align: center; font-weight:bold;"> 
+                                            <br/>
+                                            <p>NOTE:</p>
+                                            <p>For any given turbine the data collection process is the same. Follow the below instructions using the sensor and spacers prescribed for the turbine frame being measured. </p>
+                                            <p>NOTE:</p> 
+                                            <p>At no time should the e4 point app be closed or backgrounded during operation/data collection. This could cause the app to lose the serial connection to the sensor and result in a need to recollect the data for the most recently measured location. Airplane mode may be used to prevent data collection disruption</p> 
+                                          </div>  
+                                            <ol>
+                                              <li>Turbine Data Collection Menu 
+                                                <ol>
+                                                  <li>Select Main menu and enter “Measure Turbine” submenu.</li>
+                                                  <li>Select or enter all appropriate information in the entry boxes or drop down menus then select Next at the bottom of the page
+                                                    <br/>
+                                                    <figure class="text-center mt-2">
+                                                      <img class="figure-img img-fluid" width="320" src="img/frd/app_turbine_data_screen.png"/>
+                                                    </figure>
+                                                    <div style="text-align: center; font-weight:bold;"> Figure 25 Measure Turbine data screen and entry  </div>
+                                                    <br/>
+                                                  </li>
+                                                </ol>
+                                              </li>
+                                              <li>Turbine measurement screen 
+                                                <ol>
+                                                  <li>Determine starting location on turbine and select it from the drop-down menus, or select the cell in the table. See Figure 26 Data Collection screen 
+                                                    <ol>
+                                                      <li>This can be performed by selecting from the drop-downs or manually selecting the desired cells. </li>
+                                                      <li>User can manually scroll left/right and up/down by using the touch screen. This may be necessary for frames that require more data. Additionally, changing the screen orientation may help with viewing data 
+                                                        <br/>
+                                                        <figure class="text-center mt-2">
+                                                          <img class="figure-img img-fluid" width="320" src="img/frd/app_data_collection_screen.png"/>
+                                                        </figure>
+                                                        <div style="text-align: center; font-weight:bold;"> Figure 26 Data Collection screen  </div>
+                                                        <br/>
+                                                      </li>
+                                                    </ol>
+                                                  </li>
+                                                  <li>Enter Casing thickness for desired stage and location. Spacer thickness and color code are automatically populated. 
+                                                    <br/>
+                                                    <figure class="text-center mt-2">
+                                                      <img class="figure-img img-fluid" width="320" src="img/frd/app_spacer_selection_prompt.png">
+                                                    </figure>
+                                                    <div style="text-align: center; font-weight:bold;"> Figure 26 Data Collection screen  </div>
+                                                    <br/>
+                                                  </li>
+                                                </ol>
+                                              </li>
+                                              <li>Determine and collect the rotor actual RPM for later use/calculation. 
+                                                <ol>
+                                                  <li>RPM can be determined manually (counting rotations), via the app (below) or if aligning the ITS with TRACC Scan on an HA unit via the TRACC Scan app </li>
+                                                  <li>Tool based RPM calculation can be performed by 
+                                                    <ol>
+                                                      <li>Selecting a stage and location convenient to the operator </li>
+                                                      <li>Install correct spacer for the location </li>
+                                                      <li>Check gross sensor clearance with Dummy Probe through spacer and casing  </li>
+                                                      <li>Insert sensor through spacer and  casing </li>
+                                                      <li>Select “Calculate” next to RPM in the app, see Figure 28 : RPM Calculation in app </li>
+                                                      <li>Manually verify RPM against calculated RPM 
+                                                        <br/>
+                                                        <figure class="text-center mt-2">
+                                                          <img class="figure-img img-fluid" width="320" src="img/frd/app_rpm_calculation.png">
+                                                        </figure>
+                                                        <div style="text-align: center; font-weight:bold;">Figure 28 : RPM Calculation in app </div>
+                                                        <br/>
+                                                      </li>
+                                                    </ol>
+                                                  </li>
+                                                  <li>Ensure the Rotor is rotating at a constant rate between 0.5 and 15 RPM. </li>
+                                                </ol>
+                                              </li>
+                                              <li>Clearance measurement 
+                                                <ol>
+                                                  <li>Select desired measurement location in the table or via drop down menu </li>
+                                                  <li>Place the prescribed spacer, as shown in the app and marked on the spacer, in the clearance probe recess on the casing and verify a solid connection between the casing and spacer magnets. 
+                                                    <ol>
+                                                      <li>Units with a double wall casing can collect debris on the mating surface. It has been found that inserting the spacer to collect all ferrous material from the inner casing is an effective way of clearing out the debris. </li>
+                                                    </ol>
+                                                  </li>
+                                                  <li>Insert the Dummy probe (slightly longer than the sensor) into the spacer and through the casing.  
+                                                    <ol>
+                                                      <li>Wait at least ½ revolution to allow several blades to pass over the dummy probe before removing the dummy probe. </li>
+                                                      <li>This ensures that the sensor will not impact the compressor airfoils.  </li>
+                                                      <li>When satisfied that this safety check has been completed, remove the dummy probe</li>
+                                                    </ol>
+                                                  </li>
+                                                  <li>Carefully insert the sensor into the spacer and through the casing. Sensor will engage with the spacer magnets to provide rigid connection. </li>
+                                                  <li>Verify Rotor RPM previously obtained is entered and correct </li>
+                                                  <li>Select “Collect” button to collect clearances 
+                                                    <br/>
+                                                    <figure class="text-center mt-2">
+                                                      <img class="figure-img img-fluid" width="320" src="img/frd/app_collect_button.png">
+                                                    </figure>
+                                                    <div style="text-align: center; font-weight:bold;">Figure 29: Collect button  </div>
+                                                    <br/>
+                                                  </li>
+                                                  <li> The app may provide a pop up warning that states the casing thickness is outside the allowed limits.  
+                                                    <ol>
+                                                      <li>Verify the casing thickness is entered correctly </li>
+                                                      <li>If it is entered correctly, this casing location may not be measured via the e4 Point tool due to a potential danger to the sensor tip and compressor hardware </li>
+                                                      <li>An ER case must be entered documenting this issue </li>
+                                                      <li>Manual drop checks must be performed on this location </li>
+                                                    </ol>
+                                                  </li>
+                                                  <li>
+                                                    The App now calculates Sampling Rate and Intensity Threshold based on the below Plot/Table.
+                                                    <ol>
+                                                      <li>The sampling rate and intensity threshold are used to ensure the minimum number of points per airfoil are obtained while performing the clearance inspection. Intensity Threshold and Sampling rate are calculated prior to each measurement and depend on the turbine frame, number of airfoils, and rotor RPM. 
+                                                        <br/>
+                                                        <figure class="text-center mt-2">
+                                                          <img class="figure-img img-fluid" width="320" src="img/frd/Sampling_Rate_vs_Intensity_20201119.gif">
+                                                        </figure>
+                                                        <div style="text-align: center; font-weight:bold;">Sampling Rate </div>
+                                                        <br/>
+                                                        <br/>
+                                                        <figure class="text-center mt-2">
+                                                          <img class="figure-img img-fluid" width="320" src="img/frd/intensity_threshold_plot.png">
+                                                        </figure>
+                                                        <div style="text-align: center; font-weight:bold;">Intensity threshold plot </div>
+                                                        <br/>
+                                                        <br/>
+                                                        <figure class="text-center mt-2">
+                                                          <img class="figure-img img-fluid" width="320" src="img/frd/app_sampling_rate_prompt.png">
+                                                        </figure>
+                                                        <div style="text-align: center; font-weight:bold;">Sampling rate prompt </div>
+                                                        <br/>
+                                                        
+                                                          <br/>
+                                                          <figure class="text-center mt-2">
+                                                            <img class="figure-img img-fluid" width="100" src="img/frd/warning.png"/>
+                                                          </figure>
+                                                          <div style="text-align: center; font-weight:bold;">  
+                                                            WARNING! <br/> 
+                                                            Modification of Sampling rate, Intensity, Points Per Blade, Next Blade Filtration, and Minimum Samples values while collecting samples should only be performed under the instruction of the Outage Tooling Engineers. 
+                                                          </div>
+                                                      </li>
+                                                    </ol>
+                                                  </li>
+                                                  <li>The tool then begins measuring the compressor airfoil tips as they pass the sensor. The Serial connection dot turns Red while data is being recorded. A green progress bar is shown at the bottom of the screen to show progress of data collection and provide user feedback in the event that the app freezes. 
+                                                    <div style="text-align: center; font-weight:bold;">  
+                                                      <br/>
+                                                      NOTE: If the app has a large quantity of files in the background the advancement of the progress bar may be slowed. Ensure there is sufficient free memory available and that all background operations are interrupted otherwise processing time may increase.   
+                                                    </div>
+                                                    <br/>
+                                                    <figure class="text-center mt-2">
+                                                      <img class="figure-img img-fluid" width="320" src="img/frd/app_data_collection_progress.png">
+                                                    </figure>
+                                                    <div style="text-align: center; font-weight:bold;">Data collection progress bar </div>
+                                                    <br/>
+                                                  </li>
+                                                  <li>When the data has been fully collected the app will populate the clearance data in the table at the top of the screen for the measured stage and location. </li>
+                                                  <li>The app will also plot the displacement and clearances values for a single location
+                                                    <ol>
+                                                      <li>The plot will pop up over the clearance data for the user to inspect. This plot can be closed to interrogate clearance values. See 33 Troubleshooting section for more information on diagnosing plot information</li>
+                                                      <li>To access this plot, scroll down on the collection screen after measurement has completed </li>
+                                                      <li>Analysis of this plot can show the operator if a successful run has been performed based on the displacement signal and clearance points. </li>
+                                                      <li>Several examples of common plots are shown below. If any questions arise, contact the Outage Tooling Team. See the Troubleshooting section for more information on diagnosing data issues </li>
+                                                    </ol>
+                                                    <br/>
+                                                    <figure class="text-center mt-2">
+                                                      <img class="figure-img img-fluid" width="620" src="img/frd/chart_acceptable_1.png">
+                                                    </figure>
+                                                    <br/>
+                                                    <figure class="text-center mt-2">
+                                                      <img class="figure-img img-fluid" width="620" src="img/frd/chart_acceptable_2.png">
+                                                    </figure>
+                                                    <br/>
+                                                    <figure class="text-center mt-2">
+                                                      <img class="figure-img img-fluid" width="620" src="img/frd/chart_acceptable_3.png">
+                                                    </figure>
+                                                    <div style="text-align: center; font-weight:bold;">Figure 33 Complete data plot Acceptable  </div>
+                                                    <br/>
+                                                    <figure class="text-center mt-2">
+                                                      <img class="figure-img img-fluid" width="620" src="img/frd/chart_excess_clearance_1.png">
+                                                    </figure>
+                                                    <div style="text-align: center; font-weight:bold;">Figure 34 Excess Clearance value calculation plot- unacceptable  </div>
+                                                    <br/>
+                                                    <figure class="text-center mt-2">
+                                                      <img class="figure-img img-fluid" width="620" src="img/frd/chart_clear_double_counting_1.png">
+                                                    </figure>
+                                                    <br/>
+                                                    <figure class="text-center mt-2">
+                                                      <img class="figure-img img-fluid" width="620" src="img/frd/chart_clear_double_counting_2.png">
+                                                    </figure>
+                                                    <div style="text-align: center; font-weight:bold;">Figure 35 Double Clearance plot – unacceptable  </div>
+                                                    <br/>
+                                                    <figure class="text-center mt-2">
+                                                      <img class="figure-img img-fluid" width="620" src="img/frd/chart_discrete_double_counting_1.png">
+                                                    </figure>
+                                                    <div style="text-align: center; font-weight:bold;">Figure 36 Discreet Double Clearance – overlaid clearance. Remeasure  </div>
+                                                    <br/>
+                                                    <figure class="text-center mt-2">
+                                                      <img class="figure-img img-fluid" width="620" src="img/frd/chart_garbage_data_2.png">
+                                                    </figure>
+                                                    <figure class="text-center mt-2">
+                                                      <img class="figure-img img-fluid" width="620" src="img/frd/chart_garbage_data_3.png">
+                                                    </figure>
+                                                    <div style="text-align: center; font-weight:bold;">Figure 37 Garbage Data- Unacceptable  </div>
+                                                    <br/>
+                                                    <figure class="text-center mt-2">
+                                                      <img class="figure-img img-fluid" width="620" src="img/frd/chart_noisy_data_1.png">
+                                                    </figure>
+                                                    <figure class="text-center mt-2">
+                                                      <img class="figure-img img-fluid" width="620" src="img/frd/chart_noisy_data_2.png">
+                                                    </figure>
+                                                    <figure class="text-center mt-2">
+                                                      <img class="figure-img img-fluid" width="620" src="img/frd/chart_noisy_data_3.png">
+                                                    </figure>
+                                                    <div style="text-align: center; font-weight:bold;"> Figure 38 Noisy Data – re-measure. May need Manual Drop Check Verification  </div>
+                                                    <br/>
+                                                    <figure class="text-center mt-2">
+                                                      <img class="figure-img img-fluid" width="620" src="img/frd/chart_missing_airfoils.png">
+                                                    </figure>
+                                                    <div style="text-align: center; font-weight:bold;"> Figure 39 Missing Airfoils Situationally acceptable, may need manual drop Check Verification   </div>
+                                                    <br/>
+                                                    <figure class="text-center mt-2">
+                                                      <img class="figure-img img-fluid" width="620" src="img/frd/chart_missing_clearance.png">
+                                                    </figure>
+                                                    <div style="text-align: center; font-weight:bold;"> Figure 40 Missing clearance values with displacement. Unacceptable    </div>
+                                                    <figure class="text-center mt-2">
+                                                      <img class="figure-img img-fluid" width="620" src="img/frd/chart_out_of_range.png">
+                                                    </figure>
+                                                    <div style="text-align: center; font-weight:bold;"> Figure 41 Measurements out of range. Check spacer and re-measure.    </div>
+                                                 
+                                                    <ol>
+                                                      <li>Useful statistics will be presented on the Details page. </li>
+                                                    </ol>
+                                                  </li>
+                                                 
+
+                                                </ol>
+                                              </li>
+                                            </ol>
+                                          </div>
                                         </div>
                                       </div>
                                     </div> <!-- Use Procedure  -->
 
-
                                   </div> 
-                                  
                                   <br/>
                                   <!-- ============================= End of Operating Instructions ========================== -->
 
-                                  <h5>Tools, Equipment, and Materials</h5>
+                                  <!-- ==================================== BEGIN OLD FDR ========================================= -->
+                                  <!-- HIDE IT FOR NOW style="display: none;" TODO: Remove this entire code block -->
+                                  <h5 style="display: none;">Tools, Equipment, and Materials</h5>
 
-                                  <div class="accordion" id="accordionTools">
+                                  <!-- HIDE IT FOR NOW style="display: none;" TODO: Remove this entire code block -->
+                                  <div style="display: none;" class="accordion" id="accordionTools">
 
                                     <div class="accordion-item">
                                       <h2 class="accordion-header" id="headingToolsOne">
@@ -797,7 +1625,7 @@
                                     </div>
 
                                   </div>
-                                  
+                                   <!-- ==================================== END OLD FDR ========================================= -->
 
                                   <br/>
                                   
