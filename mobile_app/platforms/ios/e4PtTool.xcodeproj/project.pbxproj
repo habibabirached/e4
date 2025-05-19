@@ -418,7 +418,7 @@
 				LastUpgradeCheck = 510;
 				TargetAttributes = {
 					1D6058900D05DD3D006BFB54 = {
-						DevelopmentTeam = H62B4T98ND;
+						DevelopmentTeam = Q243T6G7RJ;
 						ProvisioningStyle = Automatic;
 						SystemCapabilities = {
 							com.apple.Push = {
@@ -589,7 +589,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 0.2.8.32;
-				DEVELOPMENT_TEAM = H62B4T98ND;
+				DEVELOPMENT_TEAM = Q243T6G7RJ;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
@@ -604,6 +604,7 @@
 					"\"$(SRCROOT)/e4PtTool/Plugins/IFC242xPlugin\"",
 				);
 				MARKETING_VERSION = 0.2.8.32;
+				PRODUCT_BUNDLE_IDENTIFIER = com.gevernova.ent.e4PtToolstagenew;
 				PRODUCT_NAME = e4PtTool;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -623,7 +624,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = YES;
 				CURRENT_PROJECT_VERSION = 0.2.8.32;
-				DEVELOPMENT_TEAM = H62B4T98ND;
+				DEVELOPMENT_TEAM = Q243T6G7RJ;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "e4PtTool/e4PtTool-Prefix.pch";
 				GCC_THUMB_SUPPORT = NO;
@@ -636,6 +637,7 @@
 					"\"$(SRCROOT)/e4PtTool/Plugins/IFC242xPlugin\"",
 				);
 				MARKETING_VERSION = 0.2.8.32;
+				PRODUCT_BUNDLE_IDENTIFIER = com.gevernova.ent.e4PtToolstagenew;
 				PRODUCT_NAME = e4PtTool;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				TARGETED_DEVICE_FAMILY = "1,2";

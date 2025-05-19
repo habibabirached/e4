@@ -10,7 +10,34 @@
 #import "AppDelegate.h"
 #import "ControllerSettings.h"
 
+// added by Habib to do popups for debugging 
+#import <UIKit/UIKit.h>
+
 @implementation ControllerSettings
+
+// added by Habib to do popus for debugging
+- (UIViewController*)topMostController {
+    UIViewController *topController = [UIApplication sharedApplication].keyWindow.rootViewController;
+    while (topController.presentedViewController) {
+        topController = topController.presentedViewController;
+    }
+    return topController;
+}
+
+// added by Habib to do popus for debugging
+- (void)popup:(NSString*)message {
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Note"
+                                                                   message:message
+                                                            preferredStyle:UIAlertControllerStyleAlert];
+    UIAlertAction *okAction = [UIAlertAction actionWithTitle:@"OK"
+                                                       style:UIAlertActionStyleDefault
+                                                     handler:nil];
+    [alert addAction:okAction];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [[self topMostController] presentViewController:alert animated:YES completion:nil];
+    });
+}
+
 @synthesize sensor = _sensor;
 @synthesize outOfRange = _outOfRange;
 @synthesize acquisitionTime = _acquisitionTime;
@@ -20,6 +47,10 @@
 @synthesize sensorParamsProvided = _sensorParamsProvided;
 @synthesize pointsPerBlade = _pointsPerBlade;
 @synthesize pointsBetweenBlades = _pointsBetweenBlades;
+
+
+
+
 
 -(instancetype)initWithDelegate:(IFC242xManager*)delegate {
     if (self = [super init]) {
@@ -155,13 +186,18 @@
 
 -(float)calculatePointsBetweenBlades:(float)tipDiameter forBladeWidth:(float)bladeWidth forBladeCount:(int)bladeCount {
     // auto calculate
+    // Habib : the first time this is -1 the second time it is not -1
     if (self.pointsBetweenBlades == -1) {
+        // added by Habib
+        [self popup:@"[POP] pointsBetweenBlades was -1, recalculating..."];
+
         float circumference = [self calculateCircumferenceFromTipDiameterInches:tipDiameter];
         float samplesPerInch = self.pointsPerBlade / bladeWidth;
         float pointsPerRotation = samplesPerInch * circumference;
         float pointsPerSection = pointsPerRotation / bladeCount;
         return 0.75 * (pointsPerSection - self.pointsPerBlade);
     } else {
+        [self popup:@"[POP] Using cached pointsBetweenBlades value"];
         return self.pointsBetweenBlades;
     }
 }

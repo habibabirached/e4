@@ -13,6 +13,7 @@
 #import "Controller/DemoController.h"
 #import "Controller/EthernetController.h"
 #import "Controller/SerialController.h"
+#import <UIKit/UIKit.h> // Added by Habib to support popup alerts
 
 @implementation IFC242xManager {
     CDVPlugin* plugin;
@@ -21,6 +22,30 @@
     PostProcess* postProcess;
     NSString* cmdCallbackId, *lastSavedFile, *connectionType;
     BOOL calibratedAcquire;
+}
+// Added by Habib to support popup alerts
+// Returns the topmost view controller so we can show a popup
+- (UIViewController*)topMostController {
+    UIViewController *topController = [UIApplication sharedApplication].keyWindow.rootViewController;
+    while (topController.presentedViewController) {
+        topController = topController.presentedViewController;
+    }
+    return topController;
+}
+
+// Added by Habib to support popup alerts
+// Displays a popup alert with a message
+- (void)popup:(NSString*)message {
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Note"
+                                                                   message:message
+                                                            preferredStyle:UIAlertControllerStyleAlert];
+    UIAlertAction *okAction = [UIAlertAction actionWithTitle:@"OK"
+                                                       style:UIAlertActionStyleDefault
+                                                     handler:nil];
+    [alert addAction:okAction];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [[self topMostController] presentViewController:alert animated:YES completion:nil];
+    });
 }
 
 @synthesize progress = _progress;
@@ -94,11 +119,20 @@
     [self returnPluginResponse:@{@"type":@"status",@"status":statusMsg}];
 }
 
+
 - (ClearanceData*)computeClearance:(MeasurementData*)measurementData {
     self->postProcess.outOfRange = self->controller.settings.outOfRange;
     
     float offsetAdjustment = 0.0;
     float pointsBetweenBlades = 0.0;
+
+    // added by Habib
+    // Reset NBF before computing
+    // This ensures that the old value is cleared and a fresh NBF is always computed, avoiding incorrect reuse across stages.
+    // [self popup:[NSString stringWithFormat:@"in manager1.... pointsBetweenBlades = %f", self->controller.settings.pointsBetweenBlades]];
+    self->controller.settings.pointsBetweenBlades = -1;    
+    // [self popup:[NSString stringWithFormat:@"in manager2.... pointsBetweenBlades = %f", self->controller.settings.pointsBetweenBlades]];
+
     // Disabled until further testing, this would apply offsetAdjustment and pointsBetweenBlades only for turbine measurements and not apply to acquisition via Get Data
     if (self->calibratedAcquire) {
         offsetAdjustment = [self->controller.settings.sensor calculateOffsetAdjustment:self->metaData.spacerThickness casingThickness:self->metaData.casingThickness];
@@ -106,7 +140,9 @@
             NSLog(@"offsetAdjustment < 0: %f", offsetAdjustment);
             [self returnPluginResponse:@{@"type":@"log",@"message":@"offsetAdjustment < 0"} keepOpen:YES];
         }
-        pointsBetweenBlades = [self->controller.settings calculatePointsBetweenBlades:self->metaData.tipDiameter forBladeWidth:self->metaData.bladeWidth forBladeCount:self->metaData.numberOfBlades];
+        pointsBetweenBlades = [self->controller.settings calculatePointsBetweenBlades:self->metaData.tipDiameter forBladeWidth:self->metaData.bladeWidth forBladeCount:self->metaData.numberOfBlades]; 
+        self->controller.settings.pointsBetweenBlades = pointsBetweenBlades;    
+        // [self popup:[NSString stringWithFormat:@"in manager3.... pointsBetweenBlades = %f", self->controller.settings.pointsBetweenBlades]];       
     }
     return [self->postProcess computeClearance:measurementData bladeCount:self->metaData.numberOfBlades pointsBetweenBlades:pointsBetweenBlades usingAdjustmentFactor:offsetAdjustment];
 }
@@ -173,6 +209,7 @@
                                    @"date":dateStr,
                                    @"intensity_threshold":[NSString stringWithFormat:@"%.3f", self->controller.settings.intensityThreshold],
                                    @"measurement_rate":[NSString stringWithFormat:@"%.3f", self->controller.settings.measurementRate],
+                                   @"pointsBetweenBlades": [NSString stringWithFormat:@"%.3f",   self->controller.settings.pointsBetweenBlades],  // added by Habib to render the pointsBetweenBlades
                                    @"filename":[[savedFilepath subarrayWithRange:endRange] componentsJoinedByString:@"/"]};
     [self returnPluginResponse:jsonDataDict keepOpen:YES];
 }
@@ -501,18 +538,50 @@
         //[self returnPluginResponse:@{@"type":@"log",@"message":@"Manager.messageHandler: configure_controller"} keepOpen:YES];
         [self->controller configureController];
         [self returnPluginResponse:@{@"type":@"alert",@"message":@"Controller configuration is updated, you should shutdown and restart this application."}];
+
+
+
+
     } else if ([cmd containsString:@"read_sensor_parameters"]) {
         //[self returnPluginResponse:@{@"type":@"log",@"message":@"Manager.messageHandler: read_sensor_parameters"} keepOpen:YES];
         [self->controller readSensorParameters];
+
+
+    
+
+
+    // This is where the get_sensor_parameters happens
     } else if ([cmd containsString:@"get_sensor_parameters"]) {
-        //[self returnPluginResponse:@{@"type":@"log",@"message":@"Manager.messageHandler: get_sensor_parameters"} keepOpen:YES];
-        NSDictionary* jsonDict = @{@"type":@"sensor_params", @"master_fixture_height":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.hmf], @"mastering_value":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.mv], @"master_offset":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.mo], @"sensor_selection":self->controller.settings.sensor.name, @"sensor_length":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.length], @"start_measurement_range":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.smr], @"sensor_measurement_range":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.mr], @"from_controller":@(self->controller.settings.sensorParamsProvided), @"measurement_rate":[NSString stringWithFormat:@"%f", self->controller.settings.measurementRate], @"intensity_threshold":[NSString stringWithFormat:@"%f", self->controller.settings.intensityThreshold]};
+        //[self returnPluginResponse:@{@"type":@"log",@"message":@"Manager.messageHandler: get_sensor_parameters"} keepOpen:YES]; Habib
+        NSDictionary* jsonDict = @{@"type":@"sensor_params", 
+                                @"master_fixture_height":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.hmf], 
+                                @"mastering_value":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.mv], 
+                                @"master_offset":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.mo], 
+                                @"sensor_selection":self->controller.settings.sensor.name, 
+                                @"sensor_length":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.length], 
+                                @"start_measurement_range":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.smr], 
+                                @"sensor_measurement_range":[NSString stringWithFormat:@"%f", self->controller.settings.sensor.mr], 
+                                @"from_controller":@(self->controller.settings.sensorParamsProvided), 
+                                @"measurement_rate":[NSString stringWithFormat:@"%f", self->controller.settings.measurementRate], 
+                                @"intensity_threshold":[NSString stringWithFormat:@"%f", self->controller.settings.intensityThreshold]};
         [self returnPluginResponse:jsonDict];
+
+
+
     } else if ([cmd containsString:@"set_sensor_parameters"]) {
         //[self returnPluginResponse:@{@"type":@"log",@"message":@"Manager.messageHandler: set_sensor_parameters"} keepOpen:YES];
-        self->controller.settings.sensor = [[SensorSettings alloc] initWithName:[message valueForKey:@"name"] lengthInches:[[message valueForKey:@"length"] floatValue] measurementRangeMM:[[message valueForKey:@"mr"] floatValue] startOfMeasurementRangeMM:[[message valueForKey:@"smr"] floatValue] masterFixtureHeightInches:[[message valueForKey:@"hmf"] floatValue] masteringValueMM:[[message objectForKey:@"mv"] floatValue]];
-        
+
+        self->controller.settings.sensor = [[SensorSettings alloc] 
+                    initWithName:[message valueForKey:@"name"]
+                    lengthInches:[[message valueForKey:@"length"] floatValue]
+                    measurementRangeMM:[[message valueForKey:@"mr"] floatValue]
+                    startOfMeasurementRangeMM:[[message valueForKey:@"smr"] floatValue]
+                    masterFixtureHeightInches:[[message valueForKey:@"hmf"] floatValue]
+                    masteringValueMM:[[message objectForKey:@"mv"] floatValue]];
+
         [self returnPluginResponse:@{@"type":@"alert",@"message":@"Sensor Parameters are Set."}];
+
+
     } else if ([cmd containsString:@"shutdown"]) {
         //[self returnPluginResponse:@{@"type":@"log",@"message":@"Manager.messageHandler: shutdown"} keepOpen:YES];
         [self->controller disconnectDevice];

@@ -1,70 +1,73 @@
-if (typeof define !== 'function') {
-  var define = require('./lib/amdefine')(module);
+if (typeof define !== "function") {
+  var define = require("./lib/amdefine")(module);
 }
 
-define(function(require, exports, module, sensorSettings) {
-  require('./lib/highcharts/highcharts6_0_4');
+define(function (require, exports, module, sensorSettings) {
+  require("./lib/highcharts/highcharts6_0_4");
   //require('./lib/highcharts/highcharts_boost');
-  var sensorSettings = require('./sensor_settings');
-  
+  var sensorSettings = require("./sensor_settings");
+
   const renderChart = (chartConfig, target, chartFilename, writeToFileFunc) => {
     let html = createSavedChartHTML(chartConfig);
     let chart = Highcharts.chart(target, chartConfig);
-    chart.renderer.button('Save',chart.plotWidth+20,0,
-      function(){
-          writeToFileFunc(chartFilename.substring(0,chartFilename.indexOf('_')), chartFilename, html);
-          this.attr({text: 'Saved'});
+    chart.renderer
+      .button(
+        "Save",
+        chart.plotWidth + 20,
+        0,
+        function () {
+          writeToFileFunc(chartFilename.substring(0, chartFilename.indexOf("_")), chartFilename, html);
+          this.attr({ text: "Saved" });
           this.setState(3);
-      },
-      {fill:'black',width:34,height:16,style:{color:'white'}},
-      {},
-      {},
-      {fill:'gray',width:34,height:16,style:{color:'black'}}
-    ).add();
-  }
-  
+        },
+        { fill: "black", width: 34, height: 16, style: { color: "white" } },
+        {},
+        {},
+        { fill: "gray", width: 34, height: 16, style: { color: "black" } }
+      )
+      .add();
+  };
+
   const clearChartData = (chartContainer) => {
-      if (chartContainer) {
-          let chartAttr = chartContainer.getAttribute('data-highcharts-chart');
-          if (chartAttr) {
-              let chart = Highcharts.charts[chartAttr];
-              if (typeof chart !== 'undefined') {
-                  if (chart.series)
-                      while(chart.series.length > 0)
-                          chart.series[0].remove(true);
-                  if (chart.subtitle)
-                      chart.subtitle.hide();
-                  if (chart.renderer && chart.renderer.box && chart.renderer.box.children)
-                      for (element of chart.renderer.box.children)
-                          if (element.classList && element.classList.contains('highcharts-button'))
-                              element.style.visibility = 'hidden';
-              }
-          }
+    if (chartContainer) {
+      let chartAttr = chartContainer.getAttribute("data-highcharts-chart");
+      if (chartAttr) {
+        let chart = Highcharts.charts[chartAttr];
+        if (typeof chart !== "undefined") {
+          if (chart.series) while (chart.series.length > 0) chart.series[0].remove(true);
+          if (chart.subtitle) chart.subtitle.hide();
+          if (chart.renderer && chart.renderer.box && chart.renderer.box.children) for (element of chart.renderer.box.children) if (element.classList && element.classList.contains("highcharts-button")) element.style.visibility = "hidden";
+        }
       }
-  }
-  
-  const createSavedChartFilename = (dateStr, serialNumber, stageNum, position) => {
-    let filename = dateStr.replace(/\s+/g, '_').replace(/:/g, '-') + '_mm.html';
-    if (serialNumber && stageNum && position) {
-        return serialNumber + '_' + stageNum + '_' + position + '_' + filename;
     }
-    return 'data_' + filename;
-  }
-      
+  };
+
+  const createSavedChartFilename = (dateStr, serialNumber, stageNum, position) => {
+    let filename = dateStr.replace(/\s+/g, "_").replace(/:/g, "-") + "_mm.html";
+    if (serialNumber && stageNum && position) {
+      return serialNumber + "_" + stageNum + "_" + position + "_" + filename;
+    }
+    return "data_" + filename;
+  };
+
   const createSavedChartHTML = (chartConfig) => {
     return "<html><head><script src='https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js'></script><script src='https://code.highcharts.com/highcharts.js'></script><style>.FONT_BLACK{color:black}.FONT_RED{color:red}.highcharts-subtitle {text-align: center;width: 100%;}</style></head><body><div style='width:100%'></div><script>$(function () {$('div').highcharts(" + JSON.stringify(chartConfig) + ");});</script></body></html>";
-  }
-  
+  };
+
+  //
+  // addChart Subtitle
+  //
   const addChartSubtitle = (chartConfig, acquisition_date, overall_clearance, blades, blade_samples_avg, avg_displacement, selected_frame_data, current_position) => {
-    let subtitle = 'Date: ' + acquisition_date + ';&nbsp;Observed Blades: ' + blades;
-    subtitle += '<br/>';
+    let subtitle = "Date: " + acquisition_date + ";&nbsp;Observed Blades: " + blades;
+    subtitle += "<br/>";
 
     if (selected_frame_data) {
-      subtitle += 'Frame: ' + selected_frame_data.frameName + ';&nbsp;Stage: ' + selected_frame_data.stageName + ';&nbsp;Position: ' + current_position + ';&nbsp;Blades: ' + selected_frame_data.bladeCount + ';&nbsp;RPM: ' + parseFloat(selected_frame_data.RPM).toFixed(3);
-      subtitle += '<br/>';
+      subtitle += "Frame: " + selected_frame_data.frameName + ";&nbsp;Stage: " + selected_frame_data.stageName + ";&nbsp;Position: " + current_position + ";&nbsp;Blades: " + selected_frame_data.bladeCount + ";&nbsp;RPM: " + parseFloat(selected_frame_data.RPM).toFixed(3);
+      subtitle += "<br/>";
     }
 
-    subtitle += 'Avg Samples/Blade: ' + parseFloat(blade_samples_avg).toFixed(1) + ';&nbsp;Avg Tip Dist: ' + parseFloat(overall_clearance).toFixed(3);
+    // subtitle += "Avg Samples/Blade: " + parseFloat(blade_samples_avg).toFixed(1) + ";&nbsp;Avg Tip Dist: " + parseFloat(overall_clearance).toFixed(3);
+    subtitle += "Avg Samples/Blade: " + parseFloat(blade_samples_avg).toFixed(1) + ";&nbsp;Avg Tip Dist: " + parseFloat(overall_clearance).toFixed(3) + ";&nbsp;pointsBetweenBlades: " + chartConfig.pointsBetweenBlades;
 
     if (avg_displacement) {
       // value could be number or "\"--\""
@@ -72,80 +75,78 @@ define(function(require, exports, module, sensorSettings) {
         if (!isNaN(avg_displacement)) {
           avg_displacement = avg_displacement.toFixed(3);
         } else {
-          avg_displacement = avg_displacement.replace(/"/g,"");
+          avg_displacement = avg_displacement.replace(/"/g, "");
         }
-        subtitle = '<span class="FONT_BLACK text-body">' + subtitle + ';&nbsp;</span>' + '<span class="FONT_RED text-danger">Overall Avg: ' + avg_displacement + '</span>';
-      }
-      else {
+        subtitle = '<span class="FONT_BLACK text-body">' + subtitle + ";&nbsp;</span>" + '<span class="FONT_RED text-danger">Overall Avg: ' + avg_displacement + "</span>";
+      } else {
         subtitle += ";&nbsp;Overall Avg: " + avg_displacement.toFixed(3);
       }
     }
-      
+
     chartConfig.subtitle.text = subtitle;
-  }
-  
+  };
+
   const displayIntensityThresholdAndMeasurementRate = (chartConfig, measurement_rate, intensity_threshold) => {
-      chartConfig.subtitle.text = '<span>Measurement Rate: ' + measurement_rate + 'kHz;&nbsp;Intensity Threshold: ' + intensity_threshold + '%</span><br/><span>' + chartConfig.subtitle.text + '</span>';
-  }
-  
+    chartConfig.subtitle.text = "<span>Measurement Rate: " + measurement_rate + "kHz;&nbsp;Intensity Threshold: " + intensity_threshold + "%</span><br/><span>" + chartConfig.subtitle.text + "</span>";
+  };
+
   const createChartConfig = (displacementsArray, clearancesArray, units) => {
     return {
       chart: {
-        animation: false
+        animation: false,
       },
       credits: {
-        enabled: false
+        enabled: false,
       },
       boost: {
         enabled: true,
         useGPUTranslations: true,
-        allowForce: true
+        allowForce: true,
       },
-      title: { text: 'e-4Pt Acquired Data' },
-      style: { fontFamily: 'Veranda' },
+      title: { text: "e-4Pt Acquired Data" },
+      style: { fontFamily: "Veranda" },
       subtitle: { useHTML: true },
       yAxis: {
-        title: { text: 'Blade Gap' + (units ? ' (' + units + ')' : '') },
+        title: { text: "Blade Gap" + (units ? " (" + units + ")" : "") },
         labels: {
-          style: { color: 'black', fontSize: 10 }
-        }
+          style: { color: "black", fontSize: 10 },
+        },
       },
       xAxis: {
-        title: { text: 'Index' },
+        title: { text: "Index" },
         labels: {
-          style: { color: 'black', fontSize: 10 }
-        }
-     },
+          style: { color: "black", fontSize: 10 },
+        },
+      },
       legend: { enabled: false },
       tooltip: { enabled: true, valueDecimals: 3 },
       plotOptions: {
         series: {
           label: { connectorAllowed: false },
-          pointStart: 0
-        }
+          pointStart: 0,
+        },
       },
       series: [
         {
-          type: 'line',
-          name: 'Sensor Data',
-          data: displacementsArray
+          type: "line",
+          name: "Sensor Data",
+          data: displacementsArray,
         },
         {
-          type: 'scatter',
-          name: 'Clearance Minima',
-          data: clearancesArray
-        }
-      ]
+          type: "scatter",
+          name: "Clearance Minima",
+          data: clearancesArray,
+        },
+      ],
     };
-  }
+  };
 
   module.exports = {
-      addChartSubtitle: addChartSubtitle,
-      clearChartData: clearChartData,
-      createChartConfig: createChartConfig,
-      createSavedChartFilename: createSavedChartFilename,
-      displayIntensityThresholdAndMeasurementRate: displayIntensityThresholdAndMeasurementRate,
-      renderChart: renderChart
-  }
+    addChartSubtitle: addChartSubtitle,
+    clearChartData: clearChartData,
+    createChartConfig: createChartConfig,
+    createSavedChartFilename: createSavedChartFilename,
+    displayIntensityThresholdAndMeasurementRate: displayIntensityThresholdAndMeasurementRate,
+    renderChart: renderChart,
+  };
 });
-

@@ -13,6 +13,8 @@
 #import "Controller/DemoController.h"
 #import "Controller/EthernetController.h"
 #import "Controller/SerialController.h"
+#import <UIKit/UIKit.h> // Added by Habib to support popup alerts
+
 
 @implementation IFC242xManager {
     CDVPlugin* plugin;
@@ -22,6 +24,32 @@
     NSString* cmdCallbackId, *lastSavedFile, *connectionType;
     BOOL calibratedAcquire;
 }
+
+// Added by Habib to support popup alerts
+// Returns the topmost view controller so we can show a popup
+- (UIViewController*)topMostController {
+    UIViewController *topController = [UIApplication sharedApplication].keyWindow.rootViewController;
+    while (topController.presentedViewController) {
+        topController = topController.presentedViewController;
+    }
+    return topController;
+}
+
+// Added by Habib to support popup alerts
+// Displays a popup alert with a message
+- (void)popup:(NSString*)message {
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Note"
+                                                                   message:message
+                                                            preferredStyle:UIAlertControllerStyleAlert];
+    UIAlertAction *okAction = [UIAlertAction actionWithTitle:@"OK"
+                                                       style:UIAlertActionStyleDefault
+                                                     handler:nil];
+    [alert addAction:okAction];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [[self topMostController] presentViewController:alert animated:YES completion:nil];
+    });
+}
+
 
 @synthesize progress = _progress;
 
@@ -99,6 +127,14 @@
     
     float offsetAdjustment = 0.0;
     float pointsBetweenBlades = 0.0;
+
+    // added by Habib
+    // Reset NBF before computing
+    // This ensures that the old value is cleared and a fresh NBF is always computed, avoiding incorrect reuse across stages.
+    //    self->controller.settings.pointsBetweenBlades = -1;
+
+   [self popup:@"[POP] computeClearance: resetting NBF to force recomputation of pointsBetweenBlades."];
+
     // Disabled until further testing, this would apply offsetAdjustment and pointsBetweenBlades only for turbine measurements and not apply to acquisition via Get Data
     if (self->calibratedAcquire) {
         offsetAdjustment = [self->controller.settings.sensor calculateOffsetAdjustment:self->metaData.spacerThickness casingThickness:self->metaData.casingThickness];
@@ -114,6 +150,8 @@
 
 - (void)returnData:(ClearanceData*)clearanceData measurementData:(MeasurementData*)measurementData {
     //[self returnPluginResponse:@{@"type":@"log",@"message":@"Manager.returnData"} keepOpen:YES];
+    [self popup:@"[POP] return clearance data added by Habib for debug."];
+
     [self returnPluginResponse:@{@"type":@"export_log"} keepOpen:YES];
     NSError* error;
     NSData* jsonData;
