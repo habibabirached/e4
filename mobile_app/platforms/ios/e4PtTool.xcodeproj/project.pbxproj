@@ -588,7 +588,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 0.2.8.32;
+				CURRENT_PROJECT_VERSION = 0.2.9.0;
 				DEVELOPMENT_TEAM = Q243T6G7RJ;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_OPTIMIZATION_LEVEL = 0;
@@ -603,7 +603,7 @@
 					"$(inherited)",
 					"\"$(SRCROOT)/e4PtTool/Plugins/IFC242xPlugin\"",
 				);
-				MARKETING_VERSION = 0.2.8.32;
+				MARKETING_VERSION = 0.2.9.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.gevernova.ent.e4PtToolstagenew;
 				PRODUCT_NAME = e4PtTool;
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -623,7 +623,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = YES;
-				CURRENT_PROJECT_VERSION = 0.2.8.32;
+				CURRENT_PROJECT_VERSION = 0.2.9.0;
 				DEVELOPMENT_TEAM = Q243T6G7RJ;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "e4PtTool/e4PtTool-Prefix.pch";
@@ -636,7 +636,7 @@
 					"$(inherited)",
 					"\"$(SRCROOT)/e4PtTool/Plugins/IFC242xPlugin\"",
 				);
-				MARKETING_VERSION = 0.2.8.32;
+				MARKETING_VERSION = 0.2.9.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.gevernova.ent.e4PtToolstagenew;
 				PRODUCT_NAME = e4PtTool;
 				PROVISIONING_PROFILE_SPECIFIER = "";

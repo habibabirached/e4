@@ -901,6 +901,14 @@ define(function (require, exports, module) {
       },
       { passive: true }
     );
+    document.getElementById("TROUBLESHOOTING_BUTTON").addEventListener(
+      "click",
+      function () {
+        var troubleshootingModal = new bootstrap.Modal(document.getElementById("TROUBLESHOOTING_MODAL"));
+        troubleshootingModal.show();
+      },
+      { passive: true }
+    );
     document.getElementById("CALCULATION_MSG").addEventListener(
       "click",
       function () {
@@ -3713,6 +3721,83 @@ define(function (require, exports, module) {
     }
   }
 
+  // //////////////////////////////////////////////////
+  // added by Habib to zip files before we email them.
+  // //////////////////////////////////////////////////
+
+  function zipFilesForEmail(files, callback) {
+    // Create a temp directory for the zip
+    const zipFileName = "e4pt_export_" + new Date().getTime() + ".zip";
+    const zipDirectory = "temp_zip";
+    const zipPath = cordova.file.documentsDirectory + zipDirectory + "/" + zipFileName;
+
+    // First ensure temp directory exists
+    window.resolveLocalFileSystemURL(cordova.file.documentsDirectory, function (dirEntry) {
+      dirEntry.getDirectory(zipDirectory, { create: true }, function (zipDirEntry) {
+        // Use the zip plugin to create zip file
+        zip.zip(
+          files,
+          {
+            target: zipPath,
+            password: null, // You can add password protection if needed
+          },
+          function (completed) {
+            console.log("Zip completed: " + completed);
+            // Call the callback with the path to the zip file
+            callback("file://" + zipPath);
+          },
+          function (error) {
+            console.error("Error creating zip: ", error);
+            // If zip fails, fall back to sending unzipped files
+            callback(files);
+          }
+        );
+      });
+    });
+  }
+
+  // Modified sendEmailWithAttachment function
+  function sendEmailWithAttachment(toAddress, subject, attachments) {
+    window.plugin.email.isAvailable(
+      "mailto",
+      function (available) {
+        if (!available) {
+          alert("Error: Email is not set up on this device.");
+          return;
+        }
+
+        // If we have multiple files, zip them
+        if (Array.isArray(attachments) && attachments.length > 1) {
+          zipFilesForEmail(attachments, function (emailAttachment) {
+            window.plugin.email.open({
+              to: toAddress,
+              cc: [],
+              bcc: [],
+              attachments: Array.isArray(emailAttachment) ? emailAttachment : [emailAttachment],
+              subject: subject,
+              body: [],
+              isHtml: false,
+            });
+          });
+        } else {
+          // Single file, send as is
+          window.plugin.email.open({
+            to: toAddress,
+            cc: [],
+            bcc: [],
+            attachments: Array.isArray(attachments) ? attachments : [attachments],
+            subject: subject,
+            body: [],
+            isHtml: false,
+          });
+        }
+      },
+      this
+    );
+  }
+  // /////////////////////////////////////////////////////////////
+  // old code commented by Habib that sent the emails via plugin
+  // //////////////////////////////////////////////////////////////
   function sendEmailWithAttachment(toAddress, subject, attachment) {
     // Check if email is set up on this device.  If not, alert the user.
     // If so, try to send the email.

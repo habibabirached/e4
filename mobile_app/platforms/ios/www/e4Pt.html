@@ -25,7 +25,7 @@
     <div id="wrapper">
 
       <!-- Header -->
-      <header>
+      <header style="z-index: 1050;">
           <nav class="navbar navbar-expand navbar-dark bg-dark">
               <div class="container-fluid">
                   <button id="MAIN_MENU" class="btn btn-primary">
@@ -122,8 +122,8 @@
         </div>
 
         <!-- FRD PAGE -->
-        <div id="FRD_PAGE" class="container-fluid my-2">
-            <div class="card">
+        <div id="FRD_PAGE" class="container-fluid my-2" style="height: calc(100vh - 120px);">
+            <div class="card h-100">
               <div class="card-header">
                   <div class="row">
                     <div class="col-auto me-auto pt-1">
@@ -134,7 +134,7 @@
                     </div>
                   </div>
               </div>
-                <div class="card-body">
+                <div class="card-body" style="max-height: calc(100vh - 150px); overflow-y: auto;">
                   <div class="row">
                     <div class="col-lg-12">
                         <!-- Setup -->
@@ -1722,8 +1722,8 @@
         </div>
         
         <!-- Frame Select Page -->
-        <div id="SETUP_PAGE" class="container-fluid my-2">
-            <div class="card">
+        <div id="SETUP_PAGE" class="container-fluid" style="padding-top: 50px; height: calc(100vh - 50px);">
+            <div class="card h-100">
               <div class="card-header">
                 <div class="row">
                   <div class="col-auto me-auto pt-1">
@@ -1734,7 +1734,7 @@
                   </div>
                 </div>
               </div>
-              <div class="card-body">
+              <div class="card-body" style="overflow-y: auto;">
                 <div class="row">
                 <div class="col-lg-12">
                   <!-- Frame Select -->
@@ -1838,19 +1838,20 @@
         </div>
         
         <!-- Turbine Data Collection Page -->
-        <div id="TURBINE_SETUP_PAGE" class="container-fluid my-2">
+        <div id="TURBINE_SETUP_PAGE" class="container-fluid my-2" style="padding-top: 20px;">
             <div class="card w-100">
               <div class="card-body" style="overflow-y: scroll;">
                 <div class="row">
                     <div class="col-lg-12">
                       <!-- Turbine Data Collection -->
-                      <table class="table table-borderless table-sm align-middle text-center">
+                      <table class="table table-borderless table-sm align-middle text-center" style="margin-top: 20px;">
                         <tbody>
                           <tr>
                             <td colspan="2">Collection Date:</td>
                             <th scope="row" colspan="2" id="HEADER_DATETIME"></th>
                             <td colspan="3">
                               <button class="btn btn-primary" type="button" id="LOCATION_BUTTON">MEASUREMENT LOCATIONS</button>
+                              <button class="btn btn-secondary ms-2" type="button" id="TROUBLESHOOTING_BUTTON">TROUBLESHOOTING</button>
                             </td>
                           </tr>
                         </tbody>
@@ -2131,6 +2132,223 @@
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">CANCEL</button>
                 <button type="button" class="btn btn-primary" id="CLEARANCE_OVERRIDE_SAVE_BUTTON">SAVE</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Troubleshooting Modal -->
+        <div class="modal fade" id="TROUBLESHOOTING_MODAL" tabindex="-1">
+          <div class="modal-dialog modal-dialog-scrollable modal-lg">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Data Visualization and Plot Troubleshooting</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <div class="container-fluid">
+                  <ol>
+                    <li>
+                      Data errors are most readily identified by observing the clearance plot that is presented after a clearance measurement is taken 
+                    </li>
+                    <li>
+                      Figure below represents a measurement without any data.  
+                      <ol>
+                        <li>This can be caused by 
+                          <ol>
+                            <li>Incorrect spacer configuration </li> 
+                            <li>Dirty senor or Sensor failure </li>
+                            <li>Incorrect sample frequency/RPM 
+                              <br/>
+                              <figure class="text-center mt-2">
+                                  <img class="figure-img img-fluid" width="320" src="img/frd/chart_out_of_range.png"/>
+                              </figure>
+                              <div style="text-align: center; font-weight:bold;"> Out of Range </div>
+                              <br/>
+                            </li>
+                          </ol>
+                        </li>
+
+                        <li>To address this 
+                          <ol>
+                            <li>Verify casing thickness is correct in app and correct spacer is being used </li>  
+                            <li>Verify sensor tip is clean and clearance probe hole is clear of debris. Clean if required </li>
+                            <li>Re-perform Figure 22: White Dot Test. If sensor fails white dot test, quarantine the tool and inform the tool center</li> 
+                            <li>Manually determine rotor RPM and compare this value to what the app is calculating. If there is a major discrepancy use manual RPM </li>
+                            <li>If all troubleshooting steps have been exhausted contact the Outage Tooling Team for further instructions and submit an ER case <a href="mailto:David.Runkel@ge.com">David.Runkel@ge.com</a></li>
+                            <li>Perform manual checks if troubleshooting is not successful</li>
+                          </ol>
+                        </li>
+                      </ol>
+                    </li>
+
+                    <br/>
+                    <li>
+                      Figure below represents Points Between Blade Filter Error can occur when the sample frequency is incorrectly set or the Points Between Blades is incorrectly calculated 
+                      <ol>
+                        
+                        <li>To address this 
+                          <ol>
+                            <li>Manually determine rotor RPM and compare this value to what the app is calculating. If there is a major discrepancy use manual RPM  </li>  
+                            <li>Verify, in Figure 44 App Settings, that the Points Between Blades is set to Automatic, Points per blade is set to 8, and minimum points is set to 2. Note, these settings should not be manipulated and will be password controlled  </li>
+                            <li>If all troubleshooting steps have been exhausted contact the Outage Tooling Team for further instructions and submit an an ER case <a href="mailto:David.Runkel@ge.com">David.Runkel@ge.com</a></li>
+                            <li>Perform manual checks if the troubleshooting is not successful
+                              <br/>
+                              <figure class="text-center mt-2">
+                                  <img class="figure-img img-fluid" width="320" src="img/frd/app_settings.png"/>
+                              </figure>
+                              <div style="text-align: center; font-weight:bold;">App Settings (HA left, all others Right)</div>
+                              <br/>
+                            </li>
+                          </ol>
+                        </li>
+                      </ol>
+                    </li>
+
+                    <br/>
+                    <li>
+                      Figures below can be caused when the sample frequency is incorrectly set or the Points Between Blades is incorrectly calculated
+                      <br/>
+                      <figure class="text-center mt-2">
+                          <img class="figure-img img-fluid" width="320" src="img/frd/chart_noisy_data_1.png"/>
+                      </figure>
+                      <br/>
+                      <figure class="text-center mt-2">
+                          <img class="figure-img img-fluid" width="320" src="img/frd/chart_noisy_data_2.png"/>
+                      </figure>
+                      <br/>
+                      <figure class="text-center mt-2">
+                          <img class="figure-img img-fluid" width="320" src="img/frd/chart_noisy_data_3.png"/>
+                      </figure>
+                      <div style="text-align: center; font-weight:bold;"> Noisy data </div>
+                      <br/>
+                      <ol>
+                        
+                        <li>Noisy data should not be accepted. To correct noisy data 
+                          <ol>
+                            <li>Manually determine rotor RPM and compare this value to what the app is calculating. If there is a major discrepancy use manual RPM  </li>  
+                            <li>Verify, in Figure 44 App Settings, that the Points Between Blades is set to Automatic, Points per blade is set to 8, and minimum points is set to 2. Note, these settings should not be manipulated and will be password controlled   </li>
+                            <li>Verify sensor tip is clean and clearance probe hole is clear of debris. Clean if required </li>
+                            <li>Re-perform Figure 22: White Dot Test. If sensor fails white dot test, quarantine the tool and inform the tool center </li>
+                            <li>If all troubleshooting steps have been exhausted contact the Outage Tooling Team for further instructions and submit an an ER case <a href="mailto:David.Runkel@ge.com">David.Runkel@ge.com</a></li>
+                            <li>Perform manual checks if the troubleshooting is not successful </li>
+                          </ol>
+                        </li>
+                      </ol>
+                    </li>
+
+                    <br/>
+                    <li>
+                      Figures below Clear Double Counting occurs when the sample frequency is set too high and the tool misidentifies multiple points on the airfoil as different airfoils.  
+                      <br/>
+                      <figure class="text-center mt-2">
+                          <img class="figure-img img-fluid" width="320" src="img/frd/chart_clear_double_counting_1.png"/>
+                      </figure>
+                      <br/>
+                      <figure class="text-center mt-2">
+                          <img class="figure-img img-fluid" width="320" src="img/frd/chart_clear_double_counting_2.png"/>
+                      </figure>
+                      <div style="text-align: center; font-weight:bold;"> Clear Double Counting </div>
+                      <br/>
+                      <ol>
+                        <li>Clear Double Counting can be noted as 2 distinct points on a squealer tipped airfoil. To address this
+                          <ol>
+                            <li>Manually determine rotor RPM and compare this value to what the app is calculating. If there is a major discrepancy use manual RPM  </li>  
+                            <li>Verify, in Figure 44 App Settings, that the Points Between Blades is set to Automatic, Points per blade is set to 8, and minimum points is set to 2. </li>
+                            <li>Pervasive double counting (See the top plot of Figure 47 Discrete Double Counting) and clear shelf double counting (See Figure 46 Clear Double Counting) is not allowed. Analysis must be re-run.   </li>
+                            <li>If all troubleshooting steps have been exhausted contact the Outage Tooling Team for further instructions and submit an an ER case <a href="mailto:David.Runkel@ge.com">David.Runkel@ge.com</a></li>
+                            <li>Perform manual checks if the troubleshooting is not successful </li>
+                          </ol>
+                        </li>
+                      </ol>
+                    </li>
+
+                    <br/>
+                    <li>
+                      Figures below Discrete Double Counting is a more common phenomenon that occurs over all frame sizes. 
+                      <br/>
+                      <figure class="text-center mt-2">
+                          <img class="figure-img img-fluid" width="320" src="img/frd/chart_discrete_double_counting_1.png"/>
+                      </figure>
+                      <br/>
+                      <figure class="text-center mt-2">
+                          <img class="figure-img img-fluid" width="320" src="img/frd/chart_discrete_double_counting_2.png"/>
+                      </figure>
+                      <div style="text-align: center; font-weight:bold;"> Discrete Double Counting </div>
+                      <br/>
+                      <ol>
+                        <li>Discrete double counting occurs for a variety of reasons, if no more than 1/8 of airfoils measured exhibit discreet double counting on the airfoil tip (See the bottom plot in Figure 47 Discrete Double Counting) the maximum clearance error has been calculated to be ~10-13%. </li>
+                        <li>Pervasive double counting (See the top plot of Figure 47 Discrete Double Counting) and clear shelf double counting (See Figure 46 Clear Double Counting) is not allowed. Analysis must be re-run. If it persists perform manual check and submit ER case </li>
+                        <li>Discreet Double Counting can be diagnosed by close inspection of the clearance plot. Darker clearance dots indicate multiple clearance values in close proximity to each other. </li>
+                        <li>In Figure 47 Discrete Double Counting the top plot shows pervasive double counting in that a majority of airfoils have overlapping clearance values. This data is unacceptable and should be re-run </li>
+                        <li>The lower plot shows an acceptable discreet double counting event around index 5000 on the X axis. Discreet double counting is easily identified by a darker clearance circle </li>
+                        <li>To address double counting in all forms 
+                          <ol>
+                            <li>Manually determine rotor RPM and compare this value to what the app is calculating. If there is a major discrepancy use manual RPM  </li>  
+                            <li>Verify, in Figure 44 App Settings, that the Points Between Blades is set to Automatic, Points per blade is set to 8, and minimum points is set to 2. Note, these settings should not be manipulated and will be password controlled </li>
+                          </ol>
+                        <li> If double counting can not be resolved manual clearances must be taken and the Outage Tooling team contacted. Be prepared to pass along any run and clearance data for analysis, as well as Final save data 
+                          <ol> 
+                            <li>If all troubleshooting steps have been exhausted contact the Outage Tooling Team for further instructions and submit an an ER case <a href="mailto:David.Runkel@ge.com">David.Runkel@ge.com</a></li>
+                            <li>Perform manual checks if the troubleshooting is not successful </li>
+                          </ol>
+                        </li>
+                      </ol>
+                    </li>
+
+                    <br/>
+                    <li>
+                      Garbage data and incongruous clearances 
+                      <br/>
+                      <figure class="text-center mt-2">
+                          <img class="figure-img img-fluid" width="320" src="img/frd/chart_garbage_data_1.png"/>
+                      </figure>
+                      <br/>
+                      <figure class="text-center mt-2">
+                          <img class="figure-img img-fluid" width="320" src="img/frd/chart_garbage_data_2.png"/>
+                      </figure>
+                      <br/>
+                      <figure class="text-center mt-2">
+                          <img class="figure-img img-fluid" width="320" src="img/frd/chart_garbage_data_3.png"/>
+                      </figure>
+                      <div style="text-align: center; font-weight:bold;"> Garbage Data </div>
+                      <br/>
+                      <li>Figure 48 Garbage data has multiple causes, all of them serious data errors 
+                        <ol>
+                          <li>Re-perform clearance calculation. If data is garbled perform clearance calculation at another location and compare data plots </li>
+
+                          <li>Check sensor lens cleanliness – clean with an approved wipe </li>
+                          
+                          <li>Check sensor lens for defects </li>
+                          
+                          <li>Check clearance plug hole and ensure it is completely clear </li>
+                          
+                          <li>Perform white dot test and note any abnormalities </li>
+                          
+                          <li>Perform Operability check of sensor at least 5 times 1 minute apart and record op check value </li>
+                          
+                          <li>If all troubleshooting steps have been exhausted contact the Outage Tooling Team for further instructions and submit an an ER case <a href="mailto:David.Runkel@ge.com">David.Runkel@ge.com</a></li>
+                          <li>Perform manual checks if the troubleshooting is not successful </li>
+                        </ol>                                                
+                      </li>
+                    </li>
+
+                    <br/>
+                    <li>
+                      Data Post Processing
+                        <ol>
+                          <li>The collected data is filtered to remove anomalies created by the leading and trailing edges of the airfoil. The data is then filtered to ensure that only the squealer tip (if applicable) is measured for averaging. If no squealer tip is present on the airfoil (determined programmatically) the tip measurements are collected as is.  </li>
+                          <li>The data is then averaged over each airfoil to obtain the measured displacement from the sensor tip. This displacement is then run through a calculation to determine the actual clearance between the casing and airfoil.  </li>
+                          <li>In the event that there are concerns about the measurements, or if the measurements are questionable it is possible to post process the data using alternate methods </li>
+                          <li>Please contact the Outage Tooling Team <a href="mailto:David.Runkel@ge.com">David.Runkel@ge.com</a> to perform this post processing. Include the box link to where your data is stored and a description of your issue  </li>
+                        </ol> 
+                    </li>
+
+                  </ol>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">CANCEL</button>
               </div>
             </div>
           </div>
