@@ -831,7 +831,7 @@ define(function (require, exports, module) {
       "click",
       function () {
         let prompt = "Email or Upload Files?";
-        e4PtPrompt(prompt, exportDetailsFile, "Get File", ["Email", "Upload to Box", "Cancel"]);
+        e4PtPrompt(prompt, exportDetailsFile, "Get File", ["Email", "Upload to Box", "Save to Files", "Cancel"]);
       },
       { passive: true }
     );
@@ -3394,7 +3394,7 @@ define(function (require, exports, module) {
       case "filename":
         //console.log("Recieved Filename Message:", msg.fname);
         downloadFileName = msg.fname;
-        e4PtPrompt("Email or Upload File?", exportFile, "Get File", ["Email", "Upload to Box", "Cancel"]);
+        e4PtPrompt("Email, Upload, or Save File?", exportFile, "Get File", ["Email", "Upload to Box", "Save to Files", "Cancel"]);
         break;
       case "version":
         //console.log("Received version message:", msg.version);
@@ -3648,13 +3648,16 @@ define(function (require, exports, module) {
         attachmentList[i] = attachmentList[i].replace("file://", "");
       }
       uploadFileToBox(attachmentList);
+    } else if (option == 3) {
+      //console.log("Save to Files");
+      saveFilesToiPadFiles(attachmentList);
     } else {
       //console.log("Cancel");
     }
   }
 
-  // exportFiles is the callback from a prompt to email, upload or cancel. Handles multiple files.
-  // The returned option is 1 (email), 2 (upload) or 3 (cancel).
+  // exportFiles is the callback from a prompt to email, upload, save to files, or cancel. Handles multiple files.
+  // The returned option is 1 (email), 2 (upload), 3 (save to files) or 4 (cancel).
   function exportFiles(option) {
     //console.log("@exportFiles");
     // generate attachment list (array).
@@ -3681,6 +3684,9 @@ define(function (require, exports, module) {
         attachmentList[i] = attachmentList[i].replace("file://", "");
       }
       uploadFileToBox(attachmentList);
+    } else if (option == 3) {
+      //console.log("Save to Files");
+      saveFilesToiPadFiles(attachmentList);
     } else {
       //console.log("Cancel");
     }
@@ -3692,8 +3698,8 @@ define(function (require, exports, module) {
     }
   }
 
-  // exportFile is the callback from a prompt to email, upload or cancel. Only handles one file.
-  // The returned option is 1 (email), 2 (upload) or 3 (cancel).
+  // exportFile is the callback from a prompt to email, upload, save to files, or cancel. Only handles one file.
+  // The returned option is 1 (email), 2 (upload), 3 (save to files) or 4 (cancel).
   function exportFile(option) {
     //console.log("@exportFile:", option);
     if (option == 1) {
@@ -3716,6 +3722,13 @@ define(function (require, exports, module) {
         return;
       }
       uploadFileToBox(downloadFileName);
+    } else if (option == 3) {
+      //console.log("Save to Files");
+      if (downloadFileName.length == 0) {
+        e4PtAlert("There is no recent file to save.");
+        return;
+      }
+      saveFilesToiPadFiles([downloadFileName]);
     } else {
       //console.log("Cancel");
     }
@@ -3754,6 +3767,189 @@ define(function (require, exports, module) {
         );
       });
     });
+  }
+
+  // Helper function to copy files individually when zip plugin is not available
+  function copyFilesToExports(sourceFiles, exportDir, callback) {
+    console.log("=== copyFilesToExports called ===");
+    console.log("Source files:", sourceFiles);
+
+    let copiedFiles = [];
+    let filesToProcess = sourceFiles.length;
+    let filesProcessed = 0;
+
+    if (filesToProcess === 0) {
+      callback(copiedFiles);
+      return;
+    }
+
+    sourceFiles.forEach(function (sourceFilePath, index) {
+      console.log("Processing file " + (index + 1) + "/" + filesToProcess + ":", sourceFilePath);
+
+      // Get the file entry from the source path
+      window.resolveLocalFileSystemURL(
+        "file://" + sourceFilePath,
+        function (sourceFileEntry) {
+          console.log("Source file resolved:", sourceFileEntry.name);
+
+          // Try to copy the file to the export directory with a unique name if needed
+          let targetFileName = sourceFileEntry.name;
+          let copyAttempt = 0;
+
+          function attemptCopy() {
+            console.log("Attempting to copy with filename:", targetFileName);
+
+            sourceFileEntry.copyTo(
+              exportDir,
+              targetFileName,
+              function (copiedFileEntry) {
+                console.log("File copied successfully:", copiedFileEntry.name);
+                copiedFiles.push(copiedFileEntry.name);
+
+                filesProcessed++;
+                if (filesProcessed === filesToProcess) {
+                  console.log("All files processed. Copied files:", copiedFiles);
+                  callback(copiedFiles);
+                }
+              },
+              function (error) {
+                console.error("Error copying file " + sourceFileEntry.name + " as " + targetFileName + ":");
+                console.error("Error code:", error.code);
+                console.error("Error message:", error.message);
+                console.error("Full error:", JSON.stringify(error));
+
+                // If file exists, try with a different name
+                if (error.code === 12) {
+                  // PATH_EXISTS_ERR
+                  copyAttempt++;
+                  const extension = sourceFileEntry.name.split(".").pop();
+                  const nameWithoutExt = sourceFileEntry.name.replace("." + extension, "");
+                  targetFileName = nameWithoutExt + "_copy" + copyAttempt + "." + extension;
+                  console.log("File exists, trying with new name:", targetFileName);
+                  attemptCopy();
+                  return;
+                }
+
+                filesProcessed++;
+                if (filesProcessed === filesToProcess) {
+                  console.log("All files processed. Copied files:", copiedFiles);
+                  callback(copiedFiles);
+                }
+              }
+            );
+          }
+
+          attemptCopy();
+        },
+        function (error) {
+          console.error("Error resolving source file " + sourceFilePath + ":");
+          console.error("Error code:", error.code);
+          console.error("Error message:", error.message);
+          console.error("Full error:", JSON.stringify(error));
+
+          filesProcessed++;
+          if (filesProcessed === filesToProcess) {
+            console.log("All files processed. Copied files:", copiedFiles);
+            callback(copiedFiles);
+          }
+        }
+      );
+    });
+  }
+
+  // Save files to iPad Files app (zipped)
+  function saveFilesToiPadFiles(files) {
+    console.log("=== saveFilesToiPadFiles called ===");
+    console.log("Files to save:", files);
+
+    if (!files || files.length === 0) {
+      console.log("No files to save, returning");
+      e4PtAlert("No files selected to save.");
+      return;
+    }
+
+    // Create a zip file name with timestamp
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+    const zipFileName = "e4pt_export_" + timestamp + ".zip";
+    const exportDirectory = "Exports";
+
+    console.log("Zip filename:", zipFileName);
+    console.log("Export directory:", exportDirectory);
+
+    // Clean file paths (remove file:// prefix if present)
+    const cleanFiles = files.map((file) => file.replace("file://", ""));
+    console.log("Clean files:", cleanFiles);
+
+    // Check if zip plugin is available
+    let zipAvailable = false;
+    try {
+      zipAvailable = typeof zip !== "undefined" && zip && zip.zip;
+    } catch (e) {
+      zipAvailable = false;
+    }
+
+    // Ensure exports directory exists in Documents
+    window.resolveLocalFileSystemURL(
+      cordova.file.documentsDirectory,
+      function (documentsDir) {
+        documentsDir.getDirectory(
+          exportDirectory,
+          { create: true },
+          function (exportDir) {
+            const zipPath = cordova.file.documentsDirectory + exportDirectory + "/" + zipFileName;
+
+            if (!zipAvailable) {
+              console.log("ZIP plugin is not available, copying files individually...");
+              copyFilesToExports(cleanFiles, exportDir, function (copiedFiles) {
+                if (copiedFiles.length > 0) {
+                  e4PtAlert("Files saved successfully!\n\n" + copiedFiles.length + " files copied (not zipped due to missing zip plugin)\n\nTo access: Open iOS 'Files' app → Browse → On My iPad → e4PtTool → Exports\n\nFiles are now visible in the Files app. You can email them directly from there!");
+                } else {
+                  e4PtAlert("Error: No files were copied to Exports folder.");
+                }
+              });
+              return;
+            }
+
+            try {
+              console.log("About to call zip.zip()...");
+              // Use the zip plugin to create zip file
+              zip.zip(
+                cleanFiles,
+                {
+                  target: zipPath,
+                  password: null,
+                },
+                function (completed) {
+                  e4PtAlert("Files saved successfully!\n\nLocation: Files app > On My iPad > e4PtTool > Exports\nFilename: " + zipFileName);
+                },
+                function (error) {
+                  console.error("Error creating zip for iPad Files: ", error);
+                  e4PtAlert("Error creating zip file. Files may be too large or corrupted.");
+                }
+              );
+            } catch (zipError) {
+              console.error("Error with zip functionality:", zipError);
+              console.log("Falling back to copying files individually...");
+              copyFilesToExports(cleanFiles, exportDir, function (copiedFiles) {
+                if (copiedFiles.length > 0) {
+                  e4PtAlert("Files saved successfully!\n\nLocation: Files app > On My iPad > e4PtTool > Exports\n" + copiedFiles.length + " files copied (zip failed, used fallback)");
+                } else {
+                  e4PtAlert("Error: No files were copied to Exports folder.");
+                }
+              });
+            }
+          },
+          function (error) {
+            console.error("Error creating exports directory: ", error);
+            e4PtAlert("Error creating exports directory.");
+          }
+        );
+      },
+      function (error) {
+        console.error("Error accessing documents directory: ", error);
+        e4PtAlert("Error accessing documents directory.");
+      }
+    );
   }
 
   // Modified sendEmailWithAttachment function
@@ -4221,7 +4417,7 @@ define(function (require, exports, module) {
     const segments = fileURL.split("/");
     let fileName = segments.pop() || segments.pop();
     let prompt = "Email or Upload\n" + fileName + "?";
-    e4PtPrompt(prompt, exportFile, "Get File", ["Email", "Upload to Box", "Cancel"]);
+    e4PtPrompt(prompt, exportFile, "Get File", ["Email", "Upload to Box", "Save to Files", "Cancel"]);
   }
 
   function deleteMultipleFiles() {
@@ -4269,8 +4465,8 @@ define(function (require, exports, module) {
 
   function multipleFileDownloadFunction() {
     //console.log("@multipleFileDownloadFunction");
-    let prompt = "Email or Upload Files?";
-    e4PtPrompt(prompt, exportFiles, "Get File", ["Email", "Upload to Box", "Cancel"]);
+    let prompt = "Email, Upload, or Save Files?";
+    e4PtPrompt(prompt, exportFiles, "Get File", ["Email", "Upload to Box", "Save to Files", "Cancel"]);
   }
 
   function selectedFilesDownloadFunction() {
