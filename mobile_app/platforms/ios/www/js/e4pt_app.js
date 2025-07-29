@@ -3880,10 +3880,10 @@ define(function (require, exports, module) {
     const cleanFiles = files.map((file) => file.replace("file://", ""));
     console.log("Clean files:", cleanFiles);
 
-    // Check if zip plugin is available
+    // Check if JSZip is available
     let zipAvailable = false;
     try {
-      zipAvailable = typeof zip !== "undefined" && zip && zip.zip;
+      zipAvailable = typeof JSZip !== "undefined";
     } catch (e) {
       zipAvailable = false;
     }
@@ -3911,24 +3911,81 @@ define(function (require, exports, module) {
             }
 
             try {
-              console.log("About to call zip.zip()...");
-              // Use the zip plugin to create zip file
-              zip.zip(
-                cleanFiles,
-                {
-                  target: zipPath,
-                  password: null,
-                },
-                function (completed) {
-                  e4PtAlert("Files saved successfully!\n\nLocation: Files app > On My iPad > e4PtTool > Exports\nFilename: " + zipFileName);
-                },
-                function (error) {
-                  console.error("Error creating zip for iPad Files: ", error);
-                  e4PtAlert("Error creating zip file. Files may be too large or corrupted.");
-                }
-              );
+              console.log("About to create ZIP using JSZip...");
+              
+              // Create new JSZip instance
+              const zip = new JSZip();
+              let filesProcessed = 0;
+              const totalFiles = cleanFiles.length;
+              
+              // Function to process all files and create ZIP
+              function processFilesForZip() {
+                cleanFiles.forEach((filePath, index) => {
+                  // Get filename from path
+                  const fileName = filePath.split('/').pop();
+                  
+                  // Read file content
+                  window.resolveLocalFileSystemURL(
+                    'file://' + filePath,
+                    function(fileEntry) {
+                      fileEntry.file(function(file) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                          // Add file to ZIP
+                          zip.file(fileName, e.target.result);
+                          filesProcessed++;
+                          
+                          // When all files are processed, generate and save ZIP
+                          if (filesProcessed === totalFiles) {
+                            generateAndSaveZip();
+                          }
+                        };
+                        reader.readAsArrayBuffer(file);
+                      });
+                    },
+                    function(error) {
+                      console.error("Error reading file for ZIP:", filePath, error);
+                      filesProcessed++;
+                      if (filesProcessed === totalFiles) {
+                        generateAndSaveZip();
+                      }
+                    }
+                  );
+                });
+              }
+              
+              // Function to generate and save the ZIP file
+              function generateAndSaveZip() {
+                zip.generateAsync({type:"blob"}).then(function(content) {
+                  // Save the blob to file system
+                  window.resolveLocalFileSystemURL(
+                    cordova.file.documentsDirectory + exportDirectory + "/",
+                    function(dirEntry) {
+                      dirEntry.getFile(zipFileName, {create: true}, function(fileEntry) {
+                        fileEntry.createWriter(function(fileWriter) {
+                          fileWriter.onwriteend = function() {
+                            e4PtAlert("Files saved successfully!\n\nLocation: Files app > On My iPad > e4PtTool > Exports\nFilename: " + zipFileName);
+                          };
+                          fileWriter.onerror = function(e) {
+                            console.error("Write failed: " + e.toString());
+                            e4PtAlert("Error saving ZIP file to disk.");
+                          };
+                          fileWriter.write(content);
+                        });
+                      });
+                    }
+                  );
+                }).catch(function(error) {
+                  console.error("Error generating ZIP:", error);
+                  e4PtAlert("Error creating ZIP file.");
+                });
+              }
+              
+              // Start processing files
+              processFilesForZip();
+              
             } catch (zipError) {
-              console.error("Error with zip functionality:", zipError);
+              console.error("Error with JSZip functionality:", zipError);
               console.log("Falling back to copying files individually...");
               copyFilesToExports(cleanFiles, exportDir, function (copiedFiles) {
                 if (copiedFiles.length > 0) {
