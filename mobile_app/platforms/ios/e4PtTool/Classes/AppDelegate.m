@@ -27,6 +27,7 @@
 
 #import "AppDelegate.h"
 #import "MainViewController.h"
+#import "IntuneMAMIntegration.h"
 
 @implementation AppDelegate
 
@@ -43,6 +44,9 @@
 - (BOOL)application:(UIApplication*)application didFinishLaunchingWithOptions:(NSDictionary*)launchOptions
 {
     self.viewController = [[MainViewController alloc] init];
+    
+    // Initialize Intune MAM SDK
+    [[IntuneMAMIntegration sharedInstance] initializeIntuneMAM];
     
     [self checkAppSettings];
     

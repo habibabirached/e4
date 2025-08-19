@@ -266,6 +266,16 @@ define(function (require, exports, module) {
     var attachFastClick = Origami.fastclick;
     attachFastClick(document.body);
 
+    // Initialize MAM compliance checking after document is ready
+    if (typeof IntuneMAM !== 'undefined') {
+      // Wait a bit for Cordova to fully initialize, then start MAM compliance
+      setTimeout(function() {
+        initializeMAMCompliance();
+      }, 2000);
+    } else {
+      console.log("IntuneMAM not available - running without MAM policies");
+    }
+
     if (window.plugins != null) {
       messaging.setupPlugin(pluginMessage);
     } else {
@@ -3857,7 +3867,7 @@ define(function (require, exports, module) {
     });
   }
 
-  // Save files to iPad Files app (zipped)
+  // Save files to iPad Files app (zipped) - Intune MAM compliant
   function saveFilesToiPadFiles(files) {
     console.log("=== saveFilesToiPadFiles called ===");
     console.log("Files to save:", files);
@@ -3867,7 +3877,27 @@ define(function (require, exports, module) {
       e4PtAlert("No files selected to save.");
       return;
     }
-
+    
+    // First check if local data saving is allowed by MAM policies
+    IntuneMAM.isDataSavingAllowed(
+      function(isAllowed) {
+        if (!isAllowed) {
+          e4PtAlert("Local data saving is restricted by your organization's security policies.\n\nPlease use approved cloud storage services (Box, OneDrive for Business, SharePoint) to save data.");
+          return;
+        }
+        
+        // Proceed with file saving if allowed
+        proceedWithFileSaving(files);
+      },
+      function(error) {
+        console.error("Error checking data saving policy:", error);
+        e4PtAlert("Unable to verify data saving permissions. Please contact your IT administrator.");
+      }
+    );
+  }
+  
+  // Helper function to proceed with file saving after MAM policy check
+  function proceedWithFileSaving(files) {
     // Create a zip file name with timestamp
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
     const zipFileName = "e4pt_export_" + timestamp + ".zip";
@@ -4009,43 +4039,58 @@ define(function (require, exports, module) {
     );
   }
 
-  // Modified sendEmailWithAttachment function
+  // Modified sendEmailWithAttachment function - Intune MAM compliant
   function sendEmailWithAttachment(toAddress, subject, attachments) {
-    window.plugin.email.isAvailable(
-      "mailto",
-      function (available) {
-        if (!available) {
-          alert("Error: Email is not set up on this device.");
+    // First check if email sharing is allowed by MAM policies
+    IntuneMAM.isEmailSharingAllowed(
+      function(isAllowed) {
+        if (!isAllowed) {
+          e4PtAlert("Email sharing is restricted by your organization's security policies.\n\nPlease use approved cloud storage services (Box, OneDrive for Business, SharePoint) to share data.");
           return;
         }
+        
+        // Check if email is available on device
+        window.plugin.email.isAvailable(
+          "mailto",
+          function (available) {
+            if (!available) {
+              alert("Error: Email is not set up on this device.");
+              return;
+            }
 
-        // If we have multiple files, zip them
-        if (Array.isArray(attachments) && attachments.length > 1) {
-          zipFilesForEmail(attachments, function (emailAttachment) {
-            window.plugin.email.open({
-              to: toAddress,
-              cc: [],
-              bcc: [],
-              attachments: Array.isArray(emailAttachment) ? emailAttachment : [emailAttachment],
-              subject: subject,
-              body: [],
-              isHtml: false,
-            });
-          });
-        } else {
-          // Single file, send as is
-          window.plugin.email.open({
-            to: toAddress,
-            cc: [],
-            bcc: [],
-            attachments: Array.isArray(attachments) ? attachments : [attachments],
-            subject: subject,
-            body: [],
-            isHtml: false,
-          });
-        }
+            // If we have multiple files, zip them
+            if (Array.isArray(attachments) && attachments.length > 1) {
+              zipFilesForEmail(attachments, function (emailAttachment) {
+                window.plugin.email.open({
+                  to: toAddress,
+                  cc: [],
+                  bcc: [],
+                  attachments: Array.isArray(emailAttachment) ? emailAttachment : [emailAttachment],
+                  subject: subject,
+                  body: "This email contains organizational data and is subject to your company's data protection policies.",
+                  isHtml: false,
+                });
+              });
+            } else {
+              // Single file, send as is
+              window.plugin.email.open({
+                to: toAddress,
+                cc: [],
+                bcc: [],
+                attachments: Array.isArray(attachments) ? attachments : [attachments],
+                subject: subject,
+                body: "This email contains organizational data and is subject to your company's data protection policies.",
+                isHtml: false,
+              });
+            }
+          },
+          this
+        );
       },
-      this
+      function(error) {
+        console.error("Error checking email sharing policy:", error);
+        e4PtAlert("Unable to verify email sharing permissions. Please contact your IT administrator.");
+      }
     );
   }
   // /////////////////////////////////////////////////////////////
@@ -4077,19 +4122,131 @@ define(function (require, exports, module) {
 
   function uploadFileToBox(fileFullPath) {
     //console.log('fileFullPath: ' + fileFullPath);
-    // Uncomment the line below when we have a provisioning profile with iCloud entitlements from the COE.
-    // Until then this function does nothing.
-    if (messaging.usesPlugin()) {
-      window.plugins.doc_picker_plugin.uploadFileToBox(fileFullPath);
-    } else if (messaging.usesWebSocket()) {
-      e4PtAlert("Box upload isn't supported in a browser yet.\nPlease export the file and upload to Box manually.");
-    }
+    
+    // Check if cloud storage upload is allowed by MAM policies
+    IntuneMAM.getApprovedCloudStorageProviders(
+      function(approvedProviders) {
+        console.log("Approved cloud storage providers:", approvedProviders);
+        
+        if (!approvedProviders || approvedProviders.indexOf("Box") === -1) {
+          e4PtAlert("Box upload is not permitted by your organization's security policies.\n\nApproved storage services: " + (approvedProviders || "None"));
+          return;
+        }
+        
+        // Proceed with Box upload if approved
+        if (messaging.usesPlugin()) {
+          window.plugins.doc_picker_plugin.uploadFileToBox(fileFullPath);
+        } else if (messaging.usesWebSocket()) {
+          e4PtAlert("Box upload isn't supported in a browser yet.\nPlease export the file and upload to Box manually.");
+        }
+      },
+      function(error) {
+        console.error("Error checking cloud storage policy:", error);
+        e4PtAlert("Unable to verify cloud storage permissions. Please contact your IT administrator.");
+      }
+    );
   }
 
   // boxUploadCallback is called when the file upload to box has completed.
   function boxUploadCallback() {
     //console.log("@boxUploadCallback");
   }
+
+  // MAM Policy Compliance Functions
+  function initializeMAMCompliance() {
+    console.log("Initializing MAM policy compliance checks");
+    
+    // Check initial MAM policy status
+    refreshMAMCompliance();
+    
+    // Set up periodic compliance checks (every 5 minutes)
+    setInterval(refreshMAMCompliance, 300000);
+  }
+  
+  function refreshMAMCompliance() {
+    console.log("Refreshing MAM policy compliance status");
+    
+    // Check all MAM policies and update UI accordingly
+    IntuneMAM.isDataSavingAllowed(
+      function(isAllowed) {
+        console.log("Data saving allowed:", isAllowed);
+        // Update UI elements based on policy
+        updateUIForDataSavingPolicy(isAllowed);
+      },
+      function(error) {
+        console.error("Error checking data saving policy:", error);
+      }
+    );
+    
+    IntuneMAM.isEmailSharingAllowed(
+      function(isAllowed) {
+        console.log("Email sharing allowed:", isAllowed);
+        // Update UI elements based on policy
+        updateUIForEmailSharingPolicy(isAllowed);
+      },
+      function(error) {
+        console.error("Error checking email sharing policy:", error);
+      }
+    );
+    
+    IntuneMAM.getApprovedCloudStorageProviders(
+      function(providers) {
+        console.log("Approved cloud storage providers:", providers);
+        // Update UI elements based on approved providers
+        updateUIForCloudStoragePolicy(providers);
+      },
+      function(error) {
+        console.error("Error checking cloud storage policy:", error);
+      }
+    );
+  }
+  
+  function updateUIForDataSavingPolicy(isAllowed) {
+    // Add visual indicators or disable buttons based on policy
+    var saveButtons = document.querySelectorAll('[data-action="save-local"]');
+    saveButtons.forEach(function(button) {
+      if (!isAllowed) {
+        button.style.opacity = '0.5';
+        button.title = 'Local saving restricted by organization policy';
+      } else {
+        button.style.opacity = '1';
+        button.title = '';
+      }
+    });
+  }
+  
+  function updateUIForEmailSharingPolicy(isAllowed) {
+    // Add visual indicators or disable email buttons based on policy
+    var emailButtons = document.querySelectorAll('[data-action="email"]');
+    emailButtons.forEach(function(button) {
+      if (!isAllowed) {
+        button.style.opacity = '0.5';
+        button.title = 'Email sharing restricted by organization policy';
+      } else {
+        button.style.opacity = '1';
+        button.title = '';
+      }
+    });
+  }
+  
+  function updateUIForCloudStoragePolicy(providers) {
+    // Update cloud storage options based on approved providers
+    var boxButtons = document.querySelectorAll('[data-action="upload-box"]');
+    var isBoxAllowed = providers && providers.indexOf('Box') !== -1;
+    
+    boxButtons.forEach(function(button) {
+      if (!isBoxAllowed) {
+        button.style.opacity = '0.5';
+        button.title = 'Box upload not permitted by organization policy';
+      } else {
+        button.style.opacity = '1';
+        button.title = '';
+      }
+    });
+  }
+  
+  // Make MAM compliance functions available globally
+  window.refreshMAMCompliance = refreshMAMCompliance;
 
   function deleteStaleLogFiles() {
     console.log("@deleteStaleLogFiles");
