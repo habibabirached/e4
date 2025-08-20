@@ -6,9 +6,11 @@
 //
 
 #import <Foundation/Foundation.h>
-#import <IntuneMAM/IntuneMAM.h>
+// TODO: Uncomment after adding IntuneMAM.framework to project
+// #import <IntuneMAM/IntuneMAM.h>
 
-@interface IntuneMAMIntegration : NSObject <IntuneMAMPolicyDelegate>
+// TODO: Add <IntuneMAMPolicyDelegate> after adding IntuneMAM.framework
+@interface IntuneMAMIntegration : NSObject // <IntuneMAMPolicyDelegate>
 
 + (instancetype)sharedInstance;
 - (void)initializeIntuneMAM;

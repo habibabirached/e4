@@ -45,7 +45,7 @@
 {
     self.viewController = [[MainViewController alloc] init];
     
-    // Initialize Intune MAM SDK
+    // Initialize Intune MAM SDK (will log message until framework is added)
     [[IntuneMAMIntegration sharedInstance] initializeIntuneMAM];
     
     [self checkAppSettings];

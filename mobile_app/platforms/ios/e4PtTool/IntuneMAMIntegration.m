@@ -21,59 +21,69 @@
 - (void)initializeIntuneMAM {
     NSLog(@"Initializing Intune MAM SDK");
     
+    // TODO: Uncomment after adding IntuneMAM.framework to project
     // Set the policy delegate
-    [IntuneMAMPolicyManager instance].delegate = self;
+    // [IntuneMAMPolicyManager instance].delegate = self;
     
     // Initialize the SDK
-    [[IntuneMAMEnrollmentManager instance] loginAndEnrollAccount:nil];
+    // [[IntuneMAMEnrollmentManager instance] loginAndEnrollAccount:nil];
 }
 
 - (BOOL)isDataSavingAllowed {
-    IntuneMAMPolicy *policy = [[IntuneMAMPolicyManager instance] policyForIdentity:nil];
+    // TODO: Uncomment after adding IntuneMAM.framework to project
+    // IntuneMAMPolicy *policy = [[IntuneMAMPolicyManager instance] policyForIdentity:nil];
     
-    if (policy) {
-        // Check if saving organizational data locally is allowed
-        return policy.saveToLocationPolicy == IntuneMAMSaveLocationLocalDrive;
-    }
+    // if (policy) {
+    //     // Check if saving organizational data locally is allowed
+    //     return policy.saveToLocationPolicy == IntuneMAMSaveLocationLocalDrive;
+    // }
     
-    // Default to false for security
-    return NO;
+    // Temporary: Allow all operations until framework is added
+    NSLog(@"IntuneMAM framework not available - allowing data saving");
+    return YES; // Change to NO for security when framework is added
 }
 
 - (BOOL)isEmailSharingAllowed {
-    IntuneMAMPolicy *policy = [[IntuneMAMPolicyManager instance] policyForIdentity:nil];
+    // TODO: Uncomment after adding IntuneMAM.framework to project
+    // IntuneMAMPolicy *policy = [[IntuneMAMPolicyManager instance] policyForIdentity:nil];
     
-    if (policy) {
-        // Check if sharing via email is allowed
-        return policy.sharePolicy != IntuneMAMSharePolicyNone;
-    }
+    // if (policy) {
+    //     // Check if sharing via email is allowed
+    //     return policy.sharePolicy != IntuneMAMSharePolicyNone;
+    // }
     
-    // Default to false for security
-    return NO;
+    // Temporary: Allow all operations until framework is added
+    NSLog(@"IntuneMAM framework not available - allowing email sharing");
+    return YES; // Change to NO for security when framework is added
 }
 
 - (NSString *)getApprovedCloudStorageProviders {
-    IntuneMAMPolicy *policy = [[IntuneMAMPolicyManager instance] policyForIdentity:nil];
+    // TODO: Uncomment after adding IntuneMAM.framework to project
+    // IntuneMAMPolicy *policy = [[IntuneMAMPolicyManager instance] policyForIdentity:nil];
     
-    if (policy) {
-        // Return comma-separated list of approved cloud storage providers
-        NSMutableArray *approvedProviders = [[NSMutableArray alloc] init];
-        
-        // Check for specific approved cloud storage services
-        if (policy.saveToLocationPolicy & IntuneMAMSaveLocationCloud) {
-            [approvedProviders addObject:@"Box"];
-            [approvedProviders addObject:@"OneDrive for Business"];
-            [approvedProviders addObject:@"SharePoint"];
-        }
-        
-        return [approvedProviders componentsJoinedByString:@","];
-    }
+    // if (policy) {
+    //     // Return comma-separated list of approved cloud storage providers
+    //     NSMutableArray *approvedProviders = [[NSMutableArray alloc] init];
+    //     
+    //     // Check for specific approved cloud storage services
+    //     if (policy.saveToLocationPolicy & IntuneMAMSaveLocationCloud) {
+    //         [approvedProviders addObject:@"Box"];
+    //         [approvedProviders addObject:@"OneDrive for Business"];
+    //         [approvedProviders addObject:@"SharePoint"];
+    //     }
+    //     
+    //     return [approvedProviders componentsJoinedByString:@","];
+    // }
     
-    return @"";
+    // Temporary: Return all services as approved until framework is added
+    NSLog(@"IntuneMAM framework not available - allowing all cloud storage providers");
+    return @"Box,OneDrive for Business,SharePoint";
 }
 
 #pragma mark - IntuneMAMPolicyDelegate
+// TODO: Uncomment after adding IntuneMAM.framework to project
 
+/*
 - (void)identityHasChanged {
     NSLog(@"Intune MAM: Identity has changed");
     [self handleMAMPolicyChange];
@@ -83,6 +93,7 @@
     NSLog(@"Intune MAM: Policy has changed");
     [self handleMAMPolicyChange];
 }
+*/
 
 - (void)handleMAMPolicyChange {
     // Notify JavaScript layer about policy changes
